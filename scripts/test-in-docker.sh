@@ -27,7 +27,7 @@ docker run --rm \
   -v "$ROOT:$CONTAINER_SRC:ro" \
   -e SHUTTLE_DOCKER_INTEGRATION=1 \
   "$IMAGE" \
-  bash -lc "
+  bash -c "
     set -euo pipefail
     mkdir -p '$CONTAINER_WORK'
     tar \
@@ -40,17 +40,12 @@ docker run --rm \
     cd '$CONTAINER_WORK'
     ./scripts/bootstrap.sh
     source .venv/bin/activate
-    git init -b main >/dev/null
-    git config user.email 'shuttle@example.test'
-    git config user.name 'Shuttle Test'
-    git add -A
-    git commit -m 'docker integration snapshot' >/dev/null
-    git init -b main '$CONTAINER_WORK/.test-git-root' >/dev/null
-    git -C '$CONTAINER_WORK/.test-git-root' config user.email 'shuttle@example.test'
-    git -C '$CONTAINER_WORK/.test-git-root' config user.name 'Shuttle Test'
-    touch '$CONTAINER_WORK/.test-git-root/README.md'
-    git -C '$CONTAINER_WORK/.test-git-root' add README.md
-    git -C '$CONTAINER_WORK/.test-git-root' commit -m 'initial' >/dev/null
-    SHUTTLE_GIT_ROOT='$CONTAINER_WORK/.test-git-root' pytest -q
+    unset GIT_DIR GIT_WORK_TREE
+    git -C '$CONTAINER_WORK' init -b main
+    git -C '$CONTAINER_WORK' config user.email 'shuttle@example.test'
+    git -C '$CONTAINER_WORK' config user.name 'Shuttle Test'
+    git -C '$CONTAINER_WORK' add -A
+    git -C '$CONTAINER_WORK' commit -m 'docker integration snapshot'
+    pytest -q
     ./scripts/integration/smoke.sh
   "

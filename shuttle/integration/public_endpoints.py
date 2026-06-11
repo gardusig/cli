@@ -443,6 +443,32 @@ def assert_registry_covers_git_commands() -> None:
         raise AssertionError(f"git registry drift: missing={sorted(missing)} extra={sorted(extra)}")
 
 
+def _git_env() -> dict[str, str]:
+    """Subprocess env without inherited GIT_DIR / GIT_WORK_TREE bleed."""
+    env = os.environ.copy()
+    env.pop("GIT_DIR", None)
+    env.pop("GIT_WORK_TREE", None)
+    return env
+
+
+def ensure_project_git(repo_root: Path) -> None:
+    """Init repo_root when copied without .git (Docker integration workspace)."""
+    if (repo_root / ".git").exists():
+        return
+    env = _git_env()
+    git = ["git", "-C", str(repo_root)]
+    subprocess.run([*git, "init", "-b", "main"], check=True, capture_output=True, env=env)
+    subprocess.run([*git, "config", "user.email", "shuttle@example.test"], check=True, env=env)
+    subprocess.run([*git, "config", "user.name", "Shuttle Test"], check=True, env=env)
+    subprocess.run([*git, "add", "-A"], check=True, capture_output=True, env=env)
+    subprocess.run(
+        [*git, "commit", "-m", "integration snapshot"],
+        check=True,
+        capture_output=True,
+        env=env,
+    )
+
+
 def prepare_git_repo(path: Path) -> None:
     """Disposable repo with local origin remote for SHUTTLE_GIT_ROOT checks."""
     path.mkdir(parents=True, exist_ok=True)
@@ -644,6 +670,7 @@ class _push_cwd:
 
 def run_all_endpoint_checks(repo_root: Path, git_root: Path | None = None) -> list[str]:
     """Run every check; return error messages (empty if all passed)."""
+    ensure_project_git(repo_root)
     assert_registry_covers_git_commands()
     assert_every_git_subcommand_checked()
     assert_every_git_subcommand_has_ok_check()
