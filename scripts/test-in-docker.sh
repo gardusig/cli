@@ -40,6 +40,11 @@ docker run --rm \
     cd '$CONTAINER_WORK'
     ./scripts/bootstrap.sh
     source .venv/bin/activate
+    git init -b main >/dev/null
+    git config user.email 'shuttle@example.test'
+    git config user.name 'Shuttle Test'
+    git add -A
+    git commit -m 'docker integration snapshot' >/dev/null
     git init -b main '$CONTAINER_WORK/.test-git-root' >/dev/null
     git -C '$CONTAINER_WORK/.test-git-root' config user.email 'shuttle@example.test'
     git -C '$CONTAINER_WORK/.test-git-root' config user.name 'Shuttle Test'

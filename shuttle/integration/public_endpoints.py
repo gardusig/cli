@@ -618,7 +618,9 @@ def run_endpoint_check(
     if check.needs_git and git_root is not None:
         env["SHUTTLE_GIT_ROOT"] = str(git_root)
     else:
+        # Block SHUTTLE_GIT_ROOT bleed from Docker CI (whole-pytest env var).
         env.pop("SHUTTLE_GIT_ROOT", None)
+        env["SHUTTLE_GIT_ROOT"] = ""
     env.update(check.extra_env)
     with _push_cwd(repo_root):
         result = _CLI_RUNNER.invoke(app, list(check.args), env=env)
