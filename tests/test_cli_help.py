@@ -17,6 +17,10 @@ def test_git_help() -> None:
     for cmd in (
         "commit",
         "push",
+        "ship",
+        "prep",
+        "kickoff",
+        "land",
         "pull",
         "start",
         "main",

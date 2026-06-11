@@ -27,6 +27,7 @@ def test_classify_write_safe_operations() -> None:
 
 def test_classify_write_gated_operations() -> None:
     assert classify_operation("push") == OperationKind.WRITE_GATED
+    assert classify_operation("ship") == OperationKind.WRITE_GATED
     assert classify_operation("reset") == OperationKind.WRITE_GATED
     assert classify_operation("branch-clear") == OperationKind.WRITE_GATED
     assert classify_operation("branch-clear-remote") == OperationKind.WRITE_GATED

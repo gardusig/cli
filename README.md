@@ -21,11 +21,14 @@ shuttle git --help
 
 | Task | Command |
 | --- | --- |
-| Start branch | `shuttle git start [name]` |
-| Save work | `shuttle git commit` (message defaults to `.`) |
-| Publish | `shuttle git push --yes` |
-| Sync | `shuttle git pull` |
-| Align `main` | `shuttle git main --yes` |
+| **Before work** (clean main) | `shuttle git prep` |
+| **Start issue** (prep + branch) | `shuttle git kickoff issue-9-slug` |
+| **During work** (add + commit + push) | `shuttle git ship` |
+| **After merge** (main + prune branches) | `shuttle git land --yes` |
+| Start branch (no prep) | `shuttle git start [name]` |
+| Commit only | `shuttle git commit` |
+| Push only | `shuttle git push --yes` |
+| Sync feature branch | `shuttle git pull` |
 | Delete merged branch | `shuttle git branch-delete BRANCH --yes` |
 | Clear all branches (keep `main`) | `shuttle git branch-clear --yes` |
 | Tag release | `shuttle git tag` (today's date) · `shuttle git zip TAG` |

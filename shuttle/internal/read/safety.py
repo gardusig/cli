@@ -47,6 +47,10 @@ WRITE_SAFE_OPERATIONS = frozenset(
 WRITE_GATED_OPERATIONS = frozenset(
     {
         "push",
+        "ship",
+        "prep",
+        "kickoff",
+        "land",
         "main",
         "reset",
         "branch-delete",

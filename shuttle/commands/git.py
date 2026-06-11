@@ -11,7 +11,7 @@ from shuttle.internal.write.gate import WRITE_GATE_DELIMITER, require_write_gate
 from shuttle.services.git_review import run_review
 from shuttle.services.git_shortcuts import GitShortcuts
 from shuttle.utils.config import project_root
-from shuttle.utils.quick_defaults import default_tag_name
+from shuttle.utils.quick_defaults import default_tag_name, suggest_branch_name
 
 git_app = typer.Typer(help="Git shortcuts (commit message defaults to '.').", no_args_is_help=True)
 
@@ -96,6 +96,132 @@ def push_cmd(
     _write_gate("push", yes=yes, question="Push current branch to remote?")
     _svc().push(allow_main=allow_main, message=message, yes=True)
     rprint("[green]pushed[/green]")
+
+
+def _ship_intent_lines(svc: GitShortcuts, message: str, *, allow_main: bool) -> list[str]:
+    branch = svc.current_branch()
+    lines = [
+        "intent: git add -A → commit → push origin HEAD",
+        f"branch: {branch}",
+        f"commit_message: {message!r}",
+        f"dirty: {svc.is_dirty()}",
+        f"remote: {'origin' if svc.remote_exists('origin') else '(none)'}",
+    ]
+    if branch == "main" and not allow_main:
+        lines.append("warning: refusing main without --allow-main")
+    return lines
+
+
+@git_app.command("ship")
+def ship_cmd(
+    allow_main: bool = typer.Option(False, "--allow-main", help="Allow shipping from main."),
+    message: str = typer.Option(".", "-m", "--message", help="Commit message for staged changes."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Confirm ship (stage, commit, push)."),
+) -> None:
+    """Stage all, commit, and push — with branch summary confirmation first."""
+    svc = _svc()
+    branch = svc.current_branch()
+    _write_gate(
+        "ship",
+        yes=yes,
+        question=f"Ship changes from {branch!r} to origin?",
+        extra_lines=_ship_intent_lines(svc, message, allow_main=allow_main),
+    )
+    svc.push(allow_main=allow_main, message=message, yes=True)
+    rprint("[green]shipped[/green]")
+
+
+def _prep_intent_lines(svc: GitShortcuts, *, keep_ignored: bool) -> list[str]:
+    clean = "git clean -fd" if keep_ignored else "git clean -fdx"
+    return [
+        "intent: checkout main → fetch → reset --hard → " + clean,
+        f"canonical_main: {svc.canonical_main_ref()}",
+        f"dirty: {svc.is_dirty()}",
+    ]
+
+
+@git_app.command("prep")
+def prep_cmd(
+    yes: bool = typer.Option(False, "--yes", "-y", help="Discard dirty tree and align main."),
+    keep_ignored: bool = typer.Option(False, "--keep-ignored", help="Use git clean -fd instead of -fdx."),
+) -> None:
+    """Before work: fresh local main (fetch, reset, clean)."""
+    svc = _svc()
+    _write_gate(
+        "prep",
+        yes=yes,
+        question="Reset main to remote and clean working tree?",
+        extra_lines=_prep_intent_lines(svc, keep_ignored=keep_ignored),
+    )
+    svc.prep(yes=True, keep_ignored=keep_ignored)
+    rprint("[green]prep complete[/green] — on main, synced with remote")
+
+
+@git_app.command("kickoff")
+def kickoff_cmd(
+    branch: str | None = typer.Argument(
+        None,
+        help="Branch name (default wip-YYMMDD-NNN; use issue slug e.g. issue-9-docker).",
+    ),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Confirm align main + new branch."),
+    keep_ignored: bool = typer.Option(False, "--keep-ignored", help="Use git clean -fd instead of -fdx."),
+) -> None:
+    """Start issue work: align main, then create feature branch."""
+    svc = _svc()
+    branch_name = branch or suggest_branch_name(svc.local_branch_names(exclude_main=False))
+    extra = [
+        "intent: prep (align main) → git checkout -b",
+        f"branch_to_create: {branch_name}",
+        *_prep_intent_lines(svc, keep_ignored=keep_ignored),
+    ]
+    _write_gate(
+        "kickoff",
+        yes=yes,
+        question=f"Prep main and start branch {branch_name!r}?",
+        extra_lines=extra,
+    )
+    name = svc.kickoff(branch_name, yes=True, keep_ignored=keep_ignored)
+    rprint(f"[green]kickoff[/green] on branch {name}")
+
+
+def _land_intent_lines(svc: GitShortcuts, *, all_local: bool) -> list[str]:
+    if all_local:
+        branches = svc.local_branch_names(exclude_main=True)
+        label = "local_branches_to_delete"
+        mode = "all local branches except main"
+    else:
+        branches = svc.merged_branch_names(include_current=True)
+        label = "merged_branches_to_delete"
+        mode = "merged branches only"
+    lines = [
+        "intent: checkout main → fetch → reset --hard → clean → delete branches",
+        f"delete_mode: {mode}",
+        f"canonical_main: {svc.canonical_main_ref()}",
+    ]
+    lines.extend(_branch_preview_lines(label, branches))
+    return lines
+
+
+@git_app.command("land")
+def land_cmd(
+    yes: bool = typer.Option(False, "--yes", "-y", help="Confirm post-merge cleanup."),
+    all_local: bool = typer.Option(
+        False,
+        "--all-local",
+        help="Delete every local branch except main (not only merged).",
+    ),
+    keep_ignored: bool = typer.Option(False, "--keep-ignored", help="Use git clean -fd instead of -fdx."),
+) -> None:
+    """After merge: return to main, sync, and remove feature branches."""
+    svc = _svc()
+    _write_gate(
+        "land",
+        yes=yes,
+        question="Land on main and delete feature branches?",
+        extra_lines=_land_intent_lines(svc, all_local=all_local),
+    )
+    deleted = svc.land(yes=True, all_local=all_local, keep_ignored=keep_ignored)
+    rprint(f"[green]landed[/green] on main; removed {len(deleted)} branch(es)")
 
 
 @git_app.command("start")

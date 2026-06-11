@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 
 from shuttle.utils.process import GitCommandError, run_git
-from shuttle.utils.quick_defaults import default_tag_name
+from shuttle.utils.quick_defaults import default_tag_name, suggest_branch_name
 
 
 class GitShortcuts:
@@ -183,18 +183,25 @@ class GitShortcuts:
         if remote and self.remote_exists("origin"):
             run_git(["push", "origin", "--delete", name], cwd=self.top, check=False)
 
+    def merged_branch_names(self, *, include_current: bool = False) -> list[str]:
+        current = self.current_branch()
+        protected: set[str] = {"main"}
+        if not include_current:
+            protected.add(current)
+        out = run_git(["branch", "--merged"], cwd=self.top).stdout
+        names: list[str] = []
+        for line in out.splitlines():
+            name = line.strip().lstrip("* ").strip()
+            if name and name not in protected:
+                names.append(name)
+        return sorted(names)
+
     def branch_delete_all_merged(self, *, yes: bool = False) -> list[str]:
         if not yes:
             raise RuntimeError("Pass --yes to delete merged branches.")
         self.branch_prune()
-        current = self.current_branch()
-        protected = {"main", current}
-        out = run_git(["branch", "--merged"], cwd=self.top).stdout
         deleted: list[str] = []
-        for line in out.splitlines():
-            name = line.strip().lstrip("* ").strip()
-            if not name or name in protected:
-                continue
+        for name in self.merged_branch_names():
             self.branch_delete(name, force=False, remote=True, yes=True)
             deleted.append(name)
         return deleted
@@ -202,6 +209,42 @@ class GitShortcuts:
     def post_merge_cleanup(self, *, yes: bool = False) -> list[str]:
         self.align_main(yes=yes)
         return self.branch_delete_all_merged(yes=yes)
+
+    def prep(self, *, yes: bool = False, keep_ignored: bool = False) -> None:
+        """Checkout main, fetch, reset to canonical main, clean (-fdx by default)."""
+        self.align_main(yes=yes, keep_ignored=keep_ignored)
+
+    def kickoff(
+        self,
+        branch: str | None = None,
+        *,
+        yes: bool = False,
+        keep_ignored: bool = False,
+    ) -> str:
+        """Align main, then create a new feature branch."""
+        self.align_main(yes=yes, keep_ignored=keep_ignored)
+        name = branch or suggest_branch_name(self.local_branch_names(exclude_main=False))
+        run_git(["checkout", "-b", name], cwd=self.top)
+        return name
+
+    def land(
+        self,
+        *,
+        yes: bool = False,
+        all_local: bool = False,
+        keep_ignored: bool = False,
+    ) -> list[str]:
+        """After merge: align main and remove local feature branches."""
+        if not yes:
+            raise RuntimeError("Pass --yes to land.")
+        self.align_main(yes=True, keep_ignored=keep_ignored)
+        if all_local:
+            deleted: list[str] = []
+            for name in self.local_branch_names(exclude_main=True):
+                run_git(["branch", "-D", name], cwd=self.top)
+                deleted.append(name)
+            return deleted
+        return self.branch_delete_all_merged(yes=True)
 
     def local_branch_names(self, *, exclude_main: bool = True) -> list[str]:
         out = run_git(

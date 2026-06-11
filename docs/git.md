@@ -18,6 +18,7 @@ Each command maps to a [cursor-skills git skill](https://github.com/gardusig/cur
 | `@git-post-merge-cleanup` | `scripts/git/post-merge-cleanup.sh` | `shuttle git post-merge-cleanup` |
 | `@git-pull` | `scripts/git/pull.sh` | `shuttle git pull` |
 | `@git-push` | `scripts/git/push.sh` | `shuttle git push` |
+| `@git-ship` | `scripts/git/ship.sh` | `shuttle git ship` |
 | `@git-rebase` | `scripts/git/rebase.sh` | `shuttle git rebase` |
 | `@git-reset` | `scripts/git/reset.sh` | `shuttle git reset` |
 | `@git-revert` | `scripts/git/revert.sh` | `shuttle git revert` |
@@ -44,6 +45,7 @@ Operations that mutate remote state or discard local work require confirmation:
 | Operation | Confirmation |
 | --- | --- |
 | `git push` | `--yes` or interactive prompt |
+| `git ship` | `--yes` or interactive prompt (shows branch + intent summary) |
 | `git main` (reset/clean) | `--yes` or interactive prompt |
 | `git reset` | `--yes` or interactive prompt |
 | `git branch-delete` | `--yes` or interactive prompt |
@@ -75,9 +77,13 @@ shuttle git start my-feature --align-main --yes
 ## Publish
 
 ```bash
+shuttle git ship              # interactive: branch summary → add + commit + push
+shuttle git ship --yes        # non-interactive
 shuttle git commit -m "wip"
 shuttle git push --yes
 ```
+
+`ship` shows a write gate with branch, dirty state, commit message, and intent (`add → commit → push`) before running.
 
 ## Clear all branches (nuclear local reset)
 
