@@ -129,7 +129,7 @@ flowchart TD
 flowchart LR
     subgraph review [Workspace health]
         R1["shuttle git review"]
-        R2["bootstrap · shellcheck · pytest"]
+        R2["shell syntax · test-unit.sh in Docker"]
         R1 --> R2
     end
 
@@ -141,8 +141,8 @@ flowchart LR
     end
 
     subgraph docker [Isolated checks]
-        D1["./scripts/test-in-docker.sh"]
-        D2["copy repo · pytest · smoke"]
+        D1["./scripts/test-integration.sh"]
+        D2["copy repo · pytest · smoke · live docker"]
         D1 --> D2
     end
 ```

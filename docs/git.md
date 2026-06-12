@@ -133,7 +133,7 @@ shuttle git review
 ./scripts/git/review.sh
 ```
 
-Runs bootstrap (if needed), shell syntax checks, and `pytest`. No commit or push.
+Runs shell syntax checks; without `--quick`, also `./scripts/test-unit.sh` (Docker — requires Docker Desktop). No commit or push. Use `shuttle git review --quick` when Docker is unavailable.
 
 ## Docs inventory
 

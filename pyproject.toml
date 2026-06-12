@@ -47,4 +47,4 @@ fail_under = 80
 show_missing = true
 skip_empty = true
 
-# Unit CI uses coverage-unit.ini (omits shuttle/integration/*; integration covered in Docker job).
+# Unit Docker job uses coverage-unit.ini (omits shuttle/integration/*; full suite in integration job).

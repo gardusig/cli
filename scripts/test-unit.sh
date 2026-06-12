@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Local unit tests (same gate as CI macOS job).
+# Unit tests in shuttle-cli:dev (Docker on macOS or Linux; same image as CI).
 set -euo pipefail
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT"
-./scripts/bootstrap.sh
-source .venv/bin/activate
-pytest -q -m "not integration" \
-  --cov=shuttle \
-  --cov-config=coverage-unit.ini \
-  --cov-report=term-missing \
-  --cov-fail-under=80
+# shellcheck source=docker/common.sh
+source "$(dirname "$0")/docker/common.sh"
+
+INNER="$(docker_copy_workspace_script)
+cd '$CONTAINER_WORK'
+$(docker_init_git_workspace "$CONTAINER_WORK" "docker unit snapshot")
+./scripts/docker/run-unit.sh"
+
+docker_run_in_workspace "$INNER"

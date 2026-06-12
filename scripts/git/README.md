@@ -30,7 +30,10 @@ Usage:
 
 ```bash
 ./scripts/git/commit.sh -m "wip"
-./scripts/git/review.sh
+./scripts/git/review.sh          # shell syntax + Docker unit tests
+./scripts/git/review.sh --quick  # shell syntax only
 ```
 
 Set `SHUTTLE_BIN` to override the shuttle executable.
+
+Verification never runs host `pytest`; `review` delegates to `./scripts/test-unit.sh` in Docker when not `--quick`.

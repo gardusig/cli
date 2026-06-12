@@ -631,10 +631,10 @@ def review_cmd(
     quick: bool = typer.Option(
         False,
         "--quick",
-        help="Shell syntax only; skip pytest (integration smoke).",
+        help="Shell syntax only; skip Docker unit tests.",
     ),
 ) -> None:
-    """Workspace health: bootstrap, shell syntax checks, pytest (@git-review)."""
+    """Workspace health: shell syntax checks and Docker unit tests (@git-review)."""
     code = run_review(install=not no_install, quick=quick)
     if code == 0:
         rprint("[green]review passed[/green]")

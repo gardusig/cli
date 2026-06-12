@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Container-safe integration smoke test for shuttle-cli.
+# Integration smoke (container only — invoked by scripts/docker/run-integration.sh).
 set -euo pipefail
 
 ROOT="${SHUTTLE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"

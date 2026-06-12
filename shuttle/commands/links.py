@@ -61,9 +61,12 @@ def links_root() -> None:
 
     rprint("\n[bold]Other scripts[/bold]")
     for rel, note in (
-        ("scripts/bootstrap.sh", "venv + deps"),
+        ("scripts/bootstrap.sh", "local venv (runtime; tests use Docker)"),
         ("scripts/install.sh", "install to ~/.local/bin"),
-        ("scripts/test-in-docker.sh", "Docker integration run"),
+        ("scripts/docker/build-image.sh", "build shuttle-cli:dev image"),
+        ("scripts/test-unit.sh", "unit tests in container"),
+        ("scripts/test-integration.sh", "integration tests in container"),
+        ("scripts/docker/shell.sh", "onboard shell in container"),
     ):
         path = root / rel
         if path.is_file():

@@ -2,10 +2,12 @@
 
 macOS CLI for **git shortcuts** (deterministic, no AI) and future backup/sync workflows.
 
-## Quickstart (macOS)
+## Install (macOS)
+
+Local setup is for **using** shuttle only (runtime deps). **Verification** always runs in Docker — same image locally and in CI.
 
 ```bash
-./scripts/bootstrap.sh
+./scripts/bootstrap.sh          # venv + runtime install
 source .venv/bin/activate
 python -m shuttle --help
 ```
@@ -16,6 +18,8 @@ Optional install to `~/.local/bin`:
 ./scripts/install.sh
 shuttle git --help
 ```
+
+Do not run `pytest` on the host; use `./scripts/test-unit.sh` and `./scripts/test-integration.sh` instead.
 
 ## Common git commands
 
@@ -65,27 +69,16 @@ Shell wrappers live in `scripts/docker/` (e.g. `./scripts/docker/reset.sh --yes`
 
 Destructive commands use the write gate; pass `--yes` in scripts.
 
-## Testing
+## Verify (Docker)
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) on macOS (or Docker Engine on Linux). The `shuttle-cli:dev` Linux image is the only supported test environment:
 
 ```bash
-./scripts/test-unit.sh          # unit tests + ≥80% coverage (matches CI macOS job)
-./scripts/test-in-docker.sh     # full pytest + smoke inside a container
-./scripts/test-integration.sh   # container smoke + live docker CLI on host
+./scripts/docker/build-image.sh   # build once (or auto-build on first test run)
+./scripts/test-unit.sh            # unit tests (≥80% coverage)
+./scripts/test-integration.sh     # full pytest + smoke + live docker
+./scripts/docker/shell.sh         # onboard: interactive shell in container
 ```
-
-Mocked docker CLI checks (no daemon):
-
-```bash
-source .venv/bin/activate
-python scripts/integration/check_docker_commands.py
-```
-
-## Docker integration (CI)
-
-CI on every pull request runs:
-
-- **Unit** (macOS): `./scripts/test-unit.sh`
-- **Integration** (Ubuntu): container smoke via `./scripts/test-in-docker.sh`, then live `shuttle docker` against the host daemon
 
 See [docs/docker.md](docs/docker.md).
 
