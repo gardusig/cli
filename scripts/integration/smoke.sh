@@ -13,7 +13,7 @@ python -m shuttle restore | grep -q "restore: not implemented yet"
 python -m shuttle drive --help | grep -q "upload"
 python -m shuttle notion --help | grep -q "ingest"
 python -m shuttle chrome --help | grep -q "bookmarks"
-python -m shuttle notion --help | grep -q "export"
+python -m shuttle notion --help | grep -q "deploy"
 
 links_out="$(mktemp)"
 python -m shuttle links >"$links_out" 2>&1
