@@ -56,6 +56,8 @@ def docker_checks() -> list[DockerCheck]:
         DockerCheck("docker image-delete refuse", ("docker", "image-delete"), kind="refuse", needle=refuse),
         DockerCheck("docker reset refuse", ("docker", "reset"), kind="refuse", needle=refuse),
         DockerCheck("docker clean refuse", ("docker", "clean", "containers"), kind="refuse", needle=refuse),
+        DockerCheck("docker clean images refuse", ("docker", "clean", "images"), kind="refuse", needle=refuse),
+        DockerCheck("docker clean all refuse", ("docker", "clean", "all"), kind="refuse", needle=refuse),
         DockerCheck(
             "docker stop yes",
             ("docker", "stop", "--yes"),
@@ -74,6 +76,11 @@ def docker_checks() -> list[DockerCheck]:
         DockerCheck(
             "docker reset yes",
             ("docker", "reset", "--yes"),
+            needle="build cache prune",
+        ),
+        DockerCheck(
+            "docker reset dangling yes",
+            ("docker", "reset", "--yes", "--dangling-only"),
             needle="build cache prune",
         ),
         DockerCheck(

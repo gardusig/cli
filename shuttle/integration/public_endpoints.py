@@ -251,6 +251,14 @@ def endpoint_checks() -> list[EndpointCheck]:
             dirty_git=True,
         ),
         EndpointCheck("git start", ("git", "start"), kind="refuse", needle=refuse, needs_git=True),
+        EndpointCheck(
+            "git start push refuse",
+            ("git", "start", "integration-push-branch", "--no-prep", "--push"),
+            kind="refuse",
+            needle=refuse,
+            needs_git=True,
+            reset_git=True,
+        ),
         EndpointCheck("git main", ("git", "main"), kind="refuse", needle=refuse, needs_git=True),
         EndpointCheck("git reset", ("git", "reset"), kind="refuse", needle=refuse, needs_git=True),
         EndpointCheck(
@@ -359,6 +367,23 @@ def endpoint_checks() -> list[EndpointCheck]:
             needs_git=True,
             reset_git=True,
             feature_branch="merged",
+        ),
+        EndpointCheck(
+            "git reset all-local yes",
+            ("git", "reset", "--yes", "--all-local"),
+            needle="reset",
+            needs_git=True,
+            reset_git=True,
+            feature_branch="exists",
+        ),
+        EndpointCheck(
+            "git reset discard yes",
+            ("git", "reset", "--yes", "--discard"),
+            needle="reset",
+            needs_git=True,
+            reset_git=True,
+            feature_branch="checked_out",
+            dirty_git=True,
         ),
         EndpointCheck(
             "git main yes",

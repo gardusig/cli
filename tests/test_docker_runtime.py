@@ -237,3 +237,29 @@ def test_stop_containers_named(mock_run: MagicMock) -> None:
     stopped = stop_containers(names=["web"])
     assert stopped == ["web"]
     mock_run.assert_called_once_with(["stop", "web"])
+
+
+@patch("shuttle.services.docker_runtime.run_docker")
+def test_list_containers_running_only(mock_run: MagicMock) -> None:
+    from shuttle.services.docker_runtime import list_containers
+
+    mock_run.side_effect = [
+        MagicMock(stdout="abc\n", returncode=0),
+        MagicMock(
+            stdout=json.dumps(
+                {
+                    "Id": "abc",
+                    "Name": "/web",
+                    "State": {"Status": "running"},
+                    "SizeRw": 1,
+                    "SizeRootFs": 2,
+                }
+            )
+            + "\n",
+            returncode=0,
+        ),
+    ]
+    rows = list_containers(running_only=True)
+    assert len(rows) == 1
+    assert rows[0].display_name == "web"
+    assert mock_run.call_args_list[0].args[0] == ["ps", "-q"]

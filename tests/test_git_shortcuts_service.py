@@ -480,6 +480,45 @@ def test_post_merge_cleanup(mock_run: MagicMock, svc: GitShortcuts) -> None:
 
 
 @patch(PATCH)
+def test_align_main_delegates_to_sync_main(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    with patch.object(svc, "sync_main") as mock_sync:
+        svc.align_main(yes=True, keep_ignored=True)
+    mock_sync.assert_called_once_with(yes=True, keep_ignored=True)
+
+
+@patch(PATCH)
+def test_push_allow_main_on_main(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    mock_run.side_effect = [
+        _ok("main\n"),  # current_branch
+        _ok(""),  # status_short (clean)
+        _ok(""),  # remote get-url origin
+        _ok(""),  # push
+        _ok("main\n"),  # current_branch after push
+    ]
+    branch = svc.push(allow_main=True, yes=True)
+    assert branch == "main"
+    push_calls = [c for c in mock_run.call_args_list if c.args[0][0] == "push"]
+    assert len(push_calls) == 1
+
+
+@patch(PATCH)
+def test_reset_all_local_deletes_branches(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    mock_run.side_effect = [
+        _ok("feat\n"),  # current_branch
+        _ok(" M file\n"),  # status_short
+        _ok(""),  # add
+        _ok(""),  # diff --cached --quiet (has staged)
+        _ok(""),  # commit
+        _ok(""),  # sync_main internals simplified via patch
+    ]
+    with patch.object(svc, "sync_main"), patch.object(
+        svc, "local_branch_names", return_value=["feat", "wip"]
+    ):
+        deleted = svc.reset(yes=True, all_local=True)
+    assert deleted == ["feat", "wip"]
+
+
+@patch(PATCH)
 def test_list_local_and_remote_tags(mock_run: MagicMock, svc: GitShortcuts) -> None:
     mock_run.side_effect = [
         _ok("alpha\nbeta\n"),
