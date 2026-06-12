@@ -86,6 +86,22 @@ def docker_checks() -> list[DockerCheck]:
             ("docker", "clean", "images", "--yes"),
             needle="image prune",
         ),
+        DockerCheck(
+            "docker clean cache refuse",
+            ("docker", "clean", "cache"),
+            kind="refuse",
+            needle=refuse,
+        ),
+        DockerCheck(
+            "docker clean cache yes",
+            ("docker", "clean", "cache", "--yes"),
+            needle="build cache prune",
+        ),
+        DockerCheck(
+            "docker clean all yes",
+            ("docker", "clean", "all", "--yes"),
+            needle="removed",
+        ),
     ]
 
 

@@ -53,6 +53,14 @@ def test_fetch_all_with_upstream_and_prune(mock_run: MagicMock, svc: GitShortcut
 
 
 @patch(PATCH)
+def test_fetch_all_skips_missing_remotes(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    mock_run.return_value = _ok()
+    with patch.object(svc, "remote_exists", return_value=False):
+        svc.fetch_all()
+    mock_run.assert_not_called()
+
+
+@patch(PATCH)
 def test_checkout_main_fallback_to_origin(mock_run: MagicMock, svc: GitShortcuts) -> None:
     mock_run.side_effect = [
         _ok(returncode=1),
@@ -397,6 +405,41 @@ def test_tag_exists_checks(mock_run: MagicMock, svc: GitShortcuts) -> None:
 
 
 @patch(PATCH)
+def test_prepare_for_tag_dirty_without_yes(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    with patch.object(svc, "is_dirty", return_value=True):
+        with pytest.raises(RuntimeError, match="dirty"):
+            svc.prepare_for_tag(yes=False)
+    mock_run.assert_not_called()
+
+
+@patch(PATCH)
+def test_prepare_for_tag_calls_sync_main(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    mock_run.return_value = _ok("abc123\n")
+    with (
+        patch.object(svc, "is_dirty", return_value=False),
+        patch.object(svc, "sync_main") as mock_sync,
+        patch.object(svc, "current_branch", return_value="main"),
+        patch.object(svc, "head_sha", return_value="abc123"),
+        patch.object(svc, "main_tip_sha", return_value="abc123"),
+    ):
+        svc.prepare_for_tag(yes=True)
+    mock_sync.assert_called_once_with(yes=True, keep_ignored=False)
+
+
+@patch(PATCH)
+def test_prepare_for_tag_rejects_head_behind_main(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    with (
+        patch.object(svc, "is_dirty", return_value=False),
+        patch.object(svc, "sync_main"),
+        patch.object(svc, "current_branch", return_value="main"),
+        patch.object(svc, "head_sha", return_value="aaaaaaa"),
+        patch.object(svc, "main_tip_sha", return_value="bbbbbbb"),
+    ):
+        with pytest.raises(RuntimeError, match="latest main"):
+            svc.prepare_for_tag(yes=True)
+
+
+@patch(PATCH)
 def test_create_and_push_tag(mock_run: MagicMock, svc: GitShortcuts) -> None:
     mock_run.return_value = _ok()
     with patch.object(svc, "tag_exists_local", return_value=False):
@@ -434,3 +477,58 @@ def test_post_merge_cleanup(mock_run: MagicMock, svc: GitShortcuts) -> None:
     with patch.object(svc, "reset", return_value=["x"]) as mock_reset:
         assert svc.post_merge_cleanup(yes=True) == ["x"]
     mock_reset.assert_called_once_with(yes=True)
+
+
+@patch(PATCH)
+def test_list_local_and_remote_tags(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    mock_run.side_effect = [
+        _ok("alpha\nbeta\n"),
+        _ok("deadbeef refs/tags/alpha\n"),
+        _ok(""),
+    ]
+    with patch.object(svc, "remote_exists", return_value=True):
+        assert svc.list_local_tags() == ["alpha", "beta"]
+        assert svc.list_remote_tags() == ["alpha"]
+    with patch.object(svc, "remote_exists", return_value=False):
+        assert svc.list_remote_tags() == []
+
+
+@patch(PATCH)
+def test_tag_sha_and_push_action_states(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    mock_run.side_effect = [_ok("localsha\n"), _ok("remotesha\n")]
+    with patch.object(svc, "remote_exists", return_value=True):
+        assert svc.tag_local_sha("v1") == "localsha"
+        assert svc.tag_remote_sha("v1") == "remotesha"
+
+    with (
+        patch.object(svc, "tag_exists_local", return_value=True),
+        patch.object(svc, "remote_exists", return_value=True),
+        patch.object(svc, "tag_exists_remote", return_value=True),
+        patch.object(svc, "tag_local_sha", return_value="same"),
+        patch.object(svc, "tag_remote_sha", return_value="same"),
+    ):
+        assert svc.tag_push_action("v1") == "skip"
+
+    with (
+        patch.object(svc, "tag_exists_local", return_value=True),
+        patch.object(svc, "remote_exists", return_value=True),
+        patch.object(svc, "tag_exists_remote", return_value=True),
+        patch.object(svc, "tag_local_sha", return_value="local"),
+        patch.object(svc, "tag_remote_sha", return_value="remote"),
+    ):
+        assert svc.tag_push_action("v1") == "force"
+
+    with (
+        patch.object(svc, "tag_exists_local", return_value=True),
+        patch.object(svc, "remote_exists", return_value=True),
+        patch.object(svc, "tag_exists_remote", return_value=False),
+    ):
+        assert svc.tag_push_action("v1") == "push"
+
+
+@patch(PATCH)
+def test_repo_basename(mock_run: MagicMock, tmp_path: Path) -> None:
+    repo = tmp_path / "my-repo"
+    repo.mkdir()
+    svc = GitShortcuts(top=str(repo))
+    assert svc.repo_basename() == "my-repo"

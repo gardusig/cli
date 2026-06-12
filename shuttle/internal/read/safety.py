@@ -60,6 +60,7 @@ WRITE_GATED_OPERATIONS = frozenset(
         "tag-push",
         "tag-replace",
         "tag-force-push",
+        "backup-delete",
         "start-push",
         "rebase",
         "revert",

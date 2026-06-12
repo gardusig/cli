@@ -31,6 +31,7 @@ MODEL_MODULES = [
 
 SERVICE_MODULES = [
     "shuttle.services.drive_sync",
+    "shuttle.services.backup_repository",
     "shuttle.services.notion_sync",
     "shuttle.services.bookmark_sync",
     "shuttle.services.git_archive",
@@ -72,7 +73,14 @@ CURSOR_SKILLS_GIT_SCRIPTS = [
     "scripts/git/start.sh",
     "scripts/git/stash.sh",
     "scripts/git/tag.sh",
+    "scripts/git/tag-list.sh",
+    "scripts/git/tag-push.sh",
     "scripts/git/zip.sh",
+    "scripts/backup/status.sh",
+    "scripts/drive/status.sh",
+    "scripts/drive/ingest.sh",
+    "scripts/drive/upload.sh",
+    "scripts/drive/sync.sh",
 ]
 
 DOCKER_VERIFY_PATHS = [
@@ -87,7 +95,6 @@ DOCKER_VERIFY_PATHS = [
 
 REQUIRED_PATHS = [
     "config/config.yaml",
-    "config/repositories.yaml",
     "config/drives.yaml",
     "data/backups/.gitkeep",
     "data/notion/.gitkeep",
@@ -95,7 +102,20 @@ REQUIRED_PATHS = [
     "scripts/bootstrap.sh",
     "scripts/install.sh",
     *DOCKER_VERIFY_PATHS,
+    "scripts/chrome/ingest.sh",
+    "scripts/chrome/deploy.sh",
+    "scripts/chrome/export.sh",
+    "scripts/chrome/import.sh",
     "scripts/chrome/export-bookmarks.sh",
+    "data/tasks/.gitkeep",
+    "scripts/notion/ingest.sh",
+    "scripts/notion/deploy.sh",
+    "scripts/notion/sync.sh",
+    "scripts/notion/download.sh",
+    "scripts/notion/upload.sh",
+    "scripts/notion/export.sh",
+    "scripts/notion/import.sh",
+    "scripts/notion/cleanup.sh",
     "scripts/git/_common.sh",
     "shuttle/cli.py",
     "shuttle/__main__.py",
@@ -125,7 +145,7 @@ def test_placeholder_modules_import() -> None:
 def test_top_level_commands_registered() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
-    for cmd in ("backup", "restore", "git", "drives", "notion", "bookmarks"):
+    for cmd in ("restore", "git", "drive", "notion", "chrome"):
         assert cmd in result.stdout
 
 
@@ -133,6 +153,6 @@ def test_config_loader() -> None:
     from shuttle.utils.config import load_config
 
     cfg = load_config(ROOT / "config")
-    assert cfg.repositories
-    assert cfg.drives.google is True
+    assert cfg.backup.repositories
+    assert cfg.drives.google.enabled is True
     assert cfg.chrome.profile == "Default"

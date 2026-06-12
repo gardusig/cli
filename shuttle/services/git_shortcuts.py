@@ -44,15 +44,13 @@ class GitShortcuts:
         return "origin/main"
 
     def fetch_all(self, *, prune: bool = False) -> None:
-        args = ["fetch", "origin"]
-        if prune:
-            args.append("--prune")
-        run_git(args, cwd=self.top)
-        if self.remote_exists("upstream"):
-            up_args = ["fetch", "upstream"]
+        for remote in ("origin", "upstream"):
+            if not self.remote_exists(remote):
+                continue
+            args = ["fetch", remote]
             if prune:
-                up_args.append("--prune")
-            run_git(up_args, cwd=self.top)
+                args.append("--prune")
+            run_git(args, cwd=self.top)
 
     def checkout_main(self) -> None:
         result = run_git(["checkout", "main"], cwd=self.top, check=False)
@@ -399,6 +397,37 @@ class GitShortcuts:
             return
         run_git(["cherry-pick", "--no-edit", sha], cwd=self.top)
 
+    def head_sha(self) -> str:
+        return run_git(["rev-parse", "HEAD"], cwd=self.top).stdout.strip()
+
+    def main_tip_sha(self) -> str:
+        """Latest main commit: canonical remote tracking ref when present, else local main."""
+        ref = self.canonical_main_ref()
+        remote = ref.partition("/")[0]
+        if self.remote_exists(remote):
+            result = run_git(["rev-parse", ref], cwd=self.top, check=False)
+            if result.returncode == 0:
+                return result.stdout.strip()
+        return run_git(["rev-parse", "main"], cwd=self.top).stdout.strip()
+
+    def prepare_for_tag(self, *, yes: bool = False) -> None:
+        """Align to latest main (like reset) and verify HEAD before tagging."""
+        if self.is_dirty() and not yes:
+            raise RuntimeError(
+                "Working tree is dirty. Pass --yes to align main and tag, "
+                "or run `shuttle git reset --yes` first."
+            )
+        self.sync_main(yes=yes, keep_ignored=False)
+        if self.current_branch() != "main":
+            raise RuntimeError("Expected to be on main after sync.")
+        head = self.head_sha()
+        tip = self.main_tip_sha()
+        if head != tip:
+            raise RuntimeError(
+                f"Cannot tag: HEAD ({head[:7]}) is not the latest main commit ({tip[:7]}). "
+                "Run `shuttle git reset --yes` and retry."
+            )
+
     def tag_exists_local(self, name: str) -> bool:
         result = run_git(
             ["rev-parse", "-q", "--verify", f"refs/tags/{name}"],
@@ -434,6 +463,67 @@ class GitShortcuts:
             run_git(["push", "--force", remote, f"refs/tags/{name}"], cwd=self.top)
         else:
             run_git(["push", remote, f"refs/tags/{name}"], cwd=self.top)
+
+    def repo_basename(self) -> str:
+        return Path(self.top).name
+
+    def list_local_tags(self) -> list[str]:
+        result = run_git(["tag", "-l"], cwd=self.top, check=False)
+        return sorted(line.strip() for line in result.stdout.splitlines() if line.strip())
+
+    def list_remote_tags(self, remote: str = "origin") -> list[str]:
+        if not self.remote_exists(remote):
+            return []
+        result = run_git(["ls-remote", "--tags", remote], cwd=self.top, check=False)
+        tags: set[str] = set()
+        for line in result.stdout.splitlines():
+            parts = line.split()
+            if len(parts) < 2:
+                continue
+            ref = parts[1]
+            if ref.endswith("^{}"):
+                continue
+            if ref.startswith("refs/tags/"):
+                tags.add(ref.removeprefix("refs/tags/"))
+        return sorted(tags)
+
+    def tag_local_sha(self, name: str) -> str | None:
+        result = run_git(
+            ["rev-parse", "-q", f"refs/tags/{name}"],
+            cwd=self.top,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+        return result.stdout.strip()
+
+    def tag_remote_sha(self, name: str, remote: str = "origin") -> str | None:
+        if not self.remote_exists(remote):
+            return None
+        result = run_git(
+            ["ls-remote", remote, f"refs/tags/{name}"],
+            cwd=self.top,
+            check=False,
+        )
+        for line in result.stdout.splitlines():
+            parts = line.split()
+            if len(parts) >= 1 and not parts[0].endswith("^{}"):
+                return parts[0]
+        return None
+
+    def tag_push_action(self, name: str, remote: str = "origin") -> str:
+        """Return: missing-local, no-remote, skip, push, or force."""
+        if not self.tag_exists_local(name):
+            return "missing-local"
+        if not self.remote_exists(remote):
+            return "no-remote"
+        if not self.tag_exists_remote(name, remote):
+            return "push"
+        local_sha = self.tag_local_sha(name)
+        remote_sha = self.tag_remote_sha(name, remote)
+        if local_sha and remote_sha and local_sha == remote_sha:
+            return "skip"
+        return "force"
 
     def zip_tag(self, tag: str, output: Path) -> Path:
         run_git(["rev-parse", "-q", "--verify", f"refs/tags/{tag}"], cwd=self.top)

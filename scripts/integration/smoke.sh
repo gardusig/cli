@@ -8,11 +8,12 @@ cd "$ROOT"
 python -m shuttle --help >/dev/null
 python -m shuttle --version | grep -q "0.1.0"
 
-python -m shuttle backup | grep -q "backup: not implemented yet"
+python -m shuttle drive status | grep -q "Repository:"
 python -m shuttle restore | grep -q "restore: not implemented yet"
-python -m shuttle drives | grep -q "drives: not implemented yet"
+python -m shuttle drive --help | grep -q "upload"
 python -m shuttle notion | grep -q "notion: not implemented yet"
-python -m shuttle bookmarks | grep -q "scripts/chrome/export-bookmarks.sh"
+python -m shuttle chrome --help | grep -q "bookmarks"
+python -m shuttle notion --help | grep -q "export"
 
 links_out="$(mktemp)"
 python -m shuttle links >"$links_out" 2>&1

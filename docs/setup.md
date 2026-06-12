@@ -46,6 +46,14 @@ Same scripts as GitHub Actions. See [docker.md](docker.md).
 
 **Do not** run `pytest`, `pip install -e ".[dev]"`, or `scripts/integration/smoke.sh` directly on the host.
 
+## After install
+
+1. `cd` into a git repository for `shuttle git` commands.
+2. Optional: edit `config/config.yaml` → `backup.repositories` for `shuttle drive status` / `drive ingest`.
+3. Chrome `bookmarks deploy` (local → browser) needs a prior `bookmarks ingest` into `data/bookmarks/bookmarks.html`.
+
+See [configuration.md](configuration.md) and README **First-time setup**.
+
 ## Troubleshooting
 
 - **`git` not in a repository** — run commands from a git worktree root.

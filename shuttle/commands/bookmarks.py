@@ -1,8 +1,21 @@
+"""Hidden legacy alias: `shuttle bookmarks` → `shuttle chrome bookmarks`."""
+
+from __future__ import annotations
+
 import typer
 
-bookmarks_app = typer.Typer(help="Chrome bookmarks sync (placeholder).", no_args_is_help=False)
+from shuttle.commands.chrome import bookmarks_deploy_to_chrome, bookmarks_ingest_from_chrome
+
+bookmarks_app = typer.Typer(help="(deprecated) use shuttle chrome bookmarks", hidden=True)
 
 
-@bookmarks_app.callback(invoke_without_command=True)
-def bookmarks_root() -> None:
-    typer.echo("bookmarks: use scripts/chrome/export-bookmarks.sh and import-bookmarks.sh (issue #1)")
+@bookmarks_app.command("export")
+def legacy_export() -> None:
+    """Deprecated: remote-centric Chrome→local; use `shuttle chrome bookmarks ingest`."""
+    bookmarks_ingest_from_chrome()
+
+
+@bookmarks_app.command("import")
+def legacy_import() -> None:
+    """Deprecated: remote-centric local→Chrome; use `shuttle chrome bookmarks deploy`."""
+    bookmarks_deploy_to_chrome()

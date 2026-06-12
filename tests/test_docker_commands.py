@@ -216,3 +216,213 @@ def test_docker_image_delete_all(
     assert result.exit_code == 0
     assert "Total reclaimed" in result.stdout
     mock_prune.assert_called_once_with(all_unused=True)
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.list_containers", return_value=[])
+def test_docker_ps_empty(_list: MagicMock, _avail: MagicMock) -> None:
+    result = runner.invoke(app, ["docker", "ps"])
+    assert result.exit_code == 0
+    assert "no running containers" in result.stdout
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.list_container_stats", return_value=[])
+def test_docker_stats_empty(_stats: MagicMock, _avail: MagicMock) -> None:
+    result = runner.invoke(app, ["docker", "stats", "--by", "cpu"])
+    assert result.exit_code == 0
+    assert "no running containers" in result.stdout
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.list_containers", return_value=[])
+def test_docker_stats_storage_empty(_list: MagicMock, _avail: MagicMock) -> None:
+    result = runner.invoke(app, ["docker", "stats", "--by", "storage"])
+    assert result.exit_code == 0
+    assert "no running containers" in result.stdout
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch(
+    "shuttle.commands.docker.list_container_stats",
+    return_value=[ContainerStatsRow("a", "web", 1.0, 100, 1000, 10.0)],
+)
+@patch(
+    "shuttle.commands.docker.list_containers",
+    return_value=[ContainerRow("a", "/web", "running", 100, 200)],
+)
+def test_docker_stats_all_domains(
+    _list: MagicMock,
+    _stats: MagicMock,
+    _avail: MagicMock,
+) -> None:
+    result = runner.invoke(app, ["docker", "stats", "--by", "all"])
+    assert result.exit_code == 0
+    assert "CPU" in result.stdout
+    assert "memory" in result.stdout.lower()
+    assert "storage" in result.stdout.lower()
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.list_containers", return_value=[])
+def test_docker_containers_empty(_list: MagicMock, _avail: MagicMock) -> None:
+    result = runner.invoke(app, ["docker", "containers"])
+    assert result.exit_code == 0
+    assert "no containers" in result.stdout
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.list_images", return_value=[])
+def test_docker_images_empty(_list: MagicMock, _avail: MagicMock) -> None:
+    result = runner.invoke(app, ["docker", "images"])
+    assert result.exit_code == 0
+    assert "no images" in result.stdout
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.list_images", return_value=[])
+@patch("shuttle.commands.docker.list_container_stats", return_value=[])
+@patch("shuttle.commands.docker.list_containers", return_value=[])
+def test_docker_top_empty(
+    _list: MagicMock,
+    _stats: MagicMock,
+    _images: MagicMock,
+    _avail: MagicMock,
+) -> None:
+    result = runner.invoke(app, ["docker", "top"])
+    assert result.exit_code == 0
+    assert "docker is empty" in result.stdout
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.system_df", return_value="TYPE  TOTAL\nImages  1GB\n")
+def test_docker_df(mock_df: MagicMock, _avail: MagicMock) -> None:
+    result = runner.invoke(app, ["docker", "df"])
+    assert result.exit_code == 0
+    assert "Images" in result.stdout
+    mock_df.assert_called_once()
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.stop_containers")
+@patch("shuttle.commands.docker.list_containers", return_value=[])
+def test_docker_stop_no_running(
+    _list: MagicMock,
+    mock_stop: MagicMock,
+    _avail: MagicMock,
+) -> None:
+    result = runner.invoke(app, ["docker", "stop", "--yes"])
+    assert result.exit_code == 0
+    assert "no running containers" in result.stdout
+    mock_stop.assert_not_called()
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.remove_containers", return_value=["web"])
+@patch(
+    "shuttle.commands.docker.list_containers",
+    return_value=[ContainerRow("abc", "/web", "exited", 100, 200)],
+)
+def test_docker_container_delete_named(
+    _list: MagicMock,
+    mock_remove: MagicMock,
+    _avail: MagicMock,
+) -> None:
+    result = runner.invoke(app, ["docker", "container-delete", "web", "--yes"])
+    assert result.exit_code == 0
+    assert "deleted 1 container" in result.stdout
+    mock_remove.assert_called_once_with(names=["web"])
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.prune_images", return_value="")
+@patch("shuttle.commands.docker.list_containers", return_value=[])
+@patch("shuttle.commands.docker.list_images", return_value=[])
+def test_docker_image_delete_dangling(
+    _images: MagicMock,
+    _containers: MagicMock,
+    mock_prune: MagicMock,
+    _avail: MagicMock,
+) -> None:
+    result = runner.invoke(app, ["docker", "image-delete", "--yes"])
+    assert result.exit_code == 0
+    assert "image prune" in result.stdout
+    mock_prune.assert_called_once_with(all_unused=False)
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.prune_build_cache", return_value="cache reclaimed")
+@patch("shuttle.commands.docker.list_containers", return_value=[])
+def test_docker_clean_cache_with_yes(
+    _list: MagicMock,
+    mock_cache: MagicMock,
+    _avail: MagicMock,
+) -> None:
+    result = runner.invoke(app, ["docker", "clean", "cache", "--yes"])
+    assert result.exit_code == 0
+    assert "build cache prune" in result.stdout
+    mock_cache.assert_called_once()
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.prune_build_cache", return_value="")
+@patch("shuttle.commands.docker.prune_images", return_value="")
+@patch("shuttle.commands.docker.remove_containers", return_value=["a"])
+@patch("shuttle.commands.docker.list_containers", return_value=[])
+def test_docker_clean_all_with_yes(
+    _list: MagicMock,
+    mock_remove: MagicMock,
+    mock_prune: MagicMock,
+    mock_cache: MagicMock,
+    _avail: MagicMock,
+) -> None:
+    result = runner.invoke(app, ["docker", "clean", "all", "--yes"])
+    assert result.exit_code == 0
+    assert "removed 1 container" in result.stdout
+    assert "image prune" in result.stdout
+    assert "build cache prune" in result.stdout
+    mock_remove.assert_called_once()
+    mock_prune.assert_called_once_with(all_unused=False)
+    mock_cache.assert_called_once()
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+def test_docker_clean_invalid_target(_avail: MagicMock) -> None:
+    result = runner.invoke(app, ["docker", "clean", "bogus"])
+    assert result.exit_code != 0
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch(
+    "shuttle.commands.docker.list_container_stats",
+    return_value=[ContainerStatsRow("a", "web", 3.0, 200, 2000, 5.0)],
+)
+def test_docker_stats_memory(_stats: MagicMock, _avail: MagicMock) -> None:
+    result = runner.invoke(app, ["docker", "stats", "--by", "memory"])
+    assert result.exit_code == 0
+    assert "web" in result.stdout
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch("shuttle.commands.docker.prune_build_cache")
+@patch("shuttle.commands.docker.list_containers", return_value=[])
+def test_docker_clean_cache_refuses(
+    _list: MagicMock,
+    mock_cache: MagicMock,
+    _avail: MagicMock,
+) -> None:
+    result = runner.invoke(app, ["docker", "clean", "cache"])
+    assert result.exit_code != 0
+    mock_cache.assert_not_called()
+
+
+@patch("shuttle.commands.docker.docker_available", return_value=True)
+@patch(
+    "shuttle.commands.docker.list_containers",
+    return_value=[ContainerRow("a", "/web", "running", 100, 200)],
+)
+def test_docker_containers_running_only(_list: MagicMock, _avail: MagicMock) -> None:
+    result = runner.invoke(app, ["docker", "containers", "--running"])
+    assert result.exit_code == 0
+    assert "web" in result.stdout
+    _list.assert_called_once_with(all_containers=False, running_only=True)

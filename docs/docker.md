@@ -73,7 +73,7 @@ The container smoke test checks:
 
 - `scripts/integration/check_public_endpoints.py` — every public CLI command (56 checks): read-only paths, write-gate refusals, and `--yes` success paths with **remote git mocked** (`fetch` / `push` / `ls-remote` never hit the network)
 - `python -m shuttle --help` and `--version`
-- placeholder endpoints: `backup`, `restore`, `drives`, `notion`, `bookmarks`
+- placeholder endpoints: `restore`, `drive`, `notion`, `chrome`
 - shell syntax for `scripts/chrome`, `scripts/git`, and `scripts/integration`
 - Chrome bookmark export/import using local fixture files and `SHUTTLE_SKIP_CHROME_AUTOMATION=1`
 - `shuttle git start` inside a temporary git repository
