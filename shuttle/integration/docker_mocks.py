@@ -36,6 +36,16 @@ _IMAGE_FIXTURES = [
     },
 ]
 
+_STATS_FIXTURES = [
+    {
+        "ID": "abc111integration",
+        "Name": "shuttle-mock-running",
+        "CPUPerc": "12.50%",
+        "MemUsage": "50MiB / 2GiB",
+        "MemPerc": "2.44%",
+    },
+]
+
 
 def _mock_docker_result(args: list[str]) -> subprocess.CompletedProcess[str]:
     cmd = args[0] if args else ""
@@ -44,6 +54,9 @@ def _mock_docker_result(args: list[str]) -> subprocess.CompletedProcess[str]:
         if "-a" not in args:
             ids = [row["Id"] for row in _CONTAINER_FIXTURES if row["State"]["Status"] == "running"]
         stdout = "\n".join(ids) + ("\n" if ids else "")
+        return subprocess.CompletedProcess(args=["docker", *args], returncode=0, stdout=stdout, stderr="")
+    if cmd == "stats":
+        stdout = "\n".join(json.dumps(row) for row in _STATS_FIXTURES) + "\n"
         return subprocess.CompletedProcess(args=["docker", *args], returncode=0, stdout=stdout, stderr="")
     if cmd == "inspect":
         ids: list[str] = []
@@ -70,7 +83,7 @@ def _mock_docker_result(args: list[str]) -> subprocess.CompletedProcess[str]:
     if cmd == "system" and len(args) > 1 and args[1] == "df":
         stdout = "TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          1         1         64MB      0B\n"
         return subprocess.CompletedProcess(args=["docker", *args], returncode=0, stdout=stdout, stderr="")
-    if cmd == "rm":
+    if cmd in {"rm", "stop"}:
         return subprocess.CompletedProcess(args=["docker", *args], returncode=0, stdout="", stderr="")
     if cmd == "image" and "prune" in args:
         return subprocess.CompletedProcess(

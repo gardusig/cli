@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import subprocess
-import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -19,10 +18,15 @@ REFUSE_NEEDLE = "non-interactive"
 
 DOCKER_SUBCOMMANDS = (
     "ps",
+    "stats",
     "containers",
     "images",
     "top",
     "df",
+    "stop",
+    "container-delete",
+    "image-delete",
+    "reset",
     "clean",
 )
 
@@ -40,13 +44,38 @@ class DockerCheck:
 def docker_checks() -> list[DockerCheck]:
     refuse = REFUSE_NEEDLE
     return [
-        DockerCheck("docker --help", ("docker", "--help"), needle="clean"),
+        DockerCheck("docker --help", ("docker", "--help"), needle="reset"),
         DockerCheck("docker ps", ("docker", "ps"), needle="shuttle-mock-running"),
+        DockerCheck("docker stats", ("docker", "stats", "--by", "cpu"), needle="shuttle-mock-running"),
         DockerCheck("docker containers", ("docker", "containers"), needle="shuttle-mock-stopped"),
         DockerCheck("docker images", ("docker", "images"), needle="shuttle/mock"),
-        DockerCheck("docker top", ("docker", "top", "-n", "2"), needle="running containers"),
+        DockerCheck("docker top", ("docker", "top", "-n", "2"), needle="CPU"),
         DockerCheck("docker df", ("docker", "df"), needle="Images"),
+        DockerCheck("docker stop refuse", ("docker", "stop"), kind="refuse", needle=refuse),
+        DockerCheck("docker container-delete refuse", ("docker", "container-delete"), kind="refuse", needle=refuse),
+        DockerCheck("docker image-delete refuse", ("docker", "image-delete"), kind="refuse", needle=refuse),
+        DockerCheck("docker reset refuse", ("docker", "reset"), kind="refuse", needle=refuse),
         DockerCheck("docker clean refuse", ("docker", "clean", "containers"), kind="refuse", needle=refuse),
+        DockerCheck(
+            "docker stop yes",
+            ("docker", "stop", "--yes"),
+            needle="stopped",
+        ),
+        DockerCheck(
+            "docker container-delete yes",
+            ("docker", "container-delete", "--yes"),
+            needle="deleted",
+        ),
+        DockerCheck(
+            "docker image-delete yes",
+            ("docker", "image-delete", "--yes"),
+            needle="image prune",
+        ),
+        DockerCheck(
+            "docker reset yes",
+            ("docker", "reset", "--yes"),
+            needle="build cache prune",
+        ),
         DockerCheck(
             "docker clean containers yes",
             ("docker", "clean", "containers", "--yes"),
@@ -139,7 +168,6 @@ def run_live_docker_checks(repo_root: Path) -> list[str]:
     if subprocess.run(["docker", "info"], capture_output=True).returncode != 0:
         return ["live docker: docker daemon not available"]
 
-    tag = f"shuttle-cli-live:{uuid.uuid4().hex[:8]}"
     subprocess.run(["docker", "rm", "-f", _LIVE_CONTAINER], capture_output=True)
     subprocess.run(
         ["docker", "run", "-d", "--name", _LIVE_CONTAINER, "alpine", "sleep", "120"],
@@ -150,13 +178,14 @@ def run_live_docker_checks(repo_root: Path) -> list[str]:
     try:
         live_checks = [
             DockerCheck("live docker ps", ("docker", "ps"), needle=_LIVE_CONTAINER),
+            DockerCheck("live docker stats", ("docker", "stats", "--by", "memory"), needle="shuttle-cli-integration"),
             DockerCheck("live docker containers", ("docker", "containers", "--top", "5"), needle=_LIVE_CONTAINER),
-            DockerCheck("live docker images", ("docker", "images", "--top", "5"), needle="alpine"),
-            DockerCheck("live docker top", ("docker", "top", "-n", "3"), needle="running containers"),
+            DockerCheck("live docker images", ("docker", "images", "--top", "100"), needle="alpine"),
+            DockerCheck("live docker top", ("docker", "top", "-n", "3"), needle="CPU"),
             DockerCheck("live docker df", ("docker", "df"), needle="Images"),
             DockerCheck(
-                "live docker clean refuse",
-                ("docker", "clean", "containers"),
+                "live docker stop refuse",
+                ("docker", "stop", _LIVE_CONTAINER),
                 kind="refuse",
                 needle=REFUSE_NEEDLE,
             ),
@@ -175,18 +204,28 @@ def run_live_docker_checks(repo_root: Path) -> list[str]:
                 errors.append(f"{check.label}: missing {check.needle!r}\n{output}")
 
         code, output = run_docker_check(
-            DockerCheck("live docker clean containers", ("docker", "clean", "containers", "--yes"), needle="removed"),
+            DockerCheck("live docker stop", ("docker", "stop", _LIVE_CONTAINER, "--yes"), needle="stopped"),
             repo_root=repo_root,
         )
         if code != 0:
-            errors.append(f"live docker clean: exit {code}\n{output}")
+            errors.append(f"live docker stop: exit {code}\n{output}")
+
+        code, output = run_docker_check(
+            DockerCheck(
+                "live docker container-delete",
+                ("docker", "container-delete", _LIVE_CONTAINER, "--yes"),
+                needle="deleted",
+            ),
+            repo_root=repo_root,
+        )
+        if code != 0:
+            errors.append(f"live docker container-delete: exit {code}\n{output}")
         elif _LIVE_CONTAINER in subprocess.run(
             ["docker", "ps", "-a", "--format", "{{.Names}}"],
             capture_output=True,
             text=True,
         ).stdout:
-            errors.append("live docker clean: container still present after clean")
+            errors.append("live docker container-delete: container still present")
     finally:
         subprocess.run(["docker", "rm", "-f", _LIVE_CONTAINER], capture_output=True)
-        subprocess.run(["docker", "rmi", "-f", tag], capture_output=True)
     return errors

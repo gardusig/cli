@@ -91,7 +91,7 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck("notion", ("notion",), needle="not implemented yet"),
         EndpointCheck("bookmarks", ("bookmarks",), needle="export-bookmarks.sh"),
         EndpointCheck("links", ("links",), needle="Quick defaults"),
-        EndpointCheck("docker --help", ("docker", "--help"), needle="clean"),
+        EndpointCheck("docker --help", ("docker", "--help"), needle="reset"),
         EndpointCheck(
             "git group help",
             ("git",),

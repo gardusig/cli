@@ -65,6 +65,10 @@ WRITE_GATED_OPERATIONS = frozenset(
         "revert",
         "cherry-pick",
         "docker-clean",
+        "docker-stop",
+        "docker-container-delete",
+        "docker-image-delete",
+        "docker-reset",
     }
 )
 

@@ -82,8 +82,33 @@ TOP_LEVEL_COMMANDS: tuple[tuple[str, str], ...] = (
     ("notion", "Notion sync (placeholder)"),
     ("bookmarks", "Chrome bookmark script pointers"),
     ("links", "this index — docs, scripts, defaults"),
-    ("docker", "containers/images — ps, top, df, clean (see shuttle docker --help)"),
+    ("docker", "monitor + cleanup — stats, top, stop, delete, reset (see shuttle docker --help)"),
 )
+
+DOCKER_QUICK_DEFAULTS: tuple[tuple[str, str], ...] = (
+    ("docker stats", "top consumers by cpu, memory, or storage"),
+    ("docker top", "dashboard across cpu, memory, and storage"),
+    ("docker reset", "stop all, delete containers, prune images + cache — --yes"),
+    ("docker stop", "stop running containers — --yes"),
+    ("docker container-delete", "remove containers — --yes"),
+    ("docker image-delete", "prune unused images — --yes"),
+)
+
+DOCKER_SCRIPT_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("stats.sh", "docker stats"),
+    ("reset.sh", "docker reset"),
+    ("stop.sh", "docker stop"),
+    ("container-delete.sh", "docker container-delete"),
+    ("image-delete.sh", "docker image-delete"),
+)
+
+DOCKER_QUICK_DEFAULT_SCRIPTS: dict[str, str] = {
+    "docker reset": "scripts/docker/reset.sh",
+    "docker stop": "scripts/docker/stop.sh",
+    "docker container-delete": "scripts/docker/container-delete.sh",
+    "docker image-delete": "scripts/docker/image-delete.sh",
+    "docker stats": "scripts/docker/stats.sh",
+}
 
 
 def doc_entries(root: Path | None = None) -> list[CatalogEntry]:

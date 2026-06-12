@@ -48,20 +48,22 @@ See [docs/bookmarks.md](docs/bookmarks.md).
 
 ## Docker
 
-Local Docker housekeeping (requires `docker` on PATH):
+Local Docker monitor and cleanup (requires `docker` on PATH; no container start):
 
-```bash
-shuttle docker ps              # running containers by size
-shuttle docker containers      # all containers by size
-shuttle docker images          # images by size
-shuttle docker top             # top running, all containers, and images
-shuttle docker df              # docker system df
-shuttle docker clean containers --yes   # remove every container
-shuttle docker clean images --yes       # prune dangling images
-shuttle docker clean all --yes          # containers + images + build cache
-```
+| Task | Command |
+| --- | --- |
+| **Dashboard** (CPU, memory, storage) | `shuttle docker top` |
+| **By domain** | `shuttle docker stats --by cpu` / `memory` / `storage` |
+| **Storage lists** | `shuttle docker images` · `shuttle docker containers` · `shuttle docker df` |
+| **Stop running** | `shuttle docker stop --yes` |
+| **Delete containers** | `shuttle docker container-delete --yes` |
+| **Prune images** | `shuttle docker image-delete --yes` (`--all-images` for all unused) |
+| **Full reset** | `shuttle docker reset --yes` |
+| Targeted cleanup | `shuttle docker clean containers --yes` · `clean images` · `clean all` |
 
-Destructive `clean` commands use the write gate; pass `--yes` in scripts.
+Shell wrappers live in `scripts/docker/` (e.g. `./scripts/docker/reset.sh --yes`).
+
+Destructive commands use the write gate; pass `--yes` in scripts.
 
 ## Testing
 

@@ -15,7 +15,19 @@ def test_root_help() -> None:
 def test_docker_help() -> None:
     result = runner.invoke(app, ["docker", "--help"])
     assert result.exit_code == 0
-    for cmd in ("ps", "containers", "images", "top", "df", "clean"):
+    for cmd in (
+        "ps",
+        "stats",
+        "containers",
+        "images",
+        "top",
+        "df",
+        "stop",
+        "container-delete",
+        "image-delete",
+        "reset",
+        "clean",
+    ):
         assert cmd in result.stdout
 
 

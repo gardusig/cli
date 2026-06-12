@@ -1,4 +1,23 @@
-# Docker integration
+# Docker
+
+## CLI shortcuts
+
+Monitor and cleanup only (no `docker run` from shuttle):
+
+| Command | Purpose |
+| --- | --- |
+| `shuttle docker top` | Dashboard: CPU, memory, and storage leaders |
+| `shuttle docker stats --by cpu` | Top consumers by domain (`memory`, `storage`, `all`) |
+| `shuttle docker ps` / `containers` / `images` / `df` | Lists and disk summary |
+| `shuttle docker stop --yes` | Stop running containers |
+| `shuttle docker container-delete --yes` | Remove containers |
+| `shuttle docker image-delete --yes` | Prune unused images |
+| `shuttle docker reset --yes` | Full wipe: stop, delete containers, prune images + cache |
+| `shuttle docker clean TARGET --yes` | Targeted: `containers`, `images`, `cache`, `all` |
+
+Shell wrappers: `scripts/docker/` (`reset.sh`, `stop.sh`, `container-delete.sh`, `image-delete.sh`, `stats.sh`).
+
+## CI integration
 
 Issue [#9](https://github.com/gardusig/shuttle-cli/issues/9) tracks a Docker-based integration lane for exercising CLI and shell scripts without damaging local files.
 
