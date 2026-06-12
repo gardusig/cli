@@ -1,5 +1,23 @@
+backup:
+  tags_dir: ~/Library/Mobile Documents/com~apple~CloudDocs/git-tags
+  repositories:
+    - path: ~/git-local/shuttle-cli
+
 notion:
-  database_id: ""
+  database_id: ""                    # Notion database ID (board must exist)
+  task_directory: data/tasks         # local markdown source (one file per task id)
+  cleanup_before_deploy: false
+  properties:
+    title: Name
+    status: Status
+    priority: Priority
+    tags: Tags
+    id: ID
+    created: Created
+    updated: Updated
 
 chrome:
   profile: Default
+  # Local bookmarks HTML (Chrome export/import). Absolute or ~ path recommended.
+  bookmarks_file: ~/git-local/shuttle-cli/data/bookmarks/bookmarks.html
+  downloads_dir: ~/Downloads

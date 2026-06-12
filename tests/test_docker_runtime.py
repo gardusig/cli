@@ -168,3 +168,98 @@ def test_run_docker_raises_on_failure(_which: MagicMock) -> None:
         mock_proc.return_value = MagicMock(returncode=1, stderr="boom", stdout="")
         with pytest.raises(DockerError, match="boom"):
             run_docker(["ps"])
+
+
+@patch("shuttle.services.docker_runtime.shutil.which", return_value="/usr/bin/docker")
+def test_docker_available_true(_which: MagicMock) -> None:
+    from shuttle.services.docker_runtime import docker_available
+
+    assert docker_available() is True
+
+
+@patch("shuttle.services.docker_runtime.shutil.which", return_value=None)
+def test_docker_available_false(_which: MagicMock) -> None:
+    from shuttle.services.docker_runtime import docker_available
+
+    assert docker_available() is False
+
+
+@patch("shuttle.services.docker_runtime.run_docker")
+def test_system_df(mock_run: MagicMock) -> None:
+    from shuttle.services.docker_runtime import system_df
+
+    mock_run.return_value = MagicMock(stdout="TYPE  TOTAL\nImages  1GB\n", returncode=0)
+    assert "Images" in system_df()
+    mock_run.assert_called_once_with(["system", "df"])
+
+
+@patch("shuttle.services.docker_runtime.run_docker")
+def test_prune_images_dangling(mock_run: MagicMock) -> None:
+    from shuttle.services.docker_runtime import prune_images
+
+    mock_run.return_value = MagicMock(stdout="Total reclaimed: 10MB\n", returncode=0)
+    out = prune_images(all_unused=False)
+    assert "reclaimed" in out
+    mock_run.assert_called_once_with(["image", "prune", "-f"])
+
+
+@patch("shuttle.services.docker_runtime.run_docker")
+def test_prune_images_all_unused(mock_run: MagicMock) -> None:
+    from shuttle.services.docker_runtime import prune_images
+
+    mock_run.return_value = MagicMock(stdout="done\n", returncode=0)
+    prune_images(all_unused=True)
+    mock_run.assert_called_once_with(["image", "prune", "-f", "-a"])
+
+
+@patch("shuttle.services.docker_runtime.run_docker")
+def test_prune_build_cache(mock_run: MagicMock) -> None:
+    from shuttle.services.docker_runtime import prune_build_cache
+
+    mock_run.return_value = MagicMock(stdout="cache cleared\n", returncode=0)
+    assert "cache" in prune_build_cache()
+    mock_run.assert_called_once_with(["builder", "prune", "-f"])
+
+
+@patch("shuttle.services.docker_runtime.run_docker")
+def test_remove_containers_named(mock_run: MagicMock) -> None:
+    from shuttle.services.docker_runtime import remove_containers
+
+    mock_run.return_value = MagicMock(stdout="web\n", returncode=0)
+    removed = remove_containers(names=["web"])
+    assert removed == ["web"]
+    mock_run.assert_called_once_with(["rm", "-f", "web"])
+
+
+@patch("shuttle.services.docker_runtime.run_docker")
+def test_stop_containers_named(mock_run: MagicMock) -> None:
+    mock_run.return_value = MagicMock(stdout="web\n", returncode=0)
+    stopped = stop_containers(names=["web"])
+    assert stopped == ["web"]
+    mock_run.assert_called_once_with(["stop", "web"])
+
+
+@patch("shuttle.services.docker_runtime.run_docker")
+def test_list_containers_running_only(mock_run: MagicMock) -> None:
+    from shuttle.services.docker_runtime import list_containers
+
+    mock_run.side_effect = [
+        MagicMock(stdout="abc\n", returncode=0),
+        MagicMock(
+            stdout=json.dumps(
+                {
+                    "Id": "abc",
+                    "Name": "/web",
+                    "State": {"Status": "running"},
+                    "SizeRw": 1,
+                    "SizeRootFs": 2,
+                }
+            )
+            + "\n",
+            returncode=0,
+        ),
+    ]
+    rows = list_containers(running_only=True)
+    assert len(rows) == 1
+    assert rows[0].display_name == "web"
+    assert mock_run.call_args_list[0].args[0] == ["ps", "-q"]

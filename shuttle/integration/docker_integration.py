@@ -56,6 +56,8 @@ def docker_checks() -> list[DockerCheck]:
         DockerCheck("docker image-delete refuse", ("docker", "image-delete"), kind="refuse", needle=refuse),
         DockerCheck("docker reset refuse", ("docker", "reset"), kind="refuse", needle=refuse),
         DockerCheck("docker clean refuse", ("docker", "clean", "containers"), kind="refuse", needle=refuse),
+        DockerCheck("docker clean images refuse", ("docker", "clean", "images"), kind="refuse", needle=refuse),
+        DockerCheck("docker clean all refuse", ("docker", "clean", "all"), kind="refuse", needle=refuse),
         DockerCheck(
             "docker stop yes",
             ("docker", "stop", "--yes"),
@@ -77,6 +79,11 @@ def docker_checks() -> list[DockerCheck]:
             needle="build cache prune",
         ),
         DockerCheck(
+            "docker reset dangling yes",
+            ("docker", "reset", "--yes", "--dangling-only"),
+            needle="build cache prune",
+        ),
+        DockerCheck(
             "docker clean containers yes",
             ("docker", "clean", "containers", "--yes"),
             needle="removed",
@@ -85,6 +92,22 @@ def docker_checks() -> list[DockerCheck]:
             "docker clean images yes",
             ("docker", "clean", "images", "--yes"),
             needle="image prune",
+        ),
+        DockerCheck(
+            "docker clean cache refuse",
+            ("docker", "clean", "cache"),
+            kind="refuse",
+            needle=refuse,
+        ),
+        DockerCheck(
+            "docker clean cache yes",
+            ("docker", "clean", "cache", "--yes"),
+            needle="build cache prune",
+        ),
+        DockerCheck(
+            "docker clean all yes",
+            ("docker", "clean", "all", "--yes"),
+            needle="removed",
         ),
     ]
 
@@ -177,9 +200,18 @@ def run_live_docker_checks(repo_root: Path) -> list[str]:
     subprocess.run(["docker", "pull", "-q", "alpine"], capture_output=True)
     try:
         live_checks = [
-            DockerCheck("live docker ps", ("docker", "ps"), needle=_LIVE_CONTAINER),
-            DockerCheck("live docker stats", ("docker", "stats", "--by", "memory"), needle="shuttle-cli-integration"),
-            DockerCheck("live docker containers", ("docker", "containers", "--top", "5"), needle=_LIVE_CONTAINER),
+            DockerCheck("live docker ps", ("docker", "ps", "--top", "500"), needle=_LIVE_CONTAINER),
+            DockerCheck(
+                "live docker stats",
+                ("docker", "stats", "--by", "memory", "--top", "500"),
+                # Rich table truncates long names (…); prefix still identifies our container.
+                needle="shuttle-cli-integration",
+            ),
+            DockerCheck(
+                "live docker containers",
+                ("docker", "containers", "--top", "500"),
+                needle=_LIVE_CONTAINER,
+            ),
             DockerCheck("live docker images", ("docker", "images", "--top", "100"), needle="alpine"),
             DockerCheck("live docker top", ("docker", "top", "-n", "3"), needle="CPU"),
             DockerCheck("live docker df", ("docker", "df"), needle="Images"),

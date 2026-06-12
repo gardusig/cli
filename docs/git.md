@@ -25,6 +25,8 @@ Each command maps to a [cursor-skills git skill](https://github.com/gardusig/cur
 | `@git-start` | `scripts/git/start.sh` | `shuttle git start` |
 | `@git-stash` | `scripts/git/stash.sh` | `shuttle git stash` |
 | `@git-tag` | `scripts/git/tag.sh` | `shuttle git tag` |
+| `@git-tag-list` | `scripts/git/tag-list.sh` | `shuttle git tag list` |
+| `@git-tag-push` | `scripts/git/tag-push.sh` | `shuttle git tag push` |
 | `@git-zip` | `scripts/git/zip.sh` | `shuttle git zip` |
 
 ## Internal read/write
@@ -111,19 +113,23 @@ shuttle git branch-clear --yes --delete-remote
 
 ## Tag and zip
 
+Single-repository only (run from the repo you want to tag).
+
 ```bash
-shuttle git tag                    # annotated tag YYYY-MM-DD on HEAD
-shuttle git tag --push --yes       # non-interactive push
-shuttle git zip                    # zip today's tag → data/backups/YYYY-MM-DD.zip
+shuttle git tag                    # sync main, create today's tag, push to origin
+shuttle git tag 2026-06-11         # named tag
+shuttle git tag list               # local + remote tags (sorted)
+shuttle git tag push               # reconcile today's tag with origin
+shuttle git tag push 2026-06-11 --yes
+shuttle git zip                    # zip today's tag → git-tags/REPO/TAG.zip (iCloud)
 shuttle git zip 2026-06-11 -o out.zip
 ```
 
-Interactive `tag` flow:
+`tag` syncs **main** first (same as `git reset`), creates an annotated tag on the latest main commit, then pushes to `origin` when configured. Default tag name is **today's date** (`YYYY-MM-DD`). Pass `--yes` if the worktree is dirty.
 
-1. Default name is **today's date** (`YYYY-MM-DD`).
-2. If the tag exists **locally** → prompt to replace (write gate).
-3. If `origin` exists → prompt to **push** (default no).
-4. If the tag exists on **origin** and you push → prompt to **force-push**.
+For multi-repo zip inventory and bulk ingest, use [`shuttle drive ingest`](drive.md).
+
+Shell wrappers: `scripts/git/tag-list.sh`, `scripts/git/tag-push.sh`, `scripts/git/zip.sh`.
 
 ## Review (workspace health)
 

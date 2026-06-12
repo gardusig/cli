@@ -20,6 +20,54 @@ def test_project_root_points_at_repo() -> None:
     assert (root / "pyproject.toml").is_file()
 
 
+def test_tags_dir_path_resolves_icloud_absolute(tmp_path: Path) -> None:
+    icloud = tmp_path / "Mobile Documents" / "com~apple~CloudDocs" / "git-tags"
+    icloud.mkdir(parents=True)
+    cfg_dir = tmp_path / "config"
+    cfg_dir.mkdir()
+    (cfg_dir / "config.yaml").write_text(
+        f"backup:\n  tags_dir: {icloud}\n",
+        encoding="utf-8",
+    )
+    from shuttle.utils.config import tags_dir_path
+
+    assert tags_dir_path(cfg_dir) == icloud.resolve()
+
+
+def test_bookmarks_file_path_from_config(tmp_path: Path) -> None:
+    target = tmp_path / "my-bookmarks.html"
+    cfg_dir = tmp_path / "cfg"
+    cfg_dir.mkdir()
+    (cfg_dir / "config.yaml").write_text(
+        f"chrome:\n  bookmarks_file: {target}\n",
+        encoding="utf-8",
+    )
+    from shuttle.utils.config import bookmarks_file_path
+
+    assert bookmarks_file_path(cfg_dir) == target.resolve()
+
+
+def test_bookmarks_file_path_env_override(tmp_path: Path, monkeypatch) -> None:
+    override = tmp_path / "env-bookmarks.html"
+    monkeypatch.setenv("SHUTTLE_BOOKMARKS_FILE", str(override))
+    from shuttle.utils.config import bookmarks_file_path
+
+    assert bookmarks_file_path() == override.resolve()
+
+
+def test_tags_dir_path_expands_tilde(tmp_path: Path, monkeypatch) -> None:
+    cfg_dir = tmp_path / "config"
+    cfg_dir.mkdir()
+    target = tmp_path / "git-tags"
+    (cfg_dir / "config.yaml").write_text(
+        f"backup:\n  tags_dir: {target}\n",
+        encoding="utf-8",
+    )
+    from shuttle.utils.config import tags_dir_path
+
+    assert tags_dir_path(cfg_dir) == target.resolve()
+
+
 def test_default_config_dir_env_override(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("SHUTTLE_CONFIG_DIR", str(tmp_path))
     assert default_config_dir() == tmp_path
@@ -37,15 +85,16 @@ def test_load_yaml_invalid_mapping_raises(tmp_path: Path) -> None:
 
 
 def test_load_config_merges_files(tmp_path: Path) -> None:
-    (tmp_path / "config.yaml").write_text("chrome:\n  profile: Work\n", encoding="utf-8")
-    (tmp_path / "repositories.yaml").write_text(
-        "repositories:\n  - /path/a\n", encoding="utf-8"
+    (tmp_path / "config.yaml").write_text(
+        "chrome:\n  profile: Work\nbackup:\n  repositories:\n    - path: /path/a\n",
+        encoding="utf-8",
     )
     (tmp_path / "drives.yaml").write_text("drives:\n  google: true\n", encoding="utf-8")
     cfg = load_config(tmp_path)
     assert cfg.chrome.profile == "Work"
-    assert cfg.repositories == ["/path/a"]
-    assert cfg.drives.google is True
+    assert len(cfg.backup.repositories) == 1
+    assert cfg.backup.repositories[0].path == "/path/a"
+    assert cfg.drives.google.enabled is True
 
 
 def test_utils_yaml_roundtrip(tmp_path: Path) -> None:

@@ -4,15 +4,31 @@ set -euo pipefail
 
 ROOT="${SHUTTLE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 cd "$ROOT"
+export SHUTTLE_CONFIG_DIR="${SHUTTLE_CONFIG_DIR:-$ROOT/config/ci}"
+export PYTHONUNBUFFERED=1
+
+# grep -q in a pipefail pipeline can yield SIGPIPE from the writer; capture output instead.
+smoke_contains() {
+  local needle="$1"
+  shift
+  local output
+  output=$("$@" 2>&1)
+  if ! grep -qF "$needle" <<<"$output"; then
+    echo "smoke: expected to find ${needle} in output of: $*" >&2
+    echo "$output" >&2
+    return 1
+  fi
+}
 
 python -m shuttle --help >/dev/null
-python -m shuttle --version | grep -q "0.1.0"
+smoke_contains "0.1.0" python -m shuttle --version
 
-python -m shuttle backup | grep -q "backup: not implemented yet"
-python -m shuttle restore | grep -q "restore: not implemented yet"
-python -m shuttle drives | grep -q "drives: not implemented yet"
-python -m shuttle notion | grep -q "notion: not implemented yet"
-python -m shuttle bookmarks | grep -q "scripts/chrome/export-bookmarks.sh"
+smoke_contains "Repository:" python -m shuttle drive status
+smoke_contains "restore: not implemented yet" python -m shuttle restore
+smoke_contains "upload" python -m shuttle drive --help
+smoke_contains "ingest" python -m shuttle notion --help
+smoke_contains "bookmarks" python -m shuttle chrome --help
+smoke_contains "deploy" python -m shuttle notion --help
 
 links_out="$(mktemp)"
 python -m shuttle links >"$links_out" 2>&1
@@ -56,7 +72,7 @@ git -C "$tmpdir/repo" commit -m "initial" >/dev/null
 
 (
   cd "$tmpdir/repo"
-  python -m shuttle git start smoke-branch --no-prep | grep -q "smoke-branch"
+  smoke_contains "smoke-branch" python -m shuttle git start smoke-branch --no-prep
   test "$(git branch --show-current)" = "smoke-branch"
 )
 

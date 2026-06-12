@@ -1,3 +1,4 @@
+.cursor/
 .venv/
 __pycache__/
 *.py[cod]
@@ -17,3 +18,5 @@ data/notion/*
 !data/notion/.gitkeep
 data/bookmarks/*
 !data/bookmarks/.gitkeep
+data/tasks/*
+!data/tasks/.gitkeep

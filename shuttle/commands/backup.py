@@ -1,9 +1,49 @@
+"""Hidden aliases for legacy `shuttle backup` → use `shuttle drive` instead."""
+
+from __future__ import annotations
+
 import typer
 
-backup_app = typer.Typer(help="Backup workflows (placeholder).", no_args_is_help=False)
+from shuttle.commands.drive import delete_cmd, ingest_cmd, list_cmd, status_cmd
+
+backup_app = typer.Typer(
+    help="(deprecated) use shuttle drive",
+    no_args_is_help=True,
+    hidden=True,
+)
+repository_app = typer.Typer(help="(deprecated)", hidden=True)
 
 
-@backup_app.callback(invoke_without_command=True)
-def backup_root() -> None:
-    """Run backup workflow (not implemented)."""
-    typer.echo("backup: not implemented yet (see issue #3)")
+@backup_app.command("status")
+def backup_status_alias() -> None:
+    """Deprecated: use `shuttle drive status`."""
+    status_cmd()
+
+
+@repository_app.command("sync")
+def repository_sync_alias(
+    path: str | None = typer.Argument(None),
+) -> None:
+    """Deprecated: use `shuttle drive ingest`."""
+    ingest_cmd(path)
+
+
+@repository_app.command("list")
+def repository_list_alias(
+    path: str | None = typer.Argument(None),
+) -> None:
+    """Deprecated: use `shuttle drive list`."""
+    list_cmd(path)
+
+
+@repository_app.command("delete")
+def repository_delete_alias(
+    path: str = typer.Argument(...),
+    tag: str = typer.Argument(...),
+    yes: bool = typer.Option(False, "--yes", "-y"),
+) -> None:
+    """Deprecated: use `shuttle drive delete`."""
+    delete_cmd(path, tag, yes=yes)
+
+
+backup_app.add_typer(repository_app, name="repository")

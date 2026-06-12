@@ -10,7 +10,7 @@ from shuttle.internal.read.git import git_worktree_snapshot
 from shuttle.internal.write.gate import WRITE_GATE_DELIMITER, require_write_gate
 from shuttle.services.git_review import run_review
 from shuttle.services.git_shortcuts import GitShortcuts
-from shuttle.utils.config import project_root
+from shuttle.utils.config import default_zip_path, project_root
 from shuttle.utils.quick_defaults import default_tag_name, suggest_branch_name
 
 git_app = typer.Typer(help="Git shortcuts (commit message defaults to '.').", no_args_is_help=True)
@@ -538,20 +538,61 @@ def cherry_pick_cmd(
     rprint("[green]cherry-pick step complete[/green]")
 
 
-@git_app.command("tag")
-def tag_cmd(
-    name: str | None = typer.Argument(None, help="Tag name (default today YYYY-MM-DD)."),
-    push: bool = typer.Option(False, "--push", help="Push to origin (skips push prompt)."),
-    no_push: bool = typer.Option(False, "--no-push", help="Never push to origin."),
-    replace_local: bool = typer.Option(False, "--replace-local", help="Replace existing local tag."),
-    force_push: bool = typer.Option(False, "--force-push", help="Force-push tag on origin."),
-    yes: bool = typer.Option(False, "--yes", "-y"),
-) -> None:
-    """Create annotated tag on HEAD (default name: today's date)."""
+def _reconcile_tag_push(svc: GitShortcuts, tag_name: str, *, yes: bool = False) -> None:
+    action = svc.tag_push_action(tag_name)
+    if action == "missing-local":
+        raise typer.Exit(f"Tag not found locally: {tag_name}")
+    if action == "no-remote":
+        rprint(f"[dim]skip push[/dim] (no origin remote)")
+        return
+    if action == "skip":
+        rprint(f"[dim]skip[/dim] {tag_name} (already synced)")
+        return
+    if action == "push":
+        _write_gate(
+            "tag-push",
+            yes=yes,
+            question=f"Push tag {tag_name} to origin?",
+            extra_lines=[f"tag: {tag_name}"],
+        )
+        svc.push_tag(tag_name, force=False)
+        rprint(f"[green]pushed[/green] {tag_name}")
+        return
+    _write_gate(
+        "tag-force-push",
+        yes=yes,
+        question=f"Tag {tag_name} differs on origin. Force-push?",
+        extra_lines=[f"tag: {tag_name}", "remote: origin"],
+    )
+    svc.push_tag(tag_name, force=True)
+    rprint(f"[green]force-pushed[/green] {tag_name}")
+
+
+def _tag_list() -> None:
+    svc = _svc()
+    local = svc.list_local_tags()
+    remote = svc.list_remote_tags()
+    rprint(f"[bold]Local tags[/bold] ({len(local)}):")
+    for name in local:
+        rprint(f"  {name}")
+    if not local:
+        rprint("  (none)")
+    rprint(f"[bold]Remote tags on origin[/bold] ({len(remote)}):")
+    for name in remote:
+        rprint(f"  {name}")
+    if not remote:
+        rprint("  (none)")
+
+
+def _tag_create(name: str | None, *, yes: bool) -> None:
     svc = _svc()
     tag_name = name or default_tag_name()
-
-    if svc.tag_exists_local(tag_name) and not replace_local:
+    try:
+        svc.prepare_for_tag(yes=yes)
+    except RuntimeError as exc:
+        raise typer.Exit(str(exc)) from exc
+    replace_local = False
+    if svc.tag_exists_local(tag_name):
         _write_gate(
             "tag-replace",
             yes=yes,
@@ -559,49 +600,25 @@ def tag_cmd(
             extra_lines=[f"tag: {tag_name}"],
         )
         replace_local = True
-
     svc.create_tag(tag_name, replace=replace_local)
-
-    should_push = False
-    if not no_push and svc.remote_exists("origin"):
-        if push:
-            _write_gate(
-                "tag-push",
-                yes=yes,
-                question=f"Push tag {tag_name} to origin?",
-                extra_lines=[f"tag: {tag_name}"],
-            )
-            should_push = True
-        elif sys.stdin.isatty() and not yes:
-            snapshot = git_worktree_snapshot(svc)
-            typer.echo(WRITE_GATE_DELIMITER)
-            typer.echo("operation: tag-push")
-            for line in snapshot.summary_lines():
-                typer.echo(line)
-            typer.echo(f"tag: {tag_name}")
-            typer.echo(WRITE_GATE_DELIMITER)
-            should_push = typer.confirm(f"Push tag {tag_name} to origin?", default=False)
-
-    if should_push:
-        use_force = force_push
-        if svc.tag_exists_remote(tag_name):
-            _write_gate(
-                "tag-force-push",
-                yes=yes or force_push,
-                question=f"Tag {tag_name} exists on origin. Force-push?",
-                extra_lines=[f"tag: {tag_name}", "remote: origin"],
-            )
-            use_force = True
-        elif force_push:
-            _write_gate(
-                "tag-force-push",
-                yes=yes,
-                question=f"Force-push tag {tag_name} to origin?",
-                extra_lines=[f"tag: {tag_name}"],
-            )
-        svc.push_tag(tag_name, force=use_force)
-
+    _reconcile_tag_push(svc, tag_name, yes=yes)
     rprint(f"[green]tag[/green] {tag_name}")
+
+
+@git_app.command("tag")
+def tag_cmd(
+    action: str | None = typer.Argument(None, help="list, push, or tag name (default: create today)."),
+    name: str | None = typer.Argument(None, help="Tag name for push, or explicit create name."),
+    yes: bool = typer.Option(False, "--yes", "-y"),
+) -> None:
+    """Create tag on main (default today), or: tag list | tag push [NAME]."""
+    if action == "list":
+        _tag_list()
+        return
+    if action == "push":
+        _reconcile_tag_push(_svc(), name or default_tag_name(), yes=yes)
+        return
+    _tag_create(action, yes=yes)
 
 
 @git_app.command("zip")
@@ -611,7 +628,7 @@ def zip_cmd(
         None,
         "-o",
         "--output",
-        help="Output zip path (default data/backups/TAG.zip).",
+        help="Output zip path (default git-tags/REPO/TAG.zip in backup.tags_dir).",
     ),
 ) -> None:
     """Create a zip archive of the tree at a git tag."""
@@ -619,10 +636,9 @@ def zip_cmd(
     tag_name = tag or default_tag_name()
     if not svc.tag_exists_local(tag_name):
         raise typer.Exit(f"Tag not found: {tag_name}. Run `shuttle git tag` first.")
-    root = project_root()
-    dest = output or (root / "data" / "backups" / f"{tag_name}.zip")
-    archive = svc.zip_tag(tag_name, dest)
-    rprint(f"[green]zip[/green] {archive.relative_to(root)}")
+    dest = output or default_zip_path(svc.repo_basename(), tag_name)
+    svc.zip_tag(tag_name, dest)
+    rprint(f"[green]zip[/green] git-tags/{svc.repo_basename()}/{tag_name}.zip")
 
 
 @git_app.command("review")

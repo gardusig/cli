@@ -32,11 +32,11 @@ def _mock_snapshot(snapshot: MagicMock):
 @pytest.mark.parametrize(
     ("args", "needle"),
     [
-        (["backup"], "backup: not implemented yet"),
+        (["drive", "status"], "Repository:"),
+        (["drive", "--help"], "ingest"),
         (["restore"], "restore: not implemented yet"),
-        (["drives"], "drives: not implemented yet"),
-        (["notion"], "notion: not implemented yet"),
-        (["bookmarks"], "scripts/chrome/export-bookmarks.sh"),
+        (["chrome", "--help"], "bookmarks"),
+        (["notion", "--help"], "ingest"),
         (["links"], "Quick defaults"),
     ],
 )
@@ -46,10 +46,16 @@ def test_placeholder_top_level_commands(args: list[str], needle: str) -> None:
     assert needle in result.stdout
 
 
+def test_chrome_bookmarks_deploy_without_backup() -> None:
+    result = runner.invoke(app, ["chrome", "bookmarks", "deploy"])
+    assert result.exit_code != 0
+    assert "Backup not found" in result.stdout
+
+
 def test_root_lists_all_top_level_groups() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
-    for name in ("links", "git", "backup", "restore", "drives", "notion", "bookmarks"):
+    for name in ("links", "git", "restore", "drive", "notion", "chrome"):
         assert name in result.stdout
 
 
@@ -298,15 +304,15 @@ def test_git_cherry_pick_with_yes(mock_pick: MagicMock, snapshot: MagicMock) -> 
     mock_pick.assert_called_once()
 
 
+@patch("shuttle.commands.git._reconcile_tag_push")
+@patch.object(GitShortcuts, "prepare_for_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=False)
-@patch.object(GitShortcuts, "tag_exists_remote", return_value=False)
-@patch.object(GitShortcuts, "remote_exists", return_value=False)
 @patch.object(GitShortcuts, "create_tag")
 def test_git_tag_local_only(
     mock_create: MagicMock,
-    _remote: MagicMock,
-    _remote_tag: MagicMock,
     _local: MagicMock,
+    _prepare: MagicMock,
+    _push: MagicMock,
 ) -> None:
     result = runner.invoke(app, ["git", "tag", "2026-06-11"])
     assert result.exit_code == 0
@@ -314,23 +320,16 @@ def test_git_tag_local_only(
     mock_create.assert_called_once_with("2026-06-11", replace=False)
 
 
-@patch.object(GitShortcuts, "tag_exists_local", return_value=False)
-@patch.object(GitShortcuts, "tag_exists_remote", return_value=False)
-@patch.object(GitShortcuts, "remote_exists", return_value=True)
-@patch.object(GitShortcuts, "create_tag")
+@patch.object(GitShortcuts, "tag_push_action", return_value="push")
 @patch.object(GitShortcuts, "push_tag")
 def test_git_tag_push_requires_yes(
     mock_push: MagicMock,
-    mock_create: MagicMock,
-    _remote: MagicMock,
-    _remote_tag: MagicMock,
-    _local: MagicMock,
+    _action: MagicMock,
     snapshot: MagicMock,
 ) -> None:
     with _mock_snapshot(snapshot):
-        result = runner.invoke(app, ["git", "tag", "--push"])
+        result = runner.invoke(app, ["git", "tag", "push", "2026-06-11"])
     assert result.exit_code != 0
-    mock_create.assert_called_once()
     mock_push.assert_not_called()
 
 

@@ -36,6 +36,7 @@ testpaths = ["tests"]
 pythonpath = ["."]
 markers = [
   "integration: tests that may require Docker or external runtime isolation",
+  "requires_git: needs working git subprocess (skipped in restricted sandboxes)",
 ]
 
 [tool.coverage.run]

@@ -23,7 +23,17 @@ QUICK_DEFAULTS = (
     ("git push", "add + commit + push; on main starts random branch — use --yes -y to skip prompt"),
     ("git reset", "return to synced main + prune merged branches; --main-only for main sync only — --yes"),
     ("git stash push", "message defaults to '.'"),
-    ("git tag", "name defaults to today's date (YYYY-MM-DD)"),
+    ("git tag", "sync main, tag latest main commit (default name: today)"),
+    ("git zip", "zip today's tag into iCloud git-tags/REPO/"),
+    ("drive status", "git tags vs zips in backup.tags_dir (iCloud)"),
+    ("drive ingest", "zip all tags for configured repos into git-tags/"),
+    ("drive upload", "append-only upload to Google / OneDrive / Proton"),
+    ("drive sync", "ingest all repositories, then upload all enabled clouds"),
+    ("chrome bookmarks ingest", "Chrome → local HTML (chrome.bookmarks_file)"),
+    ("chrome bookmarks deploy", "local HTML → Chrome"),
+    ("notion ingest", "Notion → data/tasks markdown"),
+    ("notion deploy", "data/tasks → Notion board"),
+    ("notion sync", "ingest from Notion, then deploy local tasks"),
 )
 
 # Lifecycle shortcuts: command → shell wrapper + doc (see docs/workflows.md).
@@ -65,22 +75,27 @@ GIT_SCRIPT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("start.sh", "git start"),
     ("stash.sh", "git stash"),
     ("tag.sh", "git tag"),
+    ("tag-list.sh", "git tag list"),
+    ("tag-push.sh", "git tag push"),
     ("zip.sh", "git zip"),
 )
 
 CHROME_SCRIPTS: tuple[tuple[str, str], ...] = (
-    ("export-bookmarks.sh", "export → data/bookmarks/bookmarks.html"),
-    ("import-bookmarks.sh", "restore from data/bookmarks/bookmarks.html"),
+    ("ingest.sh", "bookmarks ingest — Chrome → local"),
+    ("deploy.sh", "bookmarks deploy — local → Chrome"),
+    ("import.sh", "deprecated wrapper → ingest"),
+    ("export.sh", "deprecated wrapper → deploy"),
+    ("export-bookmarks.sh", "legacy export script"),
+    ("import-bookmarks.sh", "legacy import script"),
     ("wait-download.sh", "poll Downloads for newest HTML export"),
 )
 
 TOP_LEVEL_COMMANDS: tuple[tuple[str, str], ...] = (
     ("git / g", "git shortcuts (see shuttle git --help)"),
-    ("backup", "backup workflows (placeholder)"),
     ("restore", "restore workflows (placeholder)"),
-    ("drives", "cloud drive sync (placeholder)"),
-    ("notion", "Notion sync (placeholder)"),
-    ("bookmarks", "Chrome bookmark script pointers"),
+    ("drive", "git-tags local store (iCloud) + cloud upload — status, ingest, upload"),
+    ("chrome", "Chrome browser — bookmarks ingest / deploy"),
+    ("notion", "Notion task board — ingest / deploy / sync / cleanup"),
     ("links", "this index — docs, scripts, defaults"),
     ("docker", "monitor + cleanup — stats, top, stop, delete, reset (see shuttle docker --help)"),
 )

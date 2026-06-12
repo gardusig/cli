@@ -5,6 +5,7 @@ from __future__ import annotations
 import subprocess
 import sys
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -21,9 +22,11 @@ STUB_CALLS: list[tuple[Callable[..., Any], tuple[Any, ...]]] = [
     (github.archive_repository, ("/repo",)),
     (github.clone_repository, ("https://x", "/dest")),
     (github.checkout_tag, ("/repo", "v1")),
-    (google_drive.upload, ("/a", "/b")),
+    (google_drive.upload, (Path("/a"), "remote/b")),
     (google_drive.download, ("/b", "/a")),
     (google_drive.list_files, ("",)),
+    (google_drive.exists, ("remote/b",)),
+    (google_drive.create_directory, ("remote",)),
     (google_drive.delete, ("/b",)),
     (icloud_drive.upload, ("/a", "/b")),
     (icloud_drive.download, ("/b", "/a")),
@@ -31,22 +34,37 @@ STUB_CALLS: list[tuple[Callable[..., Any], tuple[Any, ...]]] = [
     (icloud_drive.delete, ("/b",)),
     (notion.export_tasks, ("db", "/dest")),
     (notion.import_tasks, ("db", "/src")),
-    (onedrive.upload, ("/a", "/b")),
+    (onedrive.upload, (Path("/a"), "remote/b")),
     (onedrive.download, ("/b", "/a")),
     (onedrive.list_files, ("",)),
+    (onedrive.exists, ("remote/b",)),
+    (onedrive.create_directory, ("remote",)),
     (onedrive.delete, ("/b",)),
-    (proton_drive.upload, ("/a", "/b")),
+    (proton_drive.upload, (Path("/a"), "remote/b")),
     (proton_drive.download, ("/b", "/a")),
     (proton_drive.list_files, ("prefix",)),
+    (proton_drive.exists, ("remote/b",)),
+    (proton_drive.create_directory, ("remote",)),
     (proton_drive.delete, ("/b",)),
     (bookmark_sync.export_bookmarks, ("Default", "/tmp")),
     (bookmark_sync.import_bookmarks, ("Default", "/tmp")),
     (drive_sync.upload_backup, ("/local", "google")),
     (drive_sync.download_latest, ("google", "/dest")),
-    (notion_sync.export_tasks, ("db", "/dest")),
-    (notion_sync.import_tasks, ("db", "/src")),
     (git_archive.archive_repository, ("/repo",)),
 ]
+
+
+def test_notion_sync_stubs_raise() -> None:
+    from shuttle.utils.config import NotionConfig
+
+    task_dir = Path("/tmp/tasks")
+    cfg = NotionConfig(database_id="db")
+    with pytest.raises(NotImplementedError):
+        notion_sync.export_tasks(task_dir, token="t", config=cfg)
+    with pytest.raises(NotImplementedError):
+        notion_sync.import_tasks(task_dir, token="t", config=cfg)
+    with pytest.raises(NotImplementedError):
+        notion_sync.cleanup_board(token="t", config=cfg)
 
 
 @pytest.mark.parametrize("fn,args", STUB_CALLS)

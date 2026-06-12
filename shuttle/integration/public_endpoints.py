@@ -47,11 +47,10 @@ TOP_LEVEL_COMMANDS = (
     "links",
     "git",
     "docker",
-    "backup",
     "restore",
-    "drives",
+    "drive",
     "notion",
-    "bookmarks",
+    "chrome",
 )
 
 # Every `shuttle git <name>` subcommand from git_app.
@@ -85,11 +84,23 @@ def endpoint_checks() -> list[EndpointCheck]:
     checks: list[EndpointCheck] = [
         EndpointCheck("root --help", ("--help",), needle="git"),
         EndpointCheck("root --version", ("--version",), needle="0.1.0"),
-        EndpointCheck("backup", ("backup",), needle="not implemented yet"),
+        EndpointCheck("drive status", ("drive", "status"), needle="Repository:"),
         EndpointCheck("restore", ("restore",), needle="not implemented yet"),
-        EndpointCheck("drives", ("drives",), needle="not implemented yet"),
-        EndpointCheck("notion", ("notion",), needle="not implemented yet"),
-        EndpointCheck("bookmarks", ("bookmarks",), needle="export-bookmarks.sh"),
+        EndpointCheck("drive help", ("drive", "--help"), needle="sync"),
+        EndpointCheck("notion help", ("notion", "--help"), needle="ingest"),
+        EndpointCheck(
+            "notion ingest missing token",
+            ("notion", "ingest"),
+            needle="NOTION_TOKEN",
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck("chrome help", ("chrome", "--help"), needle="bookmarks"),
+        EndpointCheck(
+            "chrome bookmarks deploy missing",
+            ("chrome", "bookmarks", "deploy"),
+            needle="Backup not found",
+            accept_exit_codes=(1,),
+        ),
         EndpointCheck("links", ("links",), needle="Quick defaults"),
         EndpointCheck("docker --help", ("docker", "--help"), needle="reset"),
         EndpointCheck(
@@ -184,15 +195,39 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag local",
-            ("git", "tag", "integration-tag"),
+            ("git", "tag", "integration-tag", "--yes"),
             needle="integration-tag",
             needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git tag list",
+            ("git", "tag", "list"),
+            needle="Local tags",
+            needs_git=True,
+            reset_git=True,
         ),
         EndpointCheck(
             "git zip",
             ("git", "zip", "integration-tag"),
             needle=".zip",
             needs_git=True,
+        ),
+        EndpointCheck(
+            "git zip missing tag",
+            ("git", "zip", "integration-missing-tag"),
+            needle="Tag not found",
+            needs_git=True,
+            reset_git=True,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "git tag replace refuse",
+            ("git", "tag", "integration-replace-tag"),
+            kind="refuse",
+            needle=refuse,
+            needs_git=True,
+            reset_git=True,
         ),
         # Write gates — must refuse without --yes in non-interactive mode.
         EndpointCheck(
@@ -216,6 +251,14 @@ def endpoint_checks() -> list[EndpointCheck]:
             dirty_git=True,
         ),
         EndpointCheck("git start", ("git", "start"), kind="refuse", needle=refuse, needs_git=True),
+        EndpointCheck(
+            "git start push refuse",
+            ("git", "start", "integration-push-branch", "--no-prep", "--push"),
+            kind="refuse",
+            needle=refuse,
+            needs_git=True,
+            reset_git=True,
+        ),
         EndpointCheck("git main", ("git", "main"), kind="refuse", needle=refuse, needs_git=True),
         EndpointCheck("git reset", ("git", "reset"), kind="refuse", needle=refuse, needs_git=True),
         EndpointCheck(
@@ -277,10 +320,11 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag push refuse",
-            ("git", "tag", "--push"),
+            ("git", "tag", "push", "integration-tag"),
             kind="refuse",
             needle=refuse,
             needs_git=True,
+            reset_git=True,
         ),
         # Gated writes with --yes (remote fetch/push/ls-remote mocked in run_all_endpoint_checks).
         EndpointCheck(
@@ -323,6 +367,23 @@ def endpoint_checks() -> list[EndpointCheck]:
             needs_git=True,
             reset_git=True,
             feature_branch="merged",
+        ),
+        EndpointCheck(
+            "git reset all-local yes",
+            ("git", "reset", "--yes", "--all-local"),
+            needle="reset",
+            needs_git=True,
+            reset_git=True,
+            feature_branch="exists",
+        ),
+        EndpointCheck(
+            "git reset discard yes",
+            ("git", "reset", "--yes", "--discard"),
+            needle="reset",
+            needs_git=True,
+            reset_git=True,
+            feature_branch="checked_out",
+            dirty_git=True,
         ),
         EndpointCheck(
             "git main yes",
@@ -394,7 +455,7 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag push yes",
-            ("git", "tag", "integration-remote-tag", "--push", "--yes"),
+            ("git", "tag", "push", "integration-remote-tag", "--yes"),
             needle="integration-remote-tag",
             needs_git=True,
             reset_git=True,
@@ -563,13 +624,19 @@ def setup_cherry_pick(git_root: Path) -> None:
 
 
 def reset_integration_git(git_root: Path) -> None:
-    """Return disposable repo to main with no extra branches or stashes."""
-    subprocess.run(["git", "-C", str(git_root), "checkout", "main"], check=False, capture_output=True)
-    subprocess.run(["git", "-C", str(git_root), "reset", "--hard"], check=True, capture_output=True)
-    subprocess.run(["git", "-C", str(git_root), "clean", "-fd"], check=True, capture_output=True)
-    subprocess.run(["git", "-C", str(git_root), "stash", "clear"], check=False, capture_output=True)
+    """Return disposable repo to main with no extra branches, tags, or stashes."""
+    git = ["git", "-C", str(git_root)]
+    subprocess.run([*git, "checkout", "main"], check=False, capture_output=True)
+    subprocess.run([*git, "reset", "--hard"], check=True, capture_output=True)
+    subprocess.run([*git, "clean", "-fd"], check=True, capture_output=True)
+    subprocess.run([*git, "stash", "clear"], check=False, capture_output=True)
+    tags = subprocess.run([*git, "tag", "-l"], capture_output=True, text=True, check=False)
+    for line in tags.stdout.splitlines():
+        name = line.strip()
+        if name:
+            subprocess.run([*git, "tag", "-d", name], check=False, capture_output=True)
     result = subprocess.run(
-        ["git", "-C", str(git_root), "branch", "--format=%(refname:short)"],
+        [*git, "branch", "--format=%(refname:short)"],
         capture_output=True,
         text=True,
         check=True,
@@ -577,11 +644,19 @@ def reset_integration_git(git_root: Path) -> None:
     for line in result.stdout.splitlines():
         name = line.strip()
         if name and name != "main":
-            subprocess.run(
-                ["git", "-C", str(git_root), "branch", "-D", name],
-                check=False,
-                capture_output=True,
-            )
+            subprocess.run([*git, "branch", "-D", name], check=False, capture_output=True)
+    origin_main = subprocess.run(
+        [*git, "rev-parse", "origin/main"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if origin_main.returncode == 0:
+        subprocess.run(
+            [*git, "reset", "--hard", "origin/main"],
+            check=True,
+            capture_output=True,
+        )
 
 
 def git_subcommands_covered_by_checks() -> set[str]:
@@ -694,6 +769,56 @@ def run_all_endpoint_checks(repo_root: Path, git_root: Path | None = None) -> li
         for check in endpoint_checks():
             if check.reset_git and git_root is not None:
                 reset_integration_git(git_root)
+            if check.label == "git tag replace refuse" and git_root is not None:
+                subprocess.run(
+                    [
+                        "git",
+                        "-C",
+                        str(git_root),
+                        "tag",
+                        "-a",
+                        "integration-replace-tag",
+                        "-m",
+                        "integration-replace-tag",
+                    ],
+                    check=True,
+                    capture_output=True,
+                )
+            if check.label in {"git tag push yes", "git tag push refuse"} and git_root is not None:
+                tag_name = (
+                    "integration-remote-tag"
+                    if check.label == "git tag push yes"
+                    else "integration-tag"
+                )
+                subprocess.run(
+                    [
+                        "git",
+                        "-C",
+                        str(git_root),
+                        "tag",
+                        "-a",
+                        tag_name,
+                        "-m",
+                        tag_name,
+                    ],
+                    check=True,
+                    capture_output=True,
+                )
+            if check.label == "git zip" and git_root is not None:
+                subprocess.run(
+                    [
+                        "git",
+                        "-C",
+                        str(git_root),
+                        "tag",
+                        "-a",
+                        "integration-tag",
+                        "-m",
+                        "integration-tag",
+                    ],
+                    check=True,
+                    capture_output=True,
+                )
             if check.label == "git cherry-pick yes" and git_root is not None:
                 setup_cherry_pick(git_root)
             elif git_root is not None and check.feature_branch != "none":

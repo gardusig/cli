@@ -11,7 +11,7 @@ Shuttle favors **suggested values** over prompts so common flows are one command
 | `shuttle git reset --main-only` | Sync main only (no branch delete) | `shuttle git reset --yes --main-only` |
 | `shuttle git stash push` | Message `.` | `shuttle git stash push` |
 | `shuttle git tag` | Name `YYYY-MM-DD` (today) | `shuttle git tag` |
-| `shuttle git zip` | Tag `YYYY-MM-DD` (today) | `shuttle git zip` → `data/backups/TAG.zip` |
+| `shuttle git zip` | Tag `YYYY-MM-DD` (today) | `shuttle git zip` → iCloud `git-tags/REPO/TAG.zip` |
 
 ## Branch names
 
