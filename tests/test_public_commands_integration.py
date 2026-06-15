@@ -11,6 +11,7 @@ import pytest
 from shuttle.integration.docker_integration import (
     DOCKER_SUBCOMMANDS,
     docker_subcommands_with_ok_check,
+    docker_subcommands_with_failure_check,
 )
 from shuttle.integration.public_commands import (
     assert_public_command_registry_complete,
@@ -18,8 +19,10 @@ from shuttle.integration.public_commands import (
     run_all_public_command_checks,
 )
 from shuttle.integration.public_endpoints import (
+    GIT_SUBCOMMANDS,
     TOP_LEVEL_COMMANDS,
     git_subcommands_with_ok_check,
+    git_subcommands_with_failure_check,
     prepare_git_repo,
 )
 
@@ -32,13 +35,19 @@ def test_top_level_commands_match_cli_registration() -> None:
 
 
 def test_public_command_registry_is_complete() -> None:
-    assert_public_command_registry_complete()
-    assert git_subcommands_with_ok_check()  # exercised inside assert
+    from shuttle.integration.integration_coverage import assert_integration_coverage_gate
+
+    assert_integration_coverage_gate()
+    assert git_subcommands_with_ok_check() == set(GIT_SUBCOMMANDS)
+    missing_git_fail = set(GIT_SUBCOMMANDS) - git_subcommands_with_failure_check() - {"docs"}
+    assert missing_git_fail == set()
     assert docker_subcommands_with_ok_check() == set(DOCKER_SUBCOMMANDS)
+    assert docker_subcommands_with_failure_check() == set(DOCKER_SUBCOMMANDS)
 
 
 def test_docker_smoke_runs_public_command_checker() -> None:
     smoke = (ROOT / "scripts" / "integration" / "smoke.sh").read_text()
+    assert "check_integration_coverage.py" in smoke
     assert "check_public_commands.py" in smoke
 
 

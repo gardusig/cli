@@ -9,11 +9,13 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 
 from shuttle.internal.write.git import gated_git_write, read_git_snapshot
 from shuttle.providers import chrome, github, google_drive, icloud_drive, notion, onedrive, proton_drive
 from shuttle.services import bookmark_sync, drive_sync, git_archive, notion_sync
+from shuttle.services.notion_sync import cleanup_board
 from shuttle.services.git_review import run_review
 
 STUB_CALLS: list[tuple[Callable[..., Any], tuple[Any, ...]]] = [
@@ -54,17 +56,29 @@ STUB_CALLS: list[tuple[Callable[..., Any], tuple[Any, ...]]] = [
 ]
 
 
-def test_notion_sync_stubs_raise() -> None:
+_REAL_HTTPX_CLIENT = httpx.Client
+
+
+def test_notion_sync_with_mocks(monkeypatch, tmp_path: Path) -> None:
     from shuttle.utils.config import NotionConfig
 
-    task_dir = Path("/tmp/tasks")
     cfg = NotionConfig(database_id="db")
-    with pytest.raises(NotImplementedError):
-        notion_sync.export_tasks(task_dir, token="t", config=cfg)
-    with pytest.raises(NotImplementedError):
-        notion_sync.import_tasks(task_dir, token="t", config=cfg)
-    with pytest.raises(NotImplementedError):
-        notion_sync.cleanup_board(token="t", config=cfg)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path.endswith("/query"):
+            return httpx.Response(200, json={"results": [], "has_more": False})
+        return httpx.Response(200, json={"id": "ok"})
+
+    def _client_factory(**kwargs):
+        kwargs["transport"] = httpx.MockTransport(handler)
+        kwargs.setdefault("base_url", "https://api.notion.com/v1")
+        return _REAL_HTTPX_CLIENT(**kwargs)
+
+    with patch(
+        "shuttle.providers.notion.httpx.Client",
+        side_effect=_client_factory,
+    ):
+        assert cleanup_board(token="t", config=cfg).processed == 0
 
 
 @pytest.mark.parametrize("fn,args", STUB_CALLS)

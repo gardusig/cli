@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
@@ -40,6 +41,8 @@ class EndpointCheck:
     ensure_second_commit: bool = False
     accept_exit_codes: tuple[int, ...] = (0,)
     extra_env: dict[str, str] = field(default_factory=dict)
+    outside_git: bool = False
+    failure: str | None = None
 
 
 # Top-level groups (excluding hidden `g` alias — covered separately).
@@ -51,6 +54,7 @@ TOP_LEVEL_COMMANDS = (
     "drive",
     "notion",
     "chrome",
+    "gh",
 )
 
 # Every `shuttle git <name>` subcommand from git_app.
@@ -75,6 +79,16 @@ GIT_SUBCOMMANDS = (
     "review",
     "docs",
     "large-files",
+    "branch-current",
+    "diff-stat",
+    "diff-names",
+    "log-oneline",
+    "log-messages",
+    "rev-list-count",
+    "remote-url",
+    "rev-parse",
+    "merge-base-check",
+    "publish-check",
 )
 
 
@@ -101,6 +115,13 @@ def endpoint_checks() -> list[EndpointCheck]:
             needle="Backup not found",
             accept_exit_codes=(1,),
         ),
+        EndpointCheck("gh help", ("gh", "--help"), needle="issue"),
+        EndpointCheck(
+            "gh issue list",
+            ("gh", "issue", "list"),
+            needle='"number":',
+            accept_exit_codes=(0, 1),
+        ),
         EndpointCheck("links", ("links",), needle="Quick defaults"),
         EndpointCheck("docker --help", ("docker", "--help"), needle="reset"),
         EndpointCheck(
@@ -113,6 +134,70 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck("hidden alias g commit", ("g", "commit"), needle="nothing to commit", needs_git=True, reset_git=True),
         EndpointCheck("git docs", ("git", "docs"), needle="Documentation"),
         EndpointCheck("git large-files", ("git", "large-files", "-n", "1"), needle="shuttle/"),
+        EndpointCheck(
+            "git branch-current",
+            ("git", "branch-current"),
+            needle="main",
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git rev-parse",
+            ("git", "rev-parse", "HEAD"),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git remote-url",
+            ("git", "remote-url"),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git diff-stat",
+            ("git", "diff-stat", "--base", "main", "--head", "HEAD"),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git diff-names",
+            ("git", "diff-names", "--base", "main", "--head", "HEAD"),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git log-oneline",
+            ("git", "log-oneline", "--base", "main", "--head", "HEAD"),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git log-messages",
+            ("git", "log-messages", "--base", "main", "--head", "HEAD"),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git rev-list-count",
+            ("git", "rev-list-count", "--base", "main", "--head", "HEAD"),
+            needle="ahead",
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git merge-base-check",
+            ("git", "merge-base-check", "--base", "main", "--head", "HEAD"),
+            needle="is_ancestor",
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git publish-check",
+            ("git", "publish-check"),
+            needle="on_remote",
+            needs_git=True,
+            reset_git=True,
+        ),
         EndpointCheck(
             "git review quick",
             ("git", "review", "--no-install", "--quick"),
@@ -220,6 +305,128 @@ def endpoint_checks() -> list[EndpointCheck]:
             needs_git=True,
             reset_git=True,
             accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "git pull bad merge",
+            ("git", "pull", "--merge", "no-such-branch-xyzzy"),
+            needle="not something we can merge",
+            accept_exit_codes=(1,),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git commit missing path",
+            ("git", "commit", "--path", "no/such/file.txt"),
+            needle="did not match",
+            accept_exit_codes=(1,),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git rev-parse bad ref",
+            ("git", "rev-parse", "NOT_A_VALID_REF"),
+            needle="unknown revision",
+            accept_exit_codes=(1,),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git diff-stat bad base",
+            ("git", "diff-stat", "--base", "no-such-ref", "--head", "HEAD"),
+            needle="unknown revision",
+            accept_exit_codes=(1,),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git diff-names bad base",
+            ("git", "diff-names", "--base", "no-such-ref", "--head", "HEAD"),
+            needle="unknown revision",
+            accept_exit_codes=(1,),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git log-oneline bad base",
+            ("git", "log-oneline", "--base", "no-such-ref", "--head", "HEAD"),
+            needle="unknown revision",
+            accept_exit_codes=(1,),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git log-messages bad base",
+            ("git", "log-messages", "--base", "no-such-ref", "--head", "HEAD"),
+            needle="unknown revision",
+            accept_exit_codes=(1,),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git rev-list-count bad base",
+            ("git", "rev-list-count", "--base", "no-such-ref", "--head", "HEAD"),
+            needle="unknown revision",
+            accept_exit_codes=(1,),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git merge-base-check outside git",
+            ("git", "merge-base-check", "--base", "main", "--head", "HEAD"),
+            needle="not a git repository",
+            accept_exit_codes=(1,),
+            outside_git=True,
+        ),
+        EndpointCheck(
+            "git remote-url no remote",
+            ("git", "remote-url", "no-such-remote"),
+            needle="No such remote",
+            accept_exit_codes=(1,),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git branch-current outside git",
+            ("git", "branch-current"),
+            needle="not a git repository",
+            accept_exit_codes=(1,),
+            outside_git=True,
+        ),
+        EndpointCheck(
+            "git stash apply empty",
+            ("git", "stash", "apply"),
+            needle="not a valid reference",
+            accept_exit_codes=(1,),
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
+            "git large-files outside git",
+            ("git", "large-files", "-n", "1"),
+            needle="not a git repository",
+            accept_exit_codes=(1,),
+            outside_git=True,
+        ),
+        EndpointCheck(
+            "git publish-check outside git",
+            ("git", "publish-check"),
+            needle="not a git repository",
+            accept_exit_codes=(1,),
+            outside_git=True,
+        ),
+        EndpointCheck(
+            "git branch prune outside git",
+            ("git", "branch", "prune"),
+            needle="not a git repository",
+            accept_exit_codes=(1,),
+            outside_git=True,
+        ),
+        EndpointCheck(
+            "git review fail",
+            ("git", "review", "--no-install", "--quick"),
+            needle="review failed",
+            accept_exit_codes=(1,),
+            failure="review_fail",
         ),
         EndpointCheck(
             "git tag replace refuse",
@@ -684,7 +891,7 @@ def assert_every_git_subcommand_checked() -> None:
 def git_subcommands_with_ok_check() -> set[str]:
     ok: set[str] = set()
     for check in endpoint_checks():
-        if check.kind != "ok":
+        if not _endpoint_check_is_success(check):
             continue
         if not check.args or check.args[0] != "git" or len(check.args) < 2:
             continue
@@ -694,11 +901,51 @@ def git_subcommands_with_ok_check() -> set[str]:
     return ok
 
 
+def _endpoint_check_is_success(check: EndpointCheck) -> bool:
+    return check.kind == "ok" and 0 in check.accept_exit_codes
+
+
+def _endpoint_check_is_failure(check: EndpointCheck) -> bool:
+    return check.kind == "refuse" or check.failure is not None or (
+        check.kind == "ok" and 0 not in check.accept_exit_codes
+    )
+
+
+def git_subcommands_with_failure_check() -> set[str]:
+    failed: set[str] = set()
+    for check in endpoint_checks():
+        if not _endpoint_check_is_failure(check):
+            continue
+        if not check.args or check.args[0] != "git" or len(check.args) < 2:
+            continue
+        sub = check.args[1]
+        if not sub.startswith("-"):
+            failed.add(sub)
+    return failed
+
+
+_GIT_SUBCOMMANDS_FAIL_EXEMPT = frozenset({"docs"})
+
+
 def assert_every_git_subcommand_has_ok_check() -> None:
     """Every public git subcommand must have at least one successful integration path."""
     missing = set(GIT_SUBCOMMANDS) - git_subcommands_with_ok_check()
     if missing:
         raise AssertionError(f"git subcommands without ok integration check: {sorted(missing)}")
+
+
+def assert_every_git_subcommand_has_failure_check() -> None:
+    """Every public git subcommand must have at least one failure/refusal integration path."""
+    missing = (
+        set(GIT_SUBCOMMANDS) - git_subcommands_with_failure_check() - _GIT_SUBCOMMANDS_FAIL_EXEMPT
+    )
+    if missing:
+        raise AssertionError(f"git subcommands without failure integration check: {sorted(missing)}")
+
+
+def assert_every_git_subcommand_has_ok_and_failure_check() -> None:
+    assert_every_git_subcommand_has_ok_check()
+    assert_every_git_subcommand_has_failure_check()
 
 
 def assert_every_top_level_command_checked() -> None:
@@ -727,19 +974,26 @@ def run_endpoint_check(
     *,
     repo_root: Path,
     git_root: Path | None,
+    outside_git_root: Path | None = None,
 ) -> tuple[int, str]:
     env = os.environ.copy()
     env.setdefault("PYTHONUNBUFFERED", "1")
-    if check.needs_git and git_root is not None:
+    if check.outside_git and outside_git_root is not None:
+        env.pop("SHUTTLE_GIT_ROOT", None)
+        cwd = outside_git_root
+    elif check.needs_git and git_root is not None:
         env["SHUTTLE_GIT_ROOT"] = str(git_root)
+        cwd = repo_root
     else:
         # Block SHUTTLE_GIT_ROOT bleed from Docker CI (whole-pytest env var).
         env.pop("SHUTTLE_GIT_ROOT", None)
-        env["SHUTTLE_GIT_ROOT"] = ""
+        cwd = repo_root
     env.update(check.extra_env)
-    with _push_cwd(repo_root):
+    with _push_cwd(cwd):
         result = _CLI_RUNNER.invoke(app, list(check.args), env=env)
     output = result.stdout + (result.stderr or "")
+    if result.exception is not None:
+        output += f"\n{result.exception}"
     return result.exit_code, output
 
 
@@ -759,11 +1013,15 @@ class _push_cwd:
 
 def run_all_endpoint_checks(repo_root: Path, git_root: Path | None = None) -> list[str]:
     """Run every check; return error messages (empty if all passed)."""
+    from contextlib import nullcontext
+    from unittest.mock import patch
+
     ensure_project_git(repo_root)
     assert_registry_covers_git_commands()
     assert_every_git_subcommand_checked()
-    assert_every_git_subcommand_has_ok_check()
+    assert_every_git_subcommand_has_ok_and_failure_check()
     assert_every_top_level_command_checked()
+    outside_git_root = Path(tempfile.mkdtemp(prefix="shuttle-outside-git-"))
     errors: list[str] = []
     with patch_remote_git():
         for check in endpoint_checks():
@@ -834,7 +1092,16 @@ def run_all_endpoint_checks(repo_root: Path, git_root: Path | None = None) -> li
                         f"{check.label} setup: stash push failed ({setup_code})\n{setup_out}"
                     )
                     continue
-            code, output = run_endpoint_check(check, repo_root=repo_root, git_root=git_root)
+            review_patch = nullcontext()
+            if check.failure == "review_fail":
+                review_patch = patch("shuttle.commands.git.run_review", return_value=1)
+            with review_patch:
+                code, output = run_endpoint_check(
+                    check,
+                    repo_root=repo_root,
+                    git_root=git_root,
+                    outside_git_root=outside_git_root,
+                )
             if check.kind == "ok":
                 if code not in check.accept_exit_codes:
                     errors.append(

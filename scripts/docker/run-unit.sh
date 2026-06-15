@@ -9,6 +9,7 @@ source .venv/bin/activate
 bash -n scripts/chrome/*.sh
 bash -n scripts/docker/*.sh
 bash -n scripts/integration/*.sh
+python scripts/integration/check_integration_coverage.py
 pytest -q -m "not integration" \
   --cov=shuttle \
   --cov-config=coverage-unit.ini \

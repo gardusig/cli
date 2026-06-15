@@ -172,7 +172,6 @@ def test_git_zip_with_tag(
     mock_zip.assert_called_once()
 
 
-@pytest.mark.requires_git
 def test_prepare_for_tag_commits_dirty_feature_work_before_sync() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp) / "repo"
@@ -209,7 +208,6 @@ def test_prepare_for_tag_commits_dirty_feature_work_before_sync() -> None:
         ).returncode == 0
 
 
-@pytest.mark.requires_git
 def test_prepare_for_tag_aligns_feature_branch_to_main() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp) / "repo"
@@ -238,7 +236,6 @@ def test_prepare_for_tag_aligns_feature_branch_to_main() -> None:
         assert svc.head_sha() == main_sha
 
 
-@pytest.mark.requires_git
 def test_zip_tag_creates_archive() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp) / "repo"
@@ -257,7 +254,6 @@ def test_zip_tag_creates_archive() -> None:
         assert path.stat().st_size > 0
 
 
-@pytest.mark.requires_git
 def test_tag_push_action_states() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp) / "repo"

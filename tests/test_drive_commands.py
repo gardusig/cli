@@ -89,3 +89,53 @@ def test_drive_upload_missing_local_dir(
     result = runner.invoke(app, ["drive", "upload"])
     assert result.exit_code != 0
     assert "not found" in result.stdout.lower()
+
+
+@patch("shuttle.commands.drive.upload_missing")
+@patch("shuttle.commands.drive.tags_dir_path")
+@patch("shuttle.commands.drive._enabled_providers")
+def test_drive_upload_success(
+    mock_providers: MagicMock,
+    mock_tags: MagicMock,
+    mock_upload: MagicMock,
+    tmp_path: Path,
+) -> None:
+    from shuttle.services.drive_sync import UploadResult
+
+    tags_root = tmp_path / "git-tags"
+    tags_root.mkdir()
+    mock_tags.return_value = tags_root
+    mock_providers.return_value = [("google", MagicMock(), "remote/tags")]
+    mock_upload.return_value = UploadResult(uploaded=["demo/v1.zip"], skipped=[], failed=[])
+    result = runner.invoke(app, ["drive", "upload", "google"])
+    assert result.exit_code == 0
+    assert "demo/v1.zip" in result.stdout
+
+
+@patch("shuttle.commands.drive.list_downloaded_tags", return_value=["v1", "v2"])
+@patch("shuttle.commands.drive.resolve_repo_path")
+def test_drive_list_tags(mock_resolve: MagicMock, _tags: MagicMock, tmp_path: Path) -> None:
+    mock_resolve.return_value = tmp_path / "demo"
+    result = runner.invoke(app, ["drive", "list", str(tmp_path / "demo")])
+    assert result.exit_code == 0
+    assert "v1" in result.stdout
+    assert "v2" in result.stdout
+
+
+@patch("shuttle.commands.drive.delete_repo_tag")
+@patch("shuttle.commands.drive.git_worktree_snapshot")
+@patch("shuttle.commands.drive.resolve_repo_path")
+def test_drive_delete_with_yes(
+    mock_resolve: MagicMock,
+    mock_snapshot: MagicMock,
+    mock_delete: MagicMock,
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "demo"
+    repo.mkdir()
+    mock_resolve.return_value = repo
+    mock_snapshot.return_value.summary_lines.return_value = ["branch: main"]
+    mock_delete.return_value = repo / "v1.zip"
+    result = runner.invoke(app, ["drive", "delete", str(repo), "v1", "--yes"])
+    assert result.exit_code == 0
+    assert "deleted" in result.stdout

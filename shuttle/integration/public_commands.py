@@ -5,23 +5,28 @@ from __future__ import annotations
 from pathlib import Path
 
 from shuttle.cli import app
+from shuttle.integration.cli_api_checks import (
+    assert_every_api_command_has_ok_and_fail_check,
+    cli_api_checks,
+)
 from shuttle.integration.docker_integration import (
     DOCKER_SUBCOMMANDS,
     assert_docker_registry_complete,
     assert_docker_registry_covers_commands,
-    assert_every_docker_subcommand_has_ok_check,
+    assert_every_docker_subcommand_has_ok_and_failure_check,
     docker_checks,
     run_all_docker_checks,
 )
 from shuttle.integration.public_endpoints import (
     TOP_LEVEL_COMMANDS,
     assert_every_git_subcommand_checked,
-    assert_every_git_subcommand_has_ok_check,
+    assert_every_git_subcommand_has_ok_and_failure_check,
     assert_every_top_level_command_checked,
     assert_registry_covers_git_commands,
     endpoint_checks,
     run_all_endpoint_checks,
 )
+from shuttle.integration.workspaces import API_WORKSPACES, fixture_dir
 
 
 def registered_top_level_commands() -> set[str]:
@@ -45,11 +50,15 @@ def assert_public_command_registry_complete() -> None:
     assert_top_level_registry_matches_cli()
     assert_registry_covers_git_commands()
     assert_every_git_subcommand_checked()
-    assert_every_git_subcommand_has_ok_check()
+    assert_every_git_subcommand_has_ok_and_failure_check()
     assert_every_top_level_command_checked()
     assert_docker_registry_covers_commands()
     assert_docker_registry_complete()
-    assert_every_docker_subcommand_has_ok_check()
+    assert_every_docker_subcommand_has_ok_and_failure_check()
+    gh_ws = fixture_dir(next(w for w in API_WORKSPACES if w.name == "gh"))
+    assert_every_api_command_has_ok_and_fail_check(
+        cli_api_checks(gh_workspace=gh_ws, drive_repo="."),
+    )
 
 
 def public_command_check_count() -> int:

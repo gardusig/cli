@@ -41,11 +41,11 @@ Host repo is mounted read-only; each run copies a fresh tree to `/tmp/shuttle-cl
 
 ## CI (GitHub Actions)
 
-[`.github/workflows/test.yml`](../.github/workflows/test.yml) runs on **every pull request** and on pushes to `main`:
+Both jobs run on **every pull request** (open, sync, reopen, ready for review) and on pushes to `main`. Integration runs after unit passes (`needs: unit`).
 
 | Job | Runner | What runs |
 | --- | --- | --- |
-| `unit` | `ubuntu-latest` | `shuttle-cli:dev` → `./scripts/test-unit.sh` |
+| `unit` | `ubuntu-latest` | `shuttle-cli:dev` → `./scripts/test-unit.sh` (pytest `-m "not integration"`, **≥80%** coverage on `shuttle/cli.py` + `shuttle/commands/*` via `coverage-unit.ini`) |
 | `integration` | `ubuntu-latest` | same image → `./scripts/test-integration.sh` |
 
 Both jobs must pass before merge (enable **Require status checks** for `Unit tests (Docker)` and `Integration tests (Docker)` in branch protection).

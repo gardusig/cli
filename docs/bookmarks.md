@@ -9,7 +9,7 @@ Local-centric naming (aligned with **`shuttle drive`**): **ingest** = into the r
 ```yaml
 chrome:
   profile: Default
-  bookmarks_file: ~/git-local/shuttle-cli/data/bookmarks/bookmarks.html
+  bookmarks_file: ~/git-local/private/bookmarks/bookmarks.html
   downloads_dir: ~/Downloads
 ```
 

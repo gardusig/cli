@@ -10,9 +10,3 @@ build/
 *.egg-info/
 .env
 .DS_Store
-data/backups/*
-!data/backups/.gitkeep
-data/notion/*
-!data/notion/.gitkeep
-data/bookmarks/*
-!data/bookmarks/.gitkeep

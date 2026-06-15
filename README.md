@@ -31,7 +31,8 @@ Copy the bundled `config/` tree and edit paths for your machine before daily use
 | **Git repositories** | `backup.repositories[].path` | Repos for `shuttle drive ingest` / `drive status` |
 | **Tag zip folder** | `backup.tags_dir` | Local store (default: iCloud `git-tags/`) — source for `drive upload` |
 | **Cloud upload roots** | `drives.yaml` → `google` / `onedrive` / `proton` | Remote folder names per provider |
-| **Notion task folder** | `notion.task_directory` | Local markdown tasks (`data/tasks/`) |
+| **Notion task root** | `notion.task_root` | Private `metadata/` + `body/` task files |
+| **Notion pairs manifest** | `notion.pairs_file` | `config/notion/tasks.pairs.json` in this repo |
 | **Notion database** | `notion.database_id` | Existing board ID + `NOTION_TOKEN` env |
 | **Chrome bookmarks file** | `chrome.bookmarks_file` | HTML backup (`chrome bookmarks ingest`) |
 | **Chrome downloads** | `chrome.downloads_dir` | Folder polled when ingesting from Chrome |
@@ -47,13 +48,16 @@ backup:
 
 notion:
   database_id: your-notion-database-id
-  task_directory: data/tasks
+  task_root: ~/git-local/private/configured/notion/tasks
+  pairs_file: config/notion/tasks.pairs.json
 
 chrome:
   profile: Default
-  bookmarks_file: ~/git-local/shuttle-cli/data/bookmarks/bookmarks.html
+  bookmarks_file: ~/git-local/private/bookmarks/bookmarks.html
   downloads_dir: ~/Downloads
 ```
+
+Test fixtures (not for production) live under `tests/fixtures/notion/tasks` and `tests/fixtures/bookmarks.html`.
 
 Cloud providers: `config/drives.yaml`. Notion token: **`export NOTION_TOKEN=...`** (never commit).
 
@@ -156,13 +160,14 @@ See [docs/bookmarks.md](docs/bookmarks.md) · epic [#24](https://github.com/gard
 
 ## Notion (`shuttle notion`)
 
-Local tasks: **`notion.task_directory`** (`data/tasks/`). Auth: **`NOTION_TOKEN`** + `notion.database_id`.
+Local tasks: **`notion.task_root`** (private metadata/body) + **`notion.pairs_file`** (`config/notion/tasks.pairs.json`). Auth: **`NOTION_TOKEN`** + `notion.database_id`.
 
 | Command | Purpose |
 | --- | --- |
-| `shuttle notion ingest` | Notion → `data/tasks/{id}.md` |
-| `shuttle notion deploy --yes` | Local tasks → Notion |
-| `shuttle notion sync` | Ingest from Notion, then deploy local tasks |
+| `shuttle notion pairs build` | Scan metadata/ + body/ → `tasks.pairs.json` |
+| `shuttle notion ingest` | Notion → local pairs |
+| `shuttle notion deploy --yes` | Local pairs → Notion (archives board first by default) |
+| `shuttle notion sync --yes` | Ingest from Notion, then deploy local tasks |
 | `shuttle notion cleanup --yes` | Archive all database pages |
 
 See [docs/notion.md](docs/notion.md) · epic [#2](https://github.com/gardusig/shuttle-cli/issues/2) · children [#20](https://github.com/gardusig/shuttle-cli/issues/20)–[#23](https://github.com/gardusig/shuttle-cli/issues/23).

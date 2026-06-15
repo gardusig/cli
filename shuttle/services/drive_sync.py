@@ -6,7 +6,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from shuttle.providers.base import DriveProvider
+from shuttle.providers.drive_client import wrap_drive_provider
 from shuttle.services.backup_repository import SyncResult, ingest_repositories
+from shuttle.utils.external_client import ExternalCallError
 
 
 @dataclass
@@ -32,12 +34,15 @@ def upload_missing(
     remote_root: str,
 ) -> UploadResult:
     """Upload files present locally but missing remotely (append-only)."""
+    remote = wrap_drive_provider(provider)
     result = UploadResult()
     remote_root = remote_root.strip("/")
     local_files = _scan_local_files(local_root)
     try:
-        remote_files = provider.list_files(remote_root)
+        remote_files = remote.list_files(remote_root)
     except NotImplementedError:
+        raise
+    except ExternalCallError:
         raise
     except Exception as exc:  # noqa: BLE001
         result.failed.append(("", str(exc)))
@@ -45,23 +50,27 @@ def upload_missing(
 
     for rel in local_files:
         remote_path = f"{remote_root}/{rel}" if remote_root else rel
-        if rel in remote_files or provider.exists(remote_path):
+        if rel in remote_files or remote.exists(remote_path):
             result.skipped.append(rel)
             continue
         local_path = local_root / rel
         parent = str(Path(remote_path).parent).replace("\\", "/")
         if parent and parent != ".":
             try:
-                provider.create_directory(parent)
+                remote.create_directory(parent)
             except NotImplementedError:
+                raise
+            except ExternalCallError:
                 raise
             except Exception as exc:  # noqa: BLE001
                 result.failed.append((rel, f"mkdir: {exc}"))
                 continue
         try:
-            provider.upload(local_path, remote_path)
+            remote.upload(local_path, remote_path)
             result.uploaded.append(rel)
         except NotImplementedError:
+            raise
+        except ExternalCallError:
             raise
         except Exception as exc:  # noqa: BLE001
             result.failed.append((rel, str(exc)))

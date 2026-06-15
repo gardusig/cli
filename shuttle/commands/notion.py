@@ -6,13 +6,27 @@ import typer
 from rich import print as rprint
 
 from shuttle.internal.write.gate import require_write_gate
-from shuttle.services.notion_sync import cleanup_board, export_tasks, import_tasks
-from shuttle.utils.config import load_config, notion_cleanup_before_deploy, notion_tasks_dir, require_notion_token
+from shuttle.services.notion_sync import (
+    build_pairs_manifest,
+    cleanup_board,
+    export_tasks,
+    import_tasks,
+)
+from shuttle.utils.config import (
+    load_config,
+    notion_cleanup_before_deploy,
+    notion_pairs_file,
+    notion_task_root,
+    require_notion_token,
+)
 
 notion_app = typer.Typer(
-    help="Notion task board sync (local data/tasks markdown).",
+    help="Notion task board sync (metadata/body pairs + tasks.pairs.json).",
     no_args_is_help=True,
 )
+
+pairs_app = typer.Typer(help="Manage tasks.pairs.json manifest.")
+notion_app.add_typer(pairs_app, name="pairs")
 
 
 def _cfg():
@@ -26,18 +40,27 @@ def _token(cfg=None) -> str:
         raise typer.Exit(str(exc)) from exc
 
 
+def _print_sync_warnings(result) -> None:
+    for warning in getattr(result, "warnings", []):
+        rprint(f"[yellow]warning[/yellow] {warning}")
+
+
 @notion_app.command("ingest")
 def ingest_cmd() -> None:
-    """Notion → local: ingest database pages into task_directory."""
+    """Notion → local: ingest database pages into task pairs."""
     cfg = _cfg()
     token = _token(cfg)
-    task_dir = notion_tasks_dir()
-    task_dir.mkdir(parents=True, exist_ok=True)
+    root = notion_task_root()
+    root.mkdir(parents=True, exist_ok=True)
     try:
-        result = export_tasks(task_dir, token=token, config=cfg.notion)
-    except NotImplementedError as exc:
+        result = export_tasks(root, token=token, config=cfg.notion)
+    except Exception as exc:
         raise typer.Exit(str(exc)) from exc
-    rprint(f"[green]ingested[/green] {result.processed} task(s) → {task_dir}")
+    _print_sync_warnings(result)
+    rprint(
+        f"[green]ingested[/green] {result.processed} task(s) → {root} "
+        f"({notion_pairs_file().name})"
+    )
 
 
 @notion_app.command("deploy")
@@ -49,30 +72,35 @@ def deploy_cmd(
         help="Archive existing board pages before deploy (default: notion.cleanup_before_deploy).",
     ),
 ) -> None:
-    """Local → Notion: deploy markdown tasks from task_directory."""
+    """Local → Notion: deploy task pairs from tasks.pairs.json."""
     cfg = _cfg()
     token = _token(cfg)
-    task_dir = notion_tasks_dir()
-    if not task_dir.is_dir():
-        raise typer.Exit(f"Task directory not found: {task_dir}")
+    root = notion_task_root()
+    manifest = notion_pairs_file()
+    if not manifest.is_file():
+        raise typer.Exit(f"Pairs manifest not found: {manifest}. Run: shuttle notion pairs build")
     do_cleanup = notion_cleanup_before_deploy(cfg.notion) if cleanup is None else cleanup
     if do_cleanup:
         require_write_gate(
             "notion-deploy-cleanup",
-            summary_lines=[f"task_dir: {task_dir}", f"database: {cfg.notion.database_id}"],
+            summary_lines=[f"task_root: {root}", f"database: {cfg.notion.database_id}"],
             question="Archive all existing Notion pages before deploy?",
             yes=yes,
         )
     try:
         result = import_tasks(
-            task_dir,
+            root,
             token=token,
             config=cfg.notion,
             cleanup_first=do_cleanup,
         )
-    except NotImplementedError as exc:
+    except Exception as exc:
         raise typer.Exit(str(exc)) from exc
-    rprint(f"[green]deployed[/green] {result.processed} task(s) from {task_dir}")
+    _print_sync_warnings(result)
+    rprint(
+        f"[green]deployed[/green] {result.processed} task(s) from {manifest} "
+        f"(skipped {result.skipped})"
+    )
 
 
 @notion_app.command("sync")
@@ -85,10 +113,10 @@ def sync_cmd(
     ),
 ) -> None:
     """Ingest from Notion, then deploy local tasks back to the board."""
-    rprint("[bold]Phase 1 — ingest[/bold] (Notion → task_directory)")
+    rprint("[bold]Phase 1 — ingest[/bold] (Notion → task_root)")
     ingest_cmd()
     rprint()
-    rprint("[bold]Phase 2 — deploy[/bold] (task_directory → Notion)")
+    rprint("[bold]Phase 2 — deploy[/bold] (task_root → Notion)")
     deploy_cmd(yes=yes, cleanup=cleanup)
 
 
@@ -107,9 +135,20 @@ def cleanup_cmd(
     )
     try:
         result = cleanup_board(token=token, config=cfg.notion)
-    except NotImplementedError as exc:
+    except Exception as exc:
         raise typer.Exit(str(exc)) from exc
     rprint(f"[green]archived[/green] {result.processed} page(s)")
+
+
+@pairs_app.command("build")
+def pairs_build_cmd() -> None:
+    """Scan metadata/ + body/ and write tasks.pairs.json (name must be in each yaml)."""
+    root = notion_task_root()
+    try:
+        result = build_pairs_manifest(root)
+    except Exception as exc:
+        raise typer.Exit(str(exc)) from exc
+    rprint(f"[green]built[/green] {result.processed} pair(s) → {notion_pairs_file()}")
 
 
 @notion_app.command("download", hidden=True)

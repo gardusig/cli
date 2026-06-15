@@ -1,0 +1,126 @@
+[
+  {
+    "metadata_filepath": "metadata/buy/ecommerce.yaml",
+    "body_filepath": "body/buy/ecommerce.md"
+  },
+  {
+    "metadata_filepath": "metadata/buy/liver.yaml",
+    "body_filepath": "body/buy/liver.md"
+  },
+  {
+    "metadata_filepath": "metadata/buy/perishable.yaml",
+    "body_filepath": "body/buy/perishable.md"
+  },
+  {
+    "metadata_filepath": "metadata/buy/pharmacy.yaml",
+    "body_filepath": "body/buy/pharmacy.md"
+  },
+  {
+    "metadata_filepath": "metadata/clean/bathroom.yaml",
+    "body_filepath": "body/clean/bathroom.md"
+  },
+  {
+    "metadata_filepath": "metadata/clean/floor.yaml",
+    "body_filepath": "body/clean/floor.md"
+  },
+  {
+    "metadata_filepath": "metadata/clean/kitchen.yaml",
+    "body_filepath": "body/clean/kitchen.md"
+  },
+  {
+    "metadata_filepath": "metadata/clean/laundry.yaml",
+    "body_filepath": "body/clean/laundry.md"
+  },
+  {
+    "metadata_filepath": "metadata/groom/cut-feet-nails.yaml",
+    "body_filepath": "body/groom/cut-feet-nails.md"
+  },
+  {
+    "metadata_filepath": "metadata/groom/shave.yaml",
+    "body_filepath": "body/groom/shave.md"
+  },
+  {
+    "metadata_filepath": "metadata/irpf.yaml",
+    "body_filepath": "body/irpf.md"
+  },
+  {
+    "metadata_filepath": "metadata/pack.yaml",
+    "body_filepath": "body/pack.md"
+  },
+  {
+    "metadata_filepath": "metadata/pay/cursor.yaml",
+    "body_filepath": "body/pay/cursor.md"
+  },
+  {
+    "metadata_filepath": "metadata/pay/mobile.yaml",
+    "body_filepath": "body/pay/mobile.md"
+  },
+  {
+    "metadata_filepath": "metadata/schedule/barber.yaml",
+    "body_filepath": "body/schedule/barber.md"
+  },
+  {
+    "metadata_filepath": "metadata/schedule/dentist.yaml",
+    "body_filepath": "body/schedule/dentist.md"
+  },
+  {
+    "metadata_filepath": "metadata/schedule/health-exams.yaml",
+    "body_filepath": "body/schedule/health-exams.md"
+  },
+  {
+    "metadata_filepath": "metadata/schedule/identity.yaml",
+    "body_filepath": "body/schedule/identity.md"
+  },
+  {
+    "metadata_filepath": "metadata/schedule/passport.yaml",
+    "body_filepath": "body/schedule/passport.md"
+  },
+  {
+    "metadata_filepath": "metadata/schedule/vaccine.yaml",
+    "body_filepath": "body/schedule/vaccine.md"
+  },
+  {
+    "metadata_filepath": "metadata/sync/brain-games.yaml",
+    "body_filepath": "body/sync/brain-games.md"
+  },
+  {
+    "metadata_filepath": "metadata/sync/game.yaml",
+    "body_filepath": "body/sync/game.md"
+  },
+  {
+    "metadata_filepath": "metadata/sync/instruments.yaml",
+    "body_filepath": "body/sync/instruments.md"
+  },
+  {
+    "metadata_filepath": "metadata/sync/listen.yaml",
+    "body_filepath": "body/sync/listen.md"
+  },
+  {
+    "metadata_filepath": "metadata/sync/private-diary.yaml",
+    "body_filepath": "body/sync/private-diary.md"
+  },
+  {
+    "metadata_filepath": "metadata/sync/private-net-worth.yaml",
+    "body_filepath": "body/sync/private-net-worth.md"
+  },
+  {
+    "metadata_filepath": "metadata/sync/resume.yaml",
+    "body_filepath": "body/sync/resume.md"
+  },
+  {
+    "metadata_filepath": "metadata/sync/security.yaml",
+    "body_filepath": "body/sync/security.md"
+  },
+  {
+    "metadata_filepath": "metadata/sync/watch.yaml",
+    "body_filepath": "body/sync/watch.md"
+  },
+  {
+    "metadata_filepath": "metadata/tattoo.yaml",
+    "body_filepath": "body/tattoo.md"
+  },
+  {
+    "metadata_filepath": "metadata/upload-backup.yaml",
+    "body_filepath": "body/upload-backup.md"
+  }
+]

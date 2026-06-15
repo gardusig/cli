@@ -37,8 +37,14 @@ class DrivesConfig(BaseModel):
 
 class NotionPropertyMap(BaseModel):
     title: str = "Name"
-    status: str = "Status"
     priority: str = "Priority"
+    tag: str = "Tag"
+    frequency: str = "Frequency"
+    interval: str = "Interval"
+    last_done: str = "Last done"
+    forced_status: str = "Forced status"
+    # Legacy keys (ignored by pair sync unless remapped in config).
+    status: str = "Status"
     tags: str = "Tags"
     id: str = "ID"
     created: str = "Created"
@@ -47,8 +53,10 @@ class NotionPropertyMap(BaseModel):
 
 class NotionConfig(BaseModel):
     database_id: str = ""
-    task_directory: str = "data/tasks"
-    cleanup_before_deploy: bool = False
+    task_root: str = ""
+    task_directory: str = ""  # deprecated alias for task_root
+    pairs_file: str = "tasks.pairs.json"
+    cleanup_before_deploy: bool = True
     cleanup_before_upload: bool | None = None  # deprecated alias
     cleanup_before_import: bool | None = None  # deprecated alias
     properties: NotionPropertyMap = Field(default_factory=NotionPropertyMap)
@@ -58,6 +66,8 @@ class NotionConfig(BaseModel):
             object.__setattr__(self, "cleanup_before_deploy", self.cleanup_before_upload)
         if self.cleanup_before_import is not None:
             object.__setattr__(self, "cleanup_before_deploy", self.cleanup_before_import)
+        if not self.task_root.strip() and self.task_directory.strip():
+            object.__setattr__(self, "task_root", self.task_directory)
 
 
 def notion_cleanup_before_deploy(cfg: NotionConfig) -> bool:
@@ -157,21 +167,51 @@ def bookmarks_file_path(config_dir: Path | None = None) -> Path:
         return Path(env).expanduser().resolve()
     cfg = load_config(config_dir)
     raw = cfg.chrome.bookmarks_file.strip()
-    if raw:
-        path = Path(raw).expanduser()
-        if path.is_absolute():
-            return path.resolve()
+    if not raw:
+        raise FileNotFoundError(
+            "chrome.bookmarks_file is not configured. Set chrome.bookmarks_file in config/config.yaml."
+        )
+    path = Path(raw).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    return (project_root() / path).resolve()
+
+
+def notion_task_root(config_dir: Path | None = None) -> Path:
+    """Resolved path to local Notion task root (metadata/, body/, pairs manifest)."""
+    cfg = load_config(config_dir)
+    raw = cfg.notion.task_root.strip() or cfg.notion.task_directory.strip()
+    if not raw:
+        raise FileNotFoundError(
+            "notion.task_root is not configured. Set notion.task_root in config/config.yaml "
+            "to your private task directory."
+        )
+    path = Path(raw).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    return (project_root() / path).resolve()
+
+
+def notion_pairs_file(config_dir: Path | None = None) -> Path:
+    """Resolved path to tasks.pairs.json manifest.
+
+    When ``pairs_file`` is a bare filename (e.g. ``tasks.pairs.json``), it lives under
+    ``notion.task_root``. When it includes a directory (e.g. ``config/notion/tasks.pairs.json``)
+    or is absolute, metadata/body stay under ``task_root`` and only the manifest path differs.
+    """
+    cfg = load_config(config_dir)
+    raw = cfg.notion.pairs_file.strip() or "tasks.pairs.json"
+    path = Path(raw).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    if len(path.parts) > 1:
         return (project_root() / path).resolve()
-    return (project_root() / "data" / "bookmarks" / "bookmarks.html").resolve()
+    return notion_task_root(config_dir) / path.name
 
 
 def notion_tasks_dir(config_dir: Path | None = None) -> Path:
-    """Resolved path to local Notion task markdown folder."""
-    cfg = load_config(config_dir)
-    raw = Path(cfg.notion.task_directory.strip() or "data/tasks")
-    if raw.is_absolute():
-        return raw.resolve()
-    return (project_root() / raw).resolve()
+    """Deprecated alias for notion_task_root()."""
+    return notion_task_root(config_dir)
 
 
 def require_notion_token(cfg: ShuttleConfig | None = None) -> str:

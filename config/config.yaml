@@ -5,19 +5,20 @@ backup:
 
 notion:
   database_id: ""                    # Notion database ID (board must exist)
-  task_directory: data/tasks         # local markdown source (one file per task id)
-  cleanup_before_deploy: false
+  task_root: ~/git-local/private/configured/notion/tasks
+  pairs_file: config/notion/tasks.pairs.json
+  cleanup_before_deploy: true
   properties:
     title: Name
-    status: Status
     priority: Priority
-    tags: Tags
-    id: ID
-    created: Created
-    updated: Updated
+    tag: Tag
+    frequency: Frequency
+    interval: Interval
+    last_done: "Last done"
+    forced_status: "Forced status"
 
 chrome:
   profile: Default
   # Local bookmarks HTML (Chrome export/import). Absolute or ~ path recommended.
-  bookmarks_file: ~/git-local/shuttle-cli/data/bookmarks/bookmarks.html
+  bookmarks_file: ""                   # private path, e.g. ~/git-local/private/.../bookmarks.html
   downloads_dir: ~/Downloads

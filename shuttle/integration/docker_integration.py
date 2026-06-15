@@ -4,14 +4,17 @@ from __future__ import annotations
 
 import os
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
 from typer.testing import CliRunner
+from unittest.mock import patch
 
 from shuttle.cli import app
 from shuttle.integration.docker_mocks import patch_docker_cli
+from shuttle.services import docker_runtime as runtime_mod
 
 _CLI_RUNNER = CliRunner()
 REFUSE_NEEDLE = "non-interactive"
@@ -39,6 +42,7 @@ class DockerCheck:
     args: tuple[str, ...]
     kind: CheckKind = "ok"
     needle: str | None = None
+    failure: str | None = None
 
 
 def docker_checks() -> list[DockerCheck]:
@@ -46,11 +50,53 @@ def docker_checks() -> list[DockerCheck]:
     return [
         DockerCheck("docker --help", ("docker", "--help"), needle="reset"),
         DockerCheck("docker ps", ("docker", "ps"), needle="shuttle-mock-running"),
+        DockerCheck(
+            "docker ps no docker",
+            ("docker", "ps"),
+            kind="refuse",
+            needle="docker is not installed",
+            failure="docker_unavailable",
+        ),
         DockerCheck("docker stats", ("docker", "stats", "--by", "cpu"), needle="shuttle-mock-running"),
+        DockerCheck(
+            "docker stats no docker",
+            ("docker", "stats"),
+            kind="refuse",
+            needle="docker is not installed",
+            failure="docker_unavailable",
+        ),
         DockerCheck("docker containers", ("docker", "containers"), needle="shuttle-mock-stopped"),
+        DockerCheck(
+            "docker containers no docker",
+            ("docker", "containers"),
+            kind="refuse",
+            needle="docker is not installed",
+            failure="docker_unavailable",
+        ),
         DockerCheck("docker images", ("docker", "images"), needle="shuttle/mock"),
+        DockerCheck(
+            "docker images no docker",
+            ("docker", "images"),
+            kind="refuse",
+            needle="docker is not installed",
+            failure="docker_unavailable",
+        ),
         DockerCheck("docker top", ("docker", "top", "-n", "2"), needle="CPU"),
+        DockerCheck(
+            "docker top no docker",
+            ("docker", "top"),
+            kind="refuse",
+            needle="docker is not installed",
+            failure="docker_unavailable",
+        ),
         DockerCheck("docker df", ("docker", "df"), needle="Images"),
+        DockerCheck(
+            "docker df no docker",
+            ("docker", "df"),
+            kind="refuse",
+            needle="docker is not installed",
+            failure="docker_unavailable",
+        ),
         DockerCheck("docker stop refuse", ("docker", "stop"), kind="refuse", needle=refuse),
         DockerCheck("docker container-delete refuse", ("docker", "container-delete"), kind="refuse", needle=refuse),
         DockerCheck("docker image-delete refuse", ("docker", "image-delete"), kind="refuse", needle=refuse),
@@ -131,11 +177,29 @@ def assert_docker_registry_covers_commands() -> None:
 def docker_subcommands_with_ok_check() -> set[str]:
     ok: set[str] = set()
     for check in docker_checks():
-        if check.kind != "ok":
+        if not _docker_check_is_success(check):
             continue
         if len(check.args) >= 2 and check.args[0] == "docker" and not check.args[1].startswith("-"):
             ok.add(check.args[1])
     return ok
+
+
+def _docker_check_is_success(check: DockerCheck) -> bool:
+    return check.kind == "ok"
+
+
+def _docker_check_is_failure(check: DockerCheck) -> bool:
+    return check.kind == "refuse" or check.failure is not None
+
+
+def docker_subcommands_with_failure_check() -> set[str]:
+    failed: set[str] = set()
+    for check in docker_checks():
+        if not _docker_check_is_failure(check):
+            continue
+        if len(check.args) >= 2 and check.args[0] == "docker" and not check.args[1].startswith("-"):
+            failed.add(check.args[1])
+    return failed
 
 
 def assert_docker_registry_complete() -> None:
@@ -150,6 +214,17 @@ def assert_every_docker_subcommand_has_ok_check() -> None:
         raise AssertionError(f"docker subcommands without ok integration check: {sorted(missing)}")
 
 
+def assert_every_docker_subcommand_has_failure_check() -> None:
+    missing = set(DOCKER_SUBCOMMANDS) - docker_subcommands_with_failure_check()
+    if missing:
+        raise AssertionError(f"docker subcommands without failure integration check: {sorted(missing)}")
+
+
+def assert_every_docker_subcommand_has_ok_and_failure_check() -> None:
+    assert_every_docker_subcommand_has_ok_check()
+    assert_every_docker_subcommand_has_failure_check()
+
+
 def run_docker_check(check: DockerCheck, *, repo_root: Path) -> tuple[int, str]:
     env = os.environ.copy()
     env.setdefault("PYTHONUNBUFFERED", "1")
@@ -160,15 +235,23 @@ def run_docker_check(check: DockerCheck, *, repo_root: Path) -> tuple[int, str]:
         result = _CLI_RUNNER.invoke(app, list(check.args), env=env)
     finally:
         os.chdir(prev)
-    return result.exit_code, result.stdout + (result.stderr or "")
+    output = result.stdout + (result.stderr or "")
+    if result.exception is not None:
+        output += f"\n{result.exception}"
+    return result.exit_code, output
 
 
 def run_all_docker_checks(repo_root: Path) -> list[str]:
     assert_docker_registry_complete()
+    assert_every_docker_subcommand_has_ok_and_failure_check()
     errors: list[str] = []
     with patch_docker_cli():
         for check in docker_checks():
-            code, output = run_docker_check(check, repo_root=repo_root)
+            if check.failure == "docker_unavailable":
+                with patch.object(runtime_mod.shutil, "which", return_value=None):
+                    code, output = run_docker_check(check, repo_root=repo_root)
+            else:
+                code, output = run_docker_check(check, repo_root=repo_root)
             if check.kind == "ok":
                 if code != 0:
                     errors.append(f"{check.label}: exit {code}\n{output}")

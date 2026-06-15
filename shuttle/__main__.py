@@ -1,4 +1,4 @@
-from shuttle.cli import app
+from shuttle.cli import run
 
 if __name__ == "__main__":
-    app()
+    run()

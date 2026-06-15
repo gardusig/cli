@@ -114,6 +114,15 @@ def test_repo_view_json(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
 
 
 @patch("shuttle.commands.gh._svc")
+def test_issue_view_table_format(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
+    mock_factory.return_value = mock_svc
+    mock_svc.issue_view.return_value = {"number": 9, "title": "Nine"}
+    result = runner.invoke(app, ["gh", "--format", "table", "issue", "view", "9"])
+    assert result.exit_code == 0
+    assert "Nine" in result.stdout
+
+
+@patch("shuttle.commands.gh._svc")
 def test_pr_list_head_base_filters(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     mock_factory.return_value = mock_svc
     mock_svc.pr_list.return_value = [{"number": 1, "title": "PR"}]

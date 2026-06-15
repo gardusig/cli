@@ -21,6 +21,7 @@ from shuttle.services.backup_repository import (
 from shuttle.services.drive_sync import UploadResult, sync_all, upload_missing
 from shuttle.services.git_shortcuts import GitShortcuts
 from shuttle.utils.config import load_config, tags_dir_path
+from shuttle.utils.external_client import ExternalCallError
 
 drive_app = typer.Typer(
     help="Local git-tags (iCloud) and cloud upload.",
@@ -178,6 +179,8 @@ def sync_cmd(
         sync_result = sync_all(local_root, targets)
     except RuntimeError as exc:
         raise typer.Exit(str(exc)) from exc
+    except ExternalCallError as exc:
+        raise typer.Exit(exc.user_message) from exc
     except NotImplementedError as exc:
         raise typer.Exit(str(exc)) from exc
     created, replaced, failed = _print_ingest_rows(sync_result.ingest)
@@ -218,6 +221,8 @@ def upload_cmd(
             uploads.append((name, upload_missing(local_root, module, remote_root)))
         except NotImplementedError as exc:
             raise typer.Exit(str(exc)) from exc
+        except ExternalCallError as exc:
+            raise typer.Exit(exc.user_message) from exc
     total_up, total_skip, total_fail = _print_upload_rows(uploads)
     rprint(
         f"Done. Uploaded: {total_up}  Skipped: {total_skip}  Failed: {total_fail}"

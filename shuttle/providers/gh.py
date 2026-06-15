@@ -6,6 +6,7 @@ import json
 from collections.abc import Sequence
 from typing import Any
 
+from shuttle.utils.external_client import ExternalClient
 from shuttle.utils.process import run_gh
 
 
@@ -14,6 +15,7 @@ class GhProvider:
 
     def __init__(self, *, repo: str | None = None) -> None:
         self.repo = repo
+        self._external = ExternalClient("gh")
 
     def _base_args(self) -> list[str]:
         if self.repo:
@@ -26,8 +28,13 @@ class GhProvider:
         *,
         check: bool = True,
     ) -> str:
-        result = run_gh([*self._base_args(), *args], check=check)
-        return result.stdout.strip()
+        label = " ".join(args[:2]) if len(args) >= 2 else " ".join(args)
+
+        def _invoke() -> str:
+            result = run_gh([*self._base_args(), *args], check=check)
+            return result.stdout.strip()
+
+        return self._external.call(label, _invoke)
 
     def run_json(self, args: Sequence[str]) -> Any:
         text = self.run(args)

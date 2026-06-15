@@ -8,7 +8,7 @@ from shuttle.integration.docker_integration import (
     docker_checks,
     run_all_docker_checks,
 )
-from shuttle.integration.public_commands import assert_public_command_registry_complete
+from shuttle.integration.integration_coverage import assert_integration_coverage_gate
 
 from pathlib import Path
 
@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_docker_subcommands_have_checks() -> None:
-    assert_public_command_registry_complete()
+    assert_integration_coverage_gate()
     covered = {c.args[1] for c in docker_checks() if len(c.args) >= 2}
     assert set(DOCKER_SUBCOMMANDS) <= covered
     assert_every_docker_subcommand_has_ok_check()

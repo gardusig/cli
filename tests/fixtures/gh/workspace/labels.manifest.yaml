@@ -1,0 +1,4 @@
+labels:
+  - name: epic:test
+    color: abcdef
+    description: integration fixture

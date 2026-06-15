@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Notion → local: download tasks to data/tasks/
+# Notion → local: download tasks to configured task root
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

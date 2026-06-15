@@ -9,8 +9,10 @@ import pytest
 import yaml
 
 from shuttle.utils import fs, hashing, retry, zip as zip_util
+from shuttle.providers.notion import NotionError
 from shuttle.utils.confirm import require_confirmation
 from shuttle.utils.config import default_config_dir, load_config, load_yaml, project_root
+from shuttle.utils.external_client import ExternalCallError
 from shuttle.utils.process import GitCommandError, run_git
 from shuttle.utils.yaml import dump_yaml, load_yaml as utils_load_yaml
 
@@ -53,6 +55,36 @@ def test_bookmarks_file_path_env_override(tmp_path: Path, monkeypatch) -> None:
     from shuttle.utils.config import bookmarks_file_path
 
     assert bookmarks_file_path() == override.resolve()
+
+
+def test_notion_pairs_file_split_from_task_root(tmp_path: Path) -> None:
+    private_root = tmp_path / "private" / "tasks"
+    private_root.mkdir(parents=True)
+    cfg_dir = tmp_path / "cfg"
+    cfg_dir.mkdir()
+    (cfg_dir / "config.yaml").write_text(
+        f"notion:\n  task_root: {private_root}\n  pairs_file: config/notion/tasks.pairs.json\n",
+        encoding="utf-8",
+    )
+    manifest = project_root() / "config" / "notion" / "tasks.pairs.json"
+    from shuttle.utils.config import notion_pairs_file, notion_task_root
+
+    assert notion_task_root(cfg_dir) == private_root.resolve()
+    assert notion_pairs_file(cfg_dir) == manifest.resolve()
+
+
+def test_notion_pairs_file_bare_name_under_task_root(tmp_path: Path) -> None:
+    task_root = tmp_path / "tasks"
+    task_root.mkdir()
+    cfg_dir = tmp_path / "cfg"
+    cfg_dir.mkdir()
+    (cfg_dir / "config.yaml").write_text(
+        f"notion:\n  task_root: {task_root}\n  pairs_file: tasks.pairs.json\n",
+        encoding="utf-8",
+    )
+    from shuttle.utils.config import notion_pairs_file
+
+    assert notion_pairs_file(cfg_dir) == (task_root / "tasks.pairs.json").resolve()
 
 
 def test_tags_dir_path_expands_tilde(tmp_path: Path, monkeypatch) -> None:
@@ -144,21 +176,21 @@ def test_retry_succeeds_after_failure() -> None:
     def flaky() -> str:
         calls["n"] += 1
         if calls["n"] < 2:
-            raise ValueError("nope")
+            raise NotionError("down", status_code=503)
         return "ok"
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(retry.time, "sleep", lambda _: None)
+        mp.setattr("shuttle.utils.external_client.time.sleep", lambda _: None)
         assert retry.retry(flaky, attempts=3, delay=0) == "ok"
 
 
-def test_retry_raises_last_error() -> None:
+def test_retry_raises_external_call_error() -> None:
     def always_fail() -> None:
         raise RuntimeError("fail")
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(retry.time, "sleep", lambda _: None)
-        with pytest.raises(RuntimeError, match="fail"):
+        mp.setattr("shuttle.utils.external_client.time.sleep", lambda _: None)
+        with pytest.raises(ExternalCallError, match="fail"):
             retry.retry(always_fail, attempts=2, delay=0)
 
 

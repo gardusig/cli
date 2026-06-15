@@ -31,8 +31,9 @@ QUICK_DEFAULTS = (
     ("drive sync", "ingest all repositories, then upload all enabled clouds"),
     ("chrome bookmarks ingest", "Chrome → local HTML (chrome.bookmarks_file)"),
     ("chrome bookmarks deploy", "local HTML → Chrome"),
-    ("notion ingest", "Notion → data/tasks markdown"),
-    ("notion deploy", "data/tasks → Notion board"),
+    ("notion pairs build", "scan metadata/ + body/ → tasks.pairs.json"),
+    ("notion ingest", "Notion → local task pairs"),
+    ("notion deploy", "local task pairs → Notion board"),
     ("notion sync", "ingest from Notion, then deploy local tasks"),
 )
 
@@ -96,7 +97,7 @@ TOP_LEVEL_COMMANDS: tuple[tuple[str, str], ...] = (
     ("restore", "restore workflows (placeholder)"),
     ("drive", "git-tags local store (iCloud) + cloud upload — status, ingest, upload"),
     ("chrome", "Chrome browser — bookmarks ingest / deploy"),
-    ("notion", "Notion task board — ingest / deploy / sync / cleanup"),
+    ("notion", "Notion task board — pairs build / ingest / deploy / sync / cleanup"),
     ("links", "this index — docs, scripts, defaults"),
     ("docker", "monitor + cleanup — stats, top, stop, delete, reset (see shuttle docker --help)"),
 )

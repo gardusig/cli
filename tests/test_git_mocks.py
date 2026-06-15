@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import subprocess
 
-import pytest
-
 from shuttle.integration.git_mocks import patch_remote_git
 from shuttle.utils import process as process_mod
 
@@ -29,7 +27,6 @@ def test_patch_remote_git_blocks_ls_remote() -> None:
     assert result.returncode == 0
 
 
-@pytest.mark.requires_git
 def test_patch_remote_git_allows_local_status(tmp_path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()

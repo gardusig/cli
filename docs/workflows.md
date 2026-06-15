@@ -135,7 +135,7 @@ flowchart LR
 
     subgraph bookmarks [Chrome bookmarks]
         B1["./scripts/chrome/export-bookmarks.sh"]
-        B2["data/bookmarks/bookmarks.html"]
+        B2["configured bookmarks.html"]
         B3["./scripts/chrome/import-bookmarks.sh"]
         B1 --> B2 --> B3
     end

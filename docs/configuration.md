@@ -18,19 +18,22 @@ Config loads from (first match):
 ```yaml
 notion:
   database_id: your-notion-database-id
-  task_directory: data/tasks
-  cleanup_before_deploy: false
+  task_root: ~/git-local/private/configured/notion/tasks
+  pairs_file: config/notion/tasks.pairs.json
+  cleanup_before_deploy: true
   properties:
     title: Name
-    status: Status
     priority: Priority
-    tags: Tags
-    id: ID
-    created: Created
-    updated: Updated
+    tag: Tag
+    frequency: Frequency
+    interval: Interval
+    last_done: "Last done"
+    forced_status: "Forced status"
 ```
 
-- `task_directory` — flat folder of `{id}.md` files (local source of truth)
+- `task_root` — private folder with `metadata/` and `body/` (task content)
+- `pairs_file` — manifest path; use `config/notion/tasks.pairs.json` in this repo (or a bare filename under `task_root` for tests)
+- `metadata.name` — unique Notion title (required in each yaml)
 - `database_id` — existing Notion database (shuttle never creates schema)
 - **`NOTION_TOKEN`** — integration token in environment only (not in YAML)
 
@@ -39,7 +42,7 @@ notion:
 ```yaml
 chrome:
   profile: Default
-  bookmarks_file: ~/git-local/shuttle-cli/data/bookmarks/bookmarks.html
+  bookmarks_file: ~/git-local/private/bookmarks/bookmarks.html
   downloads_dir: ~/Downloads
 ```
 

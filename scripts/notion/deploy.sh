@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local → Notion: deploy data/tasks/ to board
+# Local → Notion: deploy configured task root to board
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

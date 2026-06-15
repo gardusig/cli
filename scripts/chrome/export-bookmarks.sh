@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
-# Export Chrome bookmarks to data/bookmarks/bookmarks.html (issue #1).
+# Export Chrome bookmarks to configured bookmarks HTML (issue #1).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${SHUTTLE_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 DOWNLOADS_DIR="${SHUTTLE_DOWNLOADS_DIR:-$HOME/Downloads}"
-BOOKMARKS_FILE="${SHUTTLE_BOOKMARKS_FILE:-$ROOT/data/bookmarks/bookmarks.html}"
+BOOKMARKS_FILE="${SHUTTLE_BOOKMARKS_FILE:-}"
 SKIP_AUTOMATION="${SHUTTLE_SKIP_CHROME_AUTOMATION:-0}"
 FIXTURE_SOURCE="${SHUTTLE_BOOKMARKS_FIXTURE:-}"
+
+if [[ -z "$BOOKMARKS_FILE" ]]; then
+  echo "ERROR: SHUTTLE_BOOKMARKS_FILE is not set (configure chrome.bookmarks_file or use shuttle chrome bookmarks ingest)" >&2
+  exit 1
+fi
 
 mkdir -p "$(dirname "$BOOKMARKS_FILE")"
 

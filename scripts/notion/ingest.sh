@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Notion → local: ingest tasks into data/tasks/
+# Notion → local: ingest tasks into configured task root
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

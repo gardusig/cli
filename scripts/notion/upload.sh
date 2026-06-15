@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local → Notion: upload data/tasks/ to board
+# Local → Notion: upload configured task root to board
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

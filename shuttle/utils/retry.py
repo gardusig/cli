@@ -1,8 +1,11 @@
-"""Retry helpers (placeholder per issue #3)."""
+"""Retry helpers — delegates to ExternalClient."""
 
-import time
+from __future__ import annotations
+
 from collections.abc import Callable
 from typing import TypeVar
+
+from shuttle.utils.external_client import ExternalClient
 
 T = TypeVar("T")
 
@@ -13,12 +16,15 @@ def retry(
     attempts: int = 3,
     delay: float = 1.0,
     exceptions: tuple[type[Exception], ...] = (Exception,),
+    service: str = "external",
+    operation: str = "call",
 ) -> T:
-    last: Exception | None = None
-    for _ in range(attempts):
-        try:
-            return fn()
-        except exceptions as exc:
-            last = exc
-            time.sleep(delay)
-    raise last  # type: ignore[misc]
+    """Run fn with exponential backoff; raises ExternalCallError when exhausted."""
+
+    client = ExternalClient(
+        service,
+        attempts=attempts,
+        base_delay=delay,
+        max_delay=delay * (2 ** max(0, attempts - 1)),
+    )
+    return client.call(operation, fn)

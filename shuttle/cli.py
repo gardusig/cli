@@ -50,5 +50,16 @@ def main(
     ctx.obj = {"verbose": verbose}
 
 
+def run() -> None:
+    """CLI entrypoint — surfaces ExternalCallError as a clean user message."""
+    from shuttle.utils.external_client import ExternalCallError
+
+    try:
+        app()
+    except ExternalCallError as exc:
+        typer.echo(exc.user_message, err=True)
+        raise typer.Exit(1) from exc
+
+
 # Short alias: shuttle g <cmd> == shuttle git <cmd>
 app.add_typer(git_app, name="g", hidden=True)
