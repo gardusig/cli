@@ -1,6 +1,6 @@
 [
   {
-    "metadata_filepath": "metadata/pair.yaml",
+    "header_filepath": "header/pair.yaml",
     "body_filepath": "body/pair.md"
   }
 ]

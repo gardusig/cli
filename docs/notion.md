@@ -1,22 +1,25 @@
 # Notion task board
 
-Sync tasks between an **existing** Notion database and local **task pairs** ([issue #2](https://github.com/gardusig/shuttle-cli/issues/2)).
+Sync tasks between an **existing** Notion database and local **header/body pairs** ([issue #2](https://github.com/gardusig/shuttle-cli/issues/2)).
 
-Local repo is the source of truth. Shuttle does not create databases, views, or formulas.
+Local repo is the source of truth. Shuttle does not create databases, views, or formulas — see [notion/board-ui.md](./notion/board-ui.md) and [notion/properties/](./notion/properties/README.md) for one-time board setup.
 
 Naming matches **`shuttle drive`**: **ingest** = into local; **deploy** = out to Notion; **sync** = ingest then deploy.
 
 ## Layout
 
-Task root (`notion.task_root`) holds **`metadata/`** and **`body/`** (typically a private directory). The **manifest** (`tasks.pairs.json`) is committed in this repo at `config/notion/tasks.pairs.json` — set `notion.pairs_file` accordingly.
+Task root (`notion.task_root`) holds **`header/`** and **`body/`** (typically a private directory). The **manifest** (`tasks.pairs.json`) and **pair templates** live in this repo under `config/notion/` — set `notion.pairs_file` accordingly.
 
 | Path | Role |
 | --- | --- |
-| `tasks.pairs.json` | Manifest: `{ "metadata_filepath", "body_filepath" }` per task |
-| `metadata/**/*.yaml` | **`name`** (unique Notion title) + cadence fields |
-| `body/**/*.md` | SOP only — `## Steps`, `## Done when` (cadence lives in metadata) |
+| `config/notion/tasks.pairs.json` | Manifest: `{ "header_filepath", "body_filepath" }` per task |
+| `config/notion/templates/` | Header/body scaffolds when adding rows |
+| `header/**/*.yaml` (under `task_root`) | **`name`** (unique Notion title) + cadence fields |
+| `body/**/*.md` (under `task_root`) | SOP only — `## Steps`, `## Done when` (cadence lives in header yaml) |
 
-**`name`** in metadata yaml is the Notion **title** (unique). The manifest is path pairs only.
+**`name`** in header yaml is the Notion **title** (unique). The manifest is path pairs only.
+
+Full pair contract: [notion/task-pairs.md](./notion/task-pairs.md).
 
 ## Configuration
 
@@ -25,7 +28,7 @@ Task root (`notion.task_root`) holds **`metadata/`** and **`body/`** (typically 
 ```yaml
 notion:
   database_id: your-notion-database-id
-  task_root: ~/git-local/private/configured/notion/tasks
+  task_root: ~/git-local/private/configured/tasks
   pairs_file: config/notion/tasks.pairs.json
   cleanup_before_deploy: true
   properties:
@@ -46,7 +49,7 @@ Older keys `task_directory`, `cleanup_before_upload`, and `cleanup_before_import
 
 ```bash
 export NOTION_TOKEN=secret_...
-shuttle notion pairs build         # scan metadata/ + body/ → tasks.pairs.json
+shuttle notion pairs build         # scan header/ + body/ → tasks.pairs.json
 shuttle notion ingest              # Notion → local pairs
 shuttle notion deploy --yes        # local pairs → Notion (archives board first by default)
 shuttle notion sync --yes          # ingest, then deploy
@@ -58,12 +61,12 @@ Hidden legacy: `download` / `upload`, and older `export` / `import`.
 ### Deploy
 
 1. Archive all active pages in the database (unless `--no-cleanup`)
-2. Upload each manifest entry; skip rows with `enabled: false` in metadata yaml
+2. Upload each manifest entry; skip rows with `enabled: false` in header yaml
 
 ### Ingest
 
-1. Match board pages by metadata **`name`**
-2. Update existing pairs; create `metadata/misc/{slug}.yaml` + body for new titles
+1. Match board pages by header **`name`**
+2. Update existing pairs; create `header/misc/{slug}.yaml` + body for new titles
 3. **`last_done`:** Notion wins on ingest
 
 ## Child issues
@@ -77,7 +80,7 @@ Hidden legacy: `download` / `upload`, and older `export` / `import`.
 
 ## Task file format
 
-**Metadata** (`metadata/clean/kitchen.yaml`):
+**Header** (`header/clean/kitchen.yaml`):
 
 ```yaml
 name: "🍳 kitchen"
@@ -89,13 +92,19 @@ last_done: "2026-06-10"
 enabled: true
 ```
 
-**Body** (`body/clean/kitchen.md`): `## Steps` → `## Done when` only (cadence + title in metadata).
+**Body** (`body/clean/kitchen.md`): `## Steps` → `## Done when` only (cadence + title in header yaml).
 
 **Manifest** entry:
 
 ```json
 {
-  "metadata_filepath": "metadata/clean/kitchen.yaml",
+  "header_filepath": "header/clean/kitchen.yaml",
   "body_filepath": "body/clean/kitchen.md"
 }
 ```
+
+## Board setup (manual)
+
+1. Create Notion database columns per [notion/properties/](./notion/properties/README.md)
+2. Paste formulas from property docs
+3. Configure board view per [notion/board-ui.md](./notion/board-ui.md)

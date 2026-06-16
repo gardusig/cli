@@ -178,7 +178,7 @@ def bookmarks_file_path(config_dir: Path | None = None) -> Path:
 
 
 def notion_task_root(config_dir: Path | None = None) -> Path:
-    """Resolved path to local Notion task root (metadata/, body/, pairs manifest)."""
+    """Resolved path to local Notion task root (header/, body/, pairs manifest)."""
     cfg = load_config(config_dir)
     raw = cfg.notion.task_root.strip() or cfg.notion.task_directory.strip()
     if not raw:
@@ -197,7 +197,7 @@ def notion_pairs_file(config_dir: Path | None = None) -> Path:
 
     When ``pairs_file`` is a bare filename (e.g. ``tasks.pairs.json``), it lives under
     ``notion.task_root``. When it includes a directory (e.g. ``config/notion/tasks.pairs.json``)
-    or is absolute, metadata/body stay under ``task_root`` and only the manifest path differs.
+    or is absolute, header/body stay under ``task_root`` and only the manifest path differs.
     """
     cfg = load_config(config_dir)
     raw = cfg.notion.pairs_file.strip() or "tasks.pairs.json"
@@ -212,6 +212,11 @@ def notion_pairs_file(config_dir: Path | None = None) -> Path:
 def notion_tasks_dir(config_dir: Path | None = None) -> Path:
     """Deprecated alias for notion_task_root()."""
     return notion_task_root(config_dir)
+
+
+def notion_body_template_file(config_dir: Path | None = None) -> Path:
+    """Default body scaffold for new task pairs (ingest creates empty bodies)."""
+    return (project_root() / "config" / "notion" / "templates" / "body.md").resolve()
 
 
 def require_notion_token(cfg: ShuttleConfig | None = None) -> str:

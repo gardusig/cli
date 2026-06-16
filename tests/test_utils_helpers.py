@@ -87,6 +87,15 @@ def test_notion_pairs_file_bare_name_under_task_root(tmp_path: Path) -> None:
     assert notion_pairs_file(cfg_dir) == (task_root / "tasks.pairs.json").resolve()
 
 
+def test_notion_body_template_file() -> None:
+    from shuttle.utils.config import notion_body_template_file
+
+    path = notion_body_template_file()
+    assert path.name == "body.md"
+    assert path.is_file()
+    assert "Steps" in path.read_text(encoding="utf-8")
+
+
 def test_tags_dir_path_expands_tilde(tmp_path: Path, monkeypatch) -> None:
     cfg_dir = tmp_path / "config"
     cfg_dir.mkdir()

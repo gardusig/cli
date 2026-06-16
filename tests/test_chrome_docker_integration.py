@@ -31,8 +31,8 @@ def test_export_bookmarks_from_downloads_fixture(tmp_path: Path) -> None:
 
     assert bookmarks_file.is_file()
     text = bookmarks_file.read_text(encoding="utf-8")
-    assert "Integration Bookmark" in text
-    assert "example.com/integration" in text
+    assert "Shuttle Test Bookmark" in text
+    assert "example.com/shuttle-test" in text
 
 
 @pytest.mark.integration

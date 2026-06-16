@@ -31,7 +31,7 @@ QUICK_DEFAULTS = (
     ("drive sync", "ingest all repositories, then upload all enabled clouds"),
     ("chrome bookmarks ingest", "Chrome → local HTML (chrome.bookmarks_file)"),
     ("chrome bookmarks deploy", "local HTML → Chrome"),
-    ("notion pairs build", "scan metadata/ + body/ → tasks.pairs.json"),
+    ("notion pairs build", "scan header/ + body/ → tasks.pairs.json"),
     ("notion ingest", "Notion → local task pairs"),
     ("notion deploy", "local task pairs → Notion board"),
     ("notion sync", "ingest from Notion, then deploy local tasks"),

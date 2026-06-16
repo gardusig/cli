@@ -1,14 +1,14 @@
 [
   {
-    "metadata_filepath": "metadata/complete.yaml",
+    "header_filepath": "header/complete.yaml",
     "body_filepath": "body/complete.md"
   },
   {
-    "metadata_filepath": "metadata/disabled.yaml",
+    "header_filepath": "header/disabled.yaml",
     "body_filepath": "body/disabled.md"
   },
   {
-    "metadata_filepath": "metadata/sample.yaml",
+    "header_filepath": "header/sample.yaml",
     "body_filepath": "body/sample.md"
   }
 ]

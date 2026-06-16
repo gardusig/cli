@@ -9,7 +9,7 @@ from pydantic import BaseModel, field_validator
 
 
 class TaskMetadata(BaseModel):
-    """Metadata/*.yaml — name is the unique Notion title; body has no title heading."""
+    """header/*.yaml — name is the unique Notion title; body has no title heading."""
 
     name: str
     priority: int | None = None
@@ -37,23 +37,23 @@ class TaskMetadata(BaseModel):
 
 
 class TaskPair(BaseModel):
-    """One manifest row: parallel metadata/body paths (name lives in metadata yaml)."""
+    """One manifest row: parallel header/body paths (name lives in header yaml)."""
 
-    metadata_filepath: str
+    header_filepath: str
     body_filepath: str
-    # Legacy manifest keys (ignored; name is read from metadata).
+    # Legacy manifest keys (ignored; name is read from header yaml).
     id: str | None = None
     name: str | None = None
 
-    def metadata_path(self, task_root: Path) -> Path:
-        return task_root / self.metadata_filepath
+    def header_path(self, task_root: Path) -> Path:
+        return task_root / self.header_filepath
 
     def body_path(self, task_root: Path) -> Path:
         return task_root / self.body_filepath
 
 
 class ResolvedTaskPair(BaseModel):
-    """Loaded pair with parsed metadata and body text."""
+    """Loaded pair with parsed header metadata and body text."""
 
     pair: TaskPair
     metadata: TaskMetadata

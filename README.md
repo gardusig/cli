@@ -31,7 +31,7 @@ Copy the bundled `config/` tree and edit paths for your machine before daily use
 | **Git repositories** | `backup.repositories[].path` | Repos for `shuttle drive ingest` / `drive status` |
 | **Tag zip folder** | `backup.tags_dir` | Local store (default: iCloud `git-tags/`) — source for `drive upload` |
 | **Cloud upload roots** | `drives.yaml` → `google` / `onedrive` / `proton` | Remote folder names per provider |
-| **Notion task root** | `notion.task_root` | Private `metadata/` + `body/` task files |
+| **Notion task root** | `notion.task_root` | Private `header/` + `body/` task files |
 | **Notion pairs manifest** | `notion.pairs_file` | `config/notion/tasks.pairs.json` in this repo |
 | **Notion database** | `notion.database_id` | Existing board ID + `NOTION_TOKEN` env |
 | **Chrome bookmarks file** | `chrome.bookmarks_file` | HTML backup (`chrome bookmarks ingest`) |
@@ -48,7 +48,7 @@ backup:
 
 notion:
   database_id: your-notion-database-id
-  task_root: ~/git-local/private/configured/notion/tasks
+  task_root: ~/git-local/private/configured/tasks
   pairs_file: config/notion/tasks.pairs.json
 
 chrome:
@@ -160,11 +160,11 @@ See [docs/bookmarks.md](docs/bookmarks.md) · epic [#24](https://github.com/gard
 
 ## Notion (`shuttle notion`)
 
-Local tasks: **`notion.task_root`** (private metadata/body) + **`notion.pairs_file`** (`config/notion/tasks.pairs.json`). Auth: **`NOTION_TOKEN`** + `notion.database_id`.
+Local tasks: **`notion.task_root`** (private header/body) + **`notion.pairs_file`** (`config/notion/tasks.pairs.json`). Auth: **`NOTION_TOKEN`** + `notion.database_id`.
 
 | Command | Purpose |
 | --- | --- |
-| `shuttle notion pairs build` | Scan metadata/ + body/ → `tasks.pairs.json` |
+| `shuttle notion pairs build` | Scan header/ + body/ → `tasks.pairs.json` |
 | `shuttle notion ingest` | Notion → local pairs |
 | `shuttle notion deploy --yes` | Local pairs → Notion (archives board first by default) |
 | `shuttle notion sync --yes` | Ingest from Notion, then deploy local tasks |

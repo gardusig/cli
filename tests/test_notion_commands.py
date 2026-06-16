@@ -74,9 +74,9 @@ def test_notion_help_lists_commands() -> None:
 
 def test_notion_pairs_build(monkeypatch, tmp_path: Path) -> None:
     task_root = tmp_path / "tasks"
-    (task_root / "metadata").mkdir(parents=True)
+    (task_root / "header").mkdir(parents=True)
     (task_root / "body").mkdir(parents=True)
-    (task_root / "metadata" / "a.yaml").write_text("name: Task A\n", encoding="utf-8")
+    (task_root / "header" / "a.yaml").write_text("name: Task A\n", encoding="utf-8")
     (task_root / "body" / "a.md").write_text("# A\n", encoding="utf-8")
     with (
         patch("shuttle.commands.notion.notion_task_root", return_value=task_root),
@@ -122,7 +122,7 @@ def test_notion_deploy_success_with_warnings(monkeypatch, tmp_path: Path) -> Non
         mock_import.return_value = NotionSyncResult(
             processed=2,
             skipped=1,
-            warnings=["metadata without body: metadata/x.yaml"],
+            warnings=["header without body: metadata/x.yaml"],
         )
         result = runner.invoke(app, ["notion", "deploy", "--yes", "--no-cleanup"])
     assert result.exit_code == 0

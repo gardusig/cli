@@ -18,7 +18,7 @@ Config loads from (first match):
 ```yaml
 notion:
   database_id: your-notion-database-id
-  task_root: ~/git-local/private/configured/notion/tasks
+  task_root: ~/git-local/private/configured/tasks
   pairs_file: config/notion/tasks.pairs.json
   cleanup_before_deploy: true
   properties:
@@ -31,9 +31,9 @@ notion:
     forced_status: "Forced status"
 ```
 
-- `task_root` — private folder with `metadata/` and `body/` (task content)
+- `task_root` — private folder with `header/` and `body/` (task content)
 - `pairs_file` — manifest path; use `config/notion/tasks.pairs.json` in this repo (or a bare filename under `task_root` for tests)
-- `metadata.name` — unique Notion title (required in each yaml)
+- `header` yaml **`name`** — unique Notion title (required in each yaml)
 - `database_id` — existing Notion database (shuttle never creates schema)
 - **`NOTION_TOKEN`** — integration token in environment only (not in YAML)
 

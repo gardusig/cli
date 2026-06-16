@@ -44,8 +44,8 @@ def notion_paths(monkeypatch, isolated_task_root: Path):
 @pytest.mark.integration
 def test_scan_warns_on_orphan_metadata_and_body(isolated_task_root: Path) -> None:
     scan = scan_task_root(isolated_task_root)
-    assert any("metadata without body" in w for w in scan.warnings)
-    assert any("body without metadata" in w for w in scan.warnings)
+    assert any("header without body" in w for w in scan.warnings)
+    assert any("body without header" in w for w in scan.warnings)
     assert len(scan.pairs) == 3
     names = {task_name(p, isolated_task_root) for p in scan.pairs}
     assert names == {"✅ complete task", "⏸️ disabled task", "🧪 sample task"}
@@ -78,8 +78,8 @@ def test_deploy_mock_notion_200_iterates_tasks(notion_paths) -> None:
 
     assert result.processed == 2
     assert result.skipped == 1
-    assert any("metadata without body" in w for w in result.warnings)
-    assert any("body without metadata" in w for w in result.warnings)
+    assert any("header without body" in w for w in result.warnings)
+    assert any("body without header" in w for w in result.warnings)
     assert len(created) == 2
     title = created[0]["properties"]["Name"]["title"][0]["text"]["content"]
     assert title == "✅ complete task"
@@ -100,7 +100,7 @@ def test_ingest_mock_notion_writes_files_under_task_root(notion_paths, isolated_
         result = export_tasks(task_root, token="tok", config=cfg)
 
     assert result.processed == 2
-    new_meta_files = list((task_root / "metadata/misc").glob("*.yaml"))
+    new_meta_files = list((task_root / "header/misc").glob("*.yaml"))
     assert new_meta_files
     assert any("notion-only" in p.stem for p in new_meta_files)
 
@@ -112,7 +112,7 @@ def test_ingest_mock_notion_writes_files_under_task_root(notion_paths, isolated_
     }
     assert "🆕 notion-only task" in names
 
-    updated = (task_root / "metadata/complete.yaml").read_text(encoding="utf-8")
+    updated = (task_root / "header/complete.yaml").read_text(encoding="utf-8")
     assert "2026-03-01" in updated
 
 

@@ -304,7 +304,7 @@ def _notion_failure_checks() -> list[CliApiCheck]:
             "notion",
             ("notion", "pairs", "build"),
             kind="fail",
-            needle="metadata without body",
+            needle="header without body",
             accept_exit_codes=(1,),
             failure="notion_orphans",
         ),

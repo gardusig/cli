@@ -57,7 +57,7 @@ def test_cleanup_board_archives_pages() -> None:
 
 def test_import_tasks_deploys_enabled_pair(tmp_path: Path, monkeypatch) -> None:
     task_root = tmp_path / "tasks"
-    for rel in ("metadata/sample.yaml", "body/sample.md"):
+    for rel in ("header/sample.yaml", "body/sample.md"):
         src = FIXTURE_ROOT / rel
         dest = task_root / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -67,7 +67,7 @@ def test_import_tasks_deploys_enabled_pair(tmp_path: Path, monkeypatch) -> None:
         json.dumps(
             [
                 {
-                    "metadata_filepath": "metadata/sample.yaml",
+                    "header_filepath": "header/sample.yaml",
                     "body_filepath": "body/sample.md",
                 }
             ]
@@ -106,7 +106,7 @@ def test_import_tasks_deploys_enabled_pair(tmp_path: Path, monkeypatch) -> None:
 
 def test_export_tasks_ingest_updates_local(tmp_path: Path, monkeypatch) -> None:
     task_root = tmp_path / "tasks"
-    for rel in ("metadata/sample.yaml", "body/sample.md"):
+    for rel in ("header/sample.yaml", "body/sample.md"):
         src = FIXTURE_ROOT / rel
         dest = task_root / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -116,7 +116,7 @@ def test_export_tasks_ingest_updates_local(tmp_path: Path, monkeypatch) -> None:
         json.dumps(
             [
                 {
-                    "metadata_filepath": "metadata/sample.yaml",
+                    "header_filepath": "header/sample.yaml",
                     "body_filepath": "body/sample.md",
                 }
             ]
@@ -168,7 +168,7 @@ def test_export_tasks_ingest_updates_local(tmp_path: Path, monkeypatch) -> None:
         result = export_tasks(task_root, token="tok", config=cfg)
 
     assert result.processed == 1
-    meta_text = (task_root / "metadata/sample.yaml").read_text(encoding="utf-8")
+    meta_text = (task_root / "header/sample.yaml").read_text(encoding="utf-8")
     assert "last_done: '2026-02-01'" in meta_text or 'last_done: "2026-02-01"' in meta_text
     body_text = (task_root / "body/sample.md").read_text(encoding="utf-8")
     assert "Updated body" in body_text

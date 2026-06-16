@@ -107,7 +107,7 @@ def notion_pairs_build_context(monkeypatch: Any, tmp_path: Path) -> Iterator[Pat
 
 @contextmanager
 def notion_orphan_context(monkeypatch: Any, tmp_path: Path) -> Iterator[Path]:
-    """Task root with orphan metadata/body pairs (pairs build must fail)."""
+    """Task root with orphan header/body pairs (pairs build must fail)."""
     task_root = copy_fixture_workspace(NOTION_WS, tmp_path, dest_name="notion-orphans")
     manifest = task_root / "tasks.pairs.json"
     _patch_notion_paths(monkeypatch, task_root, manifest)
@@ -119,7 +119,7 @@ def notion_orphan_context(monkeypatch: Any, tmp_path: Path) -> Iterator[Path]:
 def notion_missing_manifest_context(monkeypatch: Any, tmp_path: Path) -> Iterator[Path]:
     empty = tmp_path / "notion-empty"
     empty.mkdir()
-    (empty / "metadata").mkdir()
+    (empty / "header").mkdir()
     (empty / "body").mkdir()
     _patch_notion_paths(monkeypatch, empty, empty / "tasks.pairs.json")
     monkeypatch.setenv("NOTION_TOKEN", "integration-token")

@@ -21,7 +21,7 @@ from shuttle.utils.config import (
 )
 
 notion_app = typer.Typer(
-    help="Notion task board sync (metadata/body pairs + tasks.pairs.json).",
+    help="Notion task board sync (header/body pairs + tasks.pairs.json).",
     no_args_is_help=True,
 )
 
@@ -142,7 +142,7 @@ def cleanup_cmd(
 
 @pairs_app.command("build")
 def pairs_build_cmd() -> None:
-    """Scan metadata/ + body/ and write tasks.pairs.json (name must be in each yaml)."""
+    """Scan header/ + body/ and write tasks.pairs.json (name must be in each yaml)."""
     root = notion_task_root()
     try:
         result = build_pairs_manifest(root)

@@ -21,7 +21,7 @@ def slugify(title: str) -> str:
 
 
 def load_pairs(manifest_path: Path, *, task_root: Path | None = None) -> list[TaskPair]:
-    """Load manifest and validate unique task names from metadata yaml."""
+    """Load manifest and validate unique task names from header yaml."""
     if not manifest_path.is_file():
         raise FileNotFoundError(f"Pairs manifest not found: {manifest_path}")
     raw = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -55,18 +55,18 @@ def _validate_unique_names(task_root: Path, pairs: list[TaskPair]) -> None:
 
 
 def task_name(pair: TaskPair, task_root: Path) -> str:
-    """Resolve unique task name from metadata yaml."""
-    meta = load_metadata(pair.metadata_path(task_root))
+    """Resolve unique task name from header yaml."""
+    meta = load_header(pair.header_path(task_root))
     return meta.name
 
 
 def save_pairs(manifest_path: Path, pairs: list[TaskPair]) -> None:
-    """Write path-only pairs manifest (sorted by metadata path)."""
+    """Write path-only pairs manifest (sorted by header path)."""
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    ordered = sorted(pairs, key=lambda p: p.metadata_filepath.casefold())
+    ordered = sorted(pairs, key=lambda p: p.header_filepath.casefold())
     payload = [
         {
-            "metadata_filepath": p.metadata_filepath,
+            "header_filepath": p.header_filepath,
             "body_filepath": p.body_filepath,
         }
         for p in ordered
@@ -77,17 +77,17 @@ def save_pairs(manifest_path: Path, pairs: list[TaskPair]) -> None:
     )
 
 
-def load_metadata(path: Path) -> TaskMetadata:
+def load_header(path: Path) -> TaskMetadata:
     if not path.is_file():
-        raise FileNotFoundError(f"Metadata file not found: {path}")
+        raise FileNotFoundError(f"Header file not found: {path}")
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     if not isinstance(data, dict):
         raise ValueError(f"Expected mapping in {path}")
     return TaskMetadata.model_validate(data)
 
 
-def dump_metadata(path: Path, metadata: TaskMetadata) -> None:
-    """Write metadata yaml including required name."""
+def dump_header(path: Path, metadata: TaskMetadata) -> None:
+    """Write header yaml including required name."""
     data = metadata.model_dump(exclude_none=True)
     if metadata.enabled is True:
         data.pop("enabled", None)
@@ -98,82 +98,87 @@ def dump_metadata(path: Path, metadata: TaskMetadata) -> None:
     )
 
 
+# Back-compat aliases for internal callers during transition (same module).
+load_metadata = load_header
+dump_metadata = dump_header
+
+
 def validate_pair_files(task_root: Path, pair: TaskPair) -> None:
     warning = pair_file_warning(pair, task_root)
     if warning:
         raise FileNotFoundError(warning)
 
 
-def _metadata_relative(path: Path, task_root: Path) -> str:
+def _header_relative(path: Path, task_root: Path) -> str:
     return path.relative_to(task_root).as_posix()
 
 
-def _body_path_for_metadata(meta_rel: str) -> str:
-    """metadata/foo/bar.yaml → body/foo/bar.md"""
-    p = Path(meta_rel)
+def _body_path_for_header(header_rel: str) -> str:
+    """header/foo/bar.yaml → body/foo/bar.md"""
+    p = Path(header_rel)
     if p.suffix not in {".yaml", ".yml"}:
-        raise ValueError(f"Not a yaml metadata path: {meta_rel}")
-    if not p.parts or p.parts[0] != "metadata":
-        raise ValueError(f"Metadata path must start with metadata/: {meta_rel}")
+        raise ValueError(f"Not a yaml header path: {header_rel}")
+    if not p.parts or p.parts[0] != "header":
+        raise ValueError(f"Header path must start with header/: {header_rel}")
     return str(Path("body", *p.parts[1:]).with_suffix(".md"))
 
 
 def pair_file_warning(pair: TaskPair, task_root: Path) -> str | None:
-    """Return a warning when metadata/body half of a pair is missing."""
-    meta = pair.metadata_path(task_root)
+    """Return a warning when header/body half of a pair is missing."""
+    header = pair.header_path(task_root)
     body = pair.body_path(task_root)
-    if not meta.is_file() and not body.is_file():
-        return f"pair missing metadata and body: {pair.metadata_filepath}"
-    if not meta.is_file():
-        return f"body without metadata: {pair.body_filepath}"
+    if not header.is_file() and not body.is_file():
+        return f"pair missing header and body: {pair.header_filepath}"
+    if not header.is_file():
+        return f"body without header: {pair.body_filepath}"
     if not body.is_file():
-        return f"metadata without body: {pair.metadata_filepath}"
+        return f"header without body: {pair.header_filepath}"
     try:
-        if not load_metadata(meta).name.strip():
-            return f"metadata missing name: {pair.metadata_filepath}"
+        if not load_header(header).name.strip():
+            return f"header missing name: {pair.header_filepath}"
     except Exception as exc:
-        return f"invalid metadata {pair.metadata_filepath}: {exc}"
+        return f"invalid header {pair.header_filepath}: {exc}"
     return None
 
 
 def combine_task(pair: TaskPair, task_root: Path) -> ResolvedTaskPair:
-    """Load metadata + body into one deployable/inspectable task."""
+    """Load header + body into one deployable/inspectable task."""
     warning = pair_file_warning(pair, task_root)
     if warning:
         raise FileNotFoundError(warning)
-    meta = load_metadata(pair.metadata_path(task_root))
+    meta = load_header(pair.header_path(task_root))
     body = normalize_task_body(pair.body_path(task_root).read_text(encoding="utf-8"))
     return ResolvedTaskPair(pair=pair, metadata=meta, body=body)
 
 
 def scan_task_root(task_root: Path) -> PairScanResult:
-    """Discover complete pairs; warn on orphan metadata or body files."""
+    """Discover complete pairs; warn on orphan header or body files."""
     warnings: list[str] = []
     pairs: list[TaskPair] = []
-    meta_dir = task_root / "metadata"
+    header_dir = task_root / "header"
     body_dir = task_root / "body"
-    if not meta_dir.is_dir() and not body_dir.is_dir():
-        return PairScanResult(warnings=["task root has no metadata/ or body/"])
+    if not header_dir.is_dir() and not body_dir.is_dir():
+        return PairScanResult(warnings=["task root has no header/ or body/"])
 
     matched_bodies: set[Path] = set()
-    if meta_dir.is_dir():
-        for meta_path in sorted(meta_dir.rglob("*.yaml")):
-            rel = _metadata_relative(meta_path, task_root)
-            body_rel = _body_path_for_metadata(rel)
+    if header_dir.is_dir():
+        for header_path in sorted(header_dir.rglob("*.yaml")):
+            rel = _header_relative(header_path, task_root)
+            body_rel = _body_path_for_header(rel)
             body_path = task_root / body_rel
             if not body_path.is_file():
-                warnings.append(f"metadata without body: {rel}")
+                warnings.append(f"header without body: {rel}")
                 continue
             try:
-                meta = load_metadata(meta_path)
+                meta = load_header(header_path)
                 if not meta.name.strip():
-                    warnings.append(f"metadata missing name: {rel}")
+                    warnings.append(f"header missing name: {rel}")
                     continue
             except Exception as exc:
-                warnings.append(f"invalid metadata {rel}: {exc}")
+                warnings.append(f"invalid header {rel}: {exc}")
                 continue
             pairs.append(
-                TaskPair(metadata_filepath=rel, body_filepath=body_rel)
+                TaskPair(header_filepath=rel, body_filepath=body_rel)
             )
             matched_bodies.add(body_path)
 
@@ -181,8 +186,8 @@ def scan_task_root(task_root: Path) -> PairScanResult:
         for body_path in sorted(body_dir.rglob("*.md")):
             if body_path in matched_bodies:
                 continue
-            rel = _metadata_relative(body_path, task_root)
-            warnings.append(f"body without metadata: {rel}")
+            rel = _header_relative(body_path, task_root)
+            warnings.append(f"body without header: {rel}")
 
     try:
         _validate_unique_names(task_root, pairs)
@@ -194,7 +199,7 @@ def scan_task_root(task_root: Path) -> PairScanResult:
 
 
 def build_from_disk(task_root: Path) -> list[TaskPair]:
-    """Scan metadata/**/*.yaml and build pairs (raises if orphans or duplicates)."""
+    """Scan header/**/*.yaml and build pairs (raises if orphans or duplicates)."""
     scan = scan_task_root(task_root)
     if scan.warnings:
         raise ValueError("; ".join(scan.warnings))

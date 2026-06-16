@@ -11,8 +11,8 @@ from shuttle.services.notion_markdown import normalize_task_body
 from shuttle.services.notion_pairs import (
     build_from_disk,
     combine_task,
-    dump_metadata,
-    load_metadata,
+    dump_header,
+    load_header,
     load_pairs,
     pair_file_warning,
     save_pairs,
@@ -20,7 +20,13 @@ from shuttle.services.notion_pairs import (
     slugify,
     task_name,
 )
-from shuttle.utils.config import NotionConfig, load_config, notion_pairs_file, notion_task_root
+from shuttle.utils.config import (
+    NotionConfig,
+    load_config,
+    notion_body_template_file,
+    notion_pairs_file,
+    notion_task_root,
+)
 
 
 @dataclass
@@ -46,7 +52,7 @@ def export_tasks(
     token: str,
     config: NotionConfig,
 ) -> NotionSyncResult:
-    """Notion → local: update metadata/body pairs from board pages."""
+    """Notion → local: update header/body pairs from board pages."""
     root = task_root or notion_task_root()
     manifest = notion_pairs_file()
     pairs = load_pairs(manifest, task_root=root) if manifest.is_file() else []
@@ -75,7 +81,7 @@ def export_tasks(
 
             if title in pair_by_name:
                 pair = pair_by_name[title]
-                existing = load_metadata(pair.metadata_path(root))
+                existing = load_header(pair.header_path(root))
                 updated = TaskMetadata(
                     name=title,
                     priority=meta_fields.get("priority") or existing.priority,
@@ -88,12 +94,12 @@ def export_tasks(
                     forced_status=meta_fields.get("forced_status") or existing.forced_status,
                     enabled=existing.enabled,
                 )
-                dump_metadata(pair.metadata_path(root), updated)
+                dump_header(pair.header_path(root), updated)
                 pair.body_path(root).write_text(body, encoding="utf-8")
                 result.processed += 1
             else:
                 slug = slugify(title)
-                meta_rel = f"metadata/misc/{slug}.yaml"
+                meta_rel = f"header/misc/{slug}.yaml"
                 body_rel = f"body/misc/{slug}.md"
                 meta_path = root / meta_rel
                 body_path = root / body_rel
@@ -102,7 +108,7 @@ def export_tasks(
                     n = 2
                     while meta_path.exists():
                         stem = f"{slug}-{n}"
-                        meta_rel = f"metadata/misc/{stem}.yaml"
+                        meta_rel = f"header/misc/{stem}.yaml"
                         body_rel = f"body/misc/{stem}.md"
                         meta_path = root / meta_rel
                         body_path = root / body_rel
@@ -118,10 +124,10 @@ def export_tasks(
                     forced_status=meta_fields.get("forced_status"),
                     enabled=True,
                 )
-                dump_metadata(meta_path, new_meta)
+                dump_header(meta_path, new_meta)
                 body_path.parent.mkdir(parents=True, exist_ok=True)
                 if not body.strip():
-                    template = root / "_template-body.md"
+                    template = notion_body_template_file()
                     body = (
                         template.read_text(encoding="utf-8")
                         if template.is_file()
@@ -130,7 +136,7 @@ def export_tasks(
                 body_path.write_text(normalize_task_body(body), encoding="utf-8")
 
                 new_pair = TaskPair(
-                    metadata_filepath=meta_rel,
+                    header_filepath=meta_rel,
                     body_filepath=body_rel,
                 )
                 pairs.append(new_pair)
@@ -206,7 +212,7 @@ def build_pairs_manifest(
     *,
     config_dir: Path | None = None,
 ) -> NotionSyncResult:
-    """Scan metadata/ + body/ and write tasks.pairs.json (under task root or pairs_file path)."""
+    """Scan header/ + body/ and write tasks.pairs.json (under task root or pairs_file path)."""
     root = task_root or notion_task_root(config_dir)
     pairs = build_from_disk(root)
     save_pairs(notion_pairs_file(config_dir), pairs)

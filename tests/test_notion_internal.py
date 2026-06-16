@@ -53,22 +53,22 @@ def test_slugify_empty_title_falls_back_to_task() -> None:
 
 
 def test_pair_file_warning_missing_name(tmp_path: Path) -> None:
-    meta = tmp_path / "metadata" / "x.yaml"
+    meta = tmp_path / "header" / "x.yaml"
     body = tmp_path / "body" / "x.md"
     meta.parent.mkdir(parents=True)
     body.parent.mkdir(parents=True)
     meta.write_text("name: \n", encoding="utf-8")
     body.write_text("## Steps\n", encoding="utf-8")
-    pair = TaskPair(metadata_filepath="metadata/x.yaml", body_filepath="body/x.md")
+    pair = TaskPair(header_filepath="header/x.yaml", body_filepath="body/x.md")
     warning = pair_file_warning(pair, tmp_path)
     assert warning is not None
-    assert "metadata/x.yaml" in warning
+    assert "header/x.yaml" in warning
     assert "name" in warning
 
 
 def test_scan_task_root_warns_on_duplicate_names(tmp_path: Path) -> None:
     for name in ("a", "b"):
-        meta = tmp_path / "metadata" / f"{name}.yaml"
+        meta = tmp_path / "header" / f"{name}.yaml"
         body = tmp_path / "body" / f"{name}.md"
         meta.parent.mkdir(parents=True, exist_ok=True)
         body.parent.mkdir(parents=True, exist_ok=True)

@@ -114,6 +114,7 @@ def endpoint_checks() -> list[EndpointCheck]:
             ("chrome", "bookmarks", "deploy"),
             needle="Backup not found",
             accept_exit_codes=(1,),
+            extra_env={"SHUTTLE_BOOKMARKS_FILE": "/nonexistent/shuttle/missing-bookmarks.html"},
         ),
         EndpointCheck("gh help", ("gh", "--help"), needle="issue"),
         EndpointCheck(

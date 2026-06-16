@@ -47,7 +47,11 @@ def test_placeholder_top_level_commands(args: list[str], needle: str) -> None:
 
 
 def test_chrome_bookmarks_deploy_without_backup() -> None:
-    result = runner.invoke(app, ["chrome", "bookmarks", "deploy"])
+    result = runner.invoke(
+        app,
+        ["chrome", "bookmarks", "deploy"],
+        env={"SHUTTLE_BOOKMARKS_FILE": "/nonexistent/shuttle/missing-bookmarks.html"},
+    )
     assert result.exit_code != 0
     assert "Backup not found" in result.stdout
 
