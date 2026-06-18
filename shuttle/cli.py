@@ -6,6 +6,7 @@ from shuttle import __version__
 from shuttle.commands.backup import backup_app
 from shuttle.commands.bookmarks import bookmarks_app
 from shuttle.commands.chrome import chrome_app
+from shuttle.commands.contest import contest_app
 from shuttle.commands.docker import docker_app
 from shuttle.commands.drive import drive_app
 from shuttle.commands.gh import gh_app
@@ -31,6 +32,7 @@ app.add_typer(notion_app, name="notion")
 app.add_typer(chrome_app, name="chrome")
 app.add_typer(bookmarks_app, name="bookmarks", hidden=True)
 app.add_typer(docker_app, name="docker")
+app.add_typer(contest_app, name="contest")
 
 
 @app.callback(invoke_without_command=True)

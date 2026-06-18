@@ -1,6 +1,6 @@
 """Canonical inventory and gate for public CLI integration test coverage.
 
-External callers (unit tests, ``scripts/integration/check_integration_coverage.py``)
+External callers (unit tests, ``tests/integration/check_integration_coverage.py``)
 use this module to verify every public command has registered ok + fail integration
 checks before the slower dockerized suites run.
 """

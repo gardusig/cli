@@ -2,7 +2,7 @@
 # Integration smoke (container only — invoked by scripts/docker/run-integration.sh).
 set -euo pipefail
 
-ROOT="${SHUTTLE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+ROOT="${SHUTTLE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$ROOT"
 export SHUTTLE_CONFIG_DIR="${SHUTTLE_CONFIG_DIR:-$ROOT/config/ci}"
 export PYTHONUNBUFFERED=1
@@ -38,7 +38,6 @@ rm -f "$links_out"
 bash -n scripts/bootstrap.sh scripts/install.sh
 bash -n scripts/chrome/*.sh
 bash -n scripts/git/*.sh
-bash -n scripts/integration/*.sh
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
@@ -76,9 +75,9 @@ git -C "$tmpdir/repo" commit -m "initial" >/dev/null
   test "$(git branch --show-current)" = "smoke-branch"
 )
 
-python scripts/integration/check_integration_coverage.py
-python scripts/integration/check_public_commands.py
-python scripts/integration/check_workflow_integration.py
-python scripts/integration/check_api_integration.py
+python tests/integration/check_integration_coverage.py
+python tests/integration/check_public_commands.py
+python tests/integration/check_workflow_integration.py
+python tests/integration/check_api_integration.py
 
 echo "Docker integration smoke passed."

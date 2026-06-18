@@ -14,5 +14,5 @@ run_step() {
 }
 
 run_step "pytest" pytest -q
-run_step "integration smoke" ./scripts/integration/smoke.sh
-run_step "live docker checks" python scripts/integration/check_docker_commands.py --live
+run_step "integration smoke" ./scripts/integration-smoke.sh
+run_step "live docker checks" python tests/integration/check_docker_commands.py --live

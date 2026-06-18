@@ -46,13 +46,13 @@ def test_public_command_registry_is_complete() -> None:
 
 
 def test_docker_smoke_runs_public_command_checker() -> None:
-    smoke = (ROOT / "scripts" / "integration" / "smoke.sh").read_text()
+    smoke = (ROOT / "scripts" / "integration-smoke.sh").read_text()
     assert "check_integration_coverage.py" in smoke
     assert "check_public_commands.py" in smoke
 
 
 def test_docker_harness_includes_public_command_checker() -> None:
-    path = ROOT / "scripts" / "integration" / "check_public_commands.py"
+    path = ROOT / "tests" / "integration" / "check_public_commands.py"
     assert path.is_file() and path.stat().st_size > 0
 
 

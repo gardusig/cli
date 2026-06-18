@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def main() -> int:
     result = subprocess.run(
-        [sys.executable, str(ROOT / "scripts/integration/check_api_integration.py")],
+        [sys.executable, str(ROOT / "tests/integration/check_api_integration.py")],
         cwd=ROOT,
         check=False,
     )

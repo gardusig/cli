@@ -15,7 +15,7 @@ from shuttle.integration.integration_coverage import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-CHECK_SCRIPT = ROOT / "scripts" / "integration" / "check_integration_coverage.py"
+CHECK_SCRIPT = ROOT / "tests" / "integration" / "check_integration_coverage.py"
 
 
 def test_integration_coverage_gate_passes() -> None:
@@ -78,5 +78,5 @@ def test_run_unit_script_runs_integration_coverage_gate() -> None:
 
 
 def test_smoke_runs_integration_coverage_gate() -> None:
-    smoke = (ROOT / "scripts" / "integration" / "smoke.sh").read_text(encoding="utf-8")
+    smoke = (ROOT / "scripts" / "integration-smoke.sh").read_text(encoding="utf-8")
     assert "check_integration_coverage.py" in smoke

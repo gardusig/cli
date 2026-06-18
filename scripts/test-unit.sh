@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Unit tests in shuttle-cli:dev (Docker on macOS or Linux; same image as CI).
+# Unit tests in shuttle-cli:unit (Docker on macOS or Linux; same image as CI).
 set -euo pipefail
+export SHUTTLE_DOCKER_TARGET=unit
+export SHUTTLE_DOCKER_IMAGE="${SHUTTLE_DOCKER_IMAGE:-shuttle-cli:unit}"
 # shellcheck source=docker/common.sh
 source "$(dirname "$0")/docker/common.sh"
 

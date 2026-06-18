@@ -1,14 +1,44 @@
+# --- Cursor / IDE ---
 .cursor/
+.idea/
+.vscode/
+
+# --- Python ---
 .venv/
 __pycache__/
 *.py[cod]
 *$py.class
+*.egg
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# --- Tests / coverage ---
 .pytest_cache/
 .integration-scratch/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
-dist/
-build/
-*.egg-info/
+
+# --- Secrets / local env ---
 .env
+.env.local
+.env.*.local
+
+# --- OS ---
 .DS_Store
+**/.DS_Store
+.AppleDouble
+._*
+
+# --- Editor swap files ---
+*~
+*.swp
+*.swo
+
+# --- Logs ---
+*.log

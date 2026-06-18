@@ -10,7 +10,7 @@ macOS CLI: **`shuttle git`** · **`shuttle drive`** · **`shuttle chrome`** · *
 | **Python 3.12+** | Local install (`bootstrap.sh` creates a venv) |
 | **[Homebrew](https://brew.sh/)** | Recommended way to install Python and git on macOS |
 | **git** | `shuttle git` (run from inside a repository) |
-| **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** | Verification only — unit/integration tests in `shuttle-cli:dev` |
+| **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** | Verification — unit (`shuttle-cli:unit`) and integration (`shuttle-cli:integration`) in Docker |
 
 Install Python and git with Homebrew:
 

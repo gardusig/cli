@@ -63,7 +63,9 @@ def links_root() -> None:
     for rel, note in (
         ("scripts/bootstrap.sh", "local venv (runtime; tests use Docker)"),
         ("scripts/install.sh", "install to ~/.local/bin"),
-        ("scripts/docker/build-image.sh", "build shuttle-cli:dev image"),
+        ("scripts/docker/build-images.sh", "build all Docker stages"),
+        ("scripts/docker/build-image.sh", "build one Docker stage"),
+        ("scripts/docker/build-contest-image.sh", "build shuttle-contest:runner image"),
         ("scripts/test-unit.sh", "unit tests in container"),
         ("scripts/test-integration.sh", "integration tests in container"),
         ("scripts/docker/shell.sh", "onboard shell in container"),

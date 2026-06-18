@@ -137,6 +137,8 @@ def load_config(config_dir: Path | None = None) -> ShuttleConfig:
     base = config_dir or default_config_dir()
     main_path = base / "config.yaml"
     drives_path = base / "drives.yaml"
+    if not drives_path.exists() and base.name == "ci":
+        drives_path = base.parent / "drives.yaml"
 
     merged: dict = {}
     merged.update(load_yaml(main_path))

@@ -55,6 +55,7 @@ TOP_LEVEL_COMMANDS = (
     "notion",
     "chrome",
     "gh",
+    "contest",
 )
 
 # Every `shuttle git <name>` subcommand from git_app.
@@ -125,6 +126,13 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck("links", ("links",), needle="Quick defaults"),
         EndpointCheck("docker --help", ("docker", "--help"), needle="reset"),
+        EndpointCheck("contest help", ("contest", "--help"), needle="validate"),
+        EndpointCheck(
+            "contest validate missing paths",
+            ("contest", "validate"),
+            needle="error",
+            accept_exit_codes=(1,),
+        ),
         EndpointCheck(
             "git group help",
             ("git",),

@@ -12,16 +12,18 @@ def test_docker_harness_files_exist() -> None:
         "Dockerfile",
         ".dockerignore",
         "scripts/docker/common.sh",
-        "scripts/docker/build-image.sh",
+    "scripts/docker/build-image.sh",
+    "scripts/docker/build-images.sh",
+    "scripts/docker/build-contest-image.sh",
         "scripts/docker/run-unit.sh",
         "scripts/docker/run-integration.sh",
         "scripts/test-unit.sh",
         "scripts/test-integration.sh",
-        "scripts/integration/smoke.sh",
-        "scripts/integration/check_integration_coverage.py",
-        "scripts/integration/check_public_commands.py",
-        "scripts/integration/check_public_endpoints.py",
-        "scripts/integration/check_docker_commands.py",
+        "scripts/integration-smoke.sh",
+        "tests/integration/check_integration_coverage.py",
+        "tests/integration/check_public_commands.py",
+        "tests/integration/check_public_endpoints.py",
+        "tests/integration/check_docker_commands.py",
     ):
         path = ROOT / rel
         assert path.exists(), f"missing {rel}"
@@ -40,21 +42,34 @@ def test_docker_harness_mentions_readonly_mount() -> None:
     assert "SHUTTLE_BOOTSTRAP_DEV" in bootstrap
 
 
-def test_ci_workflow_runs_on_pull_request_with_both_jobs() -> None:
+def test_ci_workflow_runs_on_push_and_pull_request() -> None:
     workflow = (ROOT / ".github/workflows/test.yml").read_text()
+    assert "push:" in workflow
     assert "pull_request:" in workflow
-    assert "types:" in workflow
+    assert "branches: [main]" not in workflow
     assert "unit:" in workflow or "name: Unit tests" in workflow
     assert "integration:" in workflow or "name: Integration tests" in workflow
     assert "needs: unit" in workflow
     assert "test-unit.sh" in workflow
     assert "test-integration.sh" in workflow
-    assert "shuttle-cli:dev" in workflow
+    assert "shuttle-cli:unit" in workflow
+    assert "shuttle-cli:integration" in workflow
+    assert "target: unit" in workflow
+    assert "target: integration" in workflow
     assert "cov-fail-under=80" in (ROOT / "scripts/docker/run-unit.sh").read_text()
 
 
+def test_branch_protection_workflow_exists() -> None:
+    path = ROOT / ".github/workflows/branch-protection.yml"
+    text = path.read_text()
+    assert path.is_file()
+    assert "Unit tests (Docker)" in text
+    assert "Integration tests (Docker)" in text
+    assert "workflow_dispatch:" in text
+
+
 def test_docker_smoke_runs_public_command_checker() -> None:
-    smoke = (ROOT / "scripts/integration/smoke.sh").read_text()
+    smoke = (ROOT / "scripts/integration-smoke.sh").read_text()
     assert "check_integration_coverage.py" in smoke
     assert "check_public_commands.py" in smoke
     assert "SHUTTLE_SKIP_CHROME_AUTOMATION=1" in smoke

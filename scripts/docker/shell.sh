@@ -3,6 +3,8 @@
 set -euo pipefail
 # shellcheck source=common.sh
 source "$(dirname "$0")/common.sh"
+export SHUTTLE_DOCKER_TARGET="${SHUTTLE_DOCKER_TARGET:-integration}"
+export SHUTTLE_DOCKER_IMAGE="${SHUTTLE_DOCKER_IMAGE:-shuttle-cli:integration}"
 
 docker_ensure_image
 docker run --rm -it \

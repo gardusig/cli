@@ -28,27 +28,55 @@ Host `pytest` is intentionally unsupported. Dev dependencies (`pytest`, `pytest-
 
 Issue [#9](https://github.com/gardusig/shuttle-cli/issues/9) tracks Docker-based test and onboarding lanes.
 
-The [`Dockerfile`](../Dockerfile) builds **`shuttle-cli:dev`**: Python 3.12 on Debian slim, git, bash, Docker CLI (static binary), and an editable install with dev dependencies. Use it from macOS via Docker Desktop or on Linux with Docker Engine — same image tag everywhere.
+Root [`Dockerfile`](../Dockerfile) (multi-stage): shared **python** base plus decorated targets.
+
+```text
+python:3.12-slim
+       └── python          shuttle-cli:python     requirements-dev.txt + editable install
+            ├── unit       shuttle-cli:unit       pytest / coverage
+            ├── integration shuttle-cli:integration (+ Docker CLI; alias shuttle-cli:dev)
+            └── contest    shuttle-contest:runner  (+ g++, coreutils)
+```
+
+| Target | Tag | Build | Purpose |
+| --- | --- | --- | --- |
+| `python` | `shuttle-cli:python` | `./scripts/docker/build-image.sh` with `SHUTTLE_DOCKER_TARGET=python` | Shared Python + shuttle dev install |
+| `unit` | `shuttle-cli:unit` | `./scripts/test-unit.sh` (auto) | Unit tests |
+| `integration` | `shuttle-cli:integration` | `./scripts/test-integration.sh` (auto) | Integration + live Docker socket |
+| `integration` | `shuttle-cli:dev` | alias of integration | Backward-compatible dev/onboard tag |
+| `contest` | `shuttle-contest:runner` | `./scripts/docker/build-contest-image.sh` | `shuttle contest validate` |
 
 ```bash
-./scripts/docker/build-image.sh   # build shuttle-cli:dev
-./scripts/test-unit.sh            # unit tests (CI gate)
-./scripts/test-integration.sh     # integration pytest + smoke + live docker
-./scripts/docker/shell.sh           # onboard: interactive shell
+./scripts/docker/build-images.sh         # build all stages
+./scripts/docker/build-image.sh          # one stage (SHUTTLE_DOCKER_TARGET)
+./scripts/docker/build-contest-image.sh  # contest stage
+./scripts/test-unit.sh                   # unit tests (CI gate)
+./scripts/test-integration.sh            # integration pytest + smoke + live docker
+./scripts/docker/shell.sh                # onboard: interactive shell
 ```
+
+Build one stage manually:
+
+```bash
+docker build --target unit -t shuttle-cli:unit .
+docker build --target integration -t shuttle-cli:integration .
+docker build --target contest -t shuttle-contest:runner .
+```
+
+Build context is always the **repository root**.
 
 Host repo is mounted read-only; each run copies a fresh tree to `/tmp/shuttle-cli` (see `scripts/docker/common.sh`). Integration tests mount `/var/run/docker.sock` so live `shuttle docker` checks run against your host daemon without a host Python venv.
 
 ## CI (GitHub Actions)
 
-Both jobs run on **every pull request** (open, sync, reopen, ready for review) and on pushes to `main`. Integration runs after unit passes (`needs: unit`).
+The [`test` workflow](../.github/workflows/test.yml) runs on **every push** (all branches) and on **pull requests**. Integration runs after unit passes (`needs: unit`).
 
-| Job | Runner | What runs |
+| Job | Status check name | What runs |
 | --- | --- | --- |
-| `unit` | `ubuntu-latest` | `shuttle-cli:dev` → `./scripts/test-unit.sh` (pytest `-m "not integration"`, **≥80%** coverage on `shuttle/cli.py` + `shuttle/commands/*` via `coverage-unit.ini`) |
-| `integration` | `ubuntu-latest` | same image → `./scripts/test-integration.sh` |
+| `unit` | **Unit tests (Docker)** | `shuttle-cli:unit` → `./scripts/test-unit.sh` (pytest `-m "not integration"`, **≥80%** coverage) |
+| `integration` | **Integration tests (Docker)** | `shuttle-cli:integration` → `./scripts/test-integration.sh` |
 
-Both jobs must pass before merge (enable **Require status checks** for `Unit tests (Docker)` and `Integration tests (Docker)` in branch protection).
+Require both status checks on `main` before merge. One-time setup: run the [`branch-protection` workflow](../.github/workflows/branch-protection.yml) from Actions (repo admin), or configure manually — see [`.github/README.md`](../.github/README.md).
 
 ## Run tests
 
@@ -60,7 +88,7 @@ Both jobs must pass before merge (enable **Require status checks** for `Unit tes
 
 The runner:
 
-1. Builds the local `Dockerfile` (or uses `SHUTTLE_DOCKER_SKIP_BUILD=1` with a pre-built tag).
+1. Builds root `Dockerfile` with target `unit` or `integration` (or uses `SHUTTLE_DOCKER_SKIP_BUILD=1` with a pre-built tag).
 2. Mounts the repository read-only at `/workspace/src`.
 3. Copies the repo into `/tmp/shuttle-cli` inside the container, excluding `.git`, `.venv`, and cache directories.
 4. Initializes a disposable git repo, bootstraps a venv inside the copy, then runs the test gate.
@@ -71,9 +99,9 @@ Because tests run from the copied tree in `/tmp`, commands like `shuttle git sta
 
 The container smoke test checks:
 
-- `scripts/integration/check_public_endpoints.py` — every public CLI command (56 checks): read-only paths, write-gate refusals, and `--yes` success paths with **remote git mocked** (`fetch` / `push` / `ls-remote` never hit the network)
+- `tests/integration/check_public_endpoints.py` — every public CLI command (56 checks): read-only paths, write-gate refusals, and `--yes` success paths with **remote git mocked** (`fetch` / `push` / `ls-remote` never hit the network)
 - `python -m shuttle --help` and `--version`
 - placeholder endpoints: `restore`, `drive`, `notion`, `chrome`
-- shell syntax for `scripts/chrome`, `scripts/git`, and `scripts/integration`
+- shell syntax for `scripts/chrome`, `scripts/git`, and root smoke scripts
 - Chrome bookmark export/import using local fixture files and `SHUTTLE_SKIP_CHROME_AUTOMATION=1`
 - `shuttle git start` inside a temporary git repository

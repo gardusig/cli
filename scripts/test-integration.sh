@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Integration tests in shuttle-cli:dev (mounts host Docker socket for live checks).
+# Integration tests in shuttle-cli:integration (mounts host Docker socket for live checks).
 set -euo pipefail
+export SHUTTLE_DOCKER_TARGET=integration
+export SHUTTLE_DOCKER_IMAGE="${SHUTTLE_DOCKER_IMAGE:-shuttle-cli:integration}"
 # shellcheck source=docker/common.sh
 source "$(dirname "$0")/docker/common.sh"
 

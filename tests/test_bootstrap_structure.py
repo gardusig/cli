@@ -76,7 +76,7 @@ CURSOR_SKILLS_GIT_SCRIPTS = [
     "scripts/git/tag-list.sh",
     "scripts/git/tag-push.sh",
     "scripts/git/zip.sh",
-    "scripts/backup/status.sh",
+    "scripts/backup-status.sh",
     "scripts/drive/status.sh",
     "scripts/drive/ingest.sh",
     "scripts/drive/upload.sh",
@@ -91,16 +91,7 @@ DOCKER_VERIFY_PATHS = [
     "scripts/test-unit.sh",
     "scripts/test-integration.sh",
     ".github/workflows/test.yml",
-]
-
-DOCKER_VERIFY_PATHS = [
-    "Dockerfile",
-    "scripts/docker/common.sh",
-    "scripts/docker/run-unit.sh",
-    "scripts/docker/run-integration.sh",
-    "scripts/test-unit.sh",
-    "scripts/test-integration.sh",
-    ".github/workflows/test.yml",
+    ".github/workflows/branch-protection.yml",
 ]
 
 REQUIRED_PATHS = [
@@ -109,7 +100,6 @@ REQUIRED_PATHS = [
     "config/notion/templates/body.md",
     "config/notion/templates/header.yaml",
     "config/ci/config.yaml",
-    "config/ci/drives.yaml",
     "config/drives.yaml",
     "coverage-unit.ini",
     "tests/fixtures/bookmarks.html",

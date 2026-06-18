@@ -4,9 +4,22 @@ set -euo pipefail
 
 DOCKER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${SHUTTLE_ROOT:-$(cd "$DOCKER_DIR/../.." && pwd)}"
-IMAGE="${SHUTTLE_DOCKER_IMAGE:-shuttle-cli:dev}"
+DOCKERFILE="${SHUTTLE_DOCKERFILE:-$ROOT/Dockerfile}"
+DOCKER_TARGET="${SHUTTLE_DOCKER_TARGET:-integration}"
 CONTAINER_SRC="/workspace/src"
 CONTAINER_WORK="/tmp/shuttle-cli"
+
+docker_default_image_for_target() {
+  case "$1" in
+    python) echo "shuttle-cli:python" ;;
+    unit) echo "shuttle-cli:unit" ;;
+    integration) echo "shuttle-cli:integration" ;;
+    contest) echo "shuttle-contest:runner" ;;
+    *) echo "shuttle-cli:integration" ;;
+  esac
+}
+
+IMAGE="${SHUTTLE_DOCKER_IMAGE:-$(docker_default_image_for_target "$DOCKER_TARGET")}"
 
 docker_require() {
   if ! command -v docker >/dev/null 2>&1; then
@@ -18,12 +31,18 @@ docker_require() {
 docker_ensure_image() {
   docker_require
   if [[ "${SHUTTLE_DOCKER_SKIP_BUILD:-0}" != "1" ]]; then
-    echo "Building image: $IMAGE"
-    docker build -t "$IMAGE" "$ROOT"
+    echo "Building image: $IMAGE (target=$DOCKER_TARGET)"
+    docker build -f "$DOCKERFILE" --target "$DOCKER_TARGET" -t "$IMAGE" "$ROOT"
+    if [[ "$DOCKER_TARGET" == "integration" && "$IMAGE" != "shuttle-cli:dev" ]]; then
+      docker tag "$IMAGE" shuttle-cli:dev
+    fi
     return 0
   fi
   echo "Using pre-built image: $IMAGE"
   if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+    if [[ "$IMAGE" == "shuttle-cli:integration" ]] && docker image inspect shuttle-cli:dev >/dev/null 2>&1; then
+      return 0
+    fi
     echo "ERROR: SHUTTLE_DOCKER_SKIP_BUILD=1 but image not found: $IMAGE" >&2
     exit 1
   fi

@@ -12,6 +12,11 @@ Config loads from (first match):
 | --- | --- |
 | `config.yaml` | Backup repos, local git-tags path, Notion, Chrome |
 | `drives.yaml` | Google / OneDrive / Proton upload targets |
+| `ci/config.yaml` | Docker unit/integration overrides (fixture paths); set via `SHUTTLE_CONFIG_DIR` |
+| `contest/defaults.yaml` | `shuttle contest validate` timeout, memory, image defaults |
+| `contest/templates/` | Generator and brute scaffolds for competitive programming |
+
+See [`config/README.md`](../config/README.md) for how CI overrides relate to the root files.
 
 ## Notion tasks
 

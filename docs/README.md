@@ -5,4 +5,5 @@
 3. [Chrome bookmarks](bookmarks.md) — export/import shell scripts
 4. [Configuration](configuration.md) — YAML config files
 5. [Docker integration](docker.md) — test image, harness, and CI lanes
-6. [Architecture](architecture.md) — CLI → command → service → provider
+6. [Contest validate](contest.md) — competitive programming two-tier runner
+7. [Architecture](architecture.md) — CLI → command → service → provider

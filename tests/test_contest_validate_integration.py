@@ -1,0 +1,57 @@
+"""Live Docker integration for shuttle contest validate."""
+
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+
+import pytest
+from typer.testing import CliRunner
+
+from shuttle.cli import app
+from shuttle.services.docker_runtime import docker_available
+
+ROOT = Path(__file__).resolve().parents[1]
+TOY = ROOT / "tests" / "fixtures" / "contest" / "toy"
+IMAGE = "shuttle-contest:runner"
+
+
+@pytest.mark.integration
+def test_contest_validate_toy_live() -> None:
+    if not docker_available():
+        pytest.skip("docker not available")
+
+    build_script = ROOT / "scripts" / "docker" / "build-contest-image.sh"
+    subprocess.run([str(build_script)], check=True, cwd=ROOT)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "contest",
+            "validate",
+            "--fast",
+            str(TOY / "solution.cpp"),
+            "--brute",
+            str(TOY / "brute.py"),
+            "--generator",
+            str(TOY / "gen.py"),
+            "--timeout",
+            "10",
+            "--memory-mb",
+            "256",
+            "--image",
+            IMAGE,
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "PASS" in result.output
+
+
+@pytest.mark.integration
+def test_contest_help() -> None:
+    runner = CliRunner()
+    result = runner.invoke(app, ["contest", "--help"])
+    assert result.exit_code == 0
+    assert "validate" in result.output

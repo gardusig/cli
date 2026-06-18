@@ -7,7 +7,7 @@
 | **Install** | Run `shuttle` on macOS | `./scripts/bootstrap.sh` or `./scripts/install.sh` |
 | **Verify** | Unit + integration gates (CI-equivalent) | `./scripts/test-unit.sh`, `./scripts/test-integration.sh` |
 
-Local `.venv` gets **runtime** dependencies only. Pytest, coverage, and smoke scripts run **inside** `shuttle-cli:dev` so checks never mutate your checkout.
+Local `.venv` gets **runtime** dependencies only. Pytest, coverage, and smoke scripts run **inside** Docker (`shuttle-cli:unit` / `shuttle-cli:integration`) so checks never mutate your checkout.
 
 ## Requirements
 
@@ -25,6 +25,9 @@ cd shuttle-cli
 source .venv/bin/activate
 python -m shuttle --help
 ```
+
+Manual venv (runtime only): `pip install -r requirements.txt` then `pip install -e .`  
+Host dev tools (not needed for Docker verify): `pip install -r requirements-dev.txt` or `pip install -e ".[dev]"`.
 
 ## User install
 
@@ -44,7 +47,7 @@ Same scripts as GitHub Actions. See [docker.md](docker.md).
 ./scripts/test-integration.sh     # full pytest + smoke + live docker
 ```
 
-**Do not** run `pytest`, `pip install -e ".[dev]"`, or `scripts/integration/smoke.sh` directly on the host.
+**Do not** run `pytest`, `pip install -e ".[dev]"`, or `scripts/integration-smoke.sh` directly on the host.
 
 ## After install
 
