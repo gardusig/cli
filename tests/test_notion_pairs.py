@@ -12,6 +12,7 @@ from cli.services.notion_pairs import (
     build_from_disk,
     combine_task,
     load_pairs,
+    pair_deploy_rollout,
     pair_file_warning,
     save_pairs,
     scan_task_root,
@@ -143,6 +144,20 @@ def test_pair_file_warning_orphan_header(tmp_path: Path) -> None:
     meta.write_text("name: x\n", encoding="utf-8")
     pair = TaskPair(header_filepath="header/x.yaml", body_filepath="body/x.md")
     assert pair_file_warning(pair, tmp_path) == "header without body: header/x.yaml"
+
+
+def test_pair_deploy_rollout_disabled(tmp_path: Path) -> None:
+    (tmp_path / "header").mkdir(parents=True)
+    (tmp_path / "body").mkdir(parents=True)
+    (tmp_path / "header" / "on.yaml").write_text("name: On\n", encoding="utf-8")
+    (tmp_path / "body" / "on.md").write_text("## Steps\n", encoding="utf-8")
+    (tmp_path / "header" / "off.yaml").write_text("name: Off\nenabled: false\n", encoding="utf-8")
+    (tmp_path / "body" / "off.md").write_text("## Steps\n", encoding="utf-8")
+    pairs = build_from_disk(tmp_path)
+    rollout = pair_deploy_rollout(tmp_path, pairs)
+    assert rollout.enabled == ["On"]
+    assert rollout.disabled == ["Off"]
+    assert rollout.broken == []
 
 
 def test_strip_leading_title_heading() -> None:

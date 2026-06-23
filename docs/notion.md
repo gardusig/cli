@@ -50,6 +50,7 @@ Older keys `task_directory`, `cleanup_before_upload`, and `cleanup_before_import
 ```bash
 export NOTION_TOKEN=secret_...
 cli notion pairs build         # scan header/ + body/ → tasks.pairs.json
+cli notion pairs status        # enabled vs disabled (paused) before deploy
 cli notion ingest              # Notion → local pairs
 cli notion deploy --yes        # local pairs → Notion (archives board first by default)
 cli notion sync --yes          # ingest, then deploy

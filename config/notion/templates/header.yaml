@@ -4,3 +4,4 @@ last_done: 'YYYY-MM-DD'
 name: 🏷️ task title
 priority: 4
 tag: category
+enabled: true

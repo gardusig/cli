@@ -54,8 +54,10 @@ def main(
 
 def run() -> None:
     """CLI entrypoint — surfaces ExternalCallError as a clean user message."""
+    from cli.utils.config import load_local_env
     from cli.utils.external_client import ExternalCallError
 
+    load_local_env()
     try:
         app()
     except ExternalCallError as exc:

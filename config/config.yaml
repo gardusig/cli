@@ -4,18 +4,18 @@ backup:
     - path: ~/git-local/cli
 
 notion:
-  database_id: ""                    # Notion database ID (board must exist)
+  database_id: 2f499343-9249-80d1-aae9-ce5343255b8e
   task_root: ~/git-local/private/configured/tasks
   pairs_file: config/notion/tasks.pairs.json
   cleanup_before_deploy: true
   properties:
     title: Name
-    priority: Priority
-    tag: Tag
-    frequency: Frequency
-    interval: Interval
-    last_done: "Last done"
-    forced_status: "Forced status"
+    priority: priority
+    tag: tag
+    frequency: frequency
+    interval: interval
+    last_done: last done
+    forced_status: forced status
 
 chrome:
   profile: Default

@@ -12,7 +12,7 @@ Example: `header/clean/kitchen.yaml` ↔ `body/clean/kitchen.md`
 
 | File | Role |
 | --- | --- |
-| **Header** | Notion title (`name`), cadence (`frequency`, `interval`, `last_done`), `priority`, `tag` |
+| **Header** | Notion title (`name`), cadence (`frequency`, `interval`, `last_done`), `priority`, `tag`, `enabled` |
 | **Body** | Page content only — `## Steps` and `## Done when` |
 
 Cadence lives in **header only**. Steps and checklists live in **body only**.
@@ -34,6 +34,10 @@ Machine-readable board metadata. Cli and Notion read these fields; the body file
 | `last_done` | yes | ISO date `'YYYY-MM-DD'` — update when you finish in real life |
 | `priority` | yes | P-level integer |
 | `tag` | yes | Board grouping — `buy` · `clean` · `sync` · `pay` · etc. |
+| `enabled` | no (default `true`) | `false` = keep pair in git, **skip on deploy** (paused tasks) |
+| `forced_status` | no | Manual board override — `in progress` · `to do` · `future` · `in review` |
+
+**Enabled / disabled:** omit `enabled` or set `enabled: true` for normal deploy. Set `enabled: false` to pause a task (e.g. hobbies you are not doing this season) without deleting files. Deploy skips disabled rows; ingest does not flip `enabled`.
 
 **Do:** keep names stable; bump `last_done` after each completion.  
 **Don't:** put steps, links, or long prose in yaml.
@@ -50,6 +54,6 @@ Deploy-ready Notion page content — what you see when you open the task.
 **Do:** tables, inline lists, quantities when the task needs them.  
 **Don't:** title line, cadence intro, `frequency`/`last_done`, links to other wiki files, or references to yaml/board plumbing.
 
-After creating both files under `notion.task_root`, run `cli notion pairs build`.
+After creating both files under `notion.task_root`, run `cli notion pairs build` then `cli notion pairs status` to see deploy-ready vs paused rows.
 
 **Upstream:** [Notion hub](../../../docs/notion.md)

@@ -102,6 +102,17 @@ def project_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def load_local_env() -> None:
+    """Load repo-root .env into os.environ (does not override existing vars)."""
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        return
+    env_path = project_root() / ".env"
+    if env_path.is_file():
+        load_dotenv(env_path, override=False)
+
+
 def default_config_dir() -> Path:
     env = os.environ.get("CLI_CONFIG_DIR")
     if env:

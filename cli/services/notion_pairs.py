@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -196,6 +197,31 @@ def scan_task_root(task_root: Path) -> PairScanResult:
         pairs = []
 
     return PairScanResult(pairs=pairs, warnings=warnings)
+
+
+@dataclass
+class PairDeployRollout:
+    """Deploy readiness from header yaml (enabled flag)."""
+
+    enabled: list[str] = field(default_factory=list)
+    disabled: list[str] = field(default_factory=list)
+    broken: list[str] = field(default_factory=list)
+
+
+def pair_deploy_rollout(task_root: Path, pairs: list[TaskPair]) -> PairDeployRollout:
+    """Classify manifest pairs for deploy: enabled, disabled (paused), or broken."""
+    rollout = PairDeployRollout()
+    for pair in pairs:
+        warning = pair_file_warning(pair, task_root)
+        if warning:
+            rollout.broken.append(f"{pair.header_filepath} ({warning})")
+            continue
+        meta = load_header(pair.header_path(task_root))
+        if meta.enabled:
+            rollout.enabled.append(meta.name)
+        else:
+            rollout.disabled.append(meta.name)
+    return rollout
 
 
 def build_from_disk(task_root: Path) -> list[TaskPair]:

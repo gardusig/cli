@@ -175,6 +175,7 @@ def import_tasks(
                 continue
             task = combine_task(pair, root)
             if not task.metadata.enabled:
+                result.warnings.append(f"disabled (skipped): {task.metadata.name}")
                 result.skipped += 1
                 continue
             payload = task.metadata.model_dump(

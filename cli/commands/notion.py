@@ -6,6 +6,7 @@ import typer
 from rich import print as rprint
 
 from cli.internal.write.gate import require_write_gate
+from cli.services.notion_pairs import load_pairs, pair_deploy_rollout
 from cli.services.notion_sync import (
     build_pairs_manifest,
     cleanup_board,
@@ -99,7 +100,7 @@ def deploy_cmd(
     _print_sync_warnings(result)
     rprint(
         f"[green]deployed[/green] {result.processed} task(s) from {manifest} "
-        f"(skipped {result.skipped})"
+        f"(skipped {result.skipped} — disabled or broken pairs)"
     )
 
 
@@ -140,15 +141,48 @@ def cleanup_cmd(
     rprint(f"[green]archived[/green] {result.processed} page(s)")
 
 
+def _print_pair_rollout(rollout) -> None:
+    rprint(
+        f"[dim]deploy:[/dim] {len(rollout.enabled)} enabled · "
+        f"{len(rollout.disabled)} disabled · {len(rollout.broken)} broken"
+    )
+    if rollout.disabled:
+        rprint("[yellow]disabled[/yellow] (skipped on deploy):")
+        for name in rollout.disabled:
+            rprint(f"  · {name}")
+    if rollout.broken:
+        rprint("[red]broken[/red]:")
+        for line in rollout.broken:
+            rprint(f"  · {line}")
+
+
+@pairs_app.command("status")
+def pairs_status_cmd() -> None:
+    """Show deploy-ready vs disabled (paused) pairs from the manifest."""
+    root = notion_task_root()
+    manifest = notion_pairs_file()
+    if not manifest.is_file():
+        raise typer.Exit(f"Pairs manifest not found: {manifest}. Run: cli notion pairs build")
+    try:
+        pairs = load_pairs(manifest, task_root=root)
+        rollout = pair_deploy_rollout(root, pairs)
+    except Exception as exc:
+        raise typer.Exit(str(exc)) from exc
+    _print_pair_rollout(rollout)
+
+
 @pairs_app.command("build")
 def pairs_build_cmd() -> None:
     """Scan header/ + body/ and write tasks.pairs.json (name must be in each yaml)."""
     root = notion_task_root()
     try:
         result = build_pairs_manifest(root)
+        pairs = load_pairs(notion_pairs_file(), task_root=root)
+        rollout = pair_deploy_rollout(root, pairs)
     except Exception as exc:
         raise typer.Exit(str(exc)) from exc
     rprint(f"[green]built[/green] {result.processed} pair(s) → {notion_pairs_file()}")
+    _print_pair_rollout(rollout)
 
 
 @notion_app.command("download", hidden=True)
