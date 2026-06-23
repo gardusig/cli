@@ -9,6 +9,7 @@ import httpx
 from cli.services.notion_markdown import blocks_to_task_body, markdown_to_blocks, strip_leading_title_heading
 from cli.utils.config import NotionConfig, NotionPropertyMap
 from cli.utils.external_client import ExternalClient
+from cli.utils.http import default_http_timeout
 
 NOTION_VERSION = "2022-06-28"
 BASE_URL = "https://api.notion.com/v1"
@@ -32,7 +33,7 @@ class NotionClient:
                 "Notion-Version": NOTION_VERSION,
                 "Content-Type": "application/json",
             },
-            timeout=60.0,
+            timeout=default_http_timeout(),
         )
 
     def close(self) -> None:

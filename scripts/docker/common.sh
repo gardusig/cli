@@ -57,6 +57,8 @@ mkdir -p '$dest'
 tar \\
   --exclude='.git' \\
   --exclude='.venv' \\
+  --exclude='.env' \\
+  --exclude='.env.local' \\
   --exclude='__pycache__' \\
   --exclude='.pytest_cache' \\
   --exclude='.integration-scratch' \\

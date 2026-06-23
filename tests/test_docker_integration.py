@@ -37,35 +37,31 @@ def test_docker_harness_mentions_readonly_mount() -> None:
     assert "/tmp/cli" in common
     assert "--exclude='.git'" in common
     assert "--exclude='.venv'" in common
+    assert "--exclude='.env'" in common
     assert "CLI_DOCKER_SKIP_BUILD" in common
     assert "docker.sock" in common
     assert "CLI_BOOTSTRAP_DEV" in bootstrap
 
 
-def test_ci_workflow_runs_on_push_and_pull_request() -> None:
+def test_ci_workflow_runs_on_pull_request_only() -> None:
     workflow = (ROOT / ".github/workflows/test.yml").read_text()
-    assert "push:" in workflow
     assert "pull_request:" in workflow
-    assert "branches: [main]" in workflow
+    assert "\n  push:" not in workflow
+    assert "branches: [main]" not in workflow
     assert "unit:" in workflow or "name: Unit tests" in workflow
     assert "integration:" in workflow or "name: Integration tests" in workflow
     assert "needs: unit" in workflow
     assert "test-unit.sh" in workflow
     assert "test-integration.sh" in workflow
-    assert "cli:unit" in workflow
-    assert "cli:integration" in workflow
-    assert "target: unit" in workflow
-    assert "target: integration" in workflow
-    assert "cov-fail-under=80" in (ROOT / "scripts/docker/run-unit.sh").read_text()
 
 
-def test_branch_protection_workflow_exists() -> None:
-    path = ROOT / ".github/workflows/branch-protection.yml"
-    text = path.read_text()
-    assert path.is_file()
-    assert "Unit tests (Docker)" in text
-    assert "Integration tests (Docker)" in text
-    assert "workflow_dispatch:" in text
+def test_release_workflow_runs_on_tags() -> None:
+    workflow = (ROOT / ".github/workflows/release.yml").read_text()
+    assert "tags:" in workflow
+    assert "v*" in workflow
+    assert "PYPI_API_TOKEN" in workflow
+    assert "publish-pypi" in workflow
+    assert "deploy-notion" not in workflow
 
 
 def test_docker_smoke_runs_public_command_checker() -> None:

@@ -84,6 +84,7 @@ WRITE_GATED_OPERATIONS = frozenset(
         "gh-pr-close",
         "gh-pr-merge",
         "gh-backlog-resequence",
+        "pypi-publish",
     }
 )
 

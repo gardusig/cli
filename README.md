@@ -2,6 +2,17 @@
 
 macOS CLI: **`cli git`** · **`cli drive`** · **`cli chrome`** · **`cli notion`**.
 
+## Naming
+
+| Context | Identifier |
+| --- | --- |
+| **GitHub repo** | [gardusig/cli](https://github.com/gardusig/cli) (clone path is usually `cli/`) |
+| **PyPI package** | `gardusig-cli` — `pip install gardusig-cli` |
+| **Console command** | `cli` (unchanged after PyPI install) |
+| **Python import** | `cli` |
+
+The repo stays **`cli`**; only the published distribution name on PyPI is **`gardusig-cli`** (`cli` is taken on PyPI).
+
 ## Requirements
 
 | Tool | Needed for |
@@ -10,7 +21,8 @@ macOS CLI: **`cli git`** · **`cli drive`** · **`cli chrome`** · **`cli notion
 | **Python 3.12+** | Local install (`bootstrap.sh` creates a venv) |
 | **[Homebrew](https://brew.sh/)** | Recommended way to install Python and git on macOS |
 | **git** | `cli git` (run from inside a repository) |
-| **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** | Verification — unit (`cli:unit`) and integration (`cli:integration`) in Docker |
+| **zip** | Encrypted tag archives (`cli drive ingest` on `encrypted: true` repos) |
+| **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** | Verification — `./scripts/test-unit.sh` and `./scripts/test-integration.sh` in Docker |
 
 Install Python and git with Homebrew:
 
@@ -205,6 +217,24 @@ Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) on ma
 ```
 
 See [docs/docker.md](docs/docker.md).
+
+## CI and release
+
+| Trigger | Workflow | What runs |
+| --- | --- | --- |
+| **Pull request** | [`test.yml`](.github/workflows/test.yml) | Unit + integration Docker gates |
+| **Tag** `v*` | [`release.yml`](.github/workflows/release.yml) | Publish `gardusig-cli` to PyPI |
+
+Configure repo secret **`PYPI_API_TOKEN`** for releases. Require both PR status checks (`Unit tests (Docker)`, `Integration tests (Docker)`) on `main` in GitHub branch protection.
+
+Maintainers — local release before tagging:
+
+```bash
+./scripts/release-pypi.sh   # or: cli publish pypi --yes
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+Details: [`.github/README.md`](.github/README.md) · [docs/setup.md](docs/setup.md).
 
 ## Docs
 

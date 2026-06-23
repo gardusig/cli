@@ -7,6 +7,8 @@ from typing import Any
 
 import httpx
 
+from cli.utils.http import default_http_timeout
+
 NOTION_BASE = "https://api.notion.com/v1"
 _REAL_HTTPX_CLIENT = httpx.Client
 
@@ -15,6 +17,7 @@ def patch_notion_http(handler):
     def _client_factory(**kwargs):
         kwargs["transport"] = httpx.MockTransport(handler)
         kwargs.setdefault("base_url", NOTION_BASE)
+        kwargs.setdefault("timeout", default_http_timeout())
         return _REAL_HTTPX_CLIENT(**kwargs)
 
     from unittest.mock import patch

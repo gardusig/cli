@@ -1,0 +1,82 @@
+# Repo-owned label taxonomy — sync with: cli gh label sync --manifest config/gh/labels.manifest.yaml --yes
+# See docs/gh.md and issue #53.
+
+protected:
+  - bug
+  - documentation
+  - duplicate
+  - enhancement
+  - good first issue
+  - help wanted
+  - invalid
+  - question
+  - wontfix
+
+labels:
+  - name: issue-type:epic
+    color: "5319E7"
+    description: Parent epic issue
+  - name: issue-type:child
+    color: "C5DEF5"
+    description: Child deliverable under an epic
+  - name: issue-type:task
+    color: "BFDADC"
+    description: Standalone task without epic parent
+
+  - name: backlog:untriaged
+    color: "FEF2C0"
+    description: Open issue without an epic label (temporary)
+
+  - name: p0
+    color: "B60205"
+    description: Critical priority
+  - name: p1
+    color: "D93F0B"
+    description: High priority
+  - name: p2
+    color: "FBCA04"
+    description: Normal priority
+
+  - name: epic:00-infra
+    color: "0E8A16"
+    description: Backlog infrastructure and repo hygiene
+  - name: epic:01-gh
+    color: "1D76DB"
+    description: GitHub integration (cli gh)
+  - name: epic:02-chrome
+    color: "F9D0C4"
+    description: Chrome browser integrations
+  - name: epic:03-notion
+    color: "BFD4F2"
+    description: Notion task board sync
+  - name: epic:04-drive
+    color: "006B75"
+    description: Cloud drive upload and sync
+  - name: epic:05-contest
+    color: "D4C5F9"
+    description: Contest validate harness
+  - name: epic:06-pypi
+    color: "E99695"
+    description: PyPI publish and packaging
+  - name: epic:07-cli-review
+    color: "FBCA04"
+    description: Public CLI hardening review
+  - name: epic:08-projects
+    color: "C2E0C6"
+    description: GitHub Projects recurrent board
+  - name: epic:09-git
+    color: "0052CC"
+    description: Git CLI enhancements
+  - name: epic:10-gh-pr
+    color: "1D76DB"
+    description: gh pr shortcut and PR ergonomics
+  - name: epic:11-gh-hub
+    color: "407092"
+    description: GitHub hub CRUD and API transport
+  - name: epic:12-docker
+    color: "0E8A16"
+    description: Docker CLI roadmap
+
+  - name: area:skills
+    color: "EDEDED"
+    description: cursor-skills pack integration

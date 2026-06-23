@@ -1,18 +1,15 @@
 name: test
 
-# Status check names (for branch protection): "Unit tests (Docker)", "Integration tests (Docker)"
-# pull_request: feature branches (one run per PR update; avoids duplicate with push on the same commit)
-# push (main only): post-merge verification on the default branch
+# Status check names (branch protection): "Unit tests (Docker)", "Integration tests (Docker)"
+# Runs on pull requests only — merge is gated here; tags trigger release.yml.
 
 on:
-  push:
-    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 concurrency:
-  group: test-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: test-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 permissions:
@@ -22,24 +19,26 @@ jobs:
   unit:
     name: Unit tests (Docker)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build unit test image
+      - name: Build integration test image
         uses: docker/build-push-action@v6
         with:
           context: .
-          target: unit
+          target: integration
           load: true
-          tags: cli:unit
+          tags: |
+            cli:integration
+            cli:dev
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Unit tests in container
         env:
-          CLI_DOCKER_IMAGE: cli:unit
-          CLI_DOCKER_TARGET: unit
+          CLI_DOCKER_IMAGE: cli:integration
+          CLI_DOCKER_TARGET: integration
           CLI_DOCKER_SKIP_BUILD: "1"
         run: ./scripts/test-unit.sh
 

@@ -283,21 +283,23 @@ def test_git_review_quick(mock_review: MagicMock) -> None:
     mock_review.assert_called_once_with(install=False, quick=True)
 
 
+@patch("cli.commands.git.repo_encrypt_backup", return_value=False)
 @patch.object(GitShortcuts, "tag_exists_local", return_value=True)
 @patch.object(GitShortcuts, "repo_basename", return_value="my-repo")
-@patch.object(GitShortcuts, "zip_tag")
+@patch("cli.commands.git.archive_tag_zip")
 @patch("cli.commands.git.default_tag_name", return_value="2026-06-12")
 def test_git_zip_default_tag(
     _default: MagicMock,
-    mock_zip: MagicMock,
+    mock_archive: MagicMock,
     _basename: MagicMock,
     _exists: MagicMock,
+    _encrypted: MagicMock,
 ) -> None:
-    mock_zip.return_value = Path("/tmp/my-repo-2026-06-12.zip")
+    mock_archive.return_value = Path("/tmp/my-repo-2026-06-12.zip")
     result = runner.invoke(app, ["git", "zip"])
     assert result.exit_code == 0
-    mock_zip.assert_called_once()
-    assert mock_zip.call_args.args[0] == "2026-06-12"
+    mock_archive.assert_called_once()
+    assert mock_archive.call_args.args[1] == "2026-06-12"
 
 
 @patch.object(GitShortcuts, "create_tag")

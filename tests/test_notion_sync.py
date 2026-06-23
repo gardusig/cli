@@ -13,6 +13,7 @@ from cli.integration.workspaces import notion_task_fixture_dir
 from cli.providers.notion import NotionClient
 from cli.services.notion_sync import cleanup_board, export_tasks, import_tasks
 from cli.utils.config import NotionConfig
+from cli.utils.http import default_http_timeout
 
 FIXTURE_ROOT = notion_task_fixture_dir()
 NOTION_BASE = "https://api.notion.com/v1"
@@ -23,6 +24,7 @@ def _patch_notion_http(handler):
     def _client_factory(**kwargs):
         kwargs["transport"] = httpx.MockTransport(handler)
         kwargs.setdefault("base_url", NOTION_BASE)
+        kwargs.setdefault("timeout", default_http_timeout())
         return _REAL_HTTPX_CLIENT(**kwargs)
 
     return patch(

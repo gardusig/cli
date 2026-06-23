@@ -41,8 +41,8 @@ python:3.12-slim
 | Target | Tag | Build | Purpose |
 | --- | --- | --- | --- |
 | `python` | `cli:python` | `./scripts/docker/build-image.sh` with `CLI_DOCKER_TARGET=python` | Shared Python + cli dev install |
-| `unit` | `cli:unit` | `./scripts/test-unit.sh` (auto) | Unit tests |
-| `integration` | `cli:integration` | `./scripts/test-integration.sh` (auto) | Integration + live Docker socket |
+| `unit` | `cli:unit` | `docker build --target unit` | Legacy stage (same base as integration; tests use `cli:integration`) |
+| `integration` | `cli:integration` | `./scripts/test-unit.sh` / `./scripts/test-integration.sh` (auto) | Full pytest + smoke + live docker |
 | `integration` | `cli:dev` | alias of integration | Backward-compatible dev/onboard tag |
 | `contest` | `cli-contest:runner` | `./scripts/docker/build-contest-image.sh` | `cli contest validate` |
 
@@ -69,20 +69,20 @@ Host repo is mounted read-only; each run copies a fresh tree to `/tmp/cli` (see 
 
 ## CI (GitHub Actions)
 
-The [`test` workflow](../.github/workflows/test.yml) runs on **every push** (all branches) and on **pull requests**. Integration runs after unit passes (`needs: unit`).
-
-| Job | Status check name | What runs |
+| Workflow | Trigger | What runs |
 | --- | --- | --- |
-| `unit` | **Unit tests (Docker)** | `cli:unit` → `./scripts/test-unit.sh` (pytest `-m "not integration"`, **≥80%** coverage) |
-| `integration` | **Integration tests (Docker)** | `cli:integration` → `./scripts/test-integration.sh` |
+| [`test`](../.github/workflows/test.yml) | **Pull requests** | Unit + integration Docker gates |
+| [`release`](../.github/workflows/release.yml) | **Tags** `v*` | PyPI publish |
 
-Require both status checks on `main` before merge. One-time setup: run the [`branch-protection` workflow](../.github/workflows/branch-protection.yml) from Actions (repo admin), or configure manually — see [`.github/README.md`](../.github/README.md).
+See [`.github/README.md`](../.github/README.md) for required secrets.
+
+On `main`, require both PR status checks in **Settings → Branches → Branch protection** (no workflow — configure manually in GitHub).
 
 ## Run tests
 
 ```bash
 ./scripts/docker/build-image.sh   # optional; skipped when image already exists
-./scripts/test-unit.sh            # unit only
+./scripts/test-unit.sh            # full pytest + coverage gate
 ./scripts/test-integration.sh     # full integration gate
 ```
 

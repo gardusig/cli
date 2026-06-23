@@ -32,11 +32,9 @@ def test_archive_tag_zip_plain(tmp_path: Path) -> None:
         assert "README.md" in zf.namelist()
 
 
-@pytest.mark.skipif(
-    subprocess.run(["which", "zip"], capture_output=True).returncode != 0,
-    reason="zip not installed",
-)
 def test_archive_tag_zip_encrypted(tmp_path: Path) -> None:
+    if subprocess.run(["which", "zip"], capture_output=True).returncode != 0:
+        pytest.fail("zip is required for encrypted tag archives (install via apt/brew)")
     repo = tmp_path / "repo"
     repo.mkdir()
     _init_repo(repo)

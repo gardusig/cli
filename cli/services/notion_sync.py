@@ -24,6 +24,7 @@ from cli.utils.config import (
     NotionConfig,
     load_config,
     notion_body_template_file,
+    notion_database_id,
     notion_pairs_file,
     notion_task_root,
 )
@@ -62,7 +63,7 @@ def export_tasks(
     result.warnings.extend(scan_task_root(root).warnings)
 
     with NotionClient(token, config=config) as client:
-        pages = client.query_database_pages(config.database_id)
+        pages = client.query_database_pages(notion_database_id(config))
         titles: list[str] = []
         for page in pages:
             if page.get("archived"):
@@ -165,7 +166,7 @@ def import_tasks(
 
     with NotionClient(token, config=config) as client:
         if do_cleanup:
-            client.archive_all_in_database(config.database_id)
+            client.archive_all_in_database(notion_database_id(config))
 
         for pair in pairs:
             warning = pair_file_warning(pair, root)
@@ -184,7 +185,7 @@ def import_tasks(
             )
             try:
                 client.create_database_page(
-                    config.database_id,
+                    notion_database_id(config),
                     title=task.metadata.name,
                     metadata=payload,
                     body_markdown=task.body,
@@ -204,7 +205,7 @@ def cleanup_board(
 ) -> NotionSyncResult:
     """Archive every page in the configured Notion database."""
     with NotionClient(token, config=config) as client:
-        count = client.archive_all_in_database(config.database_id)
+        count = client.archive_all_in_database(notion_database_id(config))
     return NotionSyncResult(processed=count)
 
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 import subprocess
 from collections.abc import Sequence
 
+from cli.utils.http import default_http_timeout
+
 
 class GitCommandError(RuntimeError):
     def __init__(self, cmd: Sequence[str], returncode: int, stderr: str) -> None:
@@ -44,6 +46,7 @@ def run_gh(
     *,
     cwd: str | None = None,
     check: bool = True,
+    timeout: float | None = None,
 ) -> subprocess.CompletedProcess[str]:
     cmd = ["gh", *args]
     result = subprocess.run(
@@ -52,6 +55,7 @@ def run_gh(
         capture_output=True,
         text=True,
         check=False,
+        timeout=timeout if timeout is not None else default_http_timeout(),
     )
     if check and result.returncode != 0:
         raise GhCommandError(cmd, result.returncode, result.stderr.strip())

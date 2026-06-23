@@ -312,9 +312,9 @@ def check_zip_after_tag(git_root: Path, repo_root: Path) -> list[str]:
     scratch = repo_root / ".integration-scratch" / "zip-after-tag"
     scratch.mkdir(parents=True, exist_ok=True)
     env = isolated_tags_env(scratch)
-    tags_dir = Path(env["CLI_CONFIG_DIR"]).parent / "git-tags"
+    cfg = Path(env["CLI_CONFIG_DIR"])
     repo_name = git_root.name
-    zip_path = default_zip_path(repo_name, tag)
+    zip_path = default_zip_path(repo_name, tag, config_dir=cfg)
 
     code, _ = invoke_tag_zip(
         repo_root, git_root, ("git", "tag", tag, "--yes"), extra_env=env
@@ -338,8 +338,8 @@ def check_zip_replaces_existing(git_root: Path, repo_root: Path) -> list[str]:
     scratch = repo_root / ".integration-scratch" / "zip-replace"
     scratch.mkdir(parents=True, exist_ok=True)
     env = isolated_tags_env(scratch)
-    tags_dir = Path(env["CLI_CONFIG_DIR"]).parent / "git-tags"
-    zip_path = default_zip_path(git_root.name, tag)
+    cfg = Path(env["CLI_CONFIG_DIR"])
+    zip_path = default_zip_path(git_root.name, tag, config_dir=cfg)
 
     invoke_tag_zip(repo_root, git_root, ("git", "tag", tag, "--yes"), extra_env=env)
     invoke_tag_zip(repo_root, git_root, ("git", "zip", tag), extra_env=env)
@@ -394,8 +394,8 @@ def check_tag_zip_full_workflow(git_root: Path, repo_root: Path) -> list[str]:
     scratch = repo_root / ".integration-scratch" / "tag-zip-full"
     scratch.mkdir(parents=True, exist_ok=True)
     env = isolated_tags_env(scratch)
-    tags_dir = Path(env["CLI_CONFIG_DIR"]).parent / "git-tags"
-    zip_path = default_zip_path(git_root.name, tag)
+    cfg = Path(env["CLI_CONFIG_DIR"])
+    zip_path = default_zip_path(git_root.name, tag, config_dir=cfg)
 
     steps: list[tuple[tuple[str, ...], str]] = [
         (("git", "tag", tag, "--yes"), "tag"),

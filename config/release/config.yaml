@@ -1,0 +1,6 @@
+# GitHub Actions release deploy — secrets override database + task root.
+notion:
+  database_id: "00000000-0000-0000-0000-000000000000"
+  task_root: "."
+  pairs_file: tasks.pairs.json
+  cleanup_before_deploy: true

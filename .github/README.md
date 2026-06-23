@@ -2,29 +2,28 @@
 
 ## test.yml
 
-Runs on **every push** (all branches) and on **pull requests** targeting any branch.
+Runs on **pull requests** only (no branch pushes).
 
 | Status check name | Job | Gate |
 | --- | --- | --- |
 | `Unit tests (Docker)` | `unit` | `./scripts/test-unit.sh` (≥80% coverage) |
 | `Integration tests (Docker)` | `integration` | `./scripts/test-integration.sh` |
 
-Pushes to a PR branch report the same checks on the pull request. `main` pushes get checks on the branch tip for post-merge verification.
+Require both status checks on `main` in GitHub branch protection settings.
 
-## branch-protection.yml
+## release.yml
 
-Manual workflow to configure **branch protection** requiring both test checks.
+Runs on **tag push** `v*` (e.g. `v0.1.0`) and optional **workflow_dispatch**.
 
-1. Ensure at least one successful `test` run on `main` so check names exist in GitHub.
-2. **Settings → Actions → General → Workflow permissions** → allow read/write (needed for branch protection API).
-3. **Actions → branch-protection → Run workflow** (default branch: `main`).
-4. Confirm under **Settings → Branches → Branch protection rules**.
+| Job | What |
+| --- | --- |
+| `Publish to PyPI` | `python -m build` + twine upload `gardusig-cli` |
 
-To apply the same pattern on other repositories, copy `test.yml` (keep job `name:` fields identical) and run `branch-protection` once per repo.
+Configure repo secret **`PYPI_API_TOKEN`**.
 
-## Manual setup (without workflow)
+Local tag release (same as CI):
 
-**Settings → Branches → Add rule** for `main`:
-
-- Require status checks: `Unit tests (Docker)`, `Integration tests (Docker)`
-- Require branches to be up to date before merging (matches `strict: true`)
+```bash
+./scripts/release-pypi.sh
+# or: ./scripts/release.sh
+```

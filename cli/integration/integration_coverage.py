@@ -19,6 +19,7 @@ from cli.integration.cli_api_checks import (
     cli_api_checks,
     registered_api_command_paths,
 )
+from cli.integration.contest_integration import CONTEST_SUBCOMMANDS, ContestCheck, contest_checks
 from cli.integration.docker_integration import (
     DOCKER_SUBCOMMANDS,
     DockerCheck,
@@ -32,7 +33,7 @@ from cli.integration.public_endpoints import (
 )
 from cli.integration.workspaces import API_WORKSPACES, fixture_dir
 
-Category = Literal["api", "git", "docker", "top"]
+Category = Literal["api", "git", "docker", "contest", "top"]
 
 _API_NAMES: tuple[ApiName, ...] = ("gh", "notion", "drive", "chrome")
 
@@ -101,8 +102,16 @@ def _docker_failure(check: DockerCheck) -> bool:
     return check.kind == "refuse" or check.failure is not None
 
 
+def _contest_success(check: ContestCheck) -> bool:
+    return check.kind == "ok" and not check.failure
+
+
+def _contest_failure(check: ContestCheck) -> bool:
+    return check.kind == "refuse" or check.failure is not None
+
+
 def _labels_for_path(
-    checks: list[CliApiCheck | EndpointCheck | DockerCheck],
+    checks: list[CliApiCheck | EndpointCheck | DockerCheck | ContestCheck],
     path: tuple[str, ...],
     *,
     category: Category,
@@ -133,6 +142,14 @@ def _labels_for_path(
             if _docker_success(check):
                 ok.append(check.label)
             if _docker_failure(check):
+                fail.append(check.label)
+        elif category == "contest":
+            assert isinstance(check, ContestCheck)
+            if len(check.args) < 2 or check.args[0] != "contest" or check.args[1] != path[1]:
+                continue
+            if _contest_success(check):
+                ok.append(check.label)
+            if _contest_failure(check):
                 fail.append(check.label)
         elif category == "top":
             assert isinstance(check, EndpointCheck)
@@ -182,10 +199,19 @@ def _docker_rows(checks: list[DockerCheck]) -> list[IntegrationCoverageRow]:
     return rows
 
 
+def _contest_rows(checks: list[ContestCheck]) -> list[IntegrationCoverageRow]:
+    rows: list[IntegrationCoverageRow] = []
+    for sub in CONTEST_SUBCOMMANDS:
+        path = ("contest", sub)
+        ok, fail = _labels_for_path(checks, path, category="contest")
+        rows.append(IntegrationCoverageRow("contest", path, ok, fail))
+    return rows
+
+
 def _top_level_rows(checks: list[EndpointCheck]) -> list[IntegrationCoverageRow]:
     rows: list[IntegrationCoverageRow] = []
     for name in TOP_LEVEL_COMMANDS:
-        if name in _API_NAMES or name in {"git", "docker"}:
+        if name in _API_NAMES or name in {"git", "docker", "contest"}:
             continue
         path = (name,)
         ok, fail = _labels_for_path(checks, path, category="top")
@@ -206,10 +232,12 @@ def integration_coverage_inventory() -> tuple[IntegrationCoverageRow, ...]:
     api_checks = _api_cli_checks()
     endpoints = endpoint_checks()
     docker = docker_checks()
+    contest = contest_checks()
     rows = [
         *_api_rows(api_checks),
         *_git_rows(endpoints),
         *_docker_rows(docker),
+        *_contest_rows(contest),
         *_top_level_rows(endpoints),
     ]
     return tuple(sorted(rows, key=lambda row: (row.category, row.path)))
@@ -229,7 +257,7 @@ def integration_coverage_summary() -> dict[str, Any]:
                     1 for row in rows if row.category == category and row.complete
                 ),
             }
-            for category in ("api", "git", "docker", "top")
+            for category in ("api", "git", "docker", "contest", "top")
         },
     }
 

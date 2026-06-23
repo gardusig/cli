@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -39,6 +40,8 @@ def is_retryable_exception(exc: Exception) -> bool:
     if getattr(exc, "retryable", False) is True:
         return True
     if isinstance(exc, httpx.TimeoutException | httpx.NetworkError | httpx.TransportError):
+        return True
+    if isinstance(exc, subprocess.TimeoutExpired):
         return True
     status_code = getattr(exc, "status_code", None)
     if exc.__class__.__name__ == "NotionError" and isinstance(status_code, int):

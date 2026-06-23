@@ -56,6 +56,7 @@ TOP_LEVEL_COMMANDS = (
     "chrome",
     "gh",
     "contest",
+    "publish",
 )
 
 # Every `cli git <name>` subcommand from git_app.
@@ -108,6 +109,7 @@ def endpoint_checks() -> list[EndpointCheck]:
             ("notion", "ingest"),
             needle="NOTION_TOKEN",
             accept_exit_codes=(1,),
+            failure="missing_notion_token",
         ),
         EndpointCheck("chrome help", ("chrome", "--help"), needle="bookmarks"),
         EndpointCheck(
@@ -127,11 +129,18 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck("links", ("links",), needle="Quick defaults"),
         EndpointCheck("docker --help", ("docker", "--help"), needle="reset"),
         EndpointCheck("contest help", ("contest", "--help"), needle="validate"),
+        EndpointCheck("publish help", ("publish", "--help"), needle="PyPI"),
         EndpointCheck(
-            "contest validate missing paths",
-            ("contest", "validate"),
-            needle="error",
+            "publish pypi build-only",
+            ("publish", "pypi", "--build-only"),
+            needle="Built:",
+        ),
+        EndpointCheck(
+            "publish pypi missing token",
+            ("publish", "pypi", "--yes"),
+            needle="PYPI_API_TOKEN",
             accept_exit_codes=(1,),
+            failure="missing_pypi_token",
         ),
         EndpointCheck(
             "git group help",
@@ -997,8 +1006,20 @@ def run_endpoint_check(
         # Block CLI_GIT_ROOT bleed from Docker CI (whole-pytest env var).
         env.pop("CLI_GIT_ROOT", None)
         cwd = repo_root
+    from contextlib import nullcontext
+    from unittest.mock import patch
+
     env.update(check.extra_env)
-    with _push_cwd(cwd):
+    token_patch = nullcontext()
+    if check.failure == "missing_notion_token":
+        env.pop("NOTION_TOKEN", None)
+        token_patch = patch(
+            "cli.commands.notion.require_notion_token",
+            side_effect=RuntimeError("NOTION_TOKEN is not set"),
+        )
+    if check.failure == "missing_pypi_token":
+        env.pop("PYPI_API_TOKEN", None)
+    with _push_cwd(cwd), token_patch:
         result = _CLI_RUNNER.invoke(app, list(check.args), env=env)
     output = result.stdout + (result.stderr or "")
     if result.exception is not None:

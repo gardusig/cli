@@ -333,6 +333,7 @@ def _drive_success_checks(repo_path: str) -> list[CliApiCheck]:
             "deleted",
         ),
         CliApiCheck("drive upload", "drive", ("drive", "upload", "google"), "Uploading"),
+        CliApiCheck("drive deploy", "drive", ("drive", "deploy"), "Done."),
         CliApiCheck("drive sync", "drive", ("drive", "sync"), "Phase 2"),
     ]
 
@@ -361,6 +362,15 @@ def _drive_failure_checks(repo_path: str) -> list[CliApiCheck]:
             "drive sync missing tags dir",
             "drive",
             ("drive", "sync"),
+            kind="fail",
+            needle="git-tags",
+            accept_exit_codes=(1,),
+            failure="missing_tags_dir",
+        ),
+        CliApiCheck(
+            "drive deploy missing tags dir",
+            "drive",
+            ("drive", "deploy"),
             kind="fail",
             needle="git-tags",
             accept_exit_codes=(1,),

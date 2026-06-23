@@ -7,12 +7,13 @@
 | **Install** | Run `cli` on macOS | `./scripts/bootstrap.sh` or `./scripts/install.sh` |
 | **Verify** | Unit + integration gates (CI-equivalent) | `./scripts/test-unit.sh`, `./scripts/test-integration.sh` |
 
-Local `.venv` gets **runtime** dependencies only. Pytest, coverage, and smoke scripts run **inside** Docker (`cli:unit` / `cli:integration`) so checks never mutate your checkout.
+Local `.venv` gets **runtime** dependencies only. Pytest, coverage, and smoke scripts run **inside** Docker (`cli:integration`) so checks never mutate your checkout.
 
 ## Requirements
 
 - Python **3.12+** (local CLI via `bootstrap.sh` / `install.sh`)
 - `git` on PATH
+- `zip` for encrypted tag archives (`encrypted: true` repos)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) for verification (`cli:dev` Linux image)
 - Optional: `gh` for GitHub (used by cursor-skills, not cli)
 
@@ -30,6 +31,35 @@ python -m cli --help
 
 Manual venv (runtime only): `pip install -r requirements.txt` then `pip install -e .`  
 Host dev tools (not needed for Docker verify): `pip install -r requirements-dev.txt` or `pip install -e ".[dev]"`.
+
+## PyPI install (users)
+
+Package name on PyPI is **`gardusig-cli`**; the command on PATH is still **`cli`**:
+
+```bash
+pip install gardusig-cli
+cli --version
+```
+
+Repo clone path and GitHub project name remain **`cli`** — only the PyPI distribution uses the prefixed name.
+
+Maintainers — tag release (PyPI):
+
+```bash
+cp .env.example .env   # add PYPI_API_TOKEN=pypi-...
+./scripts/release-pypi.sh
+# or: ./scripts/release.sh
+# or: cli publish pypi --yes
+```
+
+GitHub Actions — push tag `v*` runs [release.yml](../.github/workflows/release.yml). Configure repo secret **`PYPI_API_TOKEN`**.
+
+Pull requests run [test.yml](../.github/workflows/test.yml) only. See [`.github/README.md`](../.github/README.md).
+
+| Workflow | Trigger | Gate |
+| --- | --- | --- |
+| `test` | Pull requests | `./scripts/test-unit.sh` then `./scripts/test-integration.sh` |
+| `release` | Tags `v*` | PyPI upload (`PYPI_API_TOKEN` secret) |
 
 ## User install (global — any terminal)
 

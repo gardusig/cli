@@ -15,8 +15,10 @@ runner = CliRunner()
 FIXTURE_ROOT = notion_task_fixture_dir()
 
 
-def test_notion_ingest_requires_token() -> None:
-    result = runner.invoke(app, ["notion", "ingest"])
+def test_notion_ingest_requires_token(monkeypatch) -> None:
+    monkeypatch.delenv("NOTION_TOKEN", raising=False)
+    with patch("cli.commands.notion.require_notion_token", side_effect=RuntimeError("NOTION_TOKEN")):
+        result = runner.invoke(app, ["notion", "ingest"])
     assert result.exit_code != 0
     assert "NOTION_TOKEN" in result.stdout
 

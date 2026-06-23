@@ -13,6 +13,7 @@ from cli.commands.gh import gh_app
 from cli.commands.git import git_app
 from cli.commands.links import links_app
 from cli.commands.notion import notion_app
+from cli.commands.publish import publish_app
 from cli.commands.restore import restore_app
 from cli.utils.logger import setup_logging
 
@@ -33,6 +34,7 @@ app.add_typer(chrome_app, name="chrome")
 app.add_typer(bookmarks_app, name="bookmarks", hidden=True)
 app.add_typer(docker_app, name="docker")
 app.add_typer(contest_app, name="contest")
+app.add_typer(publish_app, name="publish")
 
 
 @app.callback(invoke_without_command=True)

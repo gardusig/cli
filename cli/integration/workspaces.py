@@ -66,6 +66,13 @@ API_WORKSPACES: tuple[ApiWorkspace, ...] = (
         integration_module="tests.test_gh_docker_integration",
         description="GitHub CLI: mocked gh JSON for list/view",
     ),
+    ApiWorkspace(
+        name="contest",
+        fixture_subpath="contest/toy",
+        protected_paths=(),
+        integration_module="tests.test_contest_docker_integration",
+        description="Contest validate: mocked Docker runner (no live daemon)",
+    ),
 )
 
 INTEGRATION_TEST_MODULES: tuple[str, ...] = tuple(

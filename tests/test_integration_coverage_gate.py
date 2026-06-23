@@ -36,7 +36,7 @@ def test_manifest_lists_all_categories() -> None:
     assert manifest["summary"]["total_commands"] > 0
     assert manifest["summary"]["incomplete"] == 0
     categories = {row["category"] for row in manifest["commands"]}
-    assert categories >= {"api", "git", "docker"}
+    assert categories >= {"api", "git", "docker", "contest"}
 
 
 def test_manifest_command_rows_are_complete() -> None:

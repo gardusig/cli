@@ -217,6 +217,9 @@ def bookmarks_file_path(config_dir: Path | None = None) -> Path:
 
 def notion_task_root(config_dir: Path | None = None) -> Path:
     """Resolved path to local Notion task root (header/, body/, pairs manifest)."""
+    env = os.environ.get("NOTION_TASK_ROOT", "").strip()
+    if env:
+        return Path(env).expanduser().resolve()
     cfg = load_config(config_dir)
     raw = cfg.notion.task_root.strip() or cfg.notion.task_directory.strip()
     if not raw:
@@ -257,6 +260,24 @@ def notion_body_template_file(config_dir: Path | None = None) -> Path:
     return (project_root() / "config" / "notion" / "templates" / "body.md").resolve()
 
 
+def notion_database_id(
+    notion: NotionConfig | None = None,
+    *,
+    config_dir: Path | None = None,
+) -> str:
+    """Notion database id from NOTION_DATABASE_ID env or config."""
+    env = os.environ.get("NOTION_DATABASE_ID", "").strip()
+    if env:
+        return env
+    n = notion or load_config(config_dir).notion
+    db = n.database_id.strip()
+    if not db:
+        raise RuntimeError(
+            "notion.database_id is not configured. Set NOTION_DATABASE_ID or notion.database_id in config."
+        )
+    return db
+
+
 def require_notion_token(cfg: CliConfig | None = None) -> str:
     """Notion integration token from NOTION_TOKEN (never commit to config)."""
     token = os.environ.get("NOTION_TOKEN", "").strip()
@@ -264,11 +285,7 @@ def require_notion_token(cfg: CliConfig | None = None) -> str:
         raise RuntimeError(
             "NOTION_TOKEN is not set. Export a Notion integration token to your environment."
         )
-    notion = (cfg or load_config()).notion
-    if not notion.database_id.strip():
-        raise RuntimeError(
-            "notion.database_id is not configured. Set it in config/config.yaml."
-        )
+    notion_database_id((cfg or load_config()).notion)
     return token
 
 

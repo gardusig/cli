@@ -65,12 +65,27 @@ operations:
 
 ## Label commands
 
+Manifest path: **`config/gh/labels.manifest.yaml`** (repo-owned epic/area taxonomy).
+
 ```bash
 cli gh label list --format json
 cli gh label create my-label --color ff0000 --yes
 cli gh label delete my-label --yes
-cli gh label sync --manifest .cursor/gh/labels.manifest.yaml --yes
-cli gh label sync --manifest .cursor/gh/labels.manifest.yaml --prune-orphans --yes
+cli gh label sync --manifest config/gh/labels.manifest.yaml --yes
+cli gh label sync --manifest config/gh/labels.manifest.yaml --prune-orphans --yes
+```
+
+Retro-label open issues from a batch file:
+
+```bash
+cli gh issue batch --file config/gh/backlog-labelize.batch.yaml --yes
+```
+
+Host helpers (when `cli` is on PATH):
+
+```bash
+./scripts/gh/sync-labels.sh
+./scripts/gh/labelize-backlog.sh
 ```
 
 ## Pull request commands

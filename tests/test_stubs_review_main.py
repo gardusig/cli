@@ -17,6 +17,7 @@ from cli.providers import chrome, github, google_drive, icloud_drive, notion, on
 from cli.services import bookmark_sync, drive_sync, git_archive, notion_sync
 from cli.services.notion_sync import cleanup_board
 from cli.services.git_review import run_review
+from cli.utils.http import default_http_timeout
 
 STUB_CALLS: list[tuple[Callable[..., Any], tuple[Any, ...]]] = [
     (chrome.export_bookmarks, ("Default", "/tmp")),
@@ -72,6 +73,7 @@ def test_notion_sync_with_mocks(monkeypatch, tmp_path: Path) -> None:
     def _client_factory(**kwargs):
         kwargs["transport"] = httpx.MockTransport(handler)
         kwargs.setdefault("base_url", "https://api.notion.com/v1")
+        kwargs.setdefault("timeout", default_http_timeout())
         return _REAL_HTTPX_CLIENT(**kwargs)
 
     with patch(

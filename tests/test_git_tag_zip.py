@@ -140,36 +140,38 @@ def test_git_tag_prepare_failure(mock_prepare: MagicMock) -> None:
 
 
 @patch.object(GitShortcuts, "tag_exists_local", return_value=False)
-@patch.object(GitShortcuts, "zip_tag")
-def test_git_zip_requires_tag(mock_zip: MagicMock, _exists: MagicMock) -> None:
+@patch("cli.commands.git.archive_tag_zip")
+def test_git_zip_requires_tag(mock_archive: MagicMock, _exists: MagicMock) -> None:
     result = runner.invoke(app, ["git", "zip", "missing-tag"])
     assert result.exit_code != 0
     assert "Tag not found" in result.stdout
-    mock_zip.assert_not_called()
+    mock_archive.assert_not_called()
 
 
+@patch("cli.commands.git.repo_encrypt_backup", return_value=False)
 @patch.object(GitShortcuts, "tag_exists_local", return_value=True)
 @patch.object(GitShortcuts, "repo_basename", return_value="repo")
-@patch.object(GitShortcuts, "zip_tag")
+@patch("cli.commands.git.archive_tag_zip")
 def test_git_zip_with_tag(
-    mock_zip: MagicMock,
+    mock_archive: MagicMock,
     _basename: MagicMock,
     _exists: MagicMock,
+    _encrypted: MagicMock,
     tmp_path: Path,
 ) -> None:
     dest = tmp_path / "repo-2026-06-11.zip"
 
-    def _archive(tag: str, out: Path) -> Path:
+    def _write_archive(repo_path: Path, tag: str, out: Path, **kwargs: object) -> Path:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_bytes(b"zip")
         return out
 
-    mock_zip.side_effect = _archive
+    mock_archive.side_effect = _write_archive
     with patch("cli.commands.git.default_zip_path", return_value=dest):
         result = runner.invoke(app, ["git", "zip", "2026-06-11"])
     assert result.exit_code == 0
     assert ".zip" in result.stdout
-    mock_zip.assert_called_once()
+    mock_archive.assert_called_once()
 
 
 def test_prepare_for_tag_commits_dirty_feature_work_before_sync() -> None:
