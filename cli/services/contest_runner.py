@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -191,13 +193,20 @@ def _run_tier_parallel(
     return TierRunResult(tier=tier, brute=brute, fast=fast, outputs_match=outputs_match)
 
 
+def _contest_workspace() -> tempfile.TemporaryDirectory[str]:
+    root = os.environ.get("CLI_CONTEST_WORKSPACE_ROOT")
+    if root:
+        base = Path(root)
+        base.mkdir(parents=True, exist_ok=True)
+        return tempfile.TemporaryDirectory(prefix="cli-contest-", dir=base)
+    return tempfile.TemporaryDirectory(prefix="cli-contest-")
+
+
 def validate_contest(options: ContestValidateOptions) -> ContestValidateResult:
     config = _docker_config(options)
     ensure_contest_image(config.image)
 
-    import tempfile
-
-    with tempfile.TemporaryDirectory(prefix="cli-contest-") as tmp:
+    with _contest_workspace() as tmp:
         workspace = Path(tmp)
         try:
             _setup_workspace(options, workspace)

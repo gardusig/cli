@@ -105,6 +105,11 @@ docker_run_in_workspace() {
       exit 1
     fi
     run_args+=(-v /var/run/docker.sock:/var/run/docker.sock)
+    mkdir -p "$ROOT/.integration-scratch"
+    run_args+=(
+      -v "$ROOT/.integration-scratch:/integration-scratch:rw"
+      -e CLI_CONTEST_WORKSPACE_ROOT=/integration-scratch
+    )
   fi
   docker run "${run_args[@]}" "$IMAGE" bash -c "$inner_script"
 }
