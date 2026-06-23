@@ -1,4 +1,4 @@
-"""Tests for shuttle git push (add + commit + push shortcut)."""
+"""Tests for cli git push (add + commit + push shortcut)."""
 
 from __future__ import annotations
 
@@ -7,12 +7,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from shuttle.cli import app
-from shuttle.commands.git import _push_plan
-from shuttle.services.git_shortcuts import GitShortcuts
+from cli.cli import app
+from cli.commands.git import _push_plan
+from cli.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
-GIT_SNAPSHOT_PATCH = "shuttle.commands.git.git_worktree_snapshot"
+GIT_SNAPSHOT_PATCH = "cli.commands.git.git_worktree_snapshot"
 
 
 @pytest.fixture
@@ -100,6 +100,6 @@ def test_git_push_shows_write_gate(mock_push: MagicMock, snapshot: MagicMock) ->
     with patch(GIT_SNAPSHOT_PATCH, return_value=snapshot):
         result = runner.invoke(app, ["git", "push", "--yes"])
     assert result.exit_code == 0
-    assert "--- shuttle write gate ---" in result.stdout
+    assert "--- cli write gate ---" in result.stdout
     assert "operation: push" in result.stdout
     mock_push.assert_called_once()

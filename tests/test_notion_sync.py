@@ -9,10 +9,10 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from shuttle.integration.workspaces import notion_task_fixture_dir
-from shuttle.providers.notion import NotionClient
-from shuttle.services.notion_sync import cleanup_board, export_tasks, import_tasks
-from shuttle.utils.config import NotionConfig
+from cli.integration.workspaces import notion_task_fixture_dir
+from cli.providers.notion import NotionClient
+from cli.services.notion_sync import cleanup_board, export_tasks, import_tasks
+from cli.utils.config import NotionConfig
 
 FIXTURE_ROOT = notion_task_fixture_dir()
 NOTION_BASE = "https://api.notion.com/v1"
@@ -26,7 +26,7 @@ def _patch_notion_http(handler):
         return _REAL_HTTPX_CLIENT(**kwargs)
 
     return patch(
-        "shuttle.providers.notion.httpx.Client",
+        "cli.providers.notion.httpx.Client",
         side_effect=_client_factory,
     )
 
@@ -87,11 +87,11 @@ def test_import_tasks_deploys_enabled_pair(tmp_path: Path, monkeypatch) -> None:
 
     cfg = NotionConfig(database_id="db-test", cleanup_before_deploy=True)
     monkeypatch.setattr(
-        "shuttle.services.notion_sync.notion_pairs_file",
+        "cli.services.notion_sync.notion_pairs_file",
         lambda config_dir=None: manifest,
     )
     monkeypatch.setattr(
-        "shuttle.services.notion_sync.notion_task_root",
+        "cli.services.notion_sync.notion_task_root",
         lambda config_dir=None: task_root,
     )
 
@@ -160,7 +160,7 @@ def test_export_tasks_ingest_updates_local(tmp_path: Path, monkeypatch) -> None:
 
     cfg = NotionConfig(database_id="db-test")
     monkeypatch.setattr(
-        "shuttle.services.notion_sync.notion_pairs_file",
+        "cli.services.notion_sync.notion_pairs_file",
         lambda config_dir=None: manifest,
     )
 

@@ -5,15 +5,15 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from shuttle.providers.notion import NotionError
-from shuttle.utils.external_client import (
+from cli.providers.notion import NotionError
+from cli.utils.external_client import (
     ExternalCallError,
     ExternalClient,
     failure_hint,
     format_user_message,
     is_retryable_exception,
 )
-from shuttle.utils.process import GhCommandError
+from cli.utils.process import GhCommandError
 
 
 def test_is_retryable_notion_503() -> None:

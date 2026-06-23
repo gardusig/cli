@@ -4,7 +4,7 @@
 | --- | --- |
 | [`config.yaml`](config.yaml) | Default dev settings (backup paths, Notion, Chrome) |
 | [`drives.yaml`](drives.yaml) | Cloud drive upload targets (shared by dev and CI) |
-| [`ci/config.yaml`](ci/config.yaml) | Docker test harness overrides (`SHUTTLE_CONFIG_DIR=config/ci`) |
+| [`ci/config.yaml`](ci/config.yaml) | Docker test harness overrides (`CLI_CONFIG_DIR=config/ci`) |
 | [`notion/`](notion/) | Task pair manifest + header/body scaffolds |
 | [`contest/`](contest/) | Contest validate defaults + generator/brute templates |
 

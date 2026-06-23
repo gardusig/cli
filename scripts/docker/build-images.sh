@@ -9,6 +9,6 @@ for target in python unit integration contest; do
   echo "==> $target -> $image"
   docker build -f "$DOCKERFILE" --target "$target" -t "$image" "$ROOT"
 done
-docker tag shuttle-cli:integration shuttle-cli:dev
-echo "Tagged: shuttle-cli:dev -> shuttle-cli:integration"
+docker tag cli:integration cli:dev
+echo "Tagged: cli:dev -> cli:integration"
 echo "All stages built."

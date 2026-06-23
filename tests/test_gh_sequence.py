@@ -1,6 +1,6 @@
 """Unit tests for gh_sequence helpers."""
 
-from shuttle.services.gh_sequence import SequenceKey, next_child_issue, sort_issues_by_sequence
+from cli.services.gh_sequence import SequenceKey, next_child_issue, sort_issues_by_sequence
 
 
 def test_sequence_key_loose_prefix() -> None:

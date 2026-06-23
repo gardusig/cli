@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from shuttle.providers.base import DriveProvider
+from cli.providers.base import DriveProvider
 
 
 class InMemoryDriveProvider(DriveProvider):

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from shuttle.integration.tag_zip_integration import (
+from cli.integration.tag_zip_integration import (
     TAG_ZIP_CHECKS,
     prepare_tag_zip_git,
     run_all_tag_zip_checks,
@@ -21,7 +21,7 @@ SCRATCH = ROOT / ".integration-scratch"
 @pytest.fixture
 def git_repo():
     SCRATCH.mkdir(exist_ok=True)
-    git_dir = Path(tempfile.mkdtemp(prefix="shuttle-tag-zip-", dir=SCRATCH))
+    git_dir = Path(tempfile.mkdtemp(prefix="cli-tag-zip-", dir=SCRATCH))
     bare = git_dir.parent / f"{git_dir.name}-origin.git"
     prepare_tag_zip_git(git_dir)
     try:

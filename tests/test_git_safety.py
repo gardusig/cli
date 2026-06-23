@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from shuttle.services.git_shortcuts import GitShortcuts
+from cli.services.git_shortcuts import GitShortcuts
 
 
 def test_push_refuses_without_yes() -> None:
@@ -37,7 +37,7 @@ def test_delete_remote_branches_refuses_without_yes() -> None:
         svc.delete_remote_branches(yes=False)
 
 
-@patch("shuttle.services.git_shortcuts.run_git")
+@patch("cli.services.git_shortcuts.run_git")
 def test_start_no_prep_skips_align_main(mock_run: MagicMock) -> None:
     svc = GitShortcuts(top="/tmp")
     mock_run.return_value.stdout = "feature\n"

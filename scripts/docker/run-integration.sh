@@ -3,8 +3,8 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
-export SHUTTLE_CONFIG_DIR="$ROOT/config/ci"
-SHUTTLE_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
+export CLI_CONFIG_DIR="$ROOT/config/ci"
+CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
 source .venv/bin/activate
 
 run_step() {

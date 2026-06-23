@@ -7,14 +7,14 @@ from unittest.mock import patch
 
 import pytest
 
-from shuttle.services.contest_docker import RunOutcome, RunStatus
-from shuttle.services.contest_runner import (
+from cli.services.contest_docker import RunOutcome, RunStatus
+from cli.services.contest_runner import (
     ContestPaths,
     ContestValidateOptions,
     resolve_options,
     validate_contest,
 )
-from shuttle.services.contest_serde import compare_text, normalize_text, unified_diff
+from cli.services.contest_serde import compare_text, normalize_text, unified_diff
 
 ROOT = Path(__file__).resolve().parents[1]
 TOY = ROOT / "tests" / "fixtures" / "contest" / "toy"
@@ -44,7 +44,7 @@ def test_resolve_options_from_paths() -> None:
         config=None,
         timeout=5.0,
         memory_mb=128,
-        image="shuttle-contest:runner",
+        image="cli-contest:runner",
     )
     assert opts.timeout == 5.0
     assert opts.memory_mb == 128
@@ -84,10 +84,10 @@ def _make_options() -> ContestValidateOptions:
     )
 
 
-@patch("shuttle.services.contest_runner.ensure_contest_image")
-@patch("shuttle.services.contest_runner.compile_fast_solution")
-@patch("shuttle.services.contest_runner.run_fast")
-@patch("shuttle.services.contest_runner.run_brute")
+@patch("cli.services.contest_runner.ensure_contest_image")
+@patch("cli.services.contest_runner.compile_fast_solution")
+@patch("cli.services.contest_runner.run_fast")
+@patch("cli.services.contest_runner.run_brute")
 def test_validate_pass_small_match_large_tle(
     mock_brute,
     mock_fast,
@@ -112,10 +112,10 @@ def test_validate_pass_small_match_large_tle(
     assert mock_fast.call_count == 2
 
 
-@patch("shuttle.services.contest_runner.ensure_contest_image")
-@patch("shuttle.services.contest_runner.compile_fast_solution")
-@patch("shuttle.services.contest_runner.run_fast")
-@patch("shuttle.services.contest_runner.run_brute")
+@patch("cli.services.contest_runner.ensure_contest_image")
+@patch("cli.services.contest_runner.compile_fast_solution")
+@patch("cli.services.contest_runner.run_fast")
+@patch("cli.services.contest_runner.run_brute")
 def test_validate_small_mismatch_skips_large(
     mock_brute,
     mock_fast,
@@ -137,10 +137,10 @@ def test_validate_small_mismatch_skips_large(
     assert mock_fast.call_count == 1
 
 
-@patch("shuttle.services.contest_runner.ensure_contest_image")
-@patch("shuttle.services.contest_runner.compile_fast_solution")
-@patch("shuttle.services.contest_runner.run_fast")
-@patch("shuttle.services.contest_runner.run_brute")
+@patch("cli.services.contest_runner.ensure_contest_image")
+@patch("cli.services.contest_runner.compile_fast_solution")
+@patch("cli.services.contest_runner.run_fast")
+@patch("cli.services.contest_runner.run_brute")
 def test_validate_large_brute_ok_emits_warning(
     mock_brute,
     mock_fast,
@@ -159,8 +159,8 @@ def test_validate_large_brute_ok_emits_warning(
     assert "stress" in result.warnings[0].lower()
 
 
-@patch("shuttle.services.contest_runner.ensure_contest_image")
-@patch("shuttle.services.contest_runner.compile_fast_solution")
+@patch("cli.services.contest_runner.ensure_contest_image")
+@patch("cli.services.contest_runner.compile_fast_solution")
 def test_validate_compile_error(mock_compile, mock_ensure_image) -> None:
     mock_compile.return_value = RunOutcome(
         RunStatus.COMPILE_ERROR, 0.5, "", "error: expected ';'", 1
@@ -173,10 +173,10 @@ def test_validate_compile_error(mock_compile, mock_ensure_image) -> None:
     assert "compile" in result.error.lower()
 
 
-@patch("shuttle.services.contest_runner.ensure_contest_image")
-@patch("shuttle.services.contest_runner.compile_fast_solution")
-@patch("shuttle.services.contest_runner.run_fast")
-@patch("shuttle.services.contest_runner.run_brute")
+@patch("cli.services.contest_runner.ensure_contest_image")
+@patch("cli.services.contest_runner.compile_fast_solution")
+@patch("cli.services.contest_runner.run_fast")
+@patch("cli.services.contest_runner.run_brute")
 def test_validate_fast_tle_on_large_fails(
     mock_brute,
     mock_fast,

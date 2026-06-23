@@ -3,22 +3,22 @@
 set -euo pipefail
 # shellcheck source=common.sh
 source "$(dirname "$0")/common.sh"
-export SHUTTLE_DOCKER_TARGET="${SHUTTLE_DOCKER_TARGET:-integration}"
-export SHUTTLE_DOCKER_IMAGE="${SHUTTLE_DOCKER_IMAGE:-shuttle-cli:integration}"
+export CLI_DOCKER_TARGET="${CLI_DOCKER_TARGET:-integration}"
+export CLI_DOCKER_IMAGE="${CLI_DOCKER_IMAGE:-cli:integration}"
 
 docker_ensure_image
 docker run --rm -it \
   -v "$ROOT:$CONTAINER_SRC:ro" \
-  -e SHUTTLE_DOCKER_INTEGRATION=1 \
+  -e CLI_DOCKER_INTEGRATION=1 \
   "$IMAGE" \
   bash -c "
     set -euo pipefail
     $(docker_copy_workspace_script)
     cd '$CONTAINER_WORK'
-    SHUTTLE_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
+    CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
     echo ''
     echo 'Bootstrapped workspace: $CONTAINER_WORK'
-    echo 'Try: python -m shuttle --help'
+    echo 'Try: python -m cli --help'
     echo ''
     exec bash
   "

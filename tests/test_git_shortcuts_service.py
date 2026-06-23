@@ -8,10 +8,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from shuttle.services.git_shortcuts import GitShortcuts
-from shuttle.utils.process import GitCommandError
+from cli.services.git_shortcuts import GitShortcuts
+from cli.utils.process import GitCommandError
 
-PATCH = "shuttle.services.git_shortcuts.run_git"
+PATCH = "cli.services.git_shortcuts.run_git"
 
 
 def _ok(stdout: str = "", returncode: int = 0) -> MagicMock:
@@ -28,8 +28,8 @@ def svc() -> GitShortcuts:
 
 
 @patch(PATCH)
-def test_init_uses_shuttle_git_root(mock_run: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("SHUTTLE_GIT_ROOT", "/from-env")
+def test_init_uses_cli_git_root(mock_run: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CLI_GIT_ROOT", "/from-env")
     s = GitShortcuts()
     assert s.top == "/from-env"
     mock_run.assert_not_called()

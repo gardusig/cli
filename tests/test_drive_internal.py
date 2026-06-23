@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from shuttle.services.drive_sync import _scan_local_files, upload_missing
-from shuttle.utils.external_client import ExternalCallError
+from cli.services.drive_sync import _scan_local_files, upload_missing
+from cli.utils.external_client import ExternalCallError
 from tests.drive_harness import InMemoryDriveProvider
 
 

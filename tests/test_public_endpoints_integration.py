@@ -1,4 +1,4 @@
-"""Integration coverage for every public shuttle CLI endpoint."""
+"""Integration coverage for every public cli CLI endpoint."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from shuttle.integration.public_endpoints import (
+from cli.integration.public_endpoints import (
     GIT_SUBCOMMANDS,
     TOP_LEVEL_COMMANDS,
     assert_every_git_subcommand_checked,
@@ -63,7 +63,7 @@ def test_docker_top_level_in_registry() -> None:
 @pytest.mark.integration
 def test_run_all_public_endpoint_checks() -> None:
     SCRATCH.mkdir(exist_ok=True)
-    git_dir = Path(tempfile.mkdtemp(prefix="shuttle-git-", dir=SCRATCH))
+    git_dir = Path(tempfile.mkdtemp(prefix="cli-git-", dir=SCRATCH))
     try:
         prepare_git_repo(git_dir)
         errors = run_all_endpoint_checks(ROOT, git_root=git_dir)

@@ -1,14 +1,14 @@
-"""Registry and mocked integration checks for shuttle docker commands."""
+"""Registry and mocked integration checks for cli docker commands."""
 
 from __future__ import annotations
 
-from shuttle.integration.docker_integration import (
+from cli.integration.docker_integration import (
     DOCKER_SUBCOMMANDS,
     assert_every_docker_subcommand_has_ok_check,
     docker_checks,
     run_all_docker_checks,
 )
-from shuttle.integration.integration_coverage import assert_integration_coverage_gate
+from cli.integration.integration_coverage import assert_integration_coverage_gate
 
 from pathlib import Path
 

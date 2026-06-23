@@ -3,12 +3,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="${SHUTTLE_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
-BOOKMARKS_FILE="${SHUTTLE_BOOKMARKS_FILE:-}"
-SKIP_AUTOMATION="${SHUTTLE_SKIP_CHROME_AUTOMATION:-0}"
+ROOT="${CLI_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
+BOOKMARKS_FILE="${CLI_BOOKMARKS_FILE:-}"
+SKIP_AUTOMATION="${CLI_SKIP_CHROME_AUTOMATION:-0}"
 
 if [[ -z "$BOOKMARKS_FILE" ]]; then
-  echo "ERROR: SHUTTLE_BOOKMARKS_FILE is not set (configure chrome.bookmarks_file or use shuttle chrome bookmarks deploy)" >&2
+  echo "ERROR: CLI_BOOKMARKS_FILE is not set (configure chrome.bookmarks_file or use cli chrome bookmarks deploy)" >&2
   exit 1
 fi
 

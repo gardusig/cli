@@ -1,6 +1,6 @@
 # Backup (deprecated)
 
-**Use [`drive.md`](drive.md)** — `shuttle backup` is a hidden alias for `shuttle drive`.
+**Use [`drive.md`](drive.md)** — `cli backup` is a hidden alias for `cli drive`.
 
 | Old | New |
 | --- | --- |

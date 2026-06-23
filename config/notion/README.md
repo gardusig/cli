@@ -7,7 +7,7 @@ Pair scaffolds for new rows: [templates/](./templates/README.md).
 Refresh after adding or renaming pairs:
 
 ```bash
-shuttle notion pairs build
+cli notion pairs build
 ```
 
 This overwrites `config/notion/tasks.pairs.json` in this repo.

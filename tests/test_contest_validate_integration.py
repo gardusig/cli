@@ -1,4 +1,4 @@
-"""Live Docker integration for shuttle contest validate."""
+"""Live Docker integration for cli contest validate."""
 
 from __future__ import annotations
 
@@ -8,12 +8,12 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from shuttle.cli import app
-from shuttle.services.docker_runtime import docker_available
+from cli.cli import app
+from cli.services.docker_runtime import docker_available
 
 ROOT = Path(__file__).resolve().parents[1]
 TOY = ROOT / "tests" / "fixtures" / "contest" / "toy"
-IMAGE = "shuttle-contest:runner"
+IMAGE = "cli-contest:runner"
 
 
 @pytest.mark.integration

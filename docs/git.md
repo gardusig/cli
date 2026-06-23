@@ -1,40 +1,40 @@
 # Git commands
 
-`shuttle git` wraps common local git workflows. Commit message defaults to `.`.
+`cli git` wraps common local git workflows. Commit message defaults to `.`.
 
 Each command maps to a [cursor-skills git skill](https://github.com/gardusig/cursor-skills/tree/main/skills/git) and has a shell wrapper under `scripts/git/`:
 
 | Skill | Script | Command |
 | --- | --- | --- |
-| `@git-branch` | `scripts/git/branch.sh` | `shuttle git branch` |
-| `@git-branch-delete` | `scripts/git/branch-delete.sh` | `shuttle git branch-delete` |
-| `@git-branch-delete-all` | `scripts/git/branch-delete-all.sh` | `shuttle git branch-delete-all` |
-| `@git-branch-clear` | `scripts/git/branch-clear.sh` | `shuttle git branch-clear` |
-| `@git-cherry-pick` | `scripts/git/cherry-pick.sh` | `shuttle git cherry-pick` |
-| `@git-commit` | `scripts/git/commit.sh` | `shuttle git commit` |
-| `@git-docs` | `scripts/git/docs.sh` | `shuttle git docs` |
-| `@git-large-files` | `scripts/git/large-files.sh` | `shuttle git large-files` |
-| `@git-main` | `scripts/git/main.sh` | `shuttle git main` |
-| `@git-post-merge-cleanup` | `scripts/git/post-merge-cleanup.sh` | `shuttle git post-merge-cleanup` |
-| `@git-pull` | `scripts/git/pull.sh` | `shuttle git pull` |
-| `@git-push` | `scripts/git/push.sh` | `shuttle git push` |
-| `@git-rebase` | `scripts/git/rebase.sh` | `shuttle git rebase` |
-| `@git-reset` | `scripts/git/reset.sh` | `shuttle git reset` |
-| `@git-revert` | `scripts/git/revert.sh` | `shuttle git revert` |
-| `@git-review` | `scripts/git/review.sh` | `shuttle git review` |
-| `@git-start` | `scripts/git/start.sh` | `shuttle git start` |
-| `@git-stash` | `scripts/git/stash.sh` | `shuttle git stash` |
-| `@git-tag` | `scripts/git/tag.sh` | `shuttle git tag` |
-| `@git-tag-list` | `scripts/git/tag-list.sh` | `shuttle git tag list` |
-| `@git-tag-push` | `scripts/git/tag-push.sh` | `shuttle git tag push` |
-| `@git-zip` | `scripts/git/zip.sh` | `shuttle git zip` |
+| `@git-branch` | `scripts/git/branch.sh` | `cli git branch` |
+| `@git-branch-delete` | `scripts/git/branch-delete.sh` | `cli git branch-delete` |
+| `@git-branch-delete-all` | `scripts/git/branch-delete-all.sh` | `cli git branch-delete-all` |
+| `@git-branch-clear` | `scripts/git/branch-clear.sh` | `cli git branch-clear` |
+| `@git-cherry-pick` | `scripts/git/cherry-pick.sh` | `cli git cherry-pick` |
+| `@git-commit` | `scripts/git/commit.sh` | `cli git commit` |
+| `@git-docs` | `scripts/git/docs.sh` | `cli git docs` |
+| `@git-large-files` | `scripts/git/large-files.sh` | `cli git large-files` |
+| `@git-main` | `scripts/git/main.sh` | `cli git main` |
+| `@git-post-merge-cleanup` | `scripts/git/post-merge-cleanup.sh` | `cli git post-merge-cleanup` |
+| `@git-pull` | `scripts/git/pull.sh` | `cli git pull` |
+| `@git-push` | `scripts/git/push.sh` | `cli git push` |
+| `@git-rebase` | `scripts/git/rebase.sh` | `cli git rebase` |
+| `@git-reset` | `scripts/git/reset.sh` | `cli git reset` |
+| `@git-revert` | `scripts/git/revert.sh` | `cli git revert` |
+| `@git-review` | `scripts/git/review.sh` | `cli git review` |
+| `@git-start` | `scripts/git/start.sh` | `cli git start` |
+| `@git-stash` | `scripts/git/stash.sh` | `cli git stash` |
+| `@git-tag` | `scripts/git/tag.sh` | `cli git tag` |
+| `@git-tag-list` | `scripts/git/tag-list.sh` | `cli git tag list` |
+| `@git-tag-push` | `scripts/git/tag-push.sh` | `cli git tag push` |
+| `@git-zip` | `scripts/git/zip.sh` | `cli git zip` |
 
 ## Internal read/write
 
 Pattern mirrors [cursor-skills internal read/write](https://github.com/gardusig/cursor-skills/tree/main/skills/internal):
 
-1. **Read** (`shuttle/internal/read/`) — worktree snapshot, no prompts
-2. **Write gate** (`shuttle/internal/write/gate.py`) — prints `--- shuttle write gate ---` with repo context, then asks to proceed
+1. **Read** (`cli/internal/read/`) — worktree snapshot, no prompts
+2. **Write gate** (`cli/internal/write/gate.py`) — prints `--- cli write gate ---` with repo context, then asks to proceed
 3. **Write** — mutation runs only after `--yes` or interactive confirmation
 
 Read-only commands (`review`, `docs`, `branch list`, `stash list`) skip the gate.
@@ -65,21 +65,21 @@ No confirmation needed:
 Default (issue workflow — align main + branch):
 
 ```bash
-shuttle git start issue-9-docker --yes
+cli git start issue-9-docker --yes
 ```
 
 Branch from the **current** working tree without reset/clean:
 
 ```bash
-shuttle git start my-feature --no-prep
+cli git start my-feature --no-prep
 ```
 
 ## Return to synced main
 
 ```bash
-shuttle git reset --yes              # commit dirty branch work, sync main, prune merged branches
-shuttle git reset --yes --main-only  # sync main only (keep local branches)
-shuttle git reset --yes --discard    # drop uncommitted work on current branch
+cli git reset --yes              # commit dirty branch work, sync main, prune merged branches
+cli git reset --yes --main-only  # sync main only (keep local branches)
+cli git reset --yes --discard    # drop uncommitted work on current branch
 ```
 
 On a feature branch with uncommitted edits, `reset` commits with `.` (or `-m`) before checking out `main`. Then it fetches, fast-forwards `main` when upstream exists (else hard-resets to `origin/main`), and cleans the worktree.
@@ -87,9 +87,9 @@ On a feature branch with uncommitted edits, `reset` commits with `.` (or `-m`) b
 ## Publish
 
 ```bash
-shuttle git push              # interactive: branch summary → add + commit + push
-shuttle git push --yes        # non-interactive
-shuttle git commit -m "wip"   # commit only (no push)
+cli git push              # interactive: branch summary → add + commit + push
+cli git push --yes        # non-interactive
+cli git commit -m "wip"   # commit only (no push)
 ```
 
 `push` shows a write gate with branch, dirty state, commit message, and intent (`add → commit → push`) before running. On `main`, it starts a random branch first unless you pass `--allow-main`.
@@ -99,7 +99,7 @@ shuttle git commit -m "wip"   # commit only (no push)
 `branch-delete-all` removes only **merged** branches. `branch-clear` is stronger:
 
 ```bash
-shuttle git branch-clear
+cli git branch-clear
 ```
 
 1. Write gate — confirms hard reset + clean, checkout `main`, delete **every** local branch except `main` (lists branches in the prompt).
@@ -108,7 +108,7 @@ shuttle git branch-clear
 Non-interactive full wipe:
 
 ```bash
-shuttle git branch-clear --yes --delete-remote
+cli git branch-clear --yes --delete-remote
 ```
 
 ## Tag and zip
@@ -116,52 +116,52 @@ shuttle git branch-clear --yes --delete-remote
 Single-repository only (run from the repo you want to tag).
 
 ```bash
-shuttle git tag                    # sync main, create today's tag, push to origin
-shuttle git tag 2026-06-11         # named tag
-shuttle git tag list               # local + remote tags (sorted)
-shuttle git tag push               # reconcile today's tag with origin
-shuttle git tag push 2026-06-11 --yes
-shuttle git zip                    # zip today's tag → git-tags/REPO/TAG.zip (iCloud)
-shuttle git zip 2026-06-11 -o out.zip
+cli git tag                    # sync main, create today's tag, push to origin
+cli git tag 2026-06-11         # named tag
+cli git tag list               # local + remote tags (sorted)
+cli git tag push               # reconcile today's tag with origin
+cli git tag push 2026-06-11 --yes
+cli git zip                    # zip today's tag → git-tags/REPO/TAG.zip (iCloud)
+cli git zip 2026-06-11 -o out.zip
 ```
 
 `tag` syncs **main** first (same as `git reset`), creates an annotated tag on the latest main commit, then pushes to `origin` when configured. Default tag name is **today's date** (`YYYY-MM-DD`). Pass `--yes` if the worktree is dirty.
 
-For multi-repo zip inventory and bulk ingest, use [`shuttle drive ingest`](drive.md).
+For multi-repo zip inventory and bulk ingest, use [`cli drive ingest`](drive.md).
 
 Shell wrappers: `scripts/git/tag-list.sh`, `scripts/git/tag-push.sh`, `scripts/git/zip.sh`.
 
 ## Review (workspace health)
 
 ```bash
-shuttle git review
+cli git review
 # or
 ./scripts/git/review.sh
 ```
 
-Runs shell syntax checks; without `--quick`, also `./scripts/test-unit.sh` (Docker — requires Docker Desktop). No commit or push. Use `shuttle git review --quick` when Docker is unavailable.
+Runs shell syntax checks; without `--quick`, also `./scripts/test-unit.sh` (Docker — requires Docker Desktop). No commit or push. Use `cli git review --quick` when Docker is unavailable.
 
 ## Read-only introspection (cursor-skills)
 
-Used by [`read-shuttle-git`](https://github.com/gardusig/cursor-skills/blob/main/skills/internal/read/shuttle/git/SKILL.md) — no write gate:
+Used by [`read-cli-git`](https://github.com/gardusig/cursor-skills/blob/main/skills/internal/read/cli/git/SKILL.md) — no write gate:
 
 ```bash
-shuttle git branch-current
-shuttle git diff-stat --base upstream/main
-shuttle git diff-names --base "$BASE_GIT"
-shuttle git log-oneline --base "$BASE_GIT"
-shuttle git log-messages --base "$BASE_GIT" --max-count 30
-shuttle git rev-list-count --base "$BASE_GIT"
-shuttle git remote-url upstream
-shuttle git rev-parse HEAD
-shuttle git merge-base-check --base "$BASE_GIT"
-shuttle git publish-check --remote origin --branch feature-x
+cli git branch-current
+cli git diff-stat --base upstream/main
+cli git diff-names --base "$BASE_GIT"
+cli git log-oneline --base "$BASE_GIT"
+cli git log-messages --base "$BASE_GIT" --max-count 30
+cli git rev-list-count --base "$BASE_GIT"
+cli git remote-url upstream
+cli git rev-parse HEAD
+cli git merge-base-check --base "$BASE_GIT"
+cli git publish-check --remote origin --branch feature-x
 ```
 
 ## Docs inventory
 
 ```bash
-shuttle git docs
+cli git docs
 ```
 
 Lists markdown paths for sync. In-place edits use cursor-skills `@git-docs`.

@@ -9,12 +9,12 @@ from unittest.mock import patch
 import pytest
 from typer.testing import CliRunner
 
-from shuttle.cli import app, run
-from shuttle.integration.workspaces import API_WORKSPACES, fixture_dir
-from shuttle.services.notion_sync import export_tasks, import_tasks
-from shuttle.utils.config import NotionConfig
-from shuttle.utils.external_client import ExternalCallError, ExternalClient
-from shuttle.utils.process import GhCommandError
+from cli.cli import app, run
+from cli.integration.workspaces import API_WORKSPACES, fixture_dir
+from cli.services.notion_sync import export_tasks, import_tasks
+from cli.utils.config import NotionConfig
+from cli.utils.external_client import ExternalCallError, ExternalClient
+from cli.utils.process import GhCommandError
 from tests.drive_harness import DriveRemoteError, FailingDriveProvider, InMemoryDriveProvider
 from tests.gh_harness import gh_auth_error, gh_transient_error, patch_run_gh
 from tests.integration_harness import copy_fixture_workspace
@@ -42,11 +42,11 @@ def notion_paths(monkeypatch, notion_task_root: Path):
     manifest = notion_task_root / "tasks.pairs.json"
 
     monkeypatch.setattr(
-        "shuttle.services.notion_sync.notion_pairs_file",
+        "cli.services.notion_sync.notion_pairs_file",
         lambda config_dir=None: manifest,
     )
     monkeypatch.setattr(
-        "shuttle.services.notion_sync.notion_task_root",
+        "cli.services.notion_sync.notion_task_root",
         lambda config_dir=None: notion_task_root,
     )
     return notion_task_root, manifest
@@ -91,7 +91,7 @@ def test_notion_deploy_503_retries_then_succeeds(notion_paths) -> None:
     client = ExternalClient("notion", sleep=lambda _s: None)
 
     with patch_notion_http(handler):
-        with patch("shuttle.providers.notion.ExternalClient", return_value=client):
+        with patch("cli.providers.notion.ExternalClient", return_value=client):
             result = import_tasks(task_root, token="tok", config=cfg, cleanup_first=False)
 
     assert result.processed == 2
@@ -131,7 +131,7 @@ def test_gh_issue_list_happy_path_via_run_gh() -> None:
 
 @pytest.mark.integration
 def test_gh_issue_list_auth_failure_surfaces_hint() -> None:
-    from shuttle.providers.gh import GhProvider
+    from cli.providers.gh import GhProvider
 
     with patch_run_gh(side_effect=gh_auth_error()):
         with pytest.raises(ExternalCallError) as exc_info:
@@ -170,7 +170,7 @@ def test_gh_issue_list_transient_503_retries_then_succeeds() -> None:
     client = ExternalClient("gh", sleep=lambda _s: None)
 
     with patch_run_gh(handler=handler):
-        with patch("shuttle.providers.gh.ExternalClient", return_value=client):
+        with patch("cli.providers.gh.ExternalClient", return_value=client):
             result = RUNNER.invoke(app, ["gh", "--format", "json", "issue", "list"])
 
     assert result.exit_code == 0
@@ -179,7 +179,7 @@ def test_gh_issue_list_transient_503_retries_then_succeeds() -> None:
 
 @pytest.mark.integration
 def test_drive_upload_happy_path(tmp_path: Path) -> None:
-    from shuttle.services.drive_sync import upload_missing
+    from cli.services.drive_sync import upload_missing
 
     workspace = copy_fixture_workspace(DRIVE_WS, tmp_path)
     local_root = workspace / "tags"
@@ -193,7 +193,7 @@ def test_drive_upload_happy_path(tmp_path: Path) -> None:
 
 @pytest.mark.integration
 def test_drive_upload_permanent_list_failure_stops_with_hint(tmp_path: Path) -> None:
-    from shuttle.services.drive_sync import upload_missing
+    from cli.services.drive_sync import upload_missing
 
     workspace = copy_fixture_workspace(DRIVE_WS, tmp_path)
     local_root = workspace / "tags"
@@ -212,7 +212,7 @@ def test_drive_upload_permanent_list_failure_stops_with_hint(tmp_path: Path) -> 
 
 @pytest.mark.integration
 def test_drive_upload_transient_list_retries_then_succeeds(tmp_path: Path) -> None:
-    from shuttle.services.drive_sync import upload_missing
+    from cli.services.drive_sync import upload_missing
 
     workspace = copy_fixture_workspace(DRIVE_WS, tmp_path)
     local_root = workspace / "tags"
@@ -223,7 +223,7 @@ def test_drive_upload_transient_list_retries_then_succeeds(tmp_path: Path) -> No
     )
     client = ExternalClient("drive", sleep=lambda _s: None)
 
-    with patch("shuttle.providers.drive_client.ExternalClient", return_value=client):
+    with patch("cli.providers.drive_client.ExternalClient", return_value=client):
         result = upload_missing(local_root, provider, "backups/tags")
 
     assert result.failed == []
@@ -238,7 +238,7 @@ def test_cli_run_entrypoint_maps_external_call_error(capsys, monkeypatch) -> Non
     monkeypatch.setattr(
         sys,
         "argv",
-        ["shuttle", "gh", "--format", "json", "issue", "list"],
+        ["cli", "gh", "--format", "json", "issue", "list"],
     )
 
     with patch_run_gh(side_effect=gh_auth_error()):

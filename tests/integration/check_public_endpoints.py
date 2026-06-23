@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Integration check: invoke every public shuttle CLI endpoint."""
+"""Integration check: invoke every public cli CLI endpoint."""
 from __future__ import annotations
 
 import shutil
@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from shuttle.integration.public_endpoints import (  # noqa: E402
+from cli.integration.public_endpoints import (  # noqa: E402
     endpoint_checks,
     prepare_git_repo,
     run_all_endpoint_checks,
@@ -22,7 +22,7 @@ SCRATCH = ROOT / ".integration-scratch"
 
 def main() -> int:
     SCRATCH.mkdir(exist_ok=True)
-    git_dir = Path(tempfile.mkdtemp(prefix="shuttle-git-", dir=SCRATCH))
+    git_dir = Path(tempfile.mkdtemp(prefix="cli-git-", dir=SCRATCH))
     errors: list[str] = []
     try:
         prepare_git_repo(git_dir)

@@ -7,11 +7,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from shuttle.cli import app
-from shuttle.services.git_shortcuts import GitShortcuts
+from cli.cli import app
+from cli.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
-SNAPSHOT = "shuttle.commands.git.git_worktree_snapshot"
+SNAPSHOT = "cli.commands.git.git_worktree_snapshot"
 
 
 @pytest.fixture

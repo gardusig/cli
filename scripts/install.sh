@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Install shuttle CLI into ~/.local/bin (macOS-friendly)
+# Install cli globally into ~/.local/bin (macOS-friendly; works in any terminal).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DEST="${SHUTTLE_INSTALL_DIR:-$HOME/.local/bin}"
+DEST="${CLI_INSTALL_DIR:-$HOME/.local/bin}"
 VENV="$ROOT/.venv"
+PYTHON="$VENV/bin/python"
+PATH_MARKER='# cli (gardusig/cli)'
+PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
 
 if [[ ! -d "$VENV" ]]; then
   echo "Running bootstrap first..."
@@ -16,11 +19,40 @@ mkdir -p "$DEST"
 source "$VENV/bin/activate"
 pip install -e "$ROOT" -q
 
-cat >"$DEST/shuttle" <<EOF
+cat >"$DEST/cli" <<EOF
 #!/usr/bin/env bash
-exec "$VENV/bin/python" -m shuttle "\$@"
+exec "$PYTHON" -m cli "\$@"
 EOF
-chmod +x "$DEST/shuttle"
+chmod +x "$DEST/cli"
 
-echo "Installed: $DEST/shuttle"
-echo "Ensure $DEST is on your PATH."
+# Remove stale binary from prior install (no alias kept).
+[[ -f "$DEST/shuttle" ]] && rm -f "$DEST/shuttle"
+
+ensure_path_in_profile() {
+  local profile="$1"
+  [[ -f "$profile" ]] || return 0
+  if grep -qF '.local/bin' "$profile" 2>/dev/null; then
+    return 0
+  fi
+  {
+    echo ""
+    echo "$PATH_MARKER"
+    echo "$PATH_LINE"
+  } >>"$profile"
+  echo "Added ~/.local/bin to PATH in $profile"
+}
+
+ensure_path_in_profile "$HOME/.zprofile"
+ensure_path_in_profile "$HOME/.zshrc"
+ensure_path_in_profile "$HOME/.bash_profile"
+
+if ! "$DEST/cli" --version >/dev/null 2>&1; then
+  echo "ERROR: install verification failed — $DEST/cli --version" >&2
+  exit 1
+fi
+
+echo ""
+echo "Installed: $DEST/cli"
+echo "Version:   $("$DEST/cli" --version)"
+echo ""
+echo "Open a new terminal (or run: source ~/.zprofile) then try: cli --help"

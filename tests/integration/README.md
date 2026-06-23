@@ -1,7 +1,7 @@
 # Integration check entry points
 
 Python runners invoked from `scripts/integration-smoke.sh` and `scripts/docker/run-*.sh`.
-Implementation lives in `shuttle/integration/`; these files are thin `main()` wrappers.
+Implementation lives in `cli/integration/`; these files are thin `main()` wrappers.
 
 | Script | Purpose |
 | --- | --- |

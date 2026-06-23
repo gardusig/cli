@@ -7,14 +7,14 @@ from unittest.mock import patch
 
 from typer.testing import CliRunner
 
-from shuttle.cli import app
-from shuttle.services.contest_runner import ContestValidateResult
+from cli.cli import app
+from cli.services.contest_runner import ContestValidateResult
 
 ROOT = Path(__file__).resolve().parents[1]
 TOY = ROOT / "tests" / "fixtures" / "contest" / "toy"
 
 
-@patch("shuttle.commands.contest.validate_contest")
+@patch("cli.commands.contest.validate_contest")
 def test_contest_validate_cli_pass(mock_validate) -> None:
     mock_validate.return_value = ContestValidateResult(passed=True)
     runner = CliRunner()
@@ -35,7 +35,7 @@ def test_contest_validate_cli_pass(mock_validate) -> None:
     assert "PASS" in result.output
 
 
-@patch("shuttle.commands.contest.validate_contest")
+@patch("cli.commands.contest.validate_contest")
 def test_contest_validate_cli_fail(mock_validate) -> None:
     mock_validate.return_value = ContestValidateResult(
         passed=False,

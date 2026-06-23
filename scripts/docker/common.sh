@@ -3,23 +3,23 @@
 set -euo pipefail
 
 DOCKER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="${SHUTTLE_ROOT:-$(cd "$DOCKER_DIR/../.." && pwd)}"
-DOCKERFILE="${SHUTTLE_DOCKERFILE:-$ROOT/Dockerfile}"
-DOCKER_TARGET="${SHUTTLE_DOCKER_TARGET:-integration}"
+ROOT="${CLI_ROOT:-$(cd "$DOCKER_DIR/../.." && pwd)}"
+DOCKERFILE="${CLI_DOCKERFILE:-$ROOT/Dockerfile}"
+DOCKER_TARGET="${CLI_DOCKER_TARGET:-integration}"
 CONTAINER_SRC="/workspace/src"
-CONTAINER_WORK="/tmp/shuttle-cli"
+CONTAINER_WORK="/tmp/cli"
 
 docker_default_image_for_target() {
   case "$1" in
-    python) echo "shuttle-cli:python" ;;
-    unit) echo "shuttle-cli:unit" ;;
-    integration) echo "shuttle-cli:integration" ;;
-    contest) echo "shuttle-contest:runner" ;;
-    *) echo "shuttle-cli:integration" ;;
+    python) echo "cli:python" ;;
+    unit) echo "cli:unit" ;;
+    integration) echo "cli:integration" ;;
+    contest) echo "cli-contest:runner" ;;
+    *) echo "cli:integration" ;;
   esac
 }
 
-IMAGE="${SHUTTLE_DOCKER_IMAGE:-$(docker_default_image_for_target "$DOCKER_TARGET")}"
+IMAGE="${CLI_DOCKER_IMAGE:-$(docker_default_image_for_target "$DOCKER_TARGET")}"
 
 docker_require() {
   if ! command -v docker >/dev/null 2>&1; then
@@ -30,20 +30,20 @@ docker_require() {
 
 docker_ensure_image() {
   docker_require
-  if [[ "${SHUTTLE_DOCKER_SKIP_BUILD:-0}" != "1" ]]; then
+  if [[ "${CLI_DOCKER_SKIP_BUILD:-0}" != "1" ]]; then
     echo "Building image: $IMAGE (target=$DOCKER_TARGET)"
     docker build -f "$DOCKERFILE" --target "$DOCKER_TARGET" -t "$IMAGE" "$ROOT"
-    if [[ "$DOCKER_TARGET" == "integration" && "$IMAGE" != "shuttle-cli:dev" ]]; then
-      docker tag "$IMAGE" shuttle-cli:dev
+    if [[ "$DOCKER_TARGET" == "integration" && "$IMAGE" != "cli:dev" ]]; then
+      docker tag "$IMAGE" cli:dev
     fi
     return 0
   fi
   echo "Using pre-built image: $IMAGE"
   if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
-    if [[ "$IMAGE" == "shuttle-cli:integration" ]] && docker image inspect shuttle-cli:dev >/dev/null 2>&1; then
+    if [[ "$IMAGE" == "cli:integration" ]] && docker image inspect cli:dev >/dev/null 2>&1; then
       return 0
     fi
-    echo "ERROR: SHUTTLE_DOCKER_SKIP_BUILD=1 but image not found: $IMAGE" >&2
+    echo "ERROR: CLI_DOCKER_SKIP_BUILD=1 but image not found: $IMAGE" >&2
     exit 1
   fi
 }
@@ -67,8 +67,8 @@ EOF
 
 docker_git_global_config() {
   cat <<'EOF'
-git config --global user.email 'shuttle@example.test'
-git config --global user.name 'Shuttle Test'
+git config --global user.email 'cli@example.test'
+git config --global user.name 'Cli Test'
 git config --global --add safe.directory '*'
 EOF
 }
@@ -97,7 +97,7 @@ docker_run_in_workspace() {
   local -a run_args=(
     --rm
     -v "$ROOT:$CONTAINER_SRC:ro"
-    -e SHUTTLE_DOCKER_INTEGRATION=1
+    -e CLI_DOCKER_INTEGRATION=1
   )
   if [[ "$mount_docker_sock" == "1" ]]; then
     if [[ ! -S /var/run/docker.sock ]]; then

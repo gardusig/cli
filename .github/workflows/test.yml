@@ -31,14 +31,14 @@ jobs:
           context: .
           target: unit
           load: true
-          tags: shuttle-cli:unit
+          tags: cli:unit
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Unit tests in container
         env:
-          SHUTTLE_DOCKER_IMAGE: shuttle-cli:unit
-          SHUTTLE_DOCKER_TARGET: unit
-          SHUTTLE_DOCKER_SKIP_BUILD: "1"
+          CLI_DOCKER_IMAGE: cli:unit
+          CLI_DOCKER_TARGET: unit
+          CLI_DOCKER_SKIP_BUILD: "1"
         run: ./scripts/test-unit.sh
 
   integration:
@@ -57,13 +57,13 @@ jobs:
           target: integration
           load: true
           tags: |
-            shuttle-cli:integration
-            shuttle-cli:dev
+            cli:integration
+            cli:dev
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Integration tests in container
         env:
-          SHUTTLE_DOCKER_IMAGE: shuttle-cli:integration
-          SHUTTLE_DOCKER_TARGET: integration
-          SHUTTLE_DOCKER_SKIP_BUILD: "1"
+          CLI_DOCKER_IMAGE: cli:integration
+          CLI_DOCKER_TARGET: integration
+          CLI_DOCKER_SKIP_BUILD: "1"
         run: ./scripts/test-integration.sh

@@ -1,10 +1,10 @@
 # Notion task board
 
-Sync tasks between an **existing** Notion database and local **header/body pairs** ([issue #2](https://github.com/gardusig/shuttle-cli/issues/2)).
+Sync tasks between an **existing** Notion database and local **header/body pairs** ([issue #2](https://github.com/gardusig/cli/issues/2)).
 
-Local repo is the source of truth. Shuttle does not create databases, views, or formulas — see [notion/board-ui.md](./notion/board-ui.md) and [notion/properties/](./notion/properties/README.md) for one-time board setup.
+Local repo is the source of truth. Cli does not create databases, views, or formulas — see [notion/board-ui.md](./notion/board-ui.md) and [notion/properties/](./notion/properties/README.md) for one-time board setup.
 
-Naming matches **`shuttle drive`**: **ingest** = into local; **deploy** = out to Notion; **sync** = ingest then deploy.
+Naming matches **`cli drive`**: **ingest** = into local; **deploy** = out to Notion; **sync** = ingest then deploy.
 
 ## Layout
 
@@ -49,11 +49,11 @@ Older keys `task_directory`, `cleanup_before_upload`, and `cleanup_before_import
 
 ```bash
 export NOTION_TOKEN=secret_...
-shuttle notion pairs build         # scan header/ + body/ → tasks.pairs.json
-shuttle notion ingest              # Notion → local pairs
-shuttle notion deploy --yes        # local pairs → Notion (archives board first by default)
-shuttle notion sync --yes          # ingest, then deploy
-shuttle notion cleanup --yes       # archive all pages in database
+cli notion pairs build         # scan header/ + body/ → tasks.pairs.json
+cli notion ingest              # Notion → local pairs
+cli notion deploy --yes        # local pairs → Notion (archives board first by default)
+cli notion sync --yes          # ingest, then deploy
+cli notion cleanup --yes       # archive all pages in database
 ```
 
 Hidden legacy: `download` / `upload`, and older `export` / `import`.
@@ -73,10 +73,10 @@ Hidden legacy: `download` / `upload`, and older `export` / `import`.
 
 | Issue | Scope |
 | --- | --- |
-| [#20](https://github.com/gardusig/shuttle-cli/issues/20) | Ingest (board → pairs) |
-| [#21](https://github.com/gardusig/shuttle-cli/issues/21) | Deploy (pairs → board) |
-| [#22](https://github.com/gardusig/shuttle-cli/issues/22) | Cleanup (archive all pages) |
-| [#23](https://github.com/gardusig/shuttle-cli/issues/23) | Auth, property mapping, automation |
+| [#20](https://github.com/gardusig/cli/issues/20) | Ingest (board → pairs) |
+| [#21](https://github.com/gardusig/cli/issues/21) | Deploy (pairs → board) |
+| [#22](https://github.com/gardusig/cli/issues/22) | Cleanup (archive all pages) |
+| [#23](https://github.com/gardusig/cli/issues/23) | Auth, property mapping, automation |
 
 ## Task file format
 

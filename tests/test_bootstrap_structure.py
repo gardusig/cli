@@ -7,50 +7,50 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from shuttle.cli import app
+from cli.cli import app
 
 ROOT = Path(__file__).resolve().parents[1]
 runner = CliRunner()
 
 PROVIDER_MODULES = [
-    "shuttle.providers.github",
-    "shuttle.providers.notion",
-    "shuttle.providers.chrome",
-    "shuttle.providers.google_drive",
-    "shuttle.providers.proton_drive",
-    "shuttle.providers.icloud_drive",
-    "shuttle.providers.onedrive",
+    "cli.providers.github",
+    "cli.providers.notion",
+    "cli.providers.chrome",
+    "cli.providers.google_drive",
+    "cli.providers.proton_drive",
+    "cli.providers.icloud_drive",
+    "cli.providers.onedrive",
 ]
 
 MODEL_MODULES = [
-    "shuttle.models.backup",
-    "shuttle.models.bookmark",
-    "shuttle.models.repository",
-    "shuttle.models.task",
+    "cli.models.backup",
+    "cli.models.bookmark",
+    "cli.models.repository",
+    "cli.models.task",
 ]
 
 SERVICE_MODULES = [
-    "shuttle.services.drive_sync",
-    "shuttle.services.backup_repository",
-    "shuttle.services.notion_sync",
-    "shuttle.services.bookmark_sync",
-    "shuttle.services.git_archive",
+    "cli.services.drive_sync",
+    "cli.services.backup_repository",
+    "cli.services.notion_sync",
+    "cli.services.bookmark_sync",
+    "cli.services.git_archive",
 ]
 
 UTIL_MODULES = [
-    "shuttle.utils.fs",
-    "shuttle.utils.hashing",
-    "shuttle.utils.retry",
-    "shuttle.utils.yaml",
-    "shuttle.utils.zip",
-    "shuttle.utils.confirm",
+    "cli.utils.fs",
+    "cli.utils.hashing",
+    "cli.utils.retry",
+    "cli.utils.yaml",
+    "cli.utils.zip",
+    "cli.utils.confirm",
 ]
 
 INTERNAL_MODULES = [
-    "shuttle.internal.read.safety",
-    "shuttle.internal.read.git",
-    "shuttle.internal.write.gate",
-    "shuttle.internal.write.git",
+    "cli.internal.read.safety",
+    "cli.internal.read.git",
+    "cli.internal.write.gate",
+    "cli.internal.write.git",
 ]
 
 CURSOR_SKILLS_GIT_SCRIPTS = [
@@ -124,8 +124,8 @@ REQUIRED_PATHS = [
     "scripts/notion/import.sh",
     "scripts/notion/cleanup.sh",
     "scripts/git/_common.sh",
-    "shuttle/cli.py",
-    "shuttle/__main__.py",
+    "cli/cli.py",
+    "cli/__main__.py",
     *CURSOR_SKILLS_GIT_SCRIPTS,
 ]
 
@@ -137,7 +137,7 @@ def test_required_paths_exist() -> None:
 
 def test_bootstrap_is_runtime_only_by_default() -> None:
     bootstrap = (ROOT / "scripts/bootstrap.sh").read_text()
-    assert "SHUTTLE_BOOTSTRAP_DEV" in bootstrap
+    assert "CLI_BOOTSTRAP_DEV" in bootstrap
     assert 'pip install -e ".[dev]"' in bootstrap
     assert 'pip install -e .' in bootstrap
 
@@ -157,7 +157,7 @@ def test_top_level_commands_registered() -> None:
 
 
 def test_config_loader() -> None:
-    from shuttle.utils.config import load_config
+    from cli.utils.config import load_config
 
     cfg = load_config(ROOT / "config")
     assert cfg.backup.repositories

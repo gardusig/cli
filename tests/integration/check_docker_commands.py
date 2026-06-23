@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Integration check: shuttle docker CLI (mocked or live host daemon)."""
+"""Integration check: cli docker CLI (mocked or live host daemon)."""
 from __future__ import annotations
 
 import argparse
@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from shuttle.integration.docker_integration import (  # noqa: E402
+from cli.integration.docker_integration import (  # noqa: E402
     docker_checks,
     run_all_docker_checks,
     run_live_docker_checks,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from shuttle.integration.workspaces import API_WORKSPACES, fixture_dir, protected_paths
+from cli.integration.workspaces import API_WORKSPACES, fixture_dir, protected_paths
 
 
 def test_every_api_workspace_has_fixture_tree() -> None:

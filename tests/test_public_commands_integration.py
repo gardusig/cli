@@ -8,17 +8,17 @@ from pathlib import Path
 
 import pytest
 
-from shuttle.integration.docker_integration import (
+from cli.integration.docker_integration import (
     DOCKER_SUBCOMMANDS,
     docker_subcommands_with_ok_check,
     docker_subcommands_with_failure_check,
 )
-from shuttle.integration.public_commands import (
+from cli.integration.public_commands import (
     assert_public_command_registry_complete,
     registered_top_level_commands,
     run_all_public_command_checks,
 )
-from shuttle.integration.public_endpoints import (
+from cli.integration.public_endpoints import (
     GIT_SUBCOMMANDS,
     TOP_LEVEL_COMMANDS,
     git_subcommands_with_ok_check,
@@ -35,7 +35,7 @@ def test_top_level_commands_match_cli_registration() -> None:
 
 
 def test_public_command_registry_is_complete() -> None:
-    from shuttle.integration.integration_coverage import assert_integration_coverage_gate
+    from cli.integration.integration_coverage import assert_integration_coverage_gate
 
     assert_integration_coverage_gate()
     assert git_subcommands_with_ok_check() == set(GIT_SUBCOMMANDS)
@@ -59,7 +59,7 @@ def test_docker_harness_includes_public_command_checker() -> None:
 @pytest.mark.integration
 def test_all_public_commands_in_dockerized_integration() -> None:
     SCRATCH.mkdir(exist_ok=True)
-    git_dir = Path(tempfile.mkdtemp(prefix="shuttle-public-", dir=SCRATCH))
+    git_dir = Path(tempfile.mkdtemp(prefix="cli-public-", dir=SCRATCH))
     try:
         prepare_git_repo(git_dir)
         errors = run_all_public_command_checks(ROOT, git_root=git_dir)

@@ -6,13 +6,13 @@ from pathlib import Path
 
 import pytest
 
-from shuttle.models.task import TaskPair
-from shuttle.services.notion_markdown import (
+from cli.models.task import TaskPair
+from cli.services.notion_markdown import (
     blocks_to_task_body,
     strip_content_before_steps,
     strip_leading_title_heading,
 )
-from shuttle.services.notion_pairs import pair_file_warning, scan_task_root, slugify
+from cli.services.notion_pairs import pair_file_warning, scan_task_root, slugify
 
 
 def test_strip_content_before_steps_drops_preamble() -> None:

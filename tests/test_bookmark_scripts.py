@@ -50,8 +50,8 @@ def test_wait_download_selects_newest_html(sandbox: dict[str, Path]) -> None:
     result = _run_script(
         "wait-download.sh",
         {
-            "SHUTTLE_DOWNLOADS_DIR": str(sandbox["downloads"]),
-            "SHUTTLE_DOWNLOAD_TIMEOUT": "5",
+            "CLI_DOWNLOADS_DIR": str(sandbox["downloads"]),
+            "CLI_DOWNLOAD_TIMEOUT": "5",
         },
     )
     assert result.returncode == 0
@@ -64,8 +64,8 @@ def test_wait_download_ignores_crdownload(sandbox: dict[str, Path]) -> None:
     result = _run_script(
         "wait-download.sh",
         {
-            "SHUTTLE_DOWNLOADS_DIR": str(sandbox["downloads"]),
-            "SHUTTLE_DOWNLOAD_TIMEOUT": "2",
+            "CLI_DOWNLOADS_DIR": str(sandbox["downloads"]),
+            "CLI_DOWNLOAD_TIMEOUT": "2",
         },
         check=False,
     )
@@ -76,15 +76,15 @@ def test_export_from_fixture(sandbox: dict[str, Path]) -> None:
     result = _run_script(
         "export-bookmarks.sh",
         {
-            "SHUTTLE_ROOT": str(sandbox["root"]),
-            "SHUTTLE_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
-            "SHUTTLE_SKIP_CHROME_AUTOMATION": "1",
-            "SHUTTLE_BOOKMARKS_FIXTURE": str(FIXTURE),
+            "CLI_ROOT": str(sandbox["root"]),
+            "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
+            "CLI_SKIP_CHROME_AUTOMATION": "1",
+            "CLI_BOOKMARKS_FIXTURE": str(FIXTURE),
         },
     )
     assert result.returncode == 0
     assert sandbox["bookmarks_file"].exists()
-    assert "Shuttle Test Bookmark" in sandbox["bookmarks_file"].read_text()
+    assert "Cli Test Bookmark" in sandbox["bookmarks_file"].read_text()
 
 
 def test_export_overwrites_previous_backup(sandbox: dict[str, Path]) -> None:
@@ -92,15 +92,15 @@ def test_export_overwrites_previous_backup(sandbox: dict[str, Path]) -> None:
     _run_script(
         "export-bookmarks.sh",
         {
-            "SHUTTLE_ROOT": str(sandbox["root"]),
-            "SHUTTLE_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
-            "SHUTTLE_SKIP_CHROME_AUTOMATION": "1",
-            "SHUTTLE_BOOKMARKS_FIXTURE": str(FIXTURE),
+            "CLI_ROOT": str(sandbox["root"]),
+            "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
+            "CLI_SKIP_CHROME_AUTOMATION": "1",
+            "CLI_BOOKMARKS_FIXTURE": str(FIXTURE),
         },
     )
     content = sandbox["bookmarks_file"].read_text()
     assert "stale" not in content
-    assert "Shuttle Test Bookmark" in content
+    assert "Cli Test Bookmark" in content
 
 
 def test_export_from_downloads_dir(sandbox: dict[str, Path]) -> None:
@@ -109,15 +109,15 @@ def test_export_from_downloads_dir(sandbox: dict[str, Path]) -> None:
     result = _run_script(
         "export-bookmarks.sh",
         {
-            "SHUTTLE_ROOT": str(sandbox["root"]),
-            "SHUTTLE_DOWNLOADS_DIR": str(sandbox["downloads"]),
-            "SHUTTLE_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
-            "SHUTTLE_SKIP_CHROME_AUTOMATION": "1",
+            "CLI_ROOT": str(sandbox["root"]),
+            "CLI_DOWNLOADS_DIR": str(sandbox["downloads"]),
+            "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
+            "CLI_SKIP_CHROME_AUTOMATION": "1",
         },
     )
     assert result.returncode == 0
     assert sandbox["bookmarks_file"].exists()
-    assert "Shuttle Test Bookmark" in sandbox["bookmarks_file"].read_text()
+    assert "Cli Test Bookmark" in sandbox["bookmarks_file"].read_text()
     assert not downloaded.exists()
 
 
@@ -126,9 +126,9 @@ def test_import_succeeds_with_backup(sandbox: dict[str, Path]) -> None:
     result = _run_script(
         "import-bookmarks.sh",
         {
-            "SHUTTLE_ROOT": str(sandbox["root"]),
-            "SHUTTLE_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
-            "SHUTTLE_SKIP_CHROME_AUTOMATION": "1",
+            "CLI_ROOT": str(sandbox["root"]),
+            "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
+            "CLI_SKIP_CHROME_AUTOMATION": "1",
         },
     )
     assert result.returncode == 0
@@ -139,9 +139,9 @@ def test_import_fails_without_backup(sandbox: dict[str, Path]) -> None:
     result = _run_script(
         "import-bookmarks.sh",
         {
-            "SHUTTLE_ROOT": str(sandbox["root"]),
-            "SHUTTLE_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
-            "SHUTTLE_SKIP_CHROME_AUTOMATION": "1",
+            "CLI_ROOT": str(sandbox["root"]),
+            "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
+            "CLI_SKIP_CHROME_AUTOMATION": "1",
         },
         check=False,
     )

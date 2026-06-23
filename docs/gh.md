@@ -1,13 +1,13 @@
-# GitHub integration (`shuttle gh`)
+# GitHub integration (`cli gh`)
 
-Deterministic GitHub operations for agents and humans. Wraps authenticated **`gh`** with JSON-first output and write gates (same model as `shuttle git`).
+Deterministic GitHub operations for agents and humans. Wraps authenticated **`gh`** with JSON-first output and write gates (same model as `cli git`).
 
 **Integration partner:** [cursor-skills](https://github.com/gardusig/cursor-skills) — `@gh-*` skills invoke these commands instead of embedding raw `gh` bash fences.
 
 ## Prerequisites
 
 - `gh` installed and authenticated (`gh auth status`)
-- `shuttle` on PATH
+- `cli` on PATH
 
 ## Global flags
 
@@ -19,7 +19,7 @@ Deterministic GitHub operations for agents and humans. Wraps authenticated **`gh
 
 ## Double-gate contract
 
-| Context | Cursor skill | shuttle write |
+| Context | Cursor skill | cli write |
 | --- | --- | --- |
 | Agent after **Proceed** | AskQuestion in chat | append **`--yes`** |
 | Human in terminal | — | interactive gate or **`--yes`** |
@@ -30,20 +30,20 @@ Deterministic GitHub operations for agents and humans. Wraps authenticated **`gh
 ### Read (no gate)
 
 ```bash
-shuttle gh issue list --state open --limit 30 --format json
-shuttle gh issue view 42 --format json
-shuttle gh issue search "label:bug" --format json
+cli gh issue list --state open --limit 30 --format json
+cli gh issue view 42 --format json
+cli gh issue search "label:bug" --format json
 ```
 
 ### Write (gate unless `--yes`)
 
 ```bash
-shuttle gh issue create --title "1 — Epic" --body-file body.md --label epic:foo --yes
-shuttle gh issue edit 42 --title "1.1 — Child" --yes
-shuttle gh issue close 42 --comment "Done" --yes
-shuttle gh issue delete 42 --yes
-shuttle gh issue comment 42 --body "Note" --yes
-shuttle gh issue batch --file batch.yaml --yes
+cli gh issue create --title "1 — Epic" --body-file body.md --label epic:foo --yes
+cli gh issue edit 42 --title "1.1 — Child" --yes
+cli gh issue close 42 --comment "Done" --yes
+cli gh issue delete 42 --yes
+cli gh issue comment 42 --body "Note" --yes
+cli gh issue batch --file batch.yaml --yes
 ```
 
 ### Batch YAML shape
@@ -66,30 +66,30 @@ operations:
 ## Label commands
 
 ```bash
-shuttle gh label list --format json
-shuttle gh label create my-label --color ff0000 --yes
-shuttle gh label delete my-label --yes
-shuttle gh label sync --manifest .cursor/gh/labels.manifest.yaml --yes
-shuttle gh label sync --manifest .cursor/gh/labels.manifest.yaml --prune-orphans --yes
+cli gh label list --format json
+cli gh label create my-label --color ff0000 --yes
+cli gh label delete my-label --yes
+cli gh label sync --manifest .cursor/gh/labels.manifest.yaml --yes
+cli gh label sync --manifest .cursor/gh/labels.manifest.yaml --prune-orphans --yes
 ```
 
 ## Pull request commands
 
 ```bash
-shuttle gh pr list --format json
-shuttle gh pr view 10 --format json
-shuttle gh pr diff 10
-shuttle gh pr create --title "…" --body-file pr.md --yes
-shuttle gh pr edit 10 --body-file pr.md --yes
-shuttle gh pr close 10 --yes
-shuttle gh pr merge 10 --merge-method squash --yes
+cli gh pr list --format json
+cli gh pr view 10 --format json
+cli gh pr diff 10
+cli gh pr create --title "…" --body-file pr.md --yes
+cli gh pr edit 10 --body-file pr.md --yes
+cli gh pr close 10 --yes
+cli gh pr merge 10 --merge-method squash --yes
 ```
 
 ## Repo commands
 
 ```bash
-shuttle gh --format json repo view
-shuttle gh --format json repo view --json-fields nameWithOwner,owner,issueTemplates,pullRequestTemplates
+cli gh --format json repo view
+cli gh --format json repo view --json-fields nameWithOwner,owner,issueTemplates,pullRequestTemplates
 ```
 
 ## Backlog commands
@@ -97,9 +97,9 @@ shuttle gh --format json repo view --json-fields nameWithOwner,owner,issueTempla
 Sequence titles use **`N — Title`** (epic) and **`N.M — Title`** (child).
 
 ```bash
-shuttle gh backlog tree --format json
-shuttle gh backlog next --format json
-shuttle gh backlog resequence --file plan.yaml --yes
+cli gh backlog tree --format json
+cli gh backlog next --format json
+cli gh backlog resequence --file plan.yaml --yes
 ```
 
 Resequence plan YAML:
@@ -143,4 +143,4 @@ Run: `./scripts/test-unit.sh`
 
 - [architecture.md](architecture.md) — CLI → Service → Provider
 - [cursor-skills docs/gh.md](https://github.com/gardusig/cursor-skills/blob/main/docs/gh.md)
-- shuttle-cli epic **01** — GitHub integration
+- cli epic **01** — GitHub integration

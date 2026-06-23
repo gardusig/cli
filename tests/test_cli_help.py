@@ -1,6 +1,6 @@
 from typer.testing import CliRunner
 
-from shuttle.cli import app
+from cli.cli import app
 
 runner = CliRunner()
 

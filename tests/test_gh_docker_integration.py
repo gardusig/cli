@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from shuttle.cli import app
-from shuttle.integration.workspaces import API_WORKSPACES, fixture_dir
+from cli.cli import app
+from cli.integration.workspaces import API_WORKSPACES, fixture_dir
 from tests.gh_harness import patch_gh_all
 
 GH_WS = next(w for w in API_WORKSPACES if w.name == "gh")

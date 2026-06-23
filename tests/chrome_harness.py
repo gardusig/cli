@@ -12,8 +12,8 @@ def chrome_bookmarks_env(workspace: Path, repo_root: Path) -> dict[str, str]:
     bookmarks_file.parent.mkdir(parents=True, exist_ok=True)
     return {
         **os.environ,
-        "SHUTTLE_ROOT": str(repo_root),
-        "SHUTTLE_BOOKMARKS_FILE": str(bookmarks_file),
-        "SHUTTLE_DOWNLOADS_DIR": str(workspace / "Downloads"),
-        "SHUTTLE_SKIP_CHROME_AUTOMATION": "1",
+        "CLI_ROOT": str(repo_root),
+        "CLI_BOOKMARKS_FILE": str(bookmarks_file),
+        "CLI_DOWNLOADS_DIR": str(workspace / "Downloads"),
+        "CLI_SKIP_CHROME_AUTOMATION": "1",
     }

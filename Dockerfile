@@ -2,7 +2,7 @@
 # Build: docker build --target <stage> -t <tag> .
 
 # -----------------------------------------------------------------------------
-# python — shuttle-cli runtime + dev deps (shared foundation)
+# python — cli runtime + dev deps (shared foundation)
 # -----------------------------------------------------------------------------
 FROM python:3.12-slim AS python
 
@@ -14,12 +14,12 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends bash git ca-certificates tar \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /opt/shuttle-cli
+WORKDIR /opt/cli
 
 COPY pyproject.toml README.md requirements.txt requirements-dev.txt ./
 RUN pip install --no-cache-dir -r requirements-dev.txt
 
-COPY shuttle ./shuttle
+COPY cli ./cli
 RUN pip install --no-cache-dir -e .
 
 # -----------------------------------------------------------------------------

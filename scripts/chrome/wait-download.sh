@@ -2,10 +2,10 @@
 # Poll Downloads for the newest completed .html file (issue #1).
 set -euo pipefail
 
-DOWNLOADS_DIR="${SHUTTLE_DOWNLOADS_DIR:-$HOME/Downloads}"
-TIMEOUT="${SHUTTLE_DOWNLOAD_TIMEOUT:-120}"
-INTERVAL="${SHUTTLE_DOWNLOAD_INTERVAL:-1}"
-SINCE_EPOCH="${SHUTTLE_DOWNLOAD_SINCE_EPOCH:-}"
+DOWNLOADS_DIR="${CLI_DOWNLOADS_DIR:-$HOME/Downloads}"
+TIMEOUT="${CLI_DOWNLOAD_TIMEOUT:-120}"
+INTERVAL="${CLI_DOWNLOAD_INTERVAL:-1}"
+SINCE_EPOCH="${CLI_DOWNLOAD_SINCE_EPOCH:-}"
 
 if [[ ! -d "$DOWNLOADS_DIR" ]]; then
   echo "ERROR: Downloads directory not found: $DOWNLOADS_DIR" >&2

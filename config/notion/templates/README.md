@@ -24,7 +24,7 @@ Cadence lives in **header only**. Steps and checklists live in **body only**.
 
 ## Header (`header/*.yaml`)
 
-Machine-readable board metadata. Shuttle and Notion read these fields; the body file must not repeat them.
+Machine-readable board metadata. Cli and Notion read these fields; the body file must not repeat them.
 
 | Field | Required | Notes |
 | --- | --- | --- |
@@ -50,6 +50,6 @@ Deploy-ready Notion page content — what you see when you open the task.
 **Do:** tables, inline lists, quantities when the task needs them.  
 **Don't:** title line, cadence intro, `frequency`/`last_done`, links to other wiki files, or references to yaml/board plumbing.
 
-After creating both files under `notion.task_root`, run `shuttle notion pairs build`.
+After creating both files under `notion.task_root`, run `cli notion pairs build`.
 
 **Upstream:** [Notion hub](../../../docs/notion.md)

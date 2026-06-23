@@ -4,10 +4,6 @@
     "body_filepath": "body/buy/ecommerce.md"
   },
   {
-    "header_filepath": "header/buy/liver.yaml",
-    "body_filepath": "body/buy/liver.md"
-  },
-  {
     "header_filepath": "header/buy/perishable.yaml",
     "body_filepath": "body/buy/perishable.md"
   },
@@ -44,16 +40,20 @@
     "body_filepath": "body/irpf.md"
   },
   {
-    "header_filepath": "header/pack.yaml",
-    "body_filepath": "body/pack.md"
+    "header_filepath": "header/pack-bags.yaml",
+    "body_filepath": "body/pack-bags.md"
   },
   {
-    "header_filepath": "header/pay/cursor.yaml",
-    "body_filepath": "body/pay/cursor.md"
+    "header_filepath": "header/pay/credit-card.yaml",
+    "body_filepath": "body/pay/credit-card.md"
   },
   {
-    "header_filepath": "header/pay/mobile.yaml",
-    "body_filepath": "body/pay/mobile.md"
+    "header_filepath": "header/pay/fund-accounts.yaml",
+    "body_filepath": "body/pay/fund-accounts.md"
+  },
+  {
+    "header_filepath": "header/resume.yaml",
+    "body_filepath": "body/resume.md"
   },
   {
     "header_filepath": "header/schedule/barber.yaml",
@@ -80,28 +80,28 @@
     "body_filepath": "body/schedule/vaccine.md"
   },
   {
-    "header_filepath": "header/sync/brain-games.yaml",
-    "body_filepath": "body/sync/brain-games.md"
+    "header_filepath": "header/sync/bookmarks.yaml",
+    "body_filepath": "body/sync/bookmarks.md"
   },
   {
-    "header_filepath": "header/sync/game.yaml",
-    "body_filepath": "body/sync/game.md"
+    "header_filepath": "header/sync/diary.yaml",
+    "body_filepath": "body/sync/diary.md"
   },
   {
     "header_filepath": "header/sync/instruments.yaml",
     "body_filepath": "body/sync/instruments.md"
   },
   {
-    "header_filepath": "header/sync/listen.yaml",
-    "body_filepath": "body/sync/listen.md"
+    "header_filepath": "header/sync/net-worth.yaml",
+    "body_filepath": "body/sync/net-worth.md"
   },
   {
-    "header_filepath": "header/sync/private-diary.yaml",
-    "body_filepath": "body/sync/private-diary.md"
+    "header_filepath": "header/sync/playlists.yaml",
+    "body_filepath": "body/sync/playlists.md"
   },
   {
-    "header_filepath": "header/sync/private-net-worth.yaml",
-    "body_filepath": "body/sync/private-net-worth.md"
+    "header_filepath": "header/sync/puzzles.yaml",
+    "body_filepath": "body/sync/puzzles.md"
   },
   {
     "header_filepath": "header/sync/resume.yaml",
@@ -110,6 +110,10 @@
   {
     "header_filepath": "header/sync/security.yaml",
     "body_filepath": "body/sync/security.md"
+  },
+  {
+    "header_filepath": "header/sync/video-games.yaml",
+    "body_filepath": "body/sync/video-games.md"
   },
   {
     "header_filepath": "header/sync/watch.yaml",

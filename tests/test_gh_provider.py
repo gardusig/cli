@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock, patch
 
-from shuttle.providers.gh import GhProvider
+from cli.providers.gh import GhProvider
 
 
-@patch("shuttle.providers.gh.run_gh")
+@patch("cli.providers.gh.run_gh")
 def test_run_injects_repo_flag(mock_run: MagicMock) -> None:
     mock_run.return_value = MagicMock(stdout="ok\n", returncode=0)
     provider = GhProvider(repo="owner/repo")
@@ -16,7 +16,7 @@ def test_run_injects_repo_flag(mock_run: MagicMock) -> None:
     mock_run.assert_called_once_with(["--repo", "owner/repo", "issue", "list"], check=True)
 
 
-@patch("shuttle.providers.gh.run_gh")
+@patch("cli.providers.gh.run_gh")
 def test_run_json_parses_payload(mock_run: MagicMock) -> None:
     mock_run.return_value = MagicMock(stdout='[{"number": 1}]\n', returncode=0)
     provider = GhProvider()
@@ -24,14 +24,14 @@ def test_run_json_parses_payload(mock_run: MagicMock) -> None:
     assert data == [{"number": 1}]
 
 
-@patch("shuttle.providers.gh.run_gh")
+@patch("cli.providers.gh.run_gh")
 def test_run_json_empty_stdout_returns_list(mock_run: MagicMock) -> None:
     mock_run.return_value = MagicMock(stdout="", returncode=0)
     provider = GhProvider()
     assert provider.run_json(["issue", "list"]) == []
 
 
-@patch("shuttle.providers.gh.run_gh")
+@patch("cli.providers.gh.run_gh")
 def test_default_repo_reads_name_with_owner(mock_run: MagicMock) -> None:
     mock_run.return_value = MagicMock(
         stdout=json.dumps({"nameWithOwner": "owner/repo"}) + "\n",

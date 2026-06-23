@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-from shuttle.integration.cli_api_checks import CliApiCheck, validate_cli_api_check
-from shuttle.integration.workspaces import API_WORKSPACES, fixture_dir
-from shuttle.services.backup_repository import RepoBackupStatus, SyncResult
-from shuttle.services.drive_sync import DriveSyncResult, UploadResult
+from cli.integration.cli_api_checks import CliApiCheck, validate_cli_api_check
+from cli.integration.workspaces import API_WORKSPACES, fixture_dir
+from cli.services.backup_repository import RepoBackupStatus, SyncResult
+from cli.services.drive_sync import DriveSyncResult, UploadResult
 from tests.drive_harness import InMemoryDriveProvider
 from tests.gh_harness import gh_auth_error, patch_run_gh
 from tests.integration_harness import copy_fixture_workspace
@@ -30,7 +30,7 @@ GH_WS = next(w for w in API_WORKSPACES if w.name == "gh")
 def _init_git_repo(path: Path) -> None:
     subprocess.run(["git", "init", "-b", "main", str(path)], check=True, capture_output=True)
     subprocess.run(["git", "-C", str(path), "config", "user.email", "t@example.test"], check=True)
-    subprocess.run(["git", "-C", str(path), "config", "user.name", "Shuttle Test"], check=True)
+    subprocess.run(["git", "-C", str(path), "config", "user.name", "Cli Test"], check=True)
     (path / "README.md").write_text("integration\n", encoding="utf-8")
     subprocess.run(["git", "-C", str(path), "add", "README.md"], check=True, capture_output=True)
     subprocess.run(["git", "-C", str(path), "commit", "-m", "init"], check=True, capture_output=True)
@@ -60,10 +60,10 @@ def write_drive_config(config_dir: Path, *, tags_dir: Path, repo_path: Path) -> 
 
 def _patch_notion_paths(monkeypatch: Any, task_root: Path, manifest: Path) -> None:
     for target in (
-        "shuttle.commands.notion.notion_task_root",
-        "shuttle.commands.notion.notion_pairs_file",
-        "shuttle.services.notion_sync.notion_task_root",
-        "shuttle.services.notion_sync.notion_pairs_file",
+        "cli.commands.notion.notion_task_root",
+        "cli.commands.notion.notion_pairs_file",
+        "cli.services.notion_sync.notion_task_root",
+        "cli.services.notion_sync.notion_pairs_file",
     ):
         if "pairs_file" in target:
             monkeypatch.setattr(target, lambda config_dir=None, m=manifest: m)
@@ -85,7 +85,7 @@ def notion_cli_context(monkeypatch: Any, tmp_path: Path) -> Iterator[Path]:
         encoding="utf-8",
     )
     monkeypatch.setenv("NOTION_TOKEN", "integration-token")
-    monkeypatch.setenv("SHUTTLE_CONFIG_DIR", str(cfg_dir))
+    monkeypatch.setenv("CLI_CONFIG_DIR", str(cfg_dir))
 
     with patch_notion_http(notion_cli_handler(pages)):
         yield task_root
@@ -150,7 +150,7 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
     snapshot = MagicMock()
     snapshot.summary_lines.return_value = ["branch: main"]
 
-    from shuttle.services.backup_repository import resolve_repo_path as _real_resolve_repo_path
+    from cli.services.backup_repository import resolve_repo_path as _real_resolve_repo_path
 
     def _resolve_repo_path(path: str | None = None):
         if path and path.startswith("/no/such"):
@@ -176,16 +176,16 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
         return tags_dir
 
     with (
-        patch("shuttle.commands.drive._enabled_providers", _providers),
-        patch("shuttle.commands.drive.backup_status", _backup_status),
-        patch("shuttle.commands.drive.ingest_repositories", _ingest_repositories),
-        patch("shuttle.commands.drive.sync_all", return_value=sync_result),
-        patch("shuttle.commands.drive.resolve_repo_path", _resolve_repo_path),
-        patch("shuttle.commands.drive.list_downloaded_tags", return_value=["v0.0.0", "v1.0.0"]),
-        patch("shuttle.commands.drive.delete_repo_tag", return_value=zip_path),
-        patch("shuttle.commands.drive.upload_missing", return_value=UploadResult(uploaded=["demo-repo/v1.0.0.zip"])),
-        patch("shuttle.commands.drive.git_worktree_snapshot", return_value=snapshot),
-        patch("shuttle.commands.drive.tags_dir_path", _tags_dir_path),
+        patch("cli.commands.drive._enabled_providers", _providers),
+        patch("cli.commands.drive.backup_status", _backup_status),
+        patch("cli.commands.drive.ingest_repositories", _ingest_repositories),
+        patch("cli.commands.drive.sync_all", return_value=sync_result),
+        patch("cli.commands.drive.resolve_repo_path", _resolve_repo_path),
+        patch("cli.commands.drive.list_downloaded_tags", return_value=["v0.0.0", "v1.0.0"]),
+        patch("cli.commands.drive.delete_repo_tag", return_value=zip_path),
+        patch("cli.commands.drive.upload_missing", return_value=UploadResult(uploaded=["demo-repo/v1.0.0.zip"])),
+        patch("cli.commands.drive.git_worktree_snapshot", return_value=snapshot),
+        patch("cli.commands.drive.tags_dir_path", _tags_dir_path),
     ):
         yield config_dir, tags_dir, str(repo)
 
@@ -203,26 +203,26 @@ def chrome_cli_context(
     fixture_html = workspace / "Downloads" / "bookmarks.html"
     env = {
         **os.environ,
-        "SHUTTLE_SKIP_CHROME_AUTOMATION": "1",
-        "SHUTTLE_DOWNLOADS_DIR": str(workspace / "Downloads"),
-        "SHUTTLE_BOOKMARKS_FILE": str(bookmarks),
-        "SHUTTLE_ROOT": str(ROOT),
+        "CLI_SKIP_CHROME_AUTOMATION": "1",
+        "CLI_DOWNLOADS_DIR": str(workspace / "Downloads"),
+        "CLI_BOOKMARKS_FILE": str(bookmarks),
+        "CLI_ROOT": str(ROOT),
     }
     if use_fixture:
-        env["SHUTTLE_BOOKMARKS_FIXTURE"] = str(fixture_html)
+        env["CLI_BOOKMARKS_FIXTURE"] = str(fixture_html)
     else:
         empty_downloads = tmp_path / "empty-downloads"
         empty_downloads.mkdir(exist_ok=True)
-        env["SHUTTLE_DOWNLOADS_DIR"] = str(empty_downloads)
-        env["SHUTTLE_DOWNLOAD_TIMEOUT"] = "1"
+        env["CLI_DOWNLOADS_DIR"] = str(empty_downloads)
+        env["CLI_DOWNLOAD_TIMEOUT"] = "1"
 
     def _bookmarks_env() -> dict[str, str]:
         return env
 
     with (
-        patch("shuttle.commands.chrome._bookmarks_env", _bookmarks_env),
-        patch("shuttle.commands.chrome.bookmarks_file_path", lambda config_dir=None: bookmarks),
-        patch("shuttle.commands.chrome.chrome_downloads_dir", lambda config_dir=None: workspace / "Downloads"),
+        patch("cli.commands.chrome._bookmarks_env", _bookmarks_env),
+        patch("cli.commands.chrome.bookmarks_file_path", lambda config_dir=None: bookmarks),
+        patch("cli.commands.chrome.chrome_downloads_dir", lambda config_dir=None: workspace / "Downloads"),
     ):
         if skip_export and bookmarks.is_file():
             bookmarks.unlink()
@@ -237,7 +237,7 @@ def chrome_cli_context(
 
 
 def run_check_invoke(runner, check: CliApiCheck, *, env: dict[str, str] | None = None):
-    from shuttle.cli import app
+    from cli.cli import app
 
     merged = os.environ.copy()
     if env:
@@ -302,7 +302,7 @@ def api_check_context(
             "drive_status_error",
         } else None
         with drive_cli_context(tmp_path, broken=broken) as (config_dir, _tags, repo_path):
-            env = {"SHUTTLE_CONFIG_DIR": str(config_dir)}
+            env = {"CLI_CONFIG_DIR": str(config_dir)}
             if check.failure == "drive_bad_repo":
                 check = check  # noqa: PLW0127 — args use /no/such/repo in registry
             yield env

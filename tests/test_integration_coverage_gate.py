@@ -7,7 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from shuttle.integration.integration_coverage import (
+from cli.integration.integration_coverage import (
     assert_integration_coverage_gate,
     integration_coverage_inventory,
     integration_coverage_manifest,

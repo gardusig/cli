@@ -1,31 +1,31 @@
 # Common usage flows
 
-Visual maps for everyday `shuttle` workflows. Command details live in [git.md](git.md) and [quick-defaults.md](quick-defaults.md).
+Visual maps for everyday `cli` workflows. Command details live in [git.md](git.md) and [quick-defaults.md](quick-defaults.md).
 
 ## Full issue lifecycle
 
 ```mermaid
 flowchart TD
     subgraph before [1 — Before work]
-        P["shuttle git reset --yes --main-only<br/>sync main"]
+        P["cli git reset --yes --main-only<br/>sync main"]
     end
 
     subgraph start [2 — Start issue]
-        K["shuttle git start issue-9-slug --yes<br/>align main + new branch"]
+        K["cli git start issue-9-slug --yes<br/>align main + new branch"]
     end
 
     subgraph loop [3 — During work]
         D["edit files"]
-        S["shuttle git push<br/>add · commit · push"]
-        Y["shuttle git pull<br/>stay current on main"]
+        S["cli git push<br/>add · commit · push"]
+        Y["cli git pull<br/>stay current on main"]
         D --> S
         S --> D
         Y --> D
     end
 
     subgraph after [4 — After merge]
-        L["shuttle git reset --yes<br/>sync main · delete merged branches"]
-        L2["shuttle git reset --yes --all-local<br/>delete every local branch except main"]
+        L["cli git reset --yes<br/>sync main · delete merged branches"]
+        L2["cli git reset --yes --all-local<br/>delete every local branch except main"]
     end
 
     P --> K --> loop
@@ -51,18 +51,18 @@ All destructive steps show the **write gate** (branch, dirty state, intent) befo
 
 ```bash
 # Monday: synced main
-shuttle git reset --yes --main-only
+cli git reset --yes --main-only
 
 # Pick up GitHub issue #9
-shuttle git start issue-9-docker --yes
+cli git start issue-9-docker --yes
 
 # Loop until PR is ready
-shuttle git push          # interactive
-shuttle git pull          # optional: merge latest main
-shuttle git push --yes
+cli git push          # interactive
+cli git pull          # optional: merge latest main
+cli git push --yes
 
 # After PR merged
-shuttle git reset --yes
+cli git reset --yes
 ```
 
 ## Feature work (start → publish)
@@ -76,9 +76,9 @@ flowchart LR
     end
 
     subgraph daily [Daily loop]
-        C["shuttle git start --no-prep"]
+        C["cli git start --no-prep"]
         D["edit files"]
-        E["shuttle git push"]
+        E["cli git push"]
         F{"more work?"}
         G["open PR / merge"]
         C --> D --> E --> F
@@ -93,9 +93,9 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A["on feature branch"] --> B["shuttle git pull<br/>fetch + merge upstream + main"]
+    A["on feature branch"] --> B["cli git pull<br/>fetch + merge upstream + main"]
     B --> C{conflicts?}
-    C -->|no| D["shuttle git push"]
+    C -->|no| D["cli git push"]
     C -->|yes| E["resolve conflicts"]
     E --> D
 ```
@@ -106,7 +106,7 @@ flowchart TD
 flowchart TD
     A["push / reset / start …"] --> B["read worktree snapshot"]
     B --> C["intent summary<br/>branch · dirty · plan"]
-    C --> D["--- shuttle write gate ---"]
+    C --> D["--- cli write gate ---"]
     D --> E{"--yes or confirm?"}
     E -->|no| F["Aborted"]
     E -->|yes| G["run git steps"]
@@ -117,10 +117,10 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["PR merged on GitHub"] --> B{"how aggressive?"}
-    B -->|default| C["shuttle git reset --yes<br/>merged branches only"]
-    B -->|nuclear local| D["shuttle git reset --yes --all-local"]
-    B -->|legacy| E["shuttle git post-merge-cleanup --yes"]
-    B -->|remote too| F["shuttle git branch-clear --yes --delete-remote"]
+    B -->|default| C["cli git reset --yes<br/>merged branches only"]
+    B -->|nuclear local| D["cli git reset --yes --all-local"]
+    B -->|legacy| E["cli git post-merge-cleanup --yes"]
+    B -->|remote too| F["cli git branch-clear --yes --delete-remote"]
 ```
 
 ## Health check & bookmarks
@@ -128,7 +128,7 @@ flowchart TD
 ```mermaid
 flowchart LR
     subgraph review [Workspace health]
-        R1["shuttle git review"]
+        R1["cli git review"]
         R2["shell syntax · test-unit.sh in Docker"]
         R1 --> R2
     end
@@ -151,10 +151,10 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    A["shuttle --help"] --> B["shuttle links<br/>full index"]
+    A["cli --help"] --> B["cli links<br/>full index"]
     B --> C["docs/README.md"]
     B --> D["scripts/git/*.sh"]
-    A --> F["shuttle git --help"]
+    A --> F["cli git --help"]
 ```
 
-See also: [Architecture](architecture.md) · [Docker integration](docker.md) · `shuttle links`
+See also: [Architecture](architecture.md) · [Docker integration](docker.md) · `cli links`

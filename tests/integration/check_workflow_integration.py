@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from shuttle.integration.workflow_integration import (  # noqa: E402
+from cli.integration.workflow_integration import (  # noqa: E402
     WORKFLOW_CHECKS,
     prepare_workflow_git,
     run_all_workflow_checks,
@@ -22,7 +22,7 @@ SCRATCH = ROOT / ".integration-scratch"
 
 def main() -> int:
     SCRATCH.mkdir(exist_ok=True)
-    git_dir = Path(tempfile.mkdtemp(prefix="shuttle-workflow-", dir=SCRATCH))
+    git_dir = Path(tempfile.mkdtemp(prefix="cli-workflow-", dir=SCRATCH))
     errors: list[str] = []
     try:
         prepare_workflow_git(git_dir)

@@ -20,7 +20,7 @@ def patch_notion_http(handler):
     from unittest.mock import patch
 
     return patch(
-        "shuttle.providers.notion.httpx.Client",
+        "cli.providers.notion.httpx.Client",
         side_effect=_client_factory,
     )
 

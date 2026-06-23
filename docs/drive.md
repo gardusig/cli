@@ -1,6 +1,6 @@
 # Drive commands
 
-**`shuttle drive`** owns the tag-zip lifecycle after git tagging: local store (iCloud) and cloud upload.
+**`cli drive`** owns the tag-zip lifecycle after git tagging: local store (iCloud) and cloud upload.
 
 | Phase | Command | What it does |
 | --- | --- | --- |
@@ -10,7 +10,7 @@
 | Cloud | `drive upload` | Append-only upload to Google / OneDrive / Proton |
 | **All-in-one** | `drive sync` | Ingest all `backup.repositories`, then upload all enabled providers |
 
-Parent epic: [issue #4](https://github.com/gardusig/shuttle-cli/issues/4). Future: [cloud download #29](https://github.com/gardusig/shuttle-cli/issues/29).
+Parent epic: [issue #4](https://github.com/gardusig/cli/issues/4). Future: [cloud download #29](https://github.com/gardusig/cli/issues/29).
 
 ## Local store
 
@@ -27,36 +27,36 @@ Set via `backup.tags_dir` in `config/config.yaml`. iCloud syncs this folder auto
 ## Commands
 
 ```bash
-shuttle drive status
-shuttle drive ingest                    # all backup.repositories
-shuttle drive ingest ~/git-local/foo    # one repo
-shuttle drive list
-shuttle drive delete ~/git-local/foo 2026-06-11 --yes
-shuttle drive upload
-shuttle drive upload google
-shuttle drive sync                        # ingest all + upload all
+cli drive status
+cli drive ingest                    # all backup.repositories
+cli drive ingest ~/git-local/foo    # one repo
+cli drive list
+cli drive delete ~/git-local/foo 2026-06-11 --yes
+cli drive upload
+cli drive upload google
+cli drive sync                        # ingest all + upload all
 ```
 
 Shell wrappers: `./scripts/drive/status.sh`, `ingest.sh`, `upload.sh`, `sync.sh`.
 
-See [issue #30](https://github.com/gardusig/shuttle-cli/issues/30) for sync hardening (dry-run, logging, launchd).
+See [issue #30](https://github.com/gardusig/cli/issues/30) for sync hardening (dry-run, logging, launchd).
 
 ## Workflow with git
 
 Single repo (cwd):
 
 ```bash
-shuttle git tag --yes
-shuttle git zip              # same as ingest for one tag, current repo
-shuttle drive upload
+cli git tag --yes
+cli git zip              # same as ingest for one tag, current repo
+cli drive upload
 ```
 
 Multi-repo:
 
 ```bash
-shuttle drive ingest
-shuttle drive status
-shuttle drive upload
+cli drive ingest
+cli drive status
+cli drive upload
 ```
 
 `git zip` zips one tag from the current repo. `drive ingest` zips **all** local tags for every configured repository (create or replace).
@@ -69,7 +69,7 @@ shuttle drive upload
 backup:
   tags_dir: ~/Library/Mobile Documents/com~apple~CloudDocs/git-tags
   repositories:
-    - path: ~/git-local/shuttle-cli
+    - path: ~/git-local/cli
 ```
 
 `config/drives.yaml` (cloud targets):
@@ -87,8 +87,8 @@ drives:
     root: git-tags
 ```
 
-`drive upload` scans `backup.tags_dir` and uploads paths missing on each enabled provider. Provider APIs are stubs until OAuth is wired ([#12](https://github.com/gardusig/shuttle-cli/issues/12)–[#14](https://github.com/gardusig/shuttle-cli/issues/14)).
+`drive upload` scans `backup.tags_dir` and uploads paths missing on each enabled provider. Provider APIs are stubs until OAuth is wired ([#12](https://github.com/gardusig/cli/issues/12)–[#14](https://github.com/gardusig/cli/issues/14)).
 
 ## Legacy
 
-`shuttle backup …` is a hidden alias (`backup status` → `drive status`, `backup repository sync` → `drive ingest`).
+`cli backup …` is a hidden alias (`backup status` → `drive status`, `backup repository sync` → `drive ingest`).

@@ -4,14 +4,14 @@ Docker-backed two-tier validation for competitive programming solutions.
 
 ## Overview
 
-`shuttle contest validate` checks a fast C++ solution against a Python brute on:
+`cli contest validate` checks a fast C++ solution against a Python brute on:
 
 | Tier | Input | Goal |
 | --- | --- | --- |
 | **small** | Corner cases, tiny inputs | Brute and fast outputs **must match** |
 | **large** | Stress inputs | Fast must finish; brute should **TLE** (warning if brute also finishes) |
 
-Fast solutions are **not** stored in shuttle-cli. You provide three paths:
+Fast solutions are **not** stored in cli. You provide three paths:
 
 - `--fast` — C++ solution (outside this repo)
 - `--brute` — Python slow reference
@@ -32,7 +32,7 @@ Requires Docker on the host.
 ## Usage
 
 ```bash
-shuttle contest validate \
+cli contest validate \
   --fast      /path/to/solution.cpp \
   --brute     /path/to/brute.py \
   --generator /path/to/gen.py \
@@ -51,7 +51,7 @@ memory_mb: 256
 ```
 
 ```bash
-shuttle contest validate --config contest.yaml
+cli contest validate --config contest.yaml
 ```
 
 Defaults: [`config/contest/defaults.yaml`](../config/contest/defaults.yaml) (`timeout: 10`, `memory_mb: 256`).
@@ -90,7 +90,7 @@ Reads multi-test stdin (`T` on first line), writes one answer line per case. See
 ## Example (external competitions repo)
 
 ```bash
-shuttle contest validate \
+cli contest validate \
   --fast ../solutions/codeforces/2237-a.cpp \
   --brute ../competitions/test/brutes/codeforces/2237-a.brute.py \
   --generator ../competitions/test/generators/codeforces/2237-a.gen.py
@@ -101,7 +101,7 @@ Existing generators need `small_cases()` / `large_cases()` split (replace single
 ## Execution model
 
 1. Generator runs **locally** → `small.txt`, `large.txt` in a temp workspace
-2. C++ compiled once in Docker (`shuttle-contest:runner`)
+2. C++ compiled once in Docker (`cli-contest:runner`)
 3. **Phase 1:** brute + fast on `small.txt` in parallel → compare outputs
 4. **Phase 2:** (if small matches) brute + fast on `large.txt` in parallel → check TLE behavior
 5. Temp workspace deleted; summary printed

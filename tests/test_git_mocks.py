@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import subprocess
 
-from shuttle.integration.git_mocks import patch_remote_git
-from shuttle.utils import process as process_mod
+from cli.integration.git_mocks import patch_remote_git
+from cli.utils import process as process_mod
 
 
 def test_patch_remote_git_blocks_push() -> None:

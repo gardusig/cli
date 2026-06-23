@@ -3,28 +3,28 @@
 set -euo pipefail
 
 DOCKER_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="${SHUTTLE_ROOT:-$(cd "$DOCKER_SCRIPT_DIR/../.." && pwd)}"
+ROOT="${CLI_ROOT:-$(cd "$DOCKER_SCRIPT_DIR/../.." && pwd)}"
 
-resolve_shuttle() {
-  if [[ -n "${SHUTTLE_BIN:-}" ]]; then
-    printf '%s\n' "$SHUTTLE_BIN"
+resolve_cli() {
+  if [[ -n "${CLI_BIN:-}" ]]; then
+    printf '%s\n' "$CLI_BIN"
     return 0
   fi
-  if command -v shuttle >/dev/null 2>&1; then
-    printf '%s\n' "shuttle"
+  if command -v cli >/dev/null 2>&1; then
+    printf '%s\n' "cli"
     return 0
   fi
   if [[ -x "$ROOT/.venv/bin/python" ]]; then
-    printf '%s\n' "$ROOT/.venv/bin/python -m shuttle"
+    printf '%s\n' "$ROOT/.venv/bin/python -m cli"
     return 0
   fi
-  echo "ERROR: shuttle not found. Run ./scripts/bootstrap.sh or ./scripts/install.sh" >&2
+  echo "ERROR: cli not found. Run ./scripts/bootstrap.sh or ./scripts/install.sh" >&2
   return 1
 }
 
-exec_shuttle() {
-  local shuttle_cmd
-  shuttle_cmd=$(resolve_shuttle)
+exec_cli() {
+  local cli_cmd
+  cli_cmd=$(resolve_cli)
   # shellcheck disable=SC2086
-  exec $shuttle_cmd "$@"
+  exec $cli_cmd "$@"
 }

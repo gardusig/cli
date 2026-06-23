@@ -1,4 +1,4 @@
-"""Unit tests for shuttle.utils helpers."""
+"""Unit tests for cli.utils helpers."""
 
 from __future__ import annotations
 
@@ -8,13 +8,13 @@ from pathlib import Path
 import pytest
 import yaml
 
-from shuttle.utils import fs, hashing, retry, zip as zip_util
-from shuttle.providers.notion import NotionError
-from shuttle.utils.confirm import require_confirmation
-from shuttle.utils.config import default_config_dir, load_config, load_yaml, project_root
-from shuttle.utils.external_client import ExternalCallError
-from shuttle.utils.process import GitCommandError, run_git
-from shuttle.utils.yaml import dump_yaml, load_yaml as utils_load_yaml
+from cli.utils import fs, hashing, retry, zip as zip_util
+from cli.providers.notion import NotionError
+from cli.utils.confirm import require_confirmation
+from cli.utils.config import default_config_dir, load_config, load_yaml, project_root
+from cli.utils.external_client import ExternalCallError
+from cli.utils.process import GitCommandError, run_git
+from cli.utils.yaml import dump_yaml, load_yaml as utils_load_yaml
 
 
 def test_project_root_points_at_repo() -> None:
@@ -31,7 +31,7 @@ def test_tags_dir_path_resolves_icloud_absolute(tmp_path: Path) -> None:
         f"backup:\n  tags_dir: {icloud}\n",
         encoding="utf-8",
     )
-    from shuttle.utils.config import tags_dir_path
+    from cli.utils.config import tags_dir_path
 
     assert tags_dir_path(cfg_dir) == icloud.resolve()
 
@@ -44,15 +44,15 @@ def test_bookmarks_file_path_from_config(tmp_path: Path) -> None:
         f"chrome:\n  bookmarks_file: {target}\n",
         encoding="utf-8",
     )
-    from shuttle.utils.config import bookmarks_file_path
+    from cli.utils.config import bookmarks_file_path
 
     assert bookmarks_file_path(cfg_dir) == target.resolve()
 
 
 def test_bookmarks_file_path_env_override(tmp_path: Path, monkeypatch) -> None:
     override = tmp_path / "env-bookmarks.html"
-    monkeypatch.setenv("SHUTTLE_BOOKMARKS_FILE", str(override))
-    from shuttle.utils.config import bookmarks_file_path
+    monkeypatch.setenv("CLI_BOOKMARKS_FILE", str(override))
+    from cli.utils.config import bookmarks_file_path
 
     assert bookmarks_file_path() == override.resolve()
 
@@ -67,7 +67,7 @@ def test_notion_pairs_file_split_from_task_root(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     manifest = project_root() / "config" / "notion" / "tasks.pairs.json"
-    from shuttle.utils.config import notion_pairs_file, notion_task_root
+    from cli.utils.config import notion_pairs_file, notion_task_root
 
     assert notion_task_root(cfg_dir) == private_root.resolve()
     assert notion_pairs_file(cfg_dir) == manifest.resolve()
@@ -82,13 +82,13 @@ def test_notion_pairs_file_bare_name_under_task_root(tmp_path: Path) -> None:
         f"notion:\n  task_root: {task_root}\n  pairs_file: tasks.pairs.json\n",
         encoding="utf-8",
     )
-    from shuttle.utils.config import notion_pairs_file
+    from cli.utils.config import notion_pairs_file
 
     assert notion_pairs_file(cfg_dir) == (task_root / "tasks.pairs.json").resolve()
 
 
 def test_notion_body_template_file() -> None:
-    from shuttle.utils.config import notion_body_template_file
+    from cli.utils.config import notion_body_template_file
 
     path = notion_body_template_file()
     assert path.name == "body.md"
@@ -104,13 +104,13 @@ def test_tags_dir_path_expands_tilde(tmp_path: Path, monkeypatch) -> None:
         f"backup:\n  tags_dir: {target}\n",
         encoding="utf-8",
     )
-    from shuttle.utils.config import tags_dir_path
+    from cli.utils.config import tags_dir_path
 
     assert tags_dir_path(cfg_dir) == target.resolve()
 
 
 def test_default_config_dir_env_override(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("SHUTTLE_CONFIG_DIR", str(tmp_path))
+    monkeypatch.setenv("CLI_CONFIG_DIR", str(tmp_path))
     assert default_config_dir() == tmp_path
 
 
@@ -189,7 +189,7 @@ def test_retry_succeeds_after_failure() -> None:
         return "ok"
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr("shuttle.utils.external_client.time.sleep", lambda _: None)
+        mp.setattr("cli.utils.external_client.time.sleep", lambda _: None)
         assert retry.retry(flaky, attempts=3, delay=0) == "ok"
 
 
@@ -198,7 +198,7 @@ def test_retry_raises_external_call_error() -> None:
         raise RuntimeError("fail")
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr("shuttle.utils.external_client.time.sleep", lambda _: None)
+        mp.setattr("cli.utils.external_client.time.sleep", lambda _: None)
         with pytest.raises(ExternalCallError, match="fail"):
             retry.retry(always_fail, attempts=2, delay=0)
 

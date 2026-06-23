@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from shuttle.integration.workspaces import API_WORKSPACES
+from cli.integration.workspaces import API_WORKSPACES
 from tests.chrome_harness import chrome_bookmarks_env
 from tests.integration_harness import copy_fixture_workspace, protected_repo_guard
 
@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_export_bookmarks_from_downloads_fixture(tmp_path: Path) -> None:
     workspace = copy_fixture_workspace(CHROME_WS, tmp_path)
     env = chrome_bookmarks_env(workspace, ROOT)
-    bookmarks_file = Path(env["SHUTTLE_BOOKMARKS_FILE"])
+    bookmarks_file = Path(env["CLI_BOOKMARKS_FILE"])
 
     with protected_repo_guard(CHROME_WS):
         subprocess.run(
@@ -31,15 +31,15 @@ def test_export_bookmarks_from_downloads_fixture(tmp_path: Path) -> None:
 
     assert bookmarks_file.is_file()
     text = bookmarks_file.read_text(encoding="utf-8")
-    assert "Shuttle Test Bookmark" in text
-    assert "example.com/shuttle-test" in text
+    assert "Cli Test Bookmark" in text
+    assert "example.com/cli-test" in text
 
 
 @pytest.mark.integration
 def test_import_bookmarks_script_runs(tmp_path: Path) -> None:
     workspace = copy_fixture_workspace(CHROME_WS, tmp_path)
     env = chrome_bookmarks_env(workspace, ROOT)
-    bookmarks_file = Path(env["SHUTTLE_BOOKMARKS_FILE"])
+    bookmarks_file = Path(env["CLI_BOOKMARKS_FILE"])
 
     subprocess.run(
         ["bash", str(ROOT / "scripts/chrome/export-bookmarks.sh")],

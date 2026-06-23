@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dockerized integration: every public shuttle CLI command (Typer endpoints + docker)."""
+"""Dockerized integration: every public cli CLI command (Typer endpoints + docker)."""
 from __future__ import annotations
 
 import shutil
@@ -11,18 +11,18 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from shuttle.integration.public_commands import (  # noqa: E402
+from cli.integration.public_commands import (  # noqa: E402
     public_command_check_count,
     run_all_public_command_checks,
 )
-from shuttle.integration.public_endpoints import prepare_git_repo  # noqa: E402
+from cli.integration.public_endpoints import prepare_git_repo  # noqa: E402
 
 SCRATCH = ROOT / ".integration-scratch"
 
 
 def main() -> int:
     SCRATCH.mkdir(exist_ok=True)
-    git_dir = Path(tempfile.mkdtemp(prefix="shuttle-public-", dir=SCRATCH))
+    git_dir = Path(tempfile.mkdtemp(prefix="cli-public-", dir=SCRATCH))
     errors: list[str] = []
     try:
         prepare_git_repo(git_dir)

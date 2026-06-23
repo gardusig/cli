@@ -1,6 +1,6 @@
 # Task pairs (header + body)
 
-Parallel-path pairs joined by `config/notion/tasks.pairs.json`. Task **files** live in private `notion.task_root`; the manifest lives in shuttle-cli.
+Parallel-path pairs joined by `config/notion/tasks.pairs.json`. Task **files** live in private `notion.task_root`; the manifest lives in cli.
 
 ## Pair contract
 
@@ -23,7 +23,7 @@ Parallel-path pairs joined by `config/notion/tasks.pairs.json`. Task **files** l
 Build or refresh:
 
 ```bash
-shuttle notion pairs build
+cli notion pairs build
 ```
 
 ## Body writing
@@ -38,7 +38,7 @@ shuttle notion pairs build
 1. Pick a path stem, e.g. `clean/kitchen`.
 2. Copy [config/notion/templates/header.yaml](../../config/notion/templates/header.yaml) → `header/clean/kitchen.yaml` with **`name`** + cadence fields.
 3. Copy [config/notion/templates/body.md](../../config/notion/templates/body.md) → `body/clean/kitchen.md` using the body template.
-4. Run `shuttle notion pairs build`.
+4. Run `cli notion pairs build`.
 
 ## Last done policy
 

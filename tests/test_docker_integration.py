@@ -34,12 +34,12 @@ def test_docker_harness_mentions_readonly_mount() -> None:
     common = (ROOT / "scripts/docker/common.sh").read_text()
     bootstrap = (ROOT / "scripts/bootstrap.sh").read_text()
     assert ":ro" in common
-    assert "/tmp/shuttle-cli" in common
+    assert "/tmp/cli" in common
     assert "--exclude='.git'" in common
     assert "--exclude='.venv'" in common
-    assert "SHUTTLE_DOCKER_SKIP_BUILD" in common
+    assert "CLI_DOCKER_SKIP_BUILD" in common
     assert "docker.sock" in common
-    assert "SHUTTLE_BOOTSTRAP_DEV" in bootstrap
+    assert "CLI_BOOTSTRAP_DEV" in bootstrap
 
 
 def test_ci_workflow_runs_on_push_and_pull_request() -> None:
@@ -52,8 +52,8 @@ def test_ci_workflow_runs_on_push_and_pull_request() -> None:
     assert "needs: unit" in workflow
     assert "test-unit.sh" in workflow
     assert "test-integration.sh" in workflow
-    assert "shuttle-cli:unit" in workflow
-    assert "shuttle-cli:integration" in workflow
+    assert "cli:unit" in workflow
+    assert "cli:integration" in workflow
     assert "target: unit" in workflow
     assert "target: integration" in workflow
     assert "cov-fail-under=80" in (ROOT / "scripts/docker/run-unit.sh").read_text()
@@ -72,7 +72,7 @@ def test_docker_smoke_runs_public_command_checker() -> None:
     smoke = (ROOT / "scripts/integration-smoke.sh").read_text()
     assert "check_integration_coverage.py" in smoke
     assert "check_public_commands.py" in smoke
-    assert "SHUTTLE_SKIP_CHROME_AUTOMATION=1" in smoke
+    assert "CLI_SKIP_CHROME_AUTOMATION=1" in smoke
 
 
 def test_ci_workflow_runs_live_docker_in_container() -> None:
@@ -83,6 +83,6 @@ def test_ci_workflow_runs_live_docker_in_container() -> None:
 
 
 def test_public_command_registry_covers_all_commands() -> None:
-    from shuttle.integration.integration_coverage import assert_integration_coverage_gate
+    from cli.integration.integration_coverage import assert_integration_coverage_gate
 
     assert_integration_coverage_gate()
