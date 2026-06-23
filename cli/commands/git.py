@@ -9,9 +9,16 @@ from rich import print as rprint
 
 from cli.internal.read.git import git_worktree_snapshot
 from cli.internal.write.gate import WRITE_GATE_DELIMITER, require_write_gate
+from cli.services.backup_zip import archive_tag_zip
 from cli.services.git_review import run_review
 from cli.services.git_shortcuts import GitShortcuts
-from cli.utils.config import default_zip_path, project_root
+from cli.utils.config import (
+    default_zip_path,
+    project_root,
+    repo_encrypt_backup,
+    require_backup_zip_password,
+    tag_zip_basename,
+)
 from cli.utils.quick_defaults import default_tag_name, suggest_branch_name
 
 git_app = typer.Typer(help="Git shortcuts (commit message defaults to '.').", no_args_is_help=True)
@@ -629,7 +636,7 @@ def zip_cmd(
         None,
         "-o",
         "--output",
-        help="Output zip path (default git-tags/REPO/TAG.zip in backup.tags_dir).",
+        help="Output zip path (default git-tags/REPO/REPO-TAG.zip in backup.tags_dir).",
     ),
 ) -> None:
     """Create a zip archive of the tree at a git tag."""
@@ -638,8 +645,13 @@ def zip_cmd(
     if not svc.tag_exists_local(tag_name):
         raise typer.Exit(f"Tag not found: {tag_name}. Run `cli git tag` first.")
     dest = output or default_zip_path(svc.repo_basename(), tag_name)
-    svc.zip_tag(tag_name, dest)
-    rprint(f"[green]zip[/green] git-tags/{svc.repo_basename()}/{tag_name}.zip")
+    repo_path = Path(svc.top)
+    encrypted = repo_encrypt_backup(repo_path)
+    password = require_backup_zip_password() if encrypted else None
+    archive_tag_zip(repo_path, tag_name, dest, encrypted=encrypted, password=password)
+    mode = "encrypted zip" if encrypted else "git archive"
+    stem = tag_zip_basename(svc.repo_basename(), tag_name)
+    rprint(f"[green]zip[/green] git-tags/{svc.repo_basename()}/{stem}.zip ({mode})")
 
 
 @git_app.command("review")

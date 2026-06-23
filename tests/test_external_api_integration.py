@@ -188,7 +188,7 @@ def test_drive_upload_happy_path(tmp_path: Path) -> None:
     result = upload_missing(local_root, provider, "backups/tags")
 
     assert result.failed == []
-    assert "demo-repo/v1.0.0.zip" in result.uploaded
+    assert "demo-repo/demo-repo-v1.0.0.zip" in result.uploaded
 
 
 @pytest.mark.integration
@@ -227,7 +227,7 @@ def test_drive_upload_transient_list_retries_then_succeeds(tmp_path: Path) -> No
         result = upload_missing(local_root, provider, "backups/tags")
 
     assert result.failed == []
-    assert "demo-repo/v1.0.0.zip" in result.uploaded
+    assert "demo-repo/demo-repo-v1.0.0.zip" in result.uploaded
 
 
 @pytest.mark.integration

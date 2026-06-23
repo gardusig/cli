@@ -52,10 +52,6 @@
     "body_filepath": "body/pay/fund-accounts.md"
   },
   {
-    "header_filepath": "header/resume.yaml",
-    "body_filepath": "body/resume.md"
-  },
-  {
     "header_filepath": "header/schedule/barber.yaml",
     "body_filepath": "body/schedule/barber.md"
   },
@@ -118,10 +114,6 @@
   {
     "header_filepath": "header/sync/watch.yaml",
     "body_filepath": "body/sync/watch.md"
-  },
-  {
-    "header_filepath": "header/tattoo.yaml",
-    "body_filepath": "body/tattoo.md"
   },
   {
     "header_filepath": "header/upload-backup.yaml",

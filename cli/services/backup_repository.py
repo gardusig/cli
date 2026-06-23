@@ -5,8 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from cli.services.backup_zip import archive_tag_zip
 from cli.services.git_shortcuts import GitShortcuts
-from cli.utils.config import load_config, tags_dir_path
+from cli.utils.config import (
+    backup_repository_entry,
+    load_config,
+    repo_encrypt_backup,
+    require_backup_zip_password,
+    tag_from_zip_stem,
+    tag_zip_basename,
+    tags_dir_path,
+)
 
 @dataclass
 class RepoBackupStatus:
@@ -46,7 +55,13 @@ def list_downloaded_tags(repo_path: Path, config_dir: Path | None = None) -> lis
     storage = repo_storage_dir(repo_path, config_dir)
     if not storage.is_dir():
         return []
-    return sorted(p.stem for p in storage.glob("*.zip") if p.is_file())
+    name = repo_folder_name(repo_path)
+    tags = {
+        tag_from_zip_stem(name, p.stem)
+        for p in storage.glob("*.zip")
+        if p.is_file()
+    }
+    return sorted(tags)
 
 
 def list_git_tags(repo_path: Path) -> list[str]:
@@ -106,12 +121,21 @@ def sync_repo(path: str | None = None, config_dir: Path | None = None) -> SyncRe
     svc = GitShortcuts(top=str(repo_path))
     storage = repo_storage_dir(repo_path, config_dir)
     storage.mkdir(parents=True, exist_ok=True)
+    encrypted = repo_encrypt_backup(repo_path, config_dir)
+    password = require_backup_zip_password() if encrypted else None
     result = SyncResult()
+    name = repo_folder_name(repo_path)
     for tag in svc.list_local_tags():
-        dest = storage / f"{tag}.zip"
+        dest = storage / f"{tag_zip_basename(name, tag)}.zip"
         existed = dest.is_file()
         try:
-            svc.zip_tag(tag, dest)
+            archive_tag_zip(
+                repo_path,
+                tag,
+                dest,
+                encrypted=encrypted,
+                password=password,
+            )
             if existed:
                 result.replaced.append(tag)
             else:
@@ -123,14 +147,19 @@ def sync_repo(path: str | None = None, config_dir: Path | None = None) -> SyncRe
 
 def delete_repo_tag(path: str, tag: str, config_dir: Path | None = None) -> Path:
     repo_path = resolve_repo_path(path)
-    dest = repo_storage_dir(repo_path, config_dir) / f"{tag}.zip"
+    name = repo_folder_name(repo_path)
+    storage = repo_storage_dir(repo_path, config_dir)
+    dest = storage / f"{tag_zip_basename(name, tag)}.zip"
     if not dest.is_file():
+        legacy = storage / f"{tag}.zip"
+        if legacy.is_file():
+            dest = legacy
         raise RuntimeError(f"No backup zip for tag {tag}: {dest}")
     dest.unlink()
     return dest
 
 
-def format_status_lines(rows: list[RepoBackupStatus]) -> list[str]:
+def format_status_lines(rows: list[RepoBackupStatus], config_dir: Path | None = None) -> list[str]:
     lines: list[str] = []
     if not rows:
         lines.append(
@@ -140,6 +169,11 @@ def format_status_lines(rows: list[RepoBackupStatus]) -> list[str]:
         return lines
     for row in rows:
         lines.append(f"Repository: {row.name}  ({row.path})")
+        entry = backup_repository_entry(row.path, config_dir)
+        if entry and entry.encrypted:
+            lines.append("  Backup mode:          encrypted zip (BACKUP_ZIP_PASSWORD)")
+        else:
+            lines.append("  Backup mode:          git archive")
         lines.append(f"  Local tags (git):     {'  '.join(row.git_tags) or '(none)'}")
         lines.append(f"  Downloaded (zips):    {'  '.join(row.downloaded) or '(none)'}")
         lines.append(f"  Missing locally:      {'  '.join(row.missing) or '(none)'}")

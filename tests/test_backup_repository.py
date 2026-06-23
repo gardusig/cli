@@ -38,7 +38,7 @@ def test_sync_repo_idempotent(monkeypatch, tmp_path: Path) -> None:
     assert first.created == ["v1"]
     second = sync_repo(str(repo))
     assert second.replaced == ["v1"]
-    assert (tags_root / "demo-repo" / "v1.zip").is_file()
+    assert (tags_root / "demo-repo" / "demo-repo-v1.zip").is_file()
 
 
 def test_ingest_repositories_all_configured(monkeypatch, tmp_path: Path) -> None:

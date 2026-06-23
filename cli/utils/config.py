@@ -10,6 +10,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class BackupRepository(BaseModel):
     path: str
+    encrypted: bool = False
+
+
+class BackupReplica(BaseModel):
+    """Deploy target for tag zips (cloud provider or local USB path)."""
+
+    type: str = "cloud"  # cloud | usb
+    provider: str = ""  # google | onedrive | proton (cloud only)
+    path: str = ""  # mount path (usb only)
+    root: str = "git-tags"  # remote folder prefix (cloud only)
+    name: str = ""  # optional display label
 
 
 # Default local tag storage: iCloud Drive git-tags folder (macOS).
@@ -21,6 +32,7 @@ DEFAULT_TAGS_DIR = (
 class BackupConfig(BaseModel):
     tags_dir: str = DEFAULT_TAGS_DIR
     repositories: list[BackupRepository] = Field(default_factory=list)
+    replicas: list[BackupReplica] = Field(default_factory=list)
 
 
 class DriveProviderConfig(BaseModel):
@@ -169,8 +181,21 @@ def tags_dir_path(config_dir: Path | None = None) -> Path:
     return (project_root() / raw).resolve()
 
 
+def tag_zip_basename(repo_basename: str, tag: str) -> str:
+    """Zip filename stem: ``{repo}-{tag}`` (e.g. ``private-2026-06-23``)."""
+    return f"{repo_basename}-{tag}"
+
+
+def tag_from_zip_stem(repo_basename: str, stem: str) -> str:
+    """Recover git tag from zip stem (prefixed or legacy bare tag)."""
+    prefix = f"{repo_basename}-"
+    if stem.startswith(prefix):
+        return stem[len(prefix) :]
+    return stem
+
+
 def default_zip_path(repo_basename: str, tag: str, config_dir: Path | None = None) -> Path:
-    return tags_dir_path(config_dir) / repo_basename / f"{tag}.zip"
+    return tags_dir_path(config_dir) / repo_basename / f"{tag_zip_basename(repo_basename, tag)}.zip"
 
 
 def bookmarks_file_path(config_dir: Path | None = None) -> Path:
@@ -245,6 +270,39 @@ def require_notion_token(cfg: CliConfig | None = None) -> str:
             "notion.database_id is not configured. Set it in config/config.yaml."
         )
     return token
+
+
+def backup_zip_password() -> str | None:
+    """Zip encryption password from BACKUP_ZIP_PASSWORD (never commit to config)."""
+    value = os.environ.get("BACKUP_ZIP_PASSWORD", "").strip()
+    return value or None
+
+
+def require_backup_zip_password() -> str:
+    password = backup_zip_password()
+    if not password:
+        raise RuntimeError(
+            "BACKUP_ZIP_PASSWORD is not set. Export a zip password for encrypted "
+            "backup repositories (see .env.example)."
+        )
+    return password
+
+
+def backup_repository_entry(
+    repo_path: Path,
+    config_dir: Path | None = None,
+) -> BackupRepository | None:
+    """Config row for a repository path, if listed in backup.repositories."""
+    resolved = repo_path.expanduser().resolve()
+    for entry in load_config(config_dir).backup.repositories:
+        if Path(entry.path).expanduser().resolve() == resolved:
+            return entry
+    return None
+
+
+def repo_encrypt_backup(repo_path: Path, config_dir: Path | None = None) -> bool:
+    entry = backup_repository_entry(repo_path, config_dir)
+    return bool(entry and entry.encrypted)
 
 
 def chrome_downloads_dir(config_dir: Path | None = None) -> Path:

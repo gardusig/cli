@@ -121,7 +121,7 @@ cli git tag 2026-06-11         # named tag
 cli git tag list               # local + remote tags (sorted)
 cli git tag push               # reconcile today's tag with origin
 cli git tag push 2026-06-11 --yes
-cli git zip                    # zip today's tag → git-tags/REPO/TAG.zip (iCloud)
+cli git zip                    # zip today's tag → git-tags/REPO/REPO-TAG.zip (iCloud)
 cli git zip 2026-06-11 -o out.zip
 ```
 

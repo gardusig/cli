@@ -34,6 +34,7 @@ Copy the bundled `config/` tree and edit paths for your machine before daily use
 | **Notion task root** | `notion.task_root` | Private `header/` + `body/` task files |
 | **Notion pairs manifest** | `notion.pairs_file` | `config/notion/tasks.pairs.json` in this repo |
 | **Notion database** | `notion.database_id` | Existing board ID + `NOTION_TOKEN` env |
+| **Backup zip password** | `BACKUP_ZIP_PASSWORD` env | Encrypted repos (`encrypted: true` in `backup.repositories`) |
 | **Chrome bookmarks file** | `chrome.bookmarks_file` | HTML backup (`chrome bookmarks ingest`) |
 | **Chrome downloads** | `chrome.downloads_dir` | Folder polled when ingesting from Chrome |
 
@@ -109,7 +110,7 @@ Shell wrappers: `scripts/git/` (e.g. `./scripts/git/review.sh`). See [docs/git.m
 
 ## Drive (`cli drive`)
 
-Local hub: **iCloud** `git-tags/{repo}/{tag}.zip` (via `backup.tags_dir`). Cloud: append-only upload to Google Drive, OneDrive, Proton.
+Local hub: **iCloud** `git-tags/{repo}/{repo}-{tag}.zip` (via `backup.tags_dir`). Cloud: append-only upload to Google Drive, OneDrive, Proton.
 
 | Task | Command |
 | --- | --- |

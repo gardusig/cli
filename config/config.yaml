@@ -1,7 +1,28 @@
 backup:
   tags_dir: ~/Library/Mobile Documents/com~apple~CloudDocs/git-tags
+  # Public repos: plain git archive zips. Private repo: encrypted zip (BACKUP_ZIP_PASSWORD).
   repositories:
     - path: ~/git-local/cli
+    - path: ~/git-local/cursor-skills
+    - path: ~/git-local/shuttle-cli
+    # Add your other public repos here (typically six public + one private):
+    # - path: ~/git-local/my-public-repo
+    - path: ~/git-local/private
+      encrypted: true
+  replicas:
+    - type: cloud
+      provider: google
+      root: git-tags
+    - type: cloud
+      provider: onedrive
+      root: git-tags
+    - type: cloud
+      provider: proton
+      root: git-tags
+    # Local USB replica (mount path when drive is plugged in):
+    # - type: usb
+    #   path: /Volumes/Backup/git-tags
+    #   name: usb-backup
 
 notion:
   database_id: 2f499343-9249-80d1-aae9-ce5343255b8e

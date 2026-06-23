@@ -39,34 +39,30 @@ def test_drive_ingest_failure(mock_ingest: MagicMock) -> None:
     mock_ingest.assert_called_once()
 
 
-@patch("cli.commands.drive.sync_all")
+@patch("cli.commands.drive.deploy_replicas")
+@patch("cli.commands.drive.ingest_repositories")
 @patch("cli.commands.drive.tags_dir_path")
-@patch("cli.commands.drive.load_config")
-@patch("cli.commands.drive._enabled_providers")
 def test_drive_sync(
-    mock_providers: MagicMock,
-    mock_cfg: MagicMock,
     mock_tags: MagicMock,
-    mock_sync: MagicMock,
+    mock_ingest: MagicMock,
+    mock_deploy: MagicMock,
     tmp_path: Path,
 ) -> None:
-    from cli.services.drive_sync import DriveSyncResult, UploadResult
+    from cli.services.drive_sync import UploadResult
 
     tags_root = tmp_path / "git-tags"
     tags_root.mkdir()
     mock_tags.return_value = tags_root
-    mock_providers.return_value = [("google", MagicMock(), "git-tags")]
     repo = Path("/tmp/demo")
-    mock_sync.return_value = DriveSyncResult(
-        ingest=[(repo, SyncResult(created=["v1"], replaced=[], failed=[]))],
-        uploads=[("google", UploadResult(uploaded=["demo/v1.zip"], skipped=[], failed=[]))],
-    )
+    mock_ingest.return_value = [(repo, SyncResult(created=["v1"], replaced=[], failed=[]))]
+    mock_deploy.return_value = [("google", UploadResult(uploaded=["demo/v1.zip"], skipped=[], failed=[]))]
     result = runner.invoke(app, ["drive", "sync"])
     assert result.exit_code == 0
     assert "Phase 1" in result.stdout
     assert "Phase 2" in result.stdout
     assert "v1" in result.stdout
-    mock_sync.assert_called_once()
+    mock_ingest.assert_called_once()
+    mock_deploy.assert_called_once()
 
 
 @patch("cli.commands.drive.tags_dir_path")
@@ -77,27 +73,19 @@ def test_drive_sync_missing_local_dir(mock_tags: MagicMock) -> None:
     assert "not found" in result.stdout.lower()
 
 
-@patch("cli.commands.drive.upload_missing")
 @patch("cli.commands.drive.tags_dir_path")
-@patch("cli.commands.drive.load_config")
-def test_drive_upload_missing_local_dir(
-    mock_cfg: MagicMock,
-    mock_tags: MagicMock,
-    _upload: MagicMock,
-) -> None:
+def test_drive_upload_missing_local_dir(mock_tags: MagicMock) -> None:
     mock_tags.return_value = Path("/no/such/git-tags")
     result = runner.invoke(app, ["drive", "upload"])
     assert result.exit_code != 0
     assert "not found" in result.stdout.lower()
 
 
-@patch("cli.commands.drive.upload_missing")
+@patch("cli.commands.drive.deploy_replicas")
 @patch("cli.commands.drive.tags_dir_path")
-@patch("cli.commands.drive._enabled_providers")
 def test_drive_upload_success(
-    mock_providers: MagicMock,
     mock_tags: MagicMock,
-    mock_upload: MagicMock,
+    mock_deploy: MagicMock,
     tmp_path: Path,
 ) -> None:
     from cli.services.drive_sync import UploadResult
@@ -105,11 +93,11 @@ def test_drive_upload_success(
     tags_root = tmp_path / "git-tags"
     tags_root.mkdir()
     mock_tags.return_value = tags_root
-    mock_providers.return_value = [("google", MagicMock(), "remote/tags")]
-    mock_upload.return_value = UploadResult(uploaded=["demo/v1.zip"], skipped=[], failed=[])
+    mock_deploy.return_value = [("google", UploadResult(uploaded=["demo/v1.zip"], skipped=[], failed=[]))]
     result = runner.invoke(app, ["drive", "upload", "google"])
     assert result.exit_code == 0
     assert "demo/v1.zip" in result.stdout
+    mock_deploy.assert_called_once()
 
 
 @patch("cli.commands.drive.list_downloaded_tags", return_value=["v1", "v2"])

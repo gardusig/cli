@@ -8,3 +8,5 @@
 | `backup repository sync` | `drive ingest` |
 | `backup repository list` | `drive list` |
 | `backup repository delete` | `drive delete` |
+
+Encrypted private repos use `encrypted: true` + `BACKUP_ZIP_PASSWORD`. Deploy replicas with `cli drive deploy` (cloud + USB).

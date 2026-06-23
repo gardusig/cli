@@ -214,5 +214,14 @@ def test_git_command_error_message() -> None:
     assert err.returncode == 1
 
 
+def test_tag_zip_basename_and_parse() -> None:
+    from cli.utils.config import default_zip_path, tag_from_zip_stem, tag_zip_basename
+
+    assert tag_zip_basename("private", "2026-06-23") == "private-2026-06-23"
+    assert tag_from_zip_stem("private", "private-2026-06-23") == "2026-06-23"
+    assert tag_from_zip_stem("private", "2026-06-23") == "2026-06-23"  # legacy
+    assert default_zip_path("private", "2026-06-23").name == "private-2026-06-23.zip"
+
+
 def test_require_confirmation_with_yes() -> None:
     require_confirmation("go?", yes=True)

@@ -25,8 +25,8 @@ def test_upload_missing_pushes_local_tags_to_mock_remote(tmp_path: Path) -> None
         result = upload_missing(local_root, provider, remote_root)
 
     assert result.failed == []
-    assert "demo-repo/v1.0.0.zip" in result.uploaded
-    assert provider.exists(f"{remote_root}/demo-repo/v1.0.0.zip")
+    assert "demo-repo/demo-repo-v1.0.0.zip" in result.uploaded
+    assert provider.exists(f"{remote_root}/demo-repo/demo-repo-v1.0.0.zip")
 
 
 @pytest.mark.integration
@@ -40,6 +40,6 @@ def test_upload_missing_skips_existing_remote_files(tmp_path: Path) -> None:
     second = upload_missing(local_root, provider, remote_root)
 
     assert first.failed == []
-    assert "demo-repo/v1.0.0.zip" in first.uploaded
-    assert second.skipped == ["demo-repo/v1.0.0.zip"]
+    assert "demo-repo/demo-repo-v1.0.0.zip" in first.uploaded
+    assert second.skipped == ["demo-repo/demo-repo-v1.0.0.zip"]
     assert second.uploaded == []

@@ -62,9 +62,21 @@ backup:
   tags_dir: ~/Library/Mobile Documents/com~apple~CloudDocs/git-tags
   repositories:
     - path: ~/git-local/cli
+    - path: ~/git-local/private
+      encrypted: true
+  replicas:
+    - type: cloud
+      provider: google
+      root: git-tags
+    - type: usb
+      path: /Volumes/Backup/git-tags
+      name: usb-backup
 ```
 
-`tags_dir` must be an absolute path or `~`-expanded path on the local machine (typically an iCloud Drive folder on macOS). Tag zips are created and replaced under `git-tags/{repo-name}/`.
+- `tags_dir` — local hub for tag zips (typically iCloud on macOS).
+- `repositories[].encrypted` — when `true`, ingest uses password-protected `zip -er` instead of plain `git archive`.
+- **`BACKUP_ZIP_PASSWORD`** — zip encryption password in environment only (like `NOTION_TOKEN`).
+- `replicas` — deploy targets after ingest: `cloud` (google / onedrive / proton) or `usb` (local mount path). When omitted, enabled entries in `drives.yaml` are used as cloud replicas.
 
 ## Drives (cloud upload)
 
@@ -90,6 +102,7 @@ drives:
 | `CLI_CONFIG_DIR` | Override config directory |
 | `CLI_GIT_ROOT` | Test override for git repo root |
 | `NOTION_TOKEN` | Notion integration token (required for `cli notion`) |
+| `BACKUP_ZIP_PASSWORD` | Zip password for `encrypted: true` backup repositories |
 | `CLI_BOOKMARKS_FILE` | Chrome bookmarks backup path |
 | `CLI_DOWNLOADS_DIR` | Chrome ingest downloads folder |
 

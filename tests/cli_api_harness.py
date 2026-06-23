@@ -13,8 +13,7 @@ from unittest.mock import MagicMock, patch
 from cli.integration.cli_api_checks import CliApiCheck, validate_cli_api_check
 from cli.integration.workspaces import API_WORKSPACES, fixture_dir
 from cli.services.backup_repository import RepoBackupStatus, SyncResult
-from cli.services.drive_sync import DriveSyncResult, UploadResult
-from tests.drive_harness import InMemoryDriveProvider
+from cli.services.drive_sync import UploadResult
 from tests.gh_harness import gh_auth_error, patch_run_gh
 from tests.integration_harness import copy_fixture_workspace
 from tests.notion_harness import notion_cli_handler, notion_page, patch_notion_http
@@ -134,8 +133,7 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
     tags_dir = tags_workspace / "tags"
     config_dir = tmp_path / "config"
     write_drive_config(config_dir, tags_dir=tags_dir, repo_path=repo)
-    provider = InMemoryDriveProvider()
-    zip_path = tags_dir / "demo-repo" / "v0.0.0.zip"
+    zip_path = tags_dir / "demo-repo" / "demo-repo-v0.0.0.zip"
     zip_path.parent.mkdir(parents=True, exist_ok=True)
     zip_path.write_bytes(b"fixture zip")
 
@@ -143,10 +141,6 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
         RepoBackupStatus(name="demo-repo", path=repo, git_tags=["v0.0.0"], downloaded=["v0.0.0"])
     ]
     ingest_rows = [(repo, SyncResult(created=["v0.0.0"], replaced=[], failed=[]))]
-    sync_result = DriveSyncResult(
-        ingest=ingest_rows,
-        uploads=[("google", UploadResult(uploaded=["demo-repo/v1.0.0.zip"], skipped=[], failed=[]))],
-    )
     snapshot = MagicMock()
     snapshot.summary_lines.return_value = ["branch: main"]
 
@@ -156,9 +150,6 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
         if path and path.startswith("/no/such"):
             return _real_resolve_repo_path(path)
         return repo
-
-    def _providers(_selected: str | None = None):
-        return [("google", provider, "remote/tags")]
 
     def _backup_status():
         if broken == "drive_status_error":
@@ -176,14 +167,15 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
         return tags_dir
 
     with (
-        patch("cli.commands.drive._enabled_providers", _providers),
         patch("cli.commands.drive.backup_status", _backup_status),
         patch("cli.commands.drive.ingest_repositories", _ingest_repositories),
-        patch("cli.commands.drive.sync_all", return_value=sync_result),
+        patch(
+            "cli.commands.drive.deploy_replicas",
+            return_value=[("google", UploadResult(uploaded=["demo-repo/demo-repo-v1.0.0.zip"]))],
+        ),
         patch("cli.commands.drive.resolve_repo_path", _resolve_repo_path),
         patch("cli.commands.drive.list_downloaded_tags", return_value=["v0.0.0", "v1.0.0"]),
         patch("cli.commands.drive.delete_repo_tag", return_value=zip_path),
-        patch("cli.commands.drive.upload_missing", return_value=UploadResult(uploaded=["demo-repo/v1.0.0.zip"])),
         patch("cli.commands.drive.git_worktree_snapshot", return_value=snapshot),
         patch("cli.commands.drive.tags_dir_path", _tags_dir_path),
     ):

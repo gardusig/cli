@@ -13,6 +13,7 @@ from typer.testing import CliRunner
 
 from cli.cli import app
 from cli.integration.git_mocks import patch_remote_git
+from cli.utils.config import default_zip_path
 from cli.integration.public_endpoints import (
     _push_cwd,
     dirty_integration_git,
@@ -313,7 +314,7 @@ def check_zip_after_tag(git_root: Path, repo_root: Path) -> list[str]:
     env = isolated_tags_env(scratch)
     tags_dir = Path(env["CLI_CONFIG_DIR"]).parent / "git-tags"
     repo_name = git_root.name
-    zip_path = tags_dir / repo_name / f"{tag}.zip"
+    zip_path = default_zip_path(repo_name, tag)
 
     code, _ = invoke_tag_zip(
         repo_root, git_root, ("git", "tag", tag, "--yes"), extra_env=env
@@ -338,7 +339,7 @@ def check_zip_replaces_existing(git_root: Path, repo_root: Path) -> list[str]:
     scratch.mkdir(parents=True, exist_ok=True)
     env = isolated_tags_env(scratch)
     tags_dir = Path(env["CLI_CONFIG_DIR"]).parent / "git-tags"
-    zip_path = tags_dir / git_root.name / f"{tag}.zip"
+    zip_path = default_zip_path(git_root.name, tag)
 
     invoke_tag_zip(repo_root, git_root, ("git", "tag", tag, "--yes"), extra_env=env)
     invoke_tag_zip(repo_root, git_root, ("git", "zip", tag), extra_env=env)
@@ -394,7 +395,7 @@ def check_tag_zip_full_workflow(git_root: Path, repo_root: Path) -> list[str]:
     scratch.mkdir(parents=True, exist_ok=True)
     env = isolated_tags_env(scratch)
     tags_dir = Path(env["CLI_CONFIG_DIR"]).parent / "git-tags"
-    zip_path = tags_dir / git_root.name / f"{tag}.zip"
+    zip_path = default_zip_path(git_root.name, tag)
 
     steps: list[tuple[tuple[str, ...], str]] = [
         (("git", "tag", tag, "--yes"), "tag"),

@@ -7,8 +7,6 @@ from rich import print as rprint
 
 from cli.internal.read.git import git_worktree_snapshot
 from cli.internal.write.gate import require_write_gate
-from cli.providers import google_drive, onedrive, proton_drive
-from cli.providers.base import DriveProvider
 from cli.services.backup_repository import (
     SyncResult,
     backup_status,
@@ -18,40 +16,16 @@ from cli.services.backup_repository import (
     list_downloaded_tags,
     resolve_repo_path,
 )
-from cli.services.drive_sync import UploadResult, sync_all, upload_missing
+from cli.services.replica_deploy import deploy_replicas
+from cli.services.drive_sync import UploadResult
 from cli.services.git_shortcuts import GitShortcuts
-from cli.utils.config import load_config, tags_dir_path
+from cli.utils.config import tags_dir_path
 from cli.utils.external_client import ExternalCallError
 
 drive_app = typer.Typer(
-    help="Local git-tags (iCloud) and cloud upload.",
+    help="Local git-tags (iCloud), replicas (cloud + USB), and deploy.",
     no_args_is_help=True,
 )
-
-
-def _enabled_providers(selected: str | None) -> list[tuple[str, DriveProvider, str]]:
-    cfg = load_config()
-    mapping = {
-        "google": (cfg.drives.google, google_drive),
-        "onedrive": (cfg.drives.onedrive, onedrive),
-        "proton": (cfg.drives.proton, proton_drive),
-    }
-    if selected:
-        if selected not in mapping:
-            raise typer.BadParameter(f"Unknown provider: {selected}")
-        pcfg, module = mapping[selected]
-        if not pcfg.enabled:
-            raise typer.Exit(f"Provider {selected} is disabled in drives.yaml")
-        if not pcfg.root:
-            raise typer.Exit(f"Provider {selected} has no root configured")
-        return [(selected, module, pcfg.root)]
-    rows: list[tuple[str, DriveProvider, str]] = []
-    for name, (pcfg, module) in mapping.items():
-        if pcfg.enabled and pcfg.root:
-            rows.append((name, module, pcfg.root))
-    if not rows:
-        raise typer.Exit("No enabled drive providers with root configured.")
-    return rows
 
 
 def _print_ingest_rows(rows: list[tuple[Path, SyncResult]]) -> tuple[int, int, int]:
@@ -158,12 +132,49 @@ def delete_cmd(
 
 @drive_app.command("sync")
 def sync_cmd(
-    provider: str | None = typer.Argument(
+    replica: str | None = typer.Argument(
         None,
-        help="google, onedrive, or proton (default: all enabled).",
+        help="Replica name, provider, or USB path label (default: all replicas).",
     ),
 ) -> None:
-    """Ingest all configured repositories, then upload to all enabled cloud providers."""
+    """Ingest all configured repositories, then deploy to replicas (cloud + USB)."""
+    local_root = tags_dir_path()
+    if not local_root.is_dir():
+        raise typer.Exit(
+            f"Local git-tags folder not found: {local_root}\n"
+            "Set backup.tags_dir in config/config.yaml (default: iCloud git-tags)."
+        )
+    rprint("[bold]Phase 1 — ingest[/bold] (all backup.repositories)")
+    try:
+        ingest_rows = ingest_repositories()
+    except RuntimeError as exc:
+        raise typer.Exit(str(exc)) from exc
+    created, replaced, failed = _print_ingest_rows(ingest_rows)
+    rprint(
+        f"Ingest done. Created: {created}  Replaced: {replaced}  Failed: {failed}"
+    )
+    rprint()
+    rprint("[bold]Phase 2 — deploy[/bold] (replicas: cloud + USB)")
+    try:
+        deploy_rows = deploy_replicas(local_root, selected=replica)
+        up, skip, fail = _print_upload_rows(deploy_rows)
+    except RuntimeError as exc:
+        raise typer.Exit(str(exc)) from exc
+    except NotImplementedError as exc:
+        raise typer.Exit(str(exc)) from exc
+    except ExternalCallError as exc:
+        raise typer.Exit(exc.user_message) from exc
+    rprint(f"Sync done. Deployed: {up}  Skipped: {skip}  Failed: {fail}")
+
+
+@drive_app.command("deploy")
+def deploy_cmd(
+    replica: str | None = typer.Argument(
+        None,
+        help="Replica name or provider (default: all configured replicas).",
+    ),
+) -> None:
+    """Deploy local tag zips to replicas (cloud drives and/or USB paths)."""
     local_root = tags_dir_path()
     if not local_root.is_dir():
         raise typer.Exit(
@@ -171,39 +182,27 @@ def sync_cmd(
             "Set backup.tags_dir in config/config.yaml (default: iCloud git-tags)."
         )
     try:
-        targets = _enabled_providers(provider)
-    except typer.BadParameter:
-        raise
-    rprint("[bold]Phase 1 — ingest[/bold] (all backup.repositories)")
-    try:
-        sync_result = sync_all(local_root, targets)
+        rows = deploy_replicas(local_root, selected=replica)
     except RuntimeError as exc:
+        raise typer.Exit(str(exc)) from exc
+    except NotImplementedError as exc:
         raise typer.Exit(str(exc)) from exc
     except ExternalCallError as exc:
         raise typer.Exit(exc.user_message) from exc
-    except NotImplementedError as exc:
-        raise typer.Exit(str(exc)) from exc
-    created, replaced, failed = _print_ingest_rows(sync_result.ingest)
+    total_up, total_skip, total_fail = _print_upload_rows(rows)
     rprint(
-        f"Ingest done. Created: {created}  Replaced: {replaced}  Failed: {failed}"
+        f"Done. Deployed: {total_up}  Skipped: {total_skip}  Failed: {total_fail}"
     )
-    rprint()
-    rprint("[bold]Phase 2 — upload[/bold] (append-only)")
-    try:
-        up, skip, fail = _print_upload_rows(sync_result.uploads)
-    except NotImplementedError as exc:
-        raise typer.Exit(str(exc)) from exc
-    rprint(f"Sync done. Uploaded: {up}  Skipped: {skip}  Failed: {fail}")
 
 
 @drive_app.command("upload")
 def upload_cmd(
     provider: str | None = typer.Argument(
         None,
-        help="google, onedrive, or proton (default: all enabled).",
+        help="google, onedrive, or proton (default: all enabled cloud replicas).",
     ),
 ) -> None:
-    """Upload missing local zips to cloud drive(s) (append-only)."""
+    """Deploy missing local zips to cloud replica(s) (append-only)."""
     local_root = tags_dir_path()
     if not local_root.is_dir():
         raise typer.Exit(
@@ -211,19 +210,14 @@ def upload_cmd(
             "Set backup.tags_dir in config/config.yaml (default: iCloud git-tags)."
         )
     try:
-        targets = _enabled_providers(provider)
-    except typer.BadParameter:
-        raise
-    uploads: list[tuple[str, UploadResult]] = []
-    for name, module, remote_root in targets:
-        rprint(f"[bold]Uploading to {name}[/bold] (root: {remote_root})")
-        try:
-            uploads.append((name, upload_missing(local_root, module, remote_root)))
-        except NotImplementedError as exc:
-            raise typer.Exit(str(exc)) from exc
-        except ExternalCallError as exc:
-            raise typer.Exit(exc.user_message) from exc
-    total_up, total_skip, total_fail = _print_upload_rows(uploads)
+        rows = deploy_replicas(local_root, selected=provider, kinds=("cloud",))
+    except RuntimeError as exc:
+        raise typer.Exit(str(exc)) from exc
+    except NotImplementedError as exc:
+        raise typer.Exit(str(exc)) from exc
+    except ExternalCallError as exc:
+        raise typer.Exit(exc.user_message) from exc
+    total_up, total_skip, total_fail = _print_upload_rows(rows)
     rprint(
         f"Done. Uploaded: {total_up}  Skipped: {total_skip}  Failed: {total_fail}"
     )
