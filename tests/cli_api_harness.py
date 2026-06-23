@@ -118,9 +118,9 @@ def notion_orphan_context(monkeypatch: Any, tmp_path: Path) -> Iterator[Path]:
 @contextmanager
 def notion_missing_manifest_context(monkeypatch: Any, tmp_path: Path) -> Iterator[Path]:
     empty = tmp_path / "notion-empty"
-    empty.mkdir()
-    (empty / "header").mkdir()
-    (empty / "body").mkdir()
+    empty.mkdir(exist_ok=True)
+    (empty / "header").mkdir(exist_ok=True)
+    (empty / "body").mkdir(exist_ok=True)
     _patch_notion_paths(monkeypatch, empty, empty / "tasks.pairs.json")
     monkeypatch.setenv("NOTION_TOKEN", "integration-token")
     yield empty

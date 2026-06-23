@@ -258,6 +258,7 @@ def _notion_success_checks() -> list[CliApiCheck]:
         ),
         CliApiCheck("notion cleanup", "notion", ("notion", "cleanup", "--yes"), "archived"),
         CliApiCheck("notion pairs build", "notion", ("notion", "pairs", "build"), "built"),
+        CliApiCheck("notion pairs status", "notion", ("notion", "pairs", "status"), "deploy:"),
     ]
 
 
@@ -307,6 +308,15 @@ def _notion_failure_checks() -> list[CliApiCheck]:
             needle="header without body",
             accept_exit_codes=(1,),
             failure="notion_orphans",
+        ),
+        CliApiCheck(
+            "notion pairs status missing manifest",
+            "notion",
+            ("notion", "pairs", "status"),
+            kind="fail",
+            needle="pairs build",
+            accept_exit_codes=(1,),
+            failure="missing_manifest",
         ),
     ]
 
