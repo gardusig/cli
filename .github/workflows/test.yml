@@ -1,10 +1,12 @@
 name: test
 
 # Status check names (for branch protection): "Unit tests (Docker)", "Integration tests (Docker)"
-# Runs on every branch push and on pull requests so checks appear on PRs and on the branch tip.
+# pull_request: feature branches (one run per PR update; avoids duplicate with push on the same commit)
+# push (main only): post-merge verification on the default branch
 
 on:
   push:
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
