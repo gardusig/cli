@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import time
 from dataclasses import dataclass
@@ -113,6 +114,19 @@ def _classify_outcome(exit_code: int, seconds: float, stdout: str, stderr: str) 
     return RunOutcome(RunStatus.RUNTIME_ERROR, seconds, stdout, stderr, exit_code)
 
 
+def _docker_volume_source(workspace: Path) -> Path:
+    """Map in-container scratch paths to host paths for nested docker runs."""
+    host_root = os.environ.get("CLI_CONTEST_WORKSPACE_HOST_ROOT")
+    integration_root = os.environ.get("CLI_CONTEST_WORKSPACE_ROOT")
+    if host_root and integration_root:
+        try:
+            rel = workspace.resolve().relative_to(Path(integration_root).resolve())
+        except ValueError:
+            return workspace.resolve()
+        return Path(host_root) / rel
+    return workspace.resolve()
+
+
 def _run_docker_shell(
     workspace: Path,
     inner_script: str,
@@ -130,7 +144,7 @@ def _run_docker_shell(
         f"--memory={memory}",
         f"--memory-swap={memory}",
         "-v",
-        f"{workspace.resolve()}:/work:rw",
+        f"{_docker_volume_source(workspace)}:/work:rw",
         "-w",
         "/work",
         config.image,

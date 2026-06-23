@@ -109,6 +109,7 @@ docker_run_in_workspace() {
     run_args+=(
       -v "$ROOT/.integration-scratch:/integration-scratch:rw"
       -e CLI_CONTEST_WORKSPACE_ROOT=/integration-scratch
+      -e CLI_CONTEST_WORKSPACE_HOST_ROOT="$ROOT/.integration-scratch"
     )
   fi
   docker run "${run_args[@]}" "$IMAGE" bash -c "$inner_script"
