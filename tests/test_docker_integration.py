@@ -46,7 +46,7 @@ def test_ci_workflow_runs_on_push_and_pull_request() -> None:
     workflow = (ROOT / ".github/workflows/test.yml").read_text()
     assert "push:" in workflow
     assert "pull_request:" in workflow
-    assert "branches: [main]" not in workflow
+    assert "branches: [main]" in workflow
     assert "unit:" in workflow or "name: Unit tests" in workflow
     assert "integration:" in workflow or "name: Integration tests" in workflow
     assert "needs: unit" in workflow

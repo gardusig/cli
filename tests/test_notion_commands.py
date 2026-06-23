@@ -85,6 +85,11 @@ def test_notion_pairs_build(monkeypatch, tmp_path: Path) -> None:
             "cli.commands.notion.build_pairs_manifest",
             return_value=NotionSyncResult(processed=1),
         ),
+        patch("cli.commands.notion.load_pairs", return_value=[]),
+        patch(
+            "cli.commands.notion.pair_deploy_rollout",
+            return_value=MagicMock(enabled=["Task A"], disabled=[], broken=[]),
+        ),
     ):
         result = runner.invoke(app, ["notion", "pairs", "build"])
     assert result.exit_code == 0

@@ -149,9 +149,9 @@ def test_pair_file_warning_orphan_header(tmp_path: Path) -> None:
 def test_pair_deploy_rollout_disabled(tmp_path: Path) -> None:
     (tmp_path / "header").mkdir(parents=True)
     (tmp_path / "body").mkdir(parents=True)
-    (tmp_path / "header" / "on.yaml").write_text("name: On\n", encoding="utf-8")
+    (tmp_path / "header" / "on.yaml").write_text('name: "On"\n', encoding="utf-8")
     (tmp_path / "body" / "on.md").write_text("## Steps\n", encoding="utf-8")
-    (tmp_path / "header" / "off.yaml").write_text("name: Off\nenabled: false\n", encoding="utf-8")
+    (tmp_path / "header" / "off.yaml").write_text('name: "Off"\nenabled: false\n', encoding="utf-8")
     (tmp_path / "body" / "off.md").write_text("## Steps\n", encoding="utf-8")
     pairs = build_from_disk(tmp_path)
     rollout = pair_deploy_rollout(tmp_path, pairs)
