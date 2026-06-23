@@ -2,8 +2,8 @@ name: branch-protection
 
 # One-time (or on-demand) setup: require test workflow checks on a protected branch.
 # Run manually: Actions → branch-protection → Run workflow
-# Requires repo admin; GITHUB_TOKEN must be allowed to update branch protection
-# (Settings → Actions → General → Workflow permissions → Read and write).
+# Requires BRANCH_PROTECTION_TOKEN repo secret: fine-grained PAT with Administration read/write.
+# (GITHUB_TOKEN cannot be granted Administration in workflow permissions.)
 
 on:
   workflow_dispatch:
@@ -17,9 +17,6 @@ on:
         type: boolean
         default: true
 
-permissions:
-  administration: write
-
 jobs:
   apply:
     name: Apply branch protection
@@ -27,11 +24,15 @@ jobs:
     steps:
       - name: Require test status checks on branch
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.BRANCH_PROTECTION_TOKEN }}
           BRANCH: ${{ inputs.branch }}
           REQUIRE_PR: ${{ inputs.require_pr }}
         run: |
           set -euo pipefail
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+            echo "::error::BRANCH_PROTECTION_TOKEN secret is required (PAT with Administration read/write)." >&2
+            exit 1
+          fi
           if [[ "$REQUIRE_PR" == "true" ]]; then
             reviews='{"required_approving_review_count":0,"dismiss_stale_reviews":false}'
           else
