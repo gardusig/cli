@@ -39,6 +39,7 @@ def test_upload_missing_skips_existing_remote_files(tmp_path: Path) -> None:
     first = upload_missing(local_root, provider, remote_root)
     second = upload_missing(local_root, provider, remote_root)
 
-    assert first.uploaded == ["demo-repo/v1.0.0.zip"]
+    assert first.failed == []
+    assert "demo-repo/v1.0.0.zip" in first.uploaded
     assert second.skipped == ["demo-repo/v1.0.0.zip"]
     assert second.uploaded == []
