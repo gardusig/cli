@@ -92,9 +92,18 @@ def resolve_options(
             return cfg[key]
         return defaults.get(key, default)
 
-    fast_path = Path(pick("fast", fast, None))
-    brute_path = Path(pick("brute", brute, None))
-    generator_path = Path(pick("generator", generator, None))
+    fast_val = pick("fast", fast, None)
+    brute_val = pick("brute", brute, None)
+    generator_val = pick("generator", generator, None)
+
+    def require_path(label: str, value: object) -> Path:
+        if value is None or (isinstance(value, str) and not str(value).strip()):
+            raise ValueError(f"missing required path: {label}")
+        return Path(value)
+
+    fast_path = require_path("fast", fast_val)
+    brute_path = require_path("brute", brute_val)
+    generator_path = require_path("generator", generator_val)
 
     for label, path in [("fast", fast_path), ("brute", brute_path), ("generator", generator_path)]:
         if not str(path) or str(path) == ".":

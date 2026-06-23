@@ -1101,6 +1101,9 @@ def run_all_endpoint_checks(repo_root: Path, git_root: Path | None = None) -> li
                         f"{check.label} setup: stash push failed ({setup_code})\n{setup_out}"
                     )
                     continue
+            if check.label == "gh issue list" and shutil.which("gh") is None:
+                # Mocked gh coverage: tests/test_gh_docker_integration.py
+                continue
             review_patch = nullcontext()
             if check.failure == "review_fail":
                 review_patch = patch("cli.commands.git.run_review", return_value=1)
