@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-import shutil
-import tempfile
 from pathlib import Path
 
 import pytest
 
+from cli.integration.docker_guard import (
+    cleanup_integration_temp_dir,
+    integration_temp_dir,
+)
 from cli.integration.public_endpoints import (
     GIT_SUBCOMMANDS,
     TOP_LEVEL_COMMANDS,
@@ -25,7 +27,6 @@ from cli.integration.public_endpoints import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRATCH = ROOT / ".integration-scratch"
 
 
 def test_registry_matches_registered_git_commands() -> None:
@@ -62,12 +63,10 @@ def test_docker_top_level_in_registry() -> None:
 
 @pytest.mark.integration
 def test_run_all_public_endpoint_checks() -> None:
-    SCRATCH.mkdir(exist_ok=True)
-    git_dir = Path(tempfile.mkdtemp(prefix="cli-git-", dir=SCRATCH))
+    git_dir = integration_temp_dir("cli-git-")
     try:
         prepare_git_repo(git_dir)
         errors = run_all_endpoint_checks(ROOT, git_root=git_dir)
     finally:
-        shutil.rmtree(git_dir, ignore_errors=True)
-        shutil.rmtree(git_dir.parent / f"{git_dir.name}-origin.git", ignore_errors=True)
+        cleanup_integration_temp_dir(git_dir)
     assert errors == [], "\n---\n".join(errors)

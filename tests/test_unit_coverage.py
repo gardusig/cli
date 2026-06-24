@@ -61,11 +61,19 @@ def test_git_reset_main_only_message(mock_reset: MagicMock, snapshot: MagicMock)
     assert "synced with remote" in result.stdout
 
 
-@patch.object(GitShortcuts, "reset", return_value=["a"])
-def test_git_reset_prune_message(mock_reset: MagicMock, snapshot: MagicMock) -> None:
+@patch.object(GitShortcuts, "branch_delete_all_merged", return_value=["a"])
+@patch.object(GitShortcuts, "merged_branch_names", return_value=["a"])
+@patch.object(GitShortcuts, "reset", return_value=[])
+def test_git_reset_prune_message(
+    mock_reset: MagicMock,
+    _merged: MagicMock,
+    mock_delete: MagicMock,
+    snapshot: MagicMock,
+) -> None:
     with patch(SNAPSHOT, return_value=snapshot):
-        result = runner.invoke(app, ["git", "reset", "--yes"])
+        result = runner.invoke(app, ["git", "reset", "--yes", "--delete-merged"])
     assert "removed 1 branch" in result.stdout
+    mock_delete.assert_called_once_with(yes=True)
 
 
 @patch.object(GitShortcuts, "is_dirty", return_value=True)
@@ -100,7 +108,7 @@ def test_git_branch_delete_action(
 @patch("cli.utils.process.run_git")
 def test_git_branch_rename(mock_run: MagicMock) -> None:
     mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-    result = runner.invoke(app, ["git", "branch", "rename", "--rename", "new-name"])
+    result = runner.invoke(app, ["git", "branch", "rename", "new-name"])
     assert result.exit_code == 0
     assert "renamed" in result.stdout
 

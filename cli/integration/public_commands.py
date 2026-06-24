@@ -74,6 +74,9 @@ def public_command_check_count() -> int:
 
 
 def run_all_public_command_checks(repo_root: Path, git_root: Path | None = None) -> list[str]:
+    from cli.integration.docker_guard import require_docker_integration
+
+    require_docker_integration(context="run_all_public_command_checks")
     """Run dockerized integration for all public commands (endpoints + mocked docker CLI)."""
     assert_public_command_registry_complete()
     errors = run_all_endpoint_checks(repo_root, git_root=git_root)

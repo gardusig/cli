@@ -100,6 +100,7 @@ docker_run_in_workspace() {
     --rm
     -v "$ROOT:$CONTAINER_SRC:ro"
     -e CLI_DOCKER_INTEGRATION=1
+    -e CLI_INTEGRATION_SCRATCH=/tmp/integration-scratch
   )
   if [[ "$mount_docker_sock" == "1" ]]; then
     if [[ ! -S /var/run/docker.sock ]]; then
@@ -107,11 +108,11 @@ docker_run_in_workspace() {
       exit 1
     fi
     run_args+=(-v /var/run/docker.sock:/var/run/docker.sock)
-    mkdir -p "$ROOT/.integration-scratch"
+    mkdir -p "$ROOT/.integration-scratch/contest"
     run_args+=(
-      -v "$ROOT/.integration-scratch:/integration-scratch:rw"
-      -e CLI_CONTEST_WORKSPACE_ROOT=/integration-scratch
-      -e CLI_CONTEST_WORKSPACE_HOST_ROOT="$ROOT/.integration-scratch"
+      -v "$ROOT/.integration-scratch/contest:/integration-scratch/contest:rw"
+      -e CLI_CONTEST_WORKSPACE_ROOT=/integration-scratch/contest
+      -e CLI_CONTEST_WORKSPACE_HOST_ROOT="$ROOT/.integration-scratch/contest"
     )
   fi
   docker run "${run_args[@]}" "$IMAGE" bash -c "$inner_script"

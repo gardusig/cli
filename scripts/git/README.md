@@ -5,15 +5,15 @@ Shell wrappers for each [cursor-skills git skill](https://github.com/gardusig/cu
 | Script | cursor-skills skill | CLI |
 | --- | --- | --- |
 | `branch.sh` | `git/branch` | `cli git branch` |
-| `branch-delete.sh` | `git/branch/delete` | `cli git branch-delete` |
-| `branch-delete-all.sh` | `git/branch/delete/all` | `cli git branch-delete-all` |
-| `branch-clear.sh` | `git/branch/clear` | `cli git branch-clear` |
-| `cherry-pick.sh` | `git/cherry/pick` | `cli git cherry-pick` |
+| `branch-delete.sh` | `git/branch/delete` | `cli git branch delete` |
+| `branch-delete-all.sh` | `git/branch/delete/all` | `cli git branch delete --all` |
+| `branch-clear.sh` | `git/branch/clear` | `cli git branch clear` |
+| `cherry-pick.sh` | `git/cherry/pick` | `cli git cherry pick` |
 | `commit.sh` | `git/commit` | `cli git commit` |
 | `docs.sh` | `git/docs` | `cli git docs` |
-| `large-files.sh` | `git/large/files` | `cli git large-files` |
+| `large-files.sh` | `git/large/files` | `cli git large files` |
 | `main.sh` | `git/main` | `cli git main` |
-| `post-merge-cleanup.sh` | `git/post/merge/cleanup` | `cli git post-merge-cleanup` |
+| `post-merge-cleanup.sh` | `git/post/merge/cleanup` | `cli git post merge cleanup` |
 | `pull.sh` | `git/pull` | `cli git pull` |
 | `push.sh` | `git/push` | `cli git push` |
 | `reset.sh` | `git/reset` | `cli git reset` |

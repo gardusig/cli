@@ -200,7 +200,7 @@ def check_reset_from_clean_merged_branch(git_root: Path, repo_root: Path) -> lis
         git_root,
         errors,
         prefix="reset from clean merged branch",
-        cli_args=("git", "reset", "--yes"),
+        cli_args=("git", "reset", "--yes", "--delete-merged"),
     ):
         return errors
     _assert_on_synced_main(git_root, errors, prefix="reset from clean merged branch")
@@ -229,7 +229,7 @@ def check_reset_from_dirty_merged_branch(git_root: Path, repo_root: Path) -> lis
         git_root,
         errors,
         prefix="reset from dirty merged branch",
-        cli_args=("git", "reset", "--yes", "--discard"),
+        cli_args=("git", "reset", "--yes", "--discard", "--delete-merged"),
     ):
         return errors
     _assert_on_synced_main(git_root, errors, prefix="reset from dirty merged branch")
@@ -311,7 +311,7 @@ def check_reset_from_nested_branches(git_root: Path, repo_root: Path) -> list[st
         git_root,
         errors,
         prefix="reset from nested branches",
-        cli_args=("git", "reset", "--yes"),
+        cli_args=("git", "reset", "--yes", "--delete-merged"),
     ):
         return errors
     _assert_on_synced_main(git_root, errors, prefix="reset from nested branches")
@@ -790,6 +790,9 @@ WORKFLOW_CHECKS: tuple[tuple[str, Callable[[Path, Path], list[str]]], ...] = (
 
 def run_all_workflow_checks(repo_root: Path, git_root: Path) -> list[str]:
     """Run every workflow scenario; return error messages (empty if all passed)."""
+    from cli.integration.docker_guard import require_docker_integration
+
+    require_docker_integration(context="run_all_workflow_checks")
     errors: list[str] = []
     for label, check in WORKFLOW_CHECKS:
         scenario_errors = check(git_root, repo_root)

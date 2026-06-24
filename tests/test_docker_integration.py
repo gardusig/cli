@@ -39,6 +39,8 @@ def test_docker_harness_mentions_readonly_mount() -> None:
     assert "--exclude='.venv'" in common
     assert "--exclude='.env'" in common
     assert "CLI_DOCKER_SKIP_BUILD" in common
+    assert "CLI_DOCKER_INTEGRATION=1" in common
+    assert "CLI_INTEGRATION_SCRATCH=/tmp/integration-scratch" in common
     assert "docker.sock" in common
     assert "CLI_BOOTSTRAP_DEV" in bootstrap
 
@@ -60,6 +62,7 @@ def test_release_workflow_runs_on_tags() -> None:
     assert "tags:" in workflow
     assert "v*" in workflow
     assert "PYPI_API_TOKEN" in workflow
+    assert "pypi/release.sh" in workflow
     assert "publish-pypi" in workflow
     assert "deploy-notion" not in workflow
 

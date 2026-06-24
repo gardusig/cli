@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Integration smoke (container only — invoked by scripts/docker/run-integration.sh).
 set -euo pipefail
+if [[ "${CLI_DOCKER_INTEGRATION:-}" != "1" ]]; then
+  echo "ERROR: integration-smoke.sh must run inside the Docker integration image." >&2
+  exit 1
+fi
 
 ROOT="${CLI_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$ROOT"

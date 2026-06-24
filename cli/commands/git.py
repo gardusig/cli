@@ -23,6 +23,19 @@ from cli.utils.quick_defaults import default_tag_name, suggest_branch_name
 
 git_app = typer.Typer(help="Git shortcuts (commit message defaults to '.').", no_args_is_help=True)
 
+branch_app = typer.Typer(help="Branch hygiene.", no_args_is_help=True)
+diff_app = typer.Typer(help="Read-only diffs.", no_args_is_help=True)
+log_app = typer.Typer(help="Read-only history.", no_args_is_help=True)
+rev_app = typer.Typer(help="Read-only ref resolution.", no_args_is_help=True)
+rev_list_app = typer.Typer(help="Read-only revision lists.", no_args_is_help=True)
+remote_app = typer.Typer(help="Read-only remotes.", no_args_is_help=True)
+merge_base_app = typer.Typer(help="Read-only merge-base checks.", no_args_is_help=True)
+git_publish_app = typer.Typer(help="Read-only publish checks.", no_args_is_help=True)
+large_app = typer.Typer(help="Large file inventory.", no_args_is_help=True)
+post_app = typer.Typer(help="Post-merge workflows.", no_args_is_help=True)
+post_merge_app = typer.Typer(help="After merge.", no_args_is_help=True)
+cherry_app = typer.Typer(help="Cherry-pick.", no_args_is_help=True)
+
 
 def _svc() -> GitShortcuts:
     return GitShortcuts()
@@ -151,21 +164,19 @@ def push_cmd(
 
 def _align_main_intent_lines(svc: GitShortcuts, *, keep_ignored: bool) -> list[str]:
     clean_mode = "git clean -fd" if keep_ignored else "git clean -fdx"
-    upstream = "pull --ff-only" if svc.has_upstream() else "reset --hard to remote main"
     return [
-        f"intent: checkout main → fetch → {upstream} → " + clean_mode,
+        f"intent: checkout main → fetch → reset --hard {svc.best_main_ref()} → " + clean_mode,
         f"canonical_main: {svc.canonical_main_ref()}",
+        f"best_main: {svc.best_main_ref()}",
         f"dirty: {svc.is_dirty()}",
     ]
 
 
-def _reset_intent_lines(
+def _reset_main_intent_lines(
     svc: GitShortcuts,
     message: str,
     *,
     keep_ignored: bool,
-    main_only: bool,
-    all_local: bool,
     discard: bool,
 ) -> list[str]:
     lines = _align_main_intent_lines(svc, keep_ignored=keep_ignored)
@@ -175,21 +186,26 @@ def _reset_intent_lines(
             lines.append("leave_branch: discard uncommitted changes")
         else:
             lines.append(f"leave_branch: commit with message {message!r}")
-    if main_only:
-        lines.insert(0, "intent: return to main only (no branch deletion)")
-        return lines
+    return lines
+
+
+def _reset_branch_intent_lines(
+    svc: GitShortcuts,
+    *,
+    all_local: bool,
+) -> list[str]:
     if all_local:
         branches = svc.local_branch_names(exclude_main=True)
-        label = "local_branches_to_delete"
-        mode = "all local branches except main"
-    else:
-        branches = svc.merged_branch_names(include_current=True)
-        label = "merged_branches_to_delete"
-        mode = "merged branches only"
-    lines[0] = "intent: return to main → delete branches"
-    lines.insert(1, f"delete_mode: {mode}")
-    lines.extend(_branch_preview_lines(label, branches))
-    return lines
+        return [
+            "delete_mode: all local branches except main",
+            *_branch_preview_lines("local_branches_to_delete", branches),
+        ]
+    branches = svc.merged_branch_names(include_current=True)
+    return [
+        "delete_mode: merged branches only",
+        *_branch_preview_lines("merged_branches_to_delete", branches),
+    ]
+
 
 
 @git_app.command("reset")
@@ -199,12 +215,17 @@ def reset_cmd(
     main_only: bool = typer.Option(
         False,
         "--main-only",
-        help="Sync main only; do not delete local branches.",
+        help="Sync main only; do not offer branch cleanup.",
+    ),
+    delete_merged: bool = typer.Option(
+        False,
+        "--delete-merged",
+        help="After sync, delete merged branches (non-interactive with --yes).",
     ),
     all_local: bool = typer.Option(
         False,
         "--all-local",
-        help="Delete every local branch except main (not only merged).",
+        help="After sync, delete every local branch except main (requires --yes).",
     ),
     message: str = typer.Option(
         ".",
@@ -218,38 +239,68 @@ def reset_cmd(
         help="Discard uncommitted changes on the current branch instead of committing.",
     ),
 ) -> None:
-    """Return to synced main; commit dirty work on the current branch, then prune branches."""
+    """Checkout main, sync with remote (fetch + pull), then optionally delete merged branches."""
     svc = _svc()
-    question = (
-        "Return to synced main only?"
-        if main_only
-        else "Return to synced main and delete feature branches?"
-    )
     _write_gate(
         "reset",
         yes=yes,
-        question=question,
-        extra_lines=_reset_intent_lines(
+        question="Checkout main, sync with remote, and clean working tree?",
+        extra_lines=_reset_main_intent_lines(
             svc,
             message,
             keep_ignored=keep_ignored,
-            main_only=main_only,
-            all_local=all_local,
             discard=discard,
         ),
     )
-    deleted = svc.reset(
+    svc.reset(
         yes=True,
         keep_ignored=keep_ignored,
-        main_only=main_only,
-        all_local=all_local,
+        main_only=True,
         branch_message=message,
         discard=discard,
     )
+    rprint("[green]reset[/green] — on main, synced with remote")
+
     if main_only:
-        rprint("[green]reset[/green] — on main, synced with remote")
+        return
+
+    if all_local:
+        preview = svc.local_branch_names(exclude_main=True)
+        operation = "reset-all-local"
+        question = "Delete ALL local branches except main?"
     else:
-        rprint(f"[green]reset[/green] on main; removed {len(deleted)} branch(es)")
+        preview = svc.merged_branch_names(include_current=True)
+        operation = "reset-delete-merged"
+        question = "Delete all merged branches? (cli git branch delete --all)"
+
+    if not preview:
+        return
+
+    if all_local:
+        if not yes:
+            raise typer.Exit("Pass --yes with --all-local in non-interactive mode.")
+        gate_yes = True
+    elif delete_merged and yes:
+        gate_yes = True
+    elif sys.stdin.isatty():
+        gate_yes = False
+    else:
+        return
+
+    _write_gate(
+        operation,
+        yes=gate_yes,
+        question=question,
+        extra_lines=_reset_branch_intent_lines(svc, all_local=all_local),
+    )
+
+    if all_local:
+        deleted = svc.delete_all_local_branches(yes=True)
+    else:
+        deleted = svc.branch_delete_all_merged(yes=True)
+
+    if deleted:
+        rprint(f"[green]reset[/green] — removed {len(deleted)} branch(es)")
 
 
 @git_app.command("start")
@@ -329,51 +380,35 @@ def stash_cmd(
         raise typer.BadParameter(f"Unknown stash action: {action}")
 
 
-@git_app.command("branch")
-def branch_cmd(
-    action: str = typer.Argument("list", help="list|prune|delete|rename"),
-    name: str | None = typer.Argument(None),
-    new_name: str | None = typer.Option(None, "--rename", help="New name for rename."),
-    force: bool = typer.Option(False, "--force", "-D"),
-    remote: bool = typer.Option(True, "--remote/--no-remote"),
-    yes: bool = typer.Option(False, "--yes", "-y"),
-) -> None:
-    """Branch hygiene."""
-    svc = _svc()
-    if action == "list":
-        rprint(svc.branch_list())
-    elif action == "prune":
-        svc.branch_prune()
-        rprint("[green]pruned[/green]")
-    elif action == "delete":
-        if not name:
-            raise typer.BadParameter("branch name required for delete")
-        _write_gate(
-            "branch-delete-action",
-            yes=yes,
-            question=f"Delete branch {name}?",
-            extra_lines=[f"target_branch: {name}", f"force: {force}", f"remote: {remote}"],
-        )
-        svc.branch_delete(name, force=force, remote=remote, yes=True)
-        rprint(f"[green]deleted[/green] {name}")
-    elif action == "rename":
-        if not new_name:
-            raise typer.BadParameter("--rename NEW required")
-        from cli.utils.process import run_git
-        run_git(["branch", "-m", new_name], cwd=svc.top)
-        rprint(f"[green]renamed to[/green] {new_name}")
-    else:
-        raise typer.BadParameter(f"Unknown branch action: {action}")
+@branch_app.command("list")
+def branch_list_cmd() -> None:
+    """List local branches."""
+    rprint(_svc().branch_list())
 
 
-@git_app.command("branch-delete")
+@branch_app.command("prune")
+def branch_prune_cmd() -> None:
+    """Prune stale remote-tracking branches."""
+    _svc().branch_prune()
+    rprint("[green]pruned[/green]")
+
+
+@branch_app.command("delete")
 def branch_delete_cmd(
-    name: str = typer.Argument(..., help="Branch to delete."),
+    name: str | None = typer.Argument(None, help="Branch to delete."),
+    all_merged: bool = typer.Option(False, "--all", help="Delete all merged branches."),
     force: bool = typer.Option(False, "--force", "-D"),
     remote: bool = typer.Option(True, "--remote/--no-remote"),
     yes: bool = typer.Option(False, "--yes", "-y"),
 ) -> None:
-    """Delete one merged branch locally and on origin."""
+    """Delete one branch or all merged branches."""
+    if all_merged:
+        _write_gate("branch-delete-all", yes=yes, question="Delete all merged branches?")
+        deleted = _svc().branch_delete_all_merged(yes=True)
+        rprint(f"[green]deleted[/green] {len(deleted)} branches")
+        return
+    if not name:
+        raise typer.BadParameter("branch name required (or pass --all)")
     _write_gate(
         "branch-delete",
         yes=yes,
@@ -384,17 +419,7 @@ def branch_delete_cmd(
     rprint(f"[green]deleted[/green] {name}")
 
 
-@git_app.command("branch-delete-all")
-def branch_delete_all_cmd(
-    yes: bool = typer.Option(False, "--yes", "-y"),
-) -> None:
-    """Delete all merged local branches (and remotes)."""
-    _write_gate("branch-delete-all", yes=yes, question="Delete all merged branches?")
-    deleted = _svc().branch_delete_all_merged(yes=True)
-    rprint(f"[green]deleted[/green] {len(deleted)} branches")
-
-
-@git_app.command("branch-clear")
+@branch_app.command("clear")
 def branch_clear_cmd(
     yes: bool = typer.Option(False, "--yes", "-y"),
     keep_ignored: bool = typer.Option(
@@ -468,7 +493,24 @@ def branch_clear_cmd(
         rprint(f"[green]deleted[/green] {len(remote_deleted)} remote branch(es)")
 
 
-@git_app.command("post-merge-cleanup")
+@branch_app.command("current")
+def branch_current_cmd() -> None:
+    """Print current branch name (read-only)."""
+    typer.echo(_svc().current_branch())
+
+
+@branch_app.command("rename")
+def branch_rename_cmd(
+    new_name: str = typer.Argument(..., help="New branch name."),
+) -> None:
+    """Rename the current branch."""
+    from cli.utils.process import run_git
+
+    run_git(["branch", "-m", new_name], cwd=_svc().top)
+    rprint(f"[green]renamed to[/green] {new_name}")
+
+
+@post_merge_app.command("cleanup")
 def post_merge_cleanup_cmd(
     yes: bool = typer.Option(False, "--yes", "-y"),
 ) -> None:
@@ -525,7 +567,7 @@ def revert_cmd(
     rprint("[green]revert step complete[/green]")
 
 
-@git_app.command("cherry-pick")
+@cherry_app.command("pick")
 def cherry_pick_cmd(
     sha: str | None = typer.Argument(None),
     continue_: bool = typer.Option(False, "--continue"),
@@ -546,7 +588,13 @@ def cherry_pick_cmd(
     rprint("[green]cherry-pick step complete[/green]")
 
 
-def _reconcile_tag_push(svc: GitShortcuts, tag_name: str, *, yes: bool = False) -> None:
+def _reconcile_tag_push(
+    svc: GitShortcuts,
+    tag_name: str,
+    *,
+    yes: bool = False,
+    force: bool = False,
+) -> None:
     action = svc.tag_push_action(tag_name)
     if action == "missing-local":
         raise typer.Exit(f"Tag not found locally: {tag_name}")
@@ -557,14 +605,19 @@ def _reconcile_tag_push(svc: GitShortcuts, tag_name: str, *, yes: bool = False) 
         rprint(f"[dim]skip[/dim] {tag_name} (already synced)")
         return
     if action == "push":
-        _write_gate(
-            "tag-push",
-            yes=yes,
-            question=f"Push tag {tag_name} to origin?",
-            extra_lines=[f"tag: {tag_name}"],
-        )
+        if not force:
+            _write_gate(
+                "tag-push",
+                yes=yes,
+                question=f"Push tag {tag_name} to origin?",
+                extra_lines=[f"tag: {tag_name}"],
+            )
         svc.push_tag(tag_name, force=False)
         rprint(f"[green]pushed[/green] {tag_name}")
+        return
+    if force:
+        svc.push_tag(tag_name, force=True)
+        rprint(f"[green]force-pushed[/green] {tag_name}")
         return
     _write_gate(
         "tag-force-push",
@@ -592,7 +645,7 @@ def _tag_list() -> None:
         rprint("  (none)")
 
 
-def _tag_create(name: str | None, *, yes: bool) -> None:
+def _tag_create(name: str | None, *, yes: bool, force: bool = False) -> None:
     svc = _svc()
     tag_name = name or default_tag_name()
     try:
@@ -601,15 +654,18 @@ def _tag_create(name: str | None, *, yes: bool) -> None:
         raise typer.Exit(str(exc)) from exc
     replace_local = False
     if svc.tag_exists_local(tag_name):
-        _write_gate(
-            "tag-replace",
-            yes=yes,
-            question=f"Tag {tag_name} exists locally. Replace it?",
-            extra_lines=[f"tag: {tag_name}"],
-        )
-        replace_local = True
+        if force:
+            replace_local = True
+        else:
+            _write_gate(
+                "tag-replace",
+                yes=yes,
+                question=f"Tag {tag_name} exists locally. Replace it?",
+                extra_lines=[f"tag: {tag_name}"],
+            )
+            replace_local = True
     svc.create_tag(tag_name, replace=replace_local)
-    _reconcile_tag_push(svc, tag_name, yes=yes)
+    _reconcile_tag_push(svc, tag_name, yes=yes, force=force)
     rprint(f"[green]tag[/green] {tag_name}")
 
 
@@ -618,15 +674,21 @@ def tag_cmd(
     action: str | None = typer.Argument(None, help="list, push, or tag name (default: create today)."),
     name: str | None = typer.Argument(None, help="Tag name for push, or explicit create name."),
     yes: bool = typer.Option(False, "--yes", "-y"),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Replace an existing local tag and/or force-push when remote differs.",
+    ),
 ) -> None:
     """Create tag on main (default today), or: tag list | tag push [NAME]."""
     if action == "list":
         _tag_list()
         return
     if action == "push":
-        _reconcile_tag_push(_svc(), name or default_tag_name(), yes=yes)
+        _reconcile_tag_push(_svc(), name or default_tag_name(), yes=yes, force=force)
         return
-    _tag_create(action, yes=yes)
+    _tag_create(action, yes=yes, force=force)
 
 
 @git_app.command("zip")
@@ -687,7 +749,7 @@ def docs_cmd() -> None:
     rprint("[dim]No files modified. Run @git-docs in Cursor for in-place doc updates.[/dim]")
 
 
-@git_app.command("large-files")
+@large_app.command("files")
 def large_files_cmd(
     top_n: int = typer.Option(20, "-n", "--top"),
     worktree: bool = typer.Option(False, "--worktree", help="Scan worktree instead of tracked files."),
@@ -698,13 +760,7 @@ def large_files_cmd(
         rprint(f"{size:>12}  {path}")
 
 
-@git_app.command("branch-current")
-def branch_current_cmd() -> None:
-    """Print current branch name (read-only)."""
-    typer.echo(_svc().current_branch())
-
-
-@git_app.command("diff-stat")
+@diff_app.command("stat")
 def diff_stat_cmd(
     base: str = typer.Option(..., "--base", help="Base ref for three-dot diff stat."),
     head: str = typer.Option("HEAD", "--head"),
@@ -713,7 +769,7 @@ def diff_stat_cmd(
     typer.echo(_svc().diff_stat(base, head).rstrip())
 
 
-@git_app.command("diff-names")
+@diff_app.command("names")
 def diff_names_cmd(
     base: str = typer.Option(..., "--base"),
     head: str = typer.Option("HEAD", "--head"),
@@ -722,7 +778,7 @@ def diff_names_cmd(
     typer.echo(_svc().diff_name_status(base, head).rstrip())
 
 
-@git_app.command("log-oneline")
+@log_app.command("oneline")
 def log_oneline_cmd(
     base: str = typer.Option(..., "--base"),
     head: str = typer.Option("HEAD", "--head"),
@@ -732,7 +788,7 @@ def log_oneline_cmd(
     typer.echo(_svc().log_oneline(base, head, max_count=max_count).rstrip())
 
 
-@git_app.command("log-messages")
+@log_app.command("messages")
 def log_messages_cmd(
     base: str = typer.Option(..., "--base"),
     head: str = typer.Option("HEAD", "--head"),
@@ -742,7 +798,7 @@ def log_messages_cmd(
     typer.echo(_svc().log_messages(base, head, max_count=max_count).rstrip())
 
 
-@git_app.command("rev-list-count")
+@rev_list_app.command("count")
 def rev_list_count_cmd(
     base: str = typer.Option(..., "--base"),
     head: str = typer.Option("HEAD", "--head"),
@@ -752,7 +808,7 @@ def rev_list_count_cmd(
     typer.echo(json.dumps({"behind": left, "ahead": right}))
 
 
-@git_app.command("remote-url")
+@remote_app.command("url")
 def remote_url_cmd(
     name: str = typer.Argument("origin", help="Remote name"),
 ) -> None:
@@ -760,7 +816,7 @@ def remote_url_cmd(
     typer.echo(_svc().remote_url(name))
 
 
-@git_app.command("rev-parse")
+@rev_app.command("parse")
 def rev_parse_cmd(
     ref: str = typer.Argument(..., help="Git ref to resolve"),
 ) -> None:
@@ -768,7 +824,7 @@ def rev_parse_cmd(
     typer.echo(_svc().rev_parse(ref))
 
 
-@git_app.command("merge-base-check")
+@merge_base_app.command("check")
 def merge_base_check_cmd(
     base: str = typer.Option(..., "--base"),
     head: str = typer.Option("HEAD", "--head"),
@@ -777,7 +833,7 @@ def merge_base_check_cmd(
     typer.echo(json.dumps({"is_ancestor": _svc().merge_base_is_ancestor(base, head)}))
 
 
-@git_app.command("publish-check")
+@git_publish_app.command("check")
 def publish_check_cmd(
     remote: str = typer.Option("origin", "--remote"),
     branch: str | None = typer.Option(None, "--branch"),
@@ -788,3 +844,17 @@ def publish_check_cmd(
     head = svc.rev_parse("HEAD")
     on_remote = svc.commit_on_remote_branch(remote, br, head)
     typer.echo(json.dumps({"branch": br, "commit": head, "on_remote": on_remote}))
+
+
+post_app.add_typer(post_merge_app, name="merge")
+git_app.add_typer(branch_app, name="branch")
+git_app.add_typer(diff_app, name="diff")
+git_app.add_typer(log_app, name="log")
+git_app.add_typer(rev_app, name="rev")
+git_app.add_typer(rev_list_app, name="rev-list")
+git_app.add_typer(remote_app, name="remote")
+git_app.add_typer(merge_base_app, name="merge-base")
+git_app.add_typer(git_publish_app, name="publish")
+git_app.add_typer(large_app, name="large")
+git_app.add_typer(post_app, name="post")
+git_app.add_typer(cherry_app, name="cherry")

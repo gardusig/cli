@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import shutil
-import tempfile
 from pathlib import Path
 
 import pytest
 
+from cli.integration.docker_guard import cleanup_integration_temp_dir, integration_temp_dir
 from cli.integration.tag_zip_integration import (
     TAG_ZIP_CHECKS,
     prepare_tag_zip_git,
@@ -15,20 +14,16 @@ from cli.integration.tag_zip_integration import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRATCH = ROOT / ".integration-scratch"
 
 
 @pytest.fixture
 def git_repo():
-    SCRATCH.mkdir(exist_ok=True)
-    git_dir = Path(tempfile.mkdtemp(prefix="cli-tag-zip-", dir=SCRATCH))
-    bare = git_dir.parent / f"{git_dir.name}-origin.git"
+    git_dir = integration_temp_dir("cli-tag-zip-")
     prepare_tag_zip_git(git_dir)
     try:
         yield git_dir
     finally:
-        shutil.rmtree(git_dir, ignore_errors=True)
-        shutil.rmtree(bare, ignore_errors=True)
+        cleanup_integration_temp_dir(git_dir)
 
 
 @pytest.mark.integration

@@ -69,9 +69,11 @@ def links_root() -> None:
         ("scripts/test-unit.sh", "unit tests in container"),
         ("scripts/test-integration.sh", "integration tests in container"),
         ("scripts/docker/shell.sh", "onboard shell in container"),
-        ("scripts/build-pypi.sh", "build sdist + wheel (dist/)"),
-        ("scripts/publish-pypi.sh", "upload to PyPI (PYPI_API_TOKEN)"),
-        ("scripts/release-pypi.sh", "build + publish gardusig-cli to PyPI"),
+        ("scripts/test-pypi.sh", "PR gate: build 1.0.0 + optional TestPyPI upload"),
+        ("scripts/pypi/build.sh", "build sdist + wheel (dist/)"),
+        ("scripts/pypi/upload.sh", "upload to PyPI (PYPI_API_TOKEN)"),
+        ("scripts/pypi/release.sh", "tag release: version from v* tag → PyPI"),
+        ("scripts/release-pypi.sh", "deprecated → scripts/pypi/release.sh"),
         ("scripts/gh/sync-labels.sh", "sync label manifest to GitHub"),
     ):
         path = root / rel

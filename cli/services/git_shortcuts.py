@@ -6,6 +6,9 @@ from pathlib import Path
 from cli.utils.process import GitCommandError, run_git
 from cli.utils.quick_defaults import default_tag_name, suggest_branch_name
 
+# Remotes consulted for canonical main (fork workflow: upstream → fork → origin).
+MAIN_REMOTES = ("upstream", "fork", "origin")
+
 
 class GitShortcuts:
     """Local git operations with safety gates for destructive actions."""
@@ -39,14 +42,54 @@ class GitShortcuts:
         return result.returncode == 0
 
     def canonical_main_ref(self) -> str:
-        if self.remote_exists("upstream"):
-            return "upstream/main"
-        return "origin/main"
+        for remote in MAIN_REMOTES:
+            if self._remote_main_ref_exists(remote):
+                return f"{remote}/main"
+        return "main"
+
+    def _remote_main_ref_exists(self, remote: str) -> bool:
+        if not self.remote_exists(remote):
+            return False
+        result = run_git(["rev-parse", f"{remote}/main"], cwd=self.top, check=False)
+        return result.returncode == 0
+
+    def available_main_refs(self) -> list[str]:
+        refs: list[str] = []
+        for remote in MAIN_REMOTES:
+            if self._remote_main_ref_exists(remote):
+                refs.append(f"{remote}/main")
+        if run_git(["rev-parse", "main"], cwd=self.top, check=False).returncode == 0:
+            refs.append("main")
+        return refs
+
+    def best_main_ref(self) -> str:
+        """Newest main tip among upstream/fork/origin/main (cleanest closest to latest)."""
+        refs = self.available_main_refs()
+        if not refs:
+            return "main"
+        if len(refs) == 1:
+            return refs[0]
+        best = refs[0]
+        best_time = -1
+        for ref in refs:
+            result = run_git(["log", "-1", "--format=%ct", ref], cwd=self.top, check=False)
+            if result.returncode != 0:
+                continue
+            try:
+                ts = int(result.stdout.strip())
+            except ValueError:
+                continue
+            if ts > best_time:
+                best_time = ts
+                best = ref
+        return best
 
     def fetch_all(self, *, prune: bool = False) -> None:
-        for remote in ("origin", "upstream"):
-            if not self.remote_exists(remote):
+        seen: set[str] = set()
+        for remote in (*MAIN_REMOTES, "origin", "upstream", "fork"):
+            if remote in seen or not self.remote_exists(remote):
                 continue
+            seen.add(remote)
             args = ["fetch", remote]
             if prune:
                 args.append("--prune")
@@ -94,26 +137,16 @@ class GitShortcuts:
         run_git(["clean", "-fdx", *self._clean_exclude_args()], cwd=self.top)
 
     def sync_main(self, *, yes: bool = False, keep_ignored: bool = False) -> None:
-        """Checkout main, fetch, fast-forward pull when upstream exists, else hard-reset to remote main."""
+        """Checkout main, fetch remotes, hard-reset to newest main tip, clean worktree."""
         if self.is_dirty() and not yes:
             raise RuntimeError(
                 "Working tree is dirty. Re-run with --yes to discard local changes."
             )
         self.checkout_main()
         self.fetch_all()
-        ref = self.canonical_main_ref()
-        if self.has_upstream():
-            pull = run_git(["pull", "--ff-only"], cwd=self.top, check=False)
-            if pull.returncode != 0:
-                run_git(["rev-parse", ref], cwd=self.top)
-                run_git(["reset", "--hard", ref], cwd=self.top)
-        else:
-            result = run_git(["rev-parse", ref], cwd=self.top, check=False)
-            if result.returncode == 0:
-                run_git(["reset", "--hard", ref], cwd=self.top)
-        if self.is_dirty() and yes:
-            run_git(["rev-parse", ref], cwd=self.top)
-            run_git(["reset", "--hard", ref], cwd=self.top)
+        ref = self.best_main_ref()
+        run_git(["rev-parse", ref], cwd=self.top)
+        run_git(["reset", "--hard", ref], cwd=self.top)
         self._clean_worktree(keep_ignored=keep_ignored)
 
     def align_main(self, *, yes: bool = False, keep_ignored: bool = False) -> None:
@@ -154,14 +187,18 @@ class GitShortcuts:
 
     def pull(self, *, merge_branch: str | None = None) -> None:
         self.fetch_all()
+        main_ref = self.best_main_ref()
+        if self.current_branch() == "main":
+            run_git(["rev-parse", main_ref], cwd=self.top)
+            run_git(["reset", "--hard", main_ref], cwd=self.top)
+            return
         if self.has_upstream():
             run_git(["merge", "@{u}"], cwd=self.top)
-        root = self.canonical_main_ref()
-        run_git(["rev-parse", root], cwd=self.top)
+        run_git(["rev-parse", main_ref], cwd=self.top)
         if merge_branch:
             run_git(["merge", merge_branch], cwd=self.top)
-        elif self.current_branch() != "main":
-            run_git(["merge", root], cwd=self.top)
+        else:
+            run_git(["merge", main_ref], cwd=self.top)
 
     def start(
         self,
@@ -261,10 +298,11 @@ class GitShortcuts:
         keep_ignored: bool = False,
         main_only: bool = False,
         all_local: bool = False,
+        delete_merged: bool = False,
         branch_message: str = ".",
         discard: bool = False,
     ) -> list[str]:
-        """Return to synced main; commit or discard dirty work on the current branch first."""
+        """Return to synced main; optional branch cleanup when flags are set."""
         if not yes:
             raise RuntimeError("Pass --yes to reset.")
         self._prepare_leave_branch(message=branch_message, discard=discard)
@@ -272,15 +310,23 @@ class GitShortcuts:
         if main_only:
             return []
         if all_local:
-            deleted: list[str] = []
-            for name in self.local_branch_names(exclude_main=True):
-                run_git(["branch", "-D", name], cwd=self.top)
-                deleted.append(name)
-            return deleted
-        return self.branch_delete_all_merged(yes=True)
+            return self.delete_all_local_branches(yes=True)
+        if delete_merged:
+            return self.branch_delete_all_merged(yes=True)
+        return []
+
+    def delete_all_local_branches(self, *, yes: bool = False) -> list[str]:
+        if not yes:
+            raise RuntimeError("Pass --yes to delete all local branches.")
+        deleted: list[str] = []
+        for name in self.local_branch_names(exclude_main=True):
+            run_git(["branch", "-D", name], cwd=self.top)
+            deleted.append(name)
+        return deleted
 
     def post_merge_cleanup(self, *, yes: bool = False) -> list[str]:
-        return self.reset(yes=yes)
+        self.reset(yes=yes, main_only=True)
+        return self.branch_delete_all_merged(yes=True)
 
     def local_branch_names(self, *, exclude_main: bool = True) -> list[str]:
         out = run_git(
@@ -402,14 +448,9 @@ class GitShortcuts:
         return run_git(["rev-parse", "HEAD"], cwd=self.top).stdout.strip()
 
     def main_tip_sha(self) -> str:
-        """Latest main commit: canonical remote tracking ref when present, else local main."""
-        ref = self.canonical_main_ref()
-        remote = ref.partition("/")[0]
-        if self.remote_exists(remote):
-            result = run_git(["rev-parse", ref], cwd=self.top, check=False)
-            if result.returncode == 0:
-                return result.stdout.strip()
-        return run_git(["rev-parse", "main"], cwd=self.top).stdout.strip()
+        """Latest main commit: best remote/local main tip."""
+        ref = self.best_main_ref()
+        return run_git(["rev-parse", ref], cwd=self.top).stdout.strip()
 
     def prepare_for_tag(self, *, yes: bool = False) -> None:
         """Align to latest main (like reset) and verify HEAD before tagging."""

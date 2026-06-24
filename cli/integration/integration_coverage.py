@@ -126,10 +126,10 @@ def _labels_for_path(
             (ok if check.kind == "ok" else fail).append(check.label)
         elif category == "git":
             assert isinstance(check, EndpointCheck)
-            if not check.args or check.args[0] != "git" or len(check.args) < 2:
+            if not check.args or check.args[0] != "git":
                 continue
-            sub = check.args[1]
-            if sub.startswith("-") or ("git", sub) != path:
+            check_path = tuple(check.args[: len(path)])
+            if check_path != path:
                 continue
             if _endpoint_success(check):
                 ok.append(check.label)
@@ -176,7 +176,7 @@ def _api_rows(checks: list[CliApiCheck]) -> list[IntegrationCoverageRow]:
 def _git_rows(checks: list[EndpointCheck]) -> list[IntegrationCoverageRow]:
     rows: list[IntegrationCoverageRow] = []
     for sub in GIT_SUBCOMMANDS:
-        path = ("git", sub)
+        path = ("git",) + tuple(sub.split())
         ok, fail = _labels_for_path(checks, path, category="git")
         rows.append(
             IntegrationCoverageRow(

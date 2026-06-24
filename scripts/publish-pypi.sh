@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# Build and upload gardusig-cli to PyPI (requires PYPI_API_TOKEN in .env or env).
+# Deprecated — use scripts/pypi/upload.sh
 set -euo pipefail
-# shellcheck source=_common.sh
-source "$(dirname "$0")/_common.sh"
-require_pypi_token
-export PYPI_API_TOKEN
-exec_cli publish pypi --yes "$@"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+exec "$ROOT/scripts/pypi/upload.sh" "$@"

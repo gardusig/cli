@@ -24,7 +24,7 @@ flowchart TD
     end
 
     subgraph after [4 — After merge]
-        L["cli git reset --yes<br/>sync main · delete merged branches"]
+        L["cli git reset --yes<br/>sync main · optional merged branch cleanup"]
         L2["cli git reset --yes --all-local<br/>delete every local branch except main"]
     end
 
@@ -40,8 +40,8 @@ flowchart TD
 | Start issue | `git start [branch] --yes` | align main + `checkout -b` | — |
 | Publish WIP | `git push --yes` | add + commit + push current branch; on `main`, start random branch first | `git commit` + `git push` |
 | Stay current | `git pull` | fetch + merge upstream/main into feature branch | — |
-| After merge | `git reset --yes` | return to synced main + delete **merged** branches (+ remote) | `git post-merge-cleanup --yes` |
-| Nuclear local | `git reset --yes --all-local` | synced main + delete **all** local branches except main | `git branch-clear --yes` |
+| After merge | `git reset --yes --delete-merged` | return to synced main + delete **merged** branches | `git post merge cleanup --yes` |
+| Nuclear local | `git reset --yes --all-local` | synced main + delete **all** local branches except main | `git branch clear --yes` |
 
 All destructive steps show the **write gate** (branch, dirty state, intent) before running. Pass `--yes` / `-y` to skip the prompt (summary still prints).
 
@@ -63,6 +63,8 @@ cli git push --yes
 
 # After PR merged
 cli git reset --yes
+# answer the follow-up prompt to run `branch delete --all`, or:
+cli git reset --yes --delete-merged
 ```
 
 ## Feature work (start → publish)
@@ -117,10 +119,10 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["PR merged on GitHub"] --> B{"how aggressive?"}
-    B -->|default| C["cli git reset --yes<br/>merged branches only"]
+    B -->|default| C["cli git reset --yes --delete-merged<br/>merged branches only"]
     B -->|nuclear local| D["cli git reset --yes --all-local"]
-    B -->|legacy| E["cli git post-merge-cleanup --yes"]
-    B -->|remote too| F["cli git branch-clear --yes --delete-remote"]
+    B -->|legacy| E["cli git post merge cleanup --yes"]
+    B -->|remote too| F["cli git branch clear --yes --delete-remote"]
 ```
 
 ## Health check & bookmarks

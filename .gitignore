@@ -24,6 +24,20 @@ build/
 coverage.xml
 htmlcov/
 
+# --- Build / packaging (never commit) ---
+gardusig_cli-*/
+gardusig_cli.egg-info/
+*.whl
+
+# --- Integration temp dirs (host leaks outside Docker scratch) ---
+cli-git-*/
+cli-public-*/
+cli-workflow-*/
+cli-tag-zip-*/
+cli-outside-git-*/
+cli-contest-*/
+cli-*-origin.git/
+
 # --- Secrets / local env ---
 .env
 .env.local

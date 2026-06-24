@@ -29,8 +29,10 @@ source .venv/bin/activate
 python -m cli --help
 ```
 
-Manual venv (runtime only): `pip install -r requirements.txt` then `pip install -e .`  
+Manual venv (runtime only): `pip install -r requirements.txt` then `pip install -e .`
 Host dev tools (not needed for Docker verify): `pip install -r requirements-dev.txt` or `pip install -e ".[dev]"`.
+
+`requirements.txt` / `requirements-dev.txt` stay in sync with `pyproject.toml` (checked by `tests/test_project_hygiene.py`).
 
 ## PyPI install (users)
 
@@ -47,14 +49,22 @@ Maintainers — tag release (PyPI):
 
 ```bash
 cp .env.example .env   # add PYPI_API_TOKEN=pypi-...
-./scripts/release-pypi.sh
-# or: ./scripts/release.sh
-# or: cli publish pypi --yes
+git tag v1.0.0 && git push origin v1.0.0   # CI publishes version from tag
+# or locally:
+./scripts/pypi/release.sh
+# or: cli pypi upload --yes --version 1.0.0
 ```
 
-GitHub Actions — push tag `v*` runs [release.yml](../.github/workflows/release.yml). Configure repo secret **`PYPI_API_TOKEN`**.
+| Script | When |
+| --- | --- |
+| `./scripts/test-pypi.sh` | PR CI — build `1.0.0`, optional TestPyPI |
+| `./scripts/pypi/release.sh` | Tag `v*` — production PyPI |
+| `./scripts/pypi/upload.sh` | Local build + upload |
+| `./scripts/pypi/build.sh` | Build only |
 
-Pull requests run [test.yml](../.github/workflows/test.yml) only. See [`.github/README.md`](../.github/README.md).
+GitHub Actions — push tag `v*` runs [release.yml](../.github/workflows/release.yml). Configure secret **`PYPI_API_TOKEN`**. Optional PR secret **`TESTPYPI_API_TOKEN`** for TestPyPI uploads.
+
+Pull requests run [test.yml](../.github/workflows/test.yml). See [`.github/README.md`](../.github/README.md).
 
 | Workflow | Trigger | Gate |
 | --- | --- | --- |
@@ -84,7 +94,9 @@ Same scripts as GitHub Actions. See [docker.md](docker.md).
 ./scripts/test-integration.sh     # full pytest + smoke + live docker
 ```
 
-**Do not** run `pytest`, `pip install -e ".[dev]"`, or `scripts/integration-smoke.sh` directly on the host.
+**Do not** run `pytest`, `pip install -e ".[dev]"`, or `scripts/integration-smoke.sh` directly on the host. Integration fixtures (`cli-git-*`, `cli-public-*`, etc.) only run when `CLI_DOCKER_INTEGRATION=1` inside the Docker image; host `pytest` skips `@pytest.mark.integration` tests automatically.
+
+Remove accidental local artifacts: `./scripts/clean-local.sh`
 
 ## After install
 

@@ -168,35 +168,41 @@ def test_git_reset_refuses_without_yes(mock_reset: MagicMock) -> None:
     mock_reset.assert_not_called()
 
 
-@patch.object(GitShortcuts, "reset", return_value=["old-feat"])
+@patch.object(GitShortcuts, "reset", return_value=[])
 def test_git_reset_with_yes(mock_reset: MagicMock, snapshot: MagicMock) -> None:
     with patch(SNAPSHOT, return_value=snapshot):
         result = runner.invoke(app, ["git", "reset", "--yes"])
     assert result.exit_code == 0
-    assert "reset" in result.stdout
+    assert "synced with remote" in result.stdout
     mock_reset.assert_called_once_with(
         yes=True,
         keep_ignored=False,
-        main_only=False,
-        all_local=False,
+        main_only=True,
         branch_message=".",
         discard=False,
     )
 
 
-@patch.object(GitShortcuts, "reset", return_value=["wip"])
-def test_git_reset_all_local(mock_reset: MagicMock, snapshot: MagicMock) -> None:
+@patch.object(GitShortcuts, "delete_all_local_branches", return_value=["wip"])
+@patch.object(GitShortcuts, "local_branch_names", return_value=["wip"])
+@patch.object(GitShortcuts, "reset", return_value=[])
+def test_git_reset_all_local(
+    mock_reset: MagicMock,
+    _local: MagicMock,
+    mock_delete: MagicMock,
+    snapshot: MagicMock,
+) -> None:
     with patch(SNAPSHOT, return_value=snapshot):
         result = runner.invoke(app, ["git", "reset", "--yes", "--all-local"])
     assert result.exit_code == 0
     mock_reset.assert_called_once_with(
         yes=True,
         keep_ignored=False,
-        main_only=False,
-        all_local=True,
+        main_only=True,
         branch_message=".",
         discard=False,
     )
+    mock_delete.assert_called_once_with(yes=True)
 
 
 @patch.object(GitShortcuts, "reset", return_value=[])
@@ -207,8 +213,7 @@ def test_git_reset_discard(mock_reset: MagicMock, snapshot: MagicMock) -> None:
     mock_reset.assert_called_once_with(
         yes=True,
         keep_ignored=False,
-        main_only=False,
-        all_local=False,
+        main_only=True,
         branch_message=".",
         discard=True,
     )
@@ -216,7 +221,7 @@ def test_git_reset_discard(mock_reset: MagicMock, snapshot: MagicMock) -> None:
 
 @patch.object(GitShortcuts, "branch_delete")
 def test_git_branch_delete_refuses(mock_delete: MagicMock) -> None:
-    result = runner.invoke(app, ["git", "branch-delete", "old-branch"])
+    result = runner.invoke(app, ["git", "branch", "delete", "old-branch"])
     assert result.exit_code != 0
     mock_delete.assert_not_called()
 
@@ -224,7 +229,7 @@ def test_git_branch_delete_refuses(mock_delete: MagicMock) -> None:
 @patch.object(GitShortcuts, "branch_delete")
 def test_git_branch_delete_with_yes(mock_delete: MagicMock, snapshot: MagicMock) -> None:
     with patch(SNAPSHOT, return_value=snapshot):
-        result = runner.invoke(app, ["git", "branch-delete", "old-branch", "--yes", "--no-remote"])
+        result = runner.invoke(app, ["git", "branch", "delete", "old-branch", "--yes", "--no-remote"])
     assert result.exit_code == 0
     mock_delete.assert_called_once_with("old-branch", force=False, remote=False, yes=True)
 
@@ -248,7 +253,7 @@ def test_git_tag_list(mock_remote: MagicMock, mock_local: MagicMock) -> None:
 
 @patch.object(GitShortcuts, "large_files", return_value=[("100", "big.bin")])
 def test_git_large_files(mock_large: MagicMock) -> None:
-    result = runner.invoke(app, ["git", "large-files", "-n", "5"])
+    result = runner.invoke(app, ["git", "large", "files", "-n", "5"])
     assert result.exit_code == 0
     assert "big.bin" in result.stdout
     mock_large.assert_called_once_with(5, worktree=False)
@@ -270,7 +275,7 @@ def test_git_revert_refuses(mock_revert: MagicMock) -> None:
 
 @patch.object(GitShortcuts, "cherry_pick")
 def test_git_cherry_pick_refuses(mock_pick: MagicMock) -> None:
-    result = runner.invoke(app, ["git", "cherry-pick", "abc123"])
+    result = runner.invoke(app, ["git", "cherry", "pick", "abc123"])
     assert result.exit_code != 0
     mock_pick.assert_not_called()
 
@@ -321,7 +326,7 @@ def test_git_tag_default_name(
 
 @patch.object(GitShortcuts, "current_branch", return_value="kappap")
 def test_git_branch_current(mock_branch: MagicMock) -> None:
-    result = runner.invoke(app, ["git", "branch-current"])
+    result = runner.invoke(app, ["git", "branch", "current"])
     assert result.exit_code == 0
     assert result.stdout.strip() == "kappap"
     mock_branch.assert_called_once()
@@ -329,7 +334,7 @@ def test_git_branch_current(mock_branch: MagicMock) -> None:
 
 @patch.object(GitShortcuts, "diff_stat", return_value=" 2 files changed\n")
 def test_git_diff_stat(mock_diff: MagicMock) -> None:
-    result = runner.invoke(app, ["git", "diff-stat", "--base", "main"])
+    result = runner.invoke(app, ["git", "diff", "stat", "--base", "main"])
     assert result.exit_code == 0
     assert "files changed" in result.stdout
     mock_diff.assert_called_once_with("main", "HEAD")

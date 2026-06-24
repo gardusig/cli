@@ -103,14 +103,14 @@ Run from inside a repository (`cd` into the repo first).
 
 | Task | Command |
 | --- | --- |
-| **Sync main** (before/after work) | `cli git reset --yes` (`--main-only` to skip branch prune) |
+| **Sync main** (before/after work) | `cli git reset --yes` (`--delete-merged` to prune; `--main-only` to skip branch prompt) |
 | **Start issue** (align main + branch) | `cli git start issue-9-slug --yes` |
 | **During work** (add + commit + push) | `cli git push --yes` (on `main`, starts random branch first) |
 | Branch in place (no align) | `cli git start [name] --no-prep` |
 | Commit only | `cli git commit` |
 | Sync feature branch | `cli git pull` |
-| Delete merged branch | `cli git branch-delete BRANCH --yes` |
-| Clear all branches (keep `main`) | `cli git branch-clear --yes` |
+| Delete merged branch | `cli git branch delete BRANCH --yes` |
+| Clear all branches (keep `main`) | `cli git branch clear --yes` |
 | Tag on main (default: today) | `cli git tag` · `cli git tag list` · `cli git tag push` |
 | Zip one tag (cwd repo) | `cli git zip` · `cli git zip TAG` |
 
@@ -230,7 +230,7 @@ Configure repo secret **`PYPI_API_TOKEN`** for releases. Require both PR status 
 Maintainers — local release before tagging:
 
 ```bash
-./scripts/release-pypi.sh   # or: cli publish pypi --yes
+./scripts/pypi/release.sh   # or: cli pypi upload --yes --version $(git describe --tags)
 git tag v0.1.0 && git push origin v0.1.0
 ```
 

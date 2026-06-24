@@ -40,10 +40,10 @@ def test_git_help() -> None:
         "pull",
         "start",
         "main",
-        "branch-delete",
+        "branch",
         "tag",
         "zip",
-        "large-files",
+        "large",
         "review",
         "docs",
     ):
