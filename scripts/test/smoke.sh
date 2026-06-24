@@ -39,7 +39,7 @@ python -m gardusig_cli links >"$links_out" 2>&1
 grep -q "Quick defaults" "$links_out"
 rm -f "$links_out"
 
-bash -n scripts/bootstrap.sh scripts/install.sh
+bash -n scripts/docker/bootstrap.sh scripts/pypi/install.sh scripts/pypi/_common.sh
 bash -n scripts/chrome/*.sh
 bash -n scripts/git/*.sh
 

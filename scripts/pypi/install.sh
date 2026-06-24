@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Install cli from PyPI into ~/.local/share/gardusig-cli (latest release by default).
+# Install gardusig-cli from PyPI into ~/.local/share/gardusig-cli (latest by default).
 # Config after install: ~/.config/cli/
 set -euo pipefail
+# shellcheck source=_common.sh
+source "$(dirname "$0")/_common.sh"
 
-PACKAGE="gardusig-cli"
 INSTALL_HOME="${CLI_INSTALL_HOME:-$HOME/.local/share/gardusig-cli}"
 VENV="$INSTALL_HOME/venv"
 DEST="${CLI_INSTALL_DIR:-$HOME/.local/bin}"
@@ -72,7 +73,7 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Install or upgrade gardusig-cli from PyPI into $INSTALL_HOME.
+Install or upgrade $PACKAGE_NAME from PyPI into $INSTALL_HOME.
 Places the cli command in $DEST and adds ~/.local/bin to your shell PATH.
 
 Options:
@@ -127,15 +128,15 @@ source "$VENV/bin/activate"
 python -m pip install -U pip -q
 
 if [[ -n "$PIN_VERSION" ]]; then
-  spec="${PACKAGE}==${PIN_VERSION#v}"
+  spec="${PACKAGE_NAME}==${PIN_VERSION#v}"
   echo "==> Installing $spec from PyPI"
   pip install -q "$spec"
 else
-  echo "==> Installing latest $PACKAGE from PyPI"
+  echo "==> Installing latest $PACKAGE_NAME from PyPI"
   if [[ "$UPGRADE" == "1" ]]; then
-    pip install --upgrade -q "$PACKAGE"
+    pip install --upgrade -q "$PACKAGE_NAME"
   else
-    pip install -q "$PACKAGE"
+    pip install -q "$PACKAGE_NAME"
   fi
 fi
 
@@ -153,7 +154,7 @@ verify_cli_binary "$DEST/cli"
 installed_version="$("$DEST/cli" --version)"
 echo ""
 echo "Installed: $DEST/cli"
-echo "Package:   $PACKAGE"
+echo "Package:   $PACKAGE_NAME"
 echo "Version:   $installed_version"
 echo "Venv:      $VENV"
 echo "Config:    ~/.config/cli/  (override with CLI_CONFIG_DIR)"

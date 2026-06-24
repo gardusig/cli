@@ -26,7 +26,7 @@ resolve_cli() {
     printf '%s\n' "$ROOT/.venv/bin/python -m gardusig_cli"
     return 0
   fi
-  echo "ERROR: cli not found. Run ./scripts/install.sh or pip install gardusig-cli" >&2
+  echo "ERROR: cli not found. Run ./scripts/pypi/install.sh" >&2
   return 1
 }
 

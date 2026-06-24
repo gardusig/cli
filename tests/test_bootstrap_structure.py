@@ -111,14 +111,15 @@ REQUIRED_PATHS = [
     "tests/fixtures/notion/tasks/header/sample.yaml",
     "tests/fixtures/notion/tasks/body/sample.md",
     "tests/fixtures/notion/workspace/tasks.pairs.json",
-    "scripts/bootstrap.sh",
-    "scripts/install.sh",
+    "scripts/docker/bootstrap.sh",
+    "scripts/pypi/install.sh",
     "scripts/_common.sh",
     "scripts/pypi/_common.sh",
     "scripts/pypi/build.sh",
     "scripts/pypi/upload.sh",
     "scripts/pypi/release.sh",
     "scripts/pypi/publish.sh",
+    "scripts/pypi/install.sh",
     "scripts/pypi/test.sh",
     "scripts/notion/release.sh",
     "scripts/gh/sync-labels.sh",
@@ -149,15 +150,15 @@ def test_required_paths_exist() -> None:
 
 
 def test_install_script_targets_pypi_package() -> None:
-    text = (ROOT / "scripts/install.sh").read_text(encoding="utf-8")
+    text = (ROOT / "scripts/pypi/install.sh").read_text(encoding="utf-8")
     assert "gardusig-cli" in text
     assert "pip install" in text
-    assert "find_python312" in text
+    assert "_common.sh" in text
     assert "pip install -e" not in text
 
 
 def test_bootstrap_is_runtime_only_by_default() -> None:
-    bootstrap = (ROOT / "scripts/bootstrap.sh").read_text()
+    bootstrap = (ROOT / "scripts/docker/bootstrap.sh").read_text()
     assert "CLI_BOOTSTRAP_DEV" in bootstrap
     assert 'pip install -e ".[dev]"' in bootstrap
     assert 'pip install -e .' in bootstrap

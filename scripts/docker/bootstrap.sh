@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# Contributor/Docker venv: editable install in repo .venv (not end-user install).
-# Container gates set CLI_BOOTSTRAP_DEV=1 for pytest/coverage.
+# Docker/CI only: editable venv in repo .venv (CLI_BOOTSTRAP_DEV=1 for pytest/coverage).
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
 if [[ -z "${PYTHON:-}" ]]; then

@@ -72,7 +72,7 @@ cli git reset --yes --delete-merged
 ```mermaid
 flowchart LR
     subgraph setup [Setup once]
-        A["./scripts/install.sh"]
+        A["./scripts/pypi/install.sh"]
     end
 
     subgraph daily [Daily loop]

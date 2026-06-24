@@ -12,7 +12,7 @@ def run_review(*, install: bool = True, quick: bool = False) -> int:
     """Syntax-check shell scripts; full mode runs ./scripts/test/unit.sh (Docker, not host pytest)."""
     root = project_root()
     if install and not (root / ".venv" / "bin" / "python").exists():
-        subprocess.run(["./scripts/bootstrap.sh"], cwd=root, check=True)
+        subprocess.run(["./scripts/docker/bootstrap.sh"], cwd=root, check=True)
 
     shell_dirs = [
         root / "scripts",

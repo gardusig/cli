@@ -8,7 +8,7 @@ fi
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 export CLI_CONFIG_DIR="$ROOT/config/ci"
-CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
+CLI_BOOTSTRAP_DEV=1 ./scripts/docker/bootstrap.sh
 source .venv/bin/activate
 
 run_step() {

@@ -59,10 +59,21 @@ def links_root() -> None:
     for entry in chrome_script_entries(root):
         rprint(f"  {entry.script} — {entry.note}")
 
+    rprint("\n[bold]PyPI scripts[/bold] → [dim]scripts/pypi/[/dim]")
+    for rel, note in (
+        ("scripts/pypi/install.sh", "install cli from PyPI → ~/.local/bin"),
+        ("scripts/pypi/test.sh", "PR gate: build 1.0.0 + optional TestPyPI upload"),
+        ("scripts/pypi/release.sh", "PyPI release (Docker cli:release; local + CI)"),
+        ("scripts/pypi/publish.sh", "in-container: version resolve → upload"),
+        ("scripts/pypi/build.sh", "build sdist + wheel (dist/)"),
+        ("scripts/pypi/upload.sh", "upload to PyPI (PYPI_API_TOKEN)"),
+    ):
+        path = root / rel
+        if path.is_file():
+            rprint(f"  {rel} — {note}")
+
     rprint("\n[bold]Other scripts[/bold]")
     for rel, note in (
-        ("scripts/bootstrap.sh", "contributor venv (Docker/CI; not user install)"),
-        ("scripts/install.sh", "install cli from PyPI → ~/.local/bin"),
         ("scripts/docker/build-images.sh", "build all Docker stages"),
         ("scripts/docker/build-image.sh", "build one Docker stage"),
         ("scripts/docker/build-contest-image.sh", "build cli-contest:runner image"),
@@ -70,11 +81,6 @@ def links_root() -> None:
         ("scripts/test/integration.sh", "integration tests in container"),
         ("scripts/test/smoke.sh", "integration smoke (container only)"),
         ("scripts/docker/shell.sh", "onboard shell in container"),
-        ("scripts/pypi/test.sh", "PR gate: build 1.0.0 + optional TestPyPI upload"),
-        ("scripts/pypi/release.sh", "PyPI release (Docker cli:release; local + CI)"),
-        ("scripts/pypi/publish.sh", "in-container: version resolve → upload"),
-        ("scripts/pypi/build.sh", "build sdist + wheel (dist/)"),
-        ("scripts/pypi/upload.sh", "upload to PyPI (PYPI_API_TOKEN)"),
         ("scripts/drive/status.sh", "git-tags backup status"),
         ("scripts/gh/sync-labels.sh", "sync label manifest to GitHub"),
     ):

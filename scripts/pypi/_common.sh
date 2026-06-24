@@ -8,3 +8,4 @@ ROOT="${CLI_ROOT:-$(cd "$PYPI_DIR/../.." && pwd)}"
 source "$ROOT/scripts/_common.sh"
 
 export CLI_DIST_DIR="${CLI_DIST_DIR:-$ROOT/dist}"
+PACKAGE_NAME="gardusig-cli"
