@@ -24,18 +24,18 @@ smoke_contains() {
   fi
 }
 
-python -m gardusig_cli --help >/dev/null
-smoke_contains "0.1.0" python -m gardusig_cli --version
+python -m src --help >/dev/null
+smoke_contains "0.1.0" python -m src --version
 
-smoke_contains "Repository:" python -m gardusig_cli drive status
-smoke_contains "restore: not implemented yet" python -m gardusig_cli restore
-smoke_contains "upload" python -m gardusig_cli drive --help
-smoke_contains "ingest" python -m gardusig_cli notion --help
-smoke_contains "bookmarks" python -m gardusig_cli chrome --help
-smoke_contains "deploy" python -m gardusig_cli notion --help
+smoke_contains "Repository:" python -m src drive status
+smoke_contains "restore: not implemented yet" python -m src restore
+smoke_contains "upload" python -m src drive --help
+smoke_contains "ingest" python -m src notion --help
+smoke_contains "bookmarks" python -m src chrome --help
+smoke_contains "deploy" python -m src notion --help
 
 links_out="$(mktemp)"
-python -m gardusig_cli links >"$links_out" 2>&1
+python -m src links >"$links_out" 2>&1
 grep -q "Quick defaults" "$links_out"
 rm -f "$links_out"
 
@@ -75,7 +75,7 @@ git -C "$tmpdir/repo" commit -m "initial" >/dev/null
 
 (
   cd "$tmpdir/repo"
-  smoke_contains "smoke-branch" python -m gardusig_cli git start smoke-branch --no-prep
+  smoke_contains "smoke-branch" python -m src git start smoke-branch --no-prep
   test "$(git branch --show-current)" = "smoke-branch"
 )
 

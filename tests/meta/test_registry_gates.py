@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from tests.constants import ROOT
 
-from gardusig_cli.integration.docker_integration import (
+from src.integration.docker_integration import (
     DOCKER_SUBCOMMANDS,
     assert_docker_registry_covers_commands,
     assert_every_docker_subcommand_has_ok_and_failure_check,
     docker_checks,
     registered_docker_subcommands,
 )
-from gardusig_cli.integration.public_endpoints import (
+from src.integration.public_endpoints import (
     GIT_SUBCOMMANDS,
     assert_every_git_subcommand_checked,
     assert_every_git_subcommand_has_ok_and_failure_check,

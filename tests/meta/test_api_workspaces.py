@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from tests.constants import ROOT
 
-from gardusig_cli.integration.workspaces import API_WORKSPACES, fixture_dir, protected_paths
+from src.integration.workspaces import API_WORKSPACES, fixture_dir, protected_paths
 
 
 def test_every_api_workspace_has_fixture_tree() -> None:

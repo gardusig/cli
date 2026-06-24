@@ -10,13 +10,13 @@ from pathlib import Path
 import pytest
 import yaml
 
-from gardusig_cli.utils import fs, hashing, retry, zip as zip_util
-from gardusig_cli.providers.notion import NotionError
-from gardusig_cli.utils.confirm import require_confirmation
-from gardusig_cli.utils.config import default_config_dir, load_config, load_yaml, project_root
-from gardusig_cli.utils.external_client import ExternalCallError
-from gardusig_cli.utils.process import GitCommandError, run_git
-from gardusig_cli.utils.yaml import dump_yaml, load_yaml as utils_load_yaml
+from src.utils import fs, hashing, retry, zip as zip_util
+from src.providers.notion import NotionError
+from src.utils.confirm import require_confirmation
+from src.utils.config import default_config_dir, load_config, load_yaml, project_root
+from src.utils.external_client import ExternalCallError
+from src.utils.process import GitCommandError, run_git
+from src.utils.yaml import dump_yaml, load_yaml as utils_load_yaml
 
 
 def test_project_root_points_at_repo() -> None:
@@ -38,7 +38,7 @@ def test_tags_dir_path_resolves_icloud_absolute(tmp_path: Path) -> None:
         f"backup:\n  tags_dir: {icloud}\n",
         encoding="utf-8",
     )
-    from gardusig_cli.utils.config import tags_dir_path
+    from src.utils.config import tags_dir_path
 
     assert tags_dir_path(cfg_dir) == icloud.resolve()
 
@@ -51,7 +51,7 @@ def test_bookmarks_file_path_from_config(tmp_path: Path) -> None:
         f"chrome:\n  bookmarks_file: {target}\n",
         encoding="utf-8",
     )
-    from gardusig_cli.utils.config import bookmarks_file_path
+    from src.utils.config import bookmarks_file_path
 
     assert bookmarks_file_path(cfg_dir) == target.resolve()
 
@@ -59,7 +59,7 @@ def test_bookmarks_file_path_from_config(tmp_path: Path) -> None:
 def test_bookmarks_file_path_env_override(tmp_path: Path, monkeypatch) -> None:
     override = tmp_path / "env-bookmarks.html"
     monkeypatch.setenv("CLI_BOOKMARKS_FILE", str(override))
-    from gardusig_cli.utils.config import bookmarks_file_path
+    from src.utils.config import bookmarks_file_path
 
     assert bookmarks_file_path() == override.resolve()
 
@@ -74,7 +74,7 @@ def test_notion_pairs_file_split_from_task_root(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     manifest = project_root() / "config" / "notion" / "tasks.pairs.json"
-    from gardusig_cli.utils.config import notion_pairs_file, notion_task_root
+    from src.utils.config import notion_pairs_file, notion_task_root
 
     assert notion_task_root(cfg_dir) == private_root.resolve()
     assert notion_pairs_file(cfg_dir) == manifest.resolve()
@@ -89,13 +89,13 @@ def test_notion_pairs_file_bare_name_under_task_root(tmp_path: Path) -> None:
         f"notion:\n  task_root: {task_root}\n  pairs_file: tasks.pairs.json\n",
         encoding="utf-8",
     )
-    from gardusig_cli.utils.config import notion_pairs_file
+    from src.utils.config import notion_pairs_file
 
     assert notion_pairs_file(cfg_dir) == (task_root / "tasks.pairs.json").resolve()
 
 
 def test_notion_body_template_file() -> None:
-    from gardusig_cli.utils.config import notion_body_template_file
+    from src.utils.config import notion_body_template_file
 
     path = notion_body_template_file()
     assert path.name == "body.md"
@@ -111,7 +111,7 @@ def test_tags_dir_path_expands_tilde(tmp_path: Path, monkeypatch) -> None:
         f"backup:\n  tags_dir: {target}\n",
         encoding="utf-8",
     )
-    from gardusig_cli.utils.config import tags_dir_path
+    from src.utils.config import tags_dir_path
 
     assert tags_dir_path(cfg_dir) == target.resolve()
 
@@ -196,7 +196,7 @@ def test_retry_succeeds_after_failure() -> None:
         return "ok"
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr("gardusig_cli.utils.external_client.time.sleep", lambda _: None)
+        mp.setattr("src.utils.external_client.time.sleep", lambda _: None)
         assert retry.retry(flaky, attempts=3, delay=0) == "ok"
 
 
@@ -205,7 +205,7 @@ def test_retry_raises_external_call_error() -> None:
         raise RuntimeError("fail")
 
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr("gardusig_cli.utils.external_client.time.sleep", lambda _: None)
+        mp.setattr("src.utils.external_client.time.sleep", lambda _: None)
         with pytest.raises(ExternalCallError, match="fail"):
             retry.retry(always_fail, attempts=2, delay=0)
 
@@ -222,7 +222,7 @@ def test_git_command_error_message() -> None:
 
 
 def test_tag_zip_basename_and_parse() -> None:
-    from gardusig_cli.utils.config import default_zip_path, tag_from_zip_stem, tag_zip_basename
+    from src.utils.config import default_zip_path, tag_from_zip_stem, tag_zip_basename
 
     assert tag_zip_basename("private", "2026-06-23") == "private-2026-06-23"
     assert tag_from_zip_stem("private", "private-2026-06-23") == "2026-06-23"

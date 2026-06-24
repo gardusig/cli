@@ -9,50 +9,50 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from gardusig_cli.cli import app
+from src.cli import app
 
 
 runner = CliRunner()
 
 PROVIDER_MODULES = [
-    "gardusig_cli.providers.github",
-    "gardusig_cli.providers.notion",
-    "gardusig_cli.providers.chrome",
-    "gardusig_cli.providers.google_drive",
-    "gardusig_cli.providers.proton_drive",
-    "gardusig_cli.providers.icloud_drive",
-    "gardusig_cli.providers.onedrive",
+    "src.providers.github",
+    "src.providers.notion",
+    "src.providers.chrome",
+    "src.providers.google_drive",
+    "src.providers.proton_drive",
+    "src.providers.icloud_drive",
+    "src.providers.onedrive",
 ]
 
 MODEL_MODULES = [
-    "gardusig_cli.models.backup",
-    "gardusig_cli.models.bookmark",
-    "gardusig_cli.models.repository",
-    "gardusig_cli.models.task",
+    "src.models.backup",
+    "src.models.bookmark",
+    "src.models.repository",
+    "src.models.task",
 ]
 
 SERVICE_MODULES = [
-    "gardusig_cli.services.drive_sync",
-    "gardusig_cli.services.backup_repository",
-    "gardusig_cli.services.notion_sync",
-    "gardusig_cli.services.bookmark_sync",
-    "gardusig_cli.services.git_archive",
+    "src.services.drive_sync",
+    "src.services.backup_repository",
+    "src.services.notion_sync",
+    "src.services.bookmark_sync",
+    "src.services.git_archive",
 ]
 
 UTIL_MODULES = [
-    "gardusig_cli.utils.fs",
-    "gardusig_cli.utils.hashing",
-    "gardusig_cli.utils.retry",
-    "gardusig_cli.utils.yaml",
-    "gardusig_cli.utils.zip",
-    "gardusig_cli.utils.confirm",
+    "src.utils.fs",
+    "src.utils.hashing",
+    "src.utils.retry",
+    "src.utils.yaml",
+    "src.utils.zip",
+    "src.utils.confirm",
 ]
 
 INTERNAL_MODULES = [
-    "gardusig_cli.internal.read.safety",
-    "gardusig_cli.internal.read.git",
-    "gardusig_cli.internal.write.gate",
-    "gardusig_cli.internal.write.git",
+    "src.internal.read.safety",
+    "src.internal.read.git",
+    "src.internal.write.gate",
+    "src.internal.write.git",
 ]
 
 CURSOR_SKILLS_GIT_SCRIPTS = [
@@ -141,8 +141,8 @@ REQUIRED_PATHS = [
     "scripts/notion/import.sh",
     "scripts/notion/cleanup.sh",
     "scripts/git/_common.sh",
-    "gardusig_cli/cli.py",
-    "gardusig_cli/__main__.py",
+    "src/cli.py",
+    "src/__main__.py",
     *CURSOR_SKILLS_GIT_SCRIPTS,
 ]
 
@@ -182,7 +182,7 @@ def test_top_level_commands_registered() -> None:
 
 
 def test_config_loader() -> None:
-    from gardusig_cli.utils.config import load_config
+    from src.utils.config import load_config
 
     cfg = load_config(ROOT / "config")
     assert cfg.backup.repositories

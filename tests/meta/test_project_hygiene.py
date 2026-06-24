@@ -16,7 +16,7 @@ GITIGNORE_REQUIRED_PATTERNS = (
     ".venv/",
     ".integration-scratch/",
     "dist/",
-    "gardusig_cli-*/",
+    "src-*/",
     "cli-git-*/",
     "cli-public-*/",
     ".env",
@@ -28,8 +28,8 @@ UNTRACKED_PREFIXES = (
     "build/",
     ".venv/",
     ".pytest_cache/",
-    "gardusig_cli-",
-    "gardusig_cli.egg-info/",
+    "src-",
+    "src.egg-info/",
 )
 
 
@@ -87,7 +87,7 @@ def test_build_artifacts_are_not_tracked() -> None:
 
 
 def test_docker_is_required_for_integration_checks(simulate_host_env: None) -> None:
-    from gardusig_cli.integration.docker_guard import require_docker_integration
+    from src.integration.docker_guard import require_docker_integration
 
     with pytest.raises(RuntimeError, match="Docker"):
         require_docker_integration(context="hygiene test")

@@ -7,7 +7,7 @@ from tests.constants import ROOT
 import shutil
 from pathlib import Path
 
-from gardusig_cli.integration.docker_guard import integration_temp_dir
+from src.integration.docker_guard import integration_temp_dir
 
 
 _COPY_NAMES = ("pyproject.toml", "README.md", "LICENSE", "requirements.txt")
@@ -20,7 +20,7 @@ def create_pypi_workspace() -> Path:
         src = ROOT / name
         if src.is_file():
             shutil.copy2(src, workspace / name)
-    shutil.copytree(ROOT / "gardusig_cli", workspace / "gardusig_cli")
+    shutil.copytree(ROOT / "src", workspace / "src")
     return workspace
 
 

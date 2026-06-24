@@ -10,8 +10,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from gardusig_cli.cli import app
-from gardusig_cli.integration.workspaces import API_WORKSPACES, fixture_dir
+from src.cli import app
+from src.integration.workspaces import API_WORKSPACES, fixture_dir
 from tests.harness.gh_harness import patch_gh_all
 
 GH_WS = next(w for w in API_WORKSPACES if w.name == "gh")

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from gardusig_cli.services.pypi_publish import (
+from src.services.pypi_publish import (
     PyPiPublishError,
     normalize_release_version,
     read_project_version,
@@ -35,7 +35,7 @@ def test_resolve_release_version_from_env(monkeypatch: pytest.MonkeyPatch) -> No
 def test_sync_version_files_updates_pyproject_and_init(tmp_path: Path) -> None:
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text('[project]\nname = "gardusig-cli"\nversion = "0.1.0"\n', encoding="utf-8")
-    init_dir = tmp_path / "gardusig_cli"
+    init_dir = tmp_path / "src"
     init_dir.mkdir()
     init_py = init_dir / "__init__.py"
     init_py.write_text('__version__ = "0.1.0"\n', encoding="utf-8")
@@ -59,7 +59,7 @@ def _project() -> dict:
     return tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))["project"]
 
 
-def test_pypi_distribution_name_is_gardusig_cli() -> None:
+def test_pypi_distribution_name_is_src() -> None:
     assert _project()["name"] == "gardusig-cli"
 
 
@@ -71,7 +71,7 @@ def test_pypi_urls_point_at_cli_repo() -> None:
 
 
 def test_console_entrypoint_stays_cli() -> None:
-    assert _project()["scripts"]["cli"] == "gardusig_cli.cli:run"
+    assert _project()["scripts"]["cli"] == "src.cli:run"
 
 
 """PyPI token resolution (unit; upload/build run in integration)."""
@@ -79,7 +79,7 @@ def test_console_entrypoint_stays_cli() -> None:
 
 import pytest
 
-from gardusig_cli.services.pypi_publish import PyPiPublishError, resolve_pypi_token
+from src.services.pypi_publish import PyPiPublishError, resolve_pypi_token
 
 
 def test_resolve_pypi_token_missing(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -102,7 +102,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from gardusig_cli.services.pypi_publish import (
+from src.services.pypi_publish import (
     PACKAGE_NAME,
     PyPiPublishError,
     package_index_json_url,
@@ -125,13 +125,13 @@ def test_package_index_json_url_production() -> None:
 def test_verify_package_version_on_index_ok() -> None:
     payload = {
         "info": {"version": "1.0.0"},
-        "releases": {"1.0.0": [{"filename": "gardusig_cli-1.0.0-py3-none-any.whl"}]},
+        "releases": {"1.0.0": [{"filename": "src-1.0.0-py3-none-any.whl"}]},
     }
     body = json.dumps(payload).encode()
     response = MagicMock()
     response.__enter__.return_value = response
     response.read.return_value = body
-    with patch("gardusig_cli.services.pypi_publish.urllib.request.urlopen", return_value=response):
+    with patch("src.services.pypi_publish.urllib.request.urlopen", return_value=response):
         verify_package_version_on_index(PACKAGE_NAME, "v1.0.0", testpypi=True)
 
 
@@ -142,8 +142,8 @@ def test_verify_package_version_on_index_missing_version() -> None:
     response.__enter__.return_value = response
     response.read.return_value = body
     with (
-        patch("gardusig_cli.services.pypi_publish.urllib.request.urlopen", return_value=response),
-        patch("gardusig_cli.services.pypi_publish.time.sleep"),
+        patch("src.services.pypi_publish.urllib.request.urlopen", return_value=response),
+        patch("src.services.pypi_publish.time.sleep"),
     ):
         with pytest.raises(PyPiPublishError, match="not listed on TestPyPI"):
             verify_package_version_on_index(
@@ -159,7 +159,7 @@ def test_verify_package_version_on_index_retries() -> None:
 
     ok_payload = {
         "info": {"version": "1.0.0"},
-        "releases": {"1.0.0": [{"filename": "gardusig_cli-1.0.0-py3-none-any.whl"}]},
+        "releases": {"1.0.0": [{"filename": "src-1.0.0-py3-none-any.whl"}]},
     }
     ok_body = json.dumps(ok_payload).encode()
     ok_response = MagicMock()
@@ -168,13 +168,13 @@ def test_verify_package_version_on_index_retries() -> None:
 
     with (
         patch(
-            "gardusig_cli.services.pypi_publish.urllib.request.urlopen",
+            "src.services.pypi_publish.urllib.request.urlopen",
             side_effect=[
                 urllib.error.HTTPError("url", 404, "missing", {}, io.BytesIO(b"")),
                 ok_response,
             ],
         ),
-        patch("gardusig_cli.services.pypi_publish.time.sleep") as sleep,
+        patch("src.services.pypi_publish.time.sleep") as sleep,
     ):
         verify_package_version_on_index(PACKAGE_NAME, "1.0.0", testpypi=True, retries=2)
     sleep.assert_called_once()

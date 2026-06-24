@@ -34,8 +34,8 @@ Each command maps to a [cursor-skills git skill](https://github.com/gardusig/cur
 
 Pattern mirrors [cursor-skills internal read/write](https://github.com/gardusig/cursor-skills/tree/main/skills/internal):
 
-1. **Read** (`gardusig_cli/internal/read/`) — worktree snapshot, no prompts
-2. **Write gate** (`gardusig_cli/internal/write/gate.py`) — prints `--- cli write gate ---` with repo context, then asks to proceed
+1. **Read** (`src/internal/read/`) — worktree snapshot, no prompts
+2. **Write gate** (`src/internal/write/gate.py`) — prints `--- cli write gate ---` with repo context, then asks to proceed
 3. **Write** — mutation runs only after `--yes` or interactive confirmation
 
 Read-only commands (`review`, `docs`, `branch list`, `stash list`) skip the gate.

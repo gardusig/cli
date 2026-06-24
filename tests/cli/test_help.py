@@ -2,7 +2,7 @@ from tests.constants import ROOT
 
 from typer.testing import CliRunner
 
-from gardusig_cli.cli import app
+from src.cli import app
 
 runner = CliRunner()
 

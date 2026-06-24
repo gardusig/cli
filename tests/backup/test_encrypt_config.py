@@ -6,7 +6,7 @@ from tests.constants import ROOT
 
 from pathlib import Path
 
-from gardusig_cli.utils.config import backup_repository_entry, repo_encrypt_backup
+from src.utils.config import backup_repository_entry, repo_encrypt_backup
 
 
 def test_repo_encrypt_backup_flag(tmp_path: Path) -> None:

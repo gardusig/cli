@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from gardusig_cli.cli import app
-from gardusig_cli.services.git_shortcuts import GitShortcuts
+from src.cli import app
+from src.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
 
@@ -92,7 +92,7 @@ def test_canonical_main_same_repo(_remote: MagicMock, canonical: MagicMock) -> N
     assert svc.canonical_main_ref() == "origin/main"
 
 
-@patch("gardusig_cli.services.git_shortcuts.run_git")
+@patch("src.services.git_shortcuts.run_git")
 def test_repo_root(mock_run: MagicMock) -> None:
     mock_run.return_value.stdout = "/repo\n"
     assert GitShortcuts.repo_root() == "/repo"
@@ -105,7 +105,7 @@ def snapshot() -> MagicMock:
     return snap
 
 
-SNAPSHOT = "gardusig_cli.commands.git.git_worktree_snapshot"
+SNAPSHOT = "src.commands.git.git_worktree_snapshot"
 
 
 @patch.object(GitShortcuts, "align_main")
@@ -298,7 +298,7 @@ def test_git_cherry_pick_refuses(mock_pick: MagicMock) -> None:
     mock_pick.assert_not_called()
 
 
-@patch("gardusig_cli.commands.git.run_review", return_value=0)
+@patch("src.commands.git.run_review", return_value=0)
 def test_git_review_quick(mock_review: MagicMock) -> None:
     result = runner.invoke(app, ["git", "review", "--no-install", "--quick"])
     assert result.exit_code == 0
@@ -306,11 +306,11 @@ def test_git_review_quick(mock_review: MagicMock) -> None:
     mock_review.assert_called_once_with(install=False, quick=True)
 
 
-@patch("gardusig_cli.commands.git.repo_encrypt_backup", return_value=False)
+@patch("src.commands.git.repo_encrypt_backup", return_value=False)
 @patch.object(GitShortcuts, "tag_exists_local", return_value=True)
 @patch.object(GitShortcuts, "repo_basename", return_value="my-repo")
-@patch("gardusig_cli.commands.git.archive_tag_zip")
-@patch("gardusig_cli.commands.git.default_tag_name", return_value="2026-06-12")
+@patch("src.commands.git.archive_tag_zip")
+@patch("src.commands.git.default_tag_name", return_value="2026-06-12")
 def test_git_zip_default_tag(
     _default: MagicMock,
     mock_archive: MagicMock,
@@ -328,8 +328,8 @@ def test_git_zip_default_tag(
 @patch.object(GitShortcuts, "create_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=False)
 @patch.object(GitShortcuts, "prepare_for_tag")
-@patch("gardusig_cli.commands.git._reconcile_tag_push")
-@patch("gardusig_cli.commands.git.default_tag_name", return_value="2026-06-12")
+@patch("src.commands.git._reconcile_tag_push")
+@patch("src.commands.git.default_tag_name", return_value="2026-06-12")
 def test_git_tag_default_name(
     _default: MagicMock,
     _push: MagicMock,

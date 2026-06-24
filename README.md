@@ -30,7 +30,7 @@ Install from PyPI when you only need the tool; clone the repo when you want conf
 | **GitHub repo** | [gardusig/cli](https://github.com/gardusig/cli) (clone path is usually `cli/`) |
 | **PyPI package** | `gardusig-cli` — `./scripts/pypi/install.sh` |
 | **Console command** | `cli` (unchanged after PyPI install) |
-| **Python import** | `gardusig_cli` |
+| **Python import** | `src` |
 
 The repo stays **`cli`**; only the published distribution name on PyPI is **`gardusig-cli`** (`cli` is taken on PyPI).
 

@@ -6,13 +6,13 @@ from tests.constants import ROOT
 
 from pathlib import Path
 
-from gardusig_cli.integration.contest_integration import (
+from src.integration.contest_integration import (
     CONTEST_SUBCOMMANDS,
     assert_every_contest_subcommand_has_ok_check,
     contest_checks,
     run_all_contest_checks,
 )
-from gardusig_cli.integration.integration_coverage import assert_integration_coverage_gate
+from src.integration.integration_coverage import assert_integration_coverage_gate
 
 
 def test_contest_subcommands_have_checks() -> None:

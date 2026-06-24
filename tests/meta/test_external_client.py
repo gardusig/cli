@@ -7,15 +7,15 @@ from tests.constants import ROOT
 import httpx
 import pytest
 
-from gardusig_cli.providers.notion import NotionError
-from gardusig_cli.utils.external_client import (
+from src.providers.notion import NotionError
+from src.utils.external_client import (
     ExternalCallError,
     ExternalClient,
     failure_hint,
     format_user_message,
     is_retryable_exception,
 )
-from gardusig_cli.utils.process import GhCommandError
+from src.utils.process import GhCommandError
 
 
 def test_is_retryable_notion_503() -> None:

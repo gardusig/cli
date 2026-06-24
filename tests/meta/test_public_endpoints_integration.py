@@ -8,11 +8,11 @@ from pathlib import Path
 
 import pytest
 
-from gardusig_cli.integration.docker_guard import (
+from src.integration.docker_guard import (
     cleanup_integration_temp_dir,
     integration_temp_dir,
 )
-from gardusig_cli.integration.public_endpoints import (
+from src.integration.public_endpoints import (
     GIT_SUBCOMMANDS,
     TOP_LEVEL_COMMANDS,
     assert_every_git_subcommand_checked,

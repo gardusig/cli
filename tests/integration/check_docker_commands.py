@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gardusig_cli.integration.docker_integration import (  # noqa: E402
+from src.integration.docker_integration import (  # noqa: E402
     docker_checks,
     run_all_docker_checks,
     run_live_docker_checks,

@@ -6,7 +6,7 @@ from tests.constants import ROOT
 
 import pytest
 
-from gardusig_cli.integration.docker_guard import (
+from src.integration.docker_guard import (
     in_docker_integration,
     integration_scratch_dir,
     require_docker_integration,

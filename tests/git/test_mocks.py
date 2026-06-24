@@ -6,8 +6,8 @@ from tests.constants import ROOT
 
 import subprocess
 
-from gardusig_cli.integration.git_mocks import patch_remote_git
-from gardusig_cli.utils import process as process_mod
+from src.integration.git_mocks import patch_remote_git
+from src.utils import process as process_mod
 
 
 def test_patch_remote_git_blocks_push() -> None:

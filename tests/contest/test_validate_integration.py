@@ -10,8 +10,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from gardusig_cli.cli import app
-from gardusig_cli.services.docker_runtime import ensure_docker
+from src.cli import app
+from src.services.docker_runtime import ensure_docker
 
 
 TOY = ROOT / "tests" / "fixtures" / "contest" / "toy"

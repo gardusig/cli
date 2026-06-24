@@ -8,18 +8,18 @@ from pathlib import Path
 
 import pytest
 
-from gardusig_cli.integration.docker_guard import cleanup_integration_temp_dir, integration_temp_dir
-from gardusig_cli.integration.docker_integration import (
+from src.integration.docker_guard import cleanup_integration_temp_dir, integration_temp_dir
+from src.integration.docker_integration import (
     DOCKER_SUBCOMMANDS,
     docker_subcommands_with_failure_check,
     docker_subcommands_with_ok_check,
 )
-from gardusig_cli.integration.public_commands import (
+from src.integration.public_commands import (
     assert_public_command_registry_complete,
     registered_top_level_commands,
     run_all_public_command_checks,
 )
-from gardusig_cli.integration.public_endpoints import (
+from src.integration.public_endpoints import (
     GIT_SUBCOMMANDS,
     TOP_LEVEL_COMMANDS,
     git_subcommands_with_ok_check,
@@ -33,7 +33,7 @@ def test_top_level_commands_match_cli_registration() -> None:
 
 
 def test_public_command_registry_is_complete() -> None:
-    from gardusig_cli.integration.integration_coverage import assert_integration_coverage_gate
+    from src.integration.integration_coverage import assert_integration_coverage_gate
 
     assert_integration_coverage_gate()
     assert git_subcommands_with_ok_check() == set(GIT_SUBCOMMANDS)

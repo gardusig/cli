@@ -9,12 +9,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from gardusig_cli.cli import app
-from gardusig_cli.services.git_shortcuts import GitShortcuts
+from src.cli import app
+from src.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
 
-GIT_SNAPSHOT_PATCH = "gardusig_cli.commands.git.git_worktree_snapshot"
+GIT_SNAPSHOT_PATCH = "src.commands.git.git_worktree_snapshot"
 
 
 @pytest.fixture
@@ -75,7 +75,7 @@ def test_hidden_git_alias_commit(mock_commit: MagicMock) -> None:
 # --- Git: read / safe write ---------------------------------------------------
 
 
-@patch("gardusig_cli.commands.git.run_review", return_value=0)
+@patch("src.commands.git.run_review", return_value=0)
 def test_git_review_passes(mock_review: MagicMock) -> None:
     result = runner.invoke(app, ["git", "review", "--no-install"])
     assert result.exit_code == 0
@@ -83,14 +83,14 @@ def test_git_review_passes(mock_review: MagicMock) -> None:
     mock_review.assert_called_once_with(install=False, quick=False)
 
 
-@patch("gardusig_cli.commands.git.run_review", return_value=0)
+@patch("src.commands.git.run_review", return_value=0)
 def test_git_review_quick(mock_review: MagicMock) -> None:
     result = runner.invoke(app, ["git", "review", "--no-install", "--quick"])
     assert result.exit_code == 0
     mock_review.assert_called_once_with(install=False, quick=True)
 
 
-@patch("gardusig_cli.commands.git.run_review", return_value=1)
+@patch("src.commands.git.run_review", return_value=1)
 def test_git_review_fails(mock_review: MagicMock) -> None:
     result = runner.invoke(app, ["git", "review", "--no-install"])
     assert result.exit_code == 1
@@ -334,7 +334,7 @@ def test_git_cherry_pick_with_yes(mock_pick: MagicMock, snapshot: MagicMock) -> 
     mock_pick.assert_called_once()
 
 
-@patch("gardusig_cli.commands.git._reconcile_tag_push")
+@patch("src.commands.git._reconcile_tag_push")
 @patch.object(GitShortcuts, "prepare_for_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=False)
 @patch.object(GitShortcuts, "create_tag")

@@ -9,11 +9,11 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from gardusig_cli.integration.cli_api_checks import (
+from src.integration.cli_api_checks import (
     assert_every_api_command_has_ok_and_fail_check,
     cli_api_checks,
 )
-from gardusig_cli.integration.workspaces import fixture_dir
+from src.integration.workspaces import fixture_dir
 from tests.harness.cli_api_harness import GH_WS, run_cli_api_checks
 
 

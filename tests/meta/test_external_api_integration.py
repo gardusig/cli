@@ -11,12 +11,12 @@ from unittest.mock import patch
 import pytest
 from typer.testing import CliRunner
 
-from gardusig_cli.cli import app, run
-from gardusig_cli.integration.workspaces import API_WORKSPACES, fixture_dir
-from gardusig_cli.services.notion_sync import export_tasks, import_tasks
-from gardusig_cli.utils.config import NotionConfig
-from gardusig_cli.utils.external_client import ExternalCallError, ExternalClient
-from gardusig_cli.utils.process import GhCommandError
+from src.cli import app, run
+from src.integration.workspaces import API_WORKSPACES, fixture_dir
+from src.services.notion_sync import export_tasks, import_tasks
+from src.utils.config import NotionConfig
+from src.utils.external_client import ExternalCallError, ExternalClient
+from src.utils.process import GhCommandError
 from tests.harness.drive_harness import DriveRemoteError, FailingDriveProvider, InMemoryDriveProvider
 from tests.harness.gh_harness import gh_auth_error, gh_transient_error, patch_run_gh
 from tests.harness.integration_harness import copy_fixture_workspace
@@ -44,11 +44,11 @@ def notion_paths(monkeypatch, notion_task_root: Path):
     manifest = notion_task_root / "tasks.pairs.json"
 
     monkeypatch.setattr(
-        "gardusig_cli.services.notion_sync.notion_pairs_file",
+        "src.services.notion_sync.notion_pairs_file",
         lambda config_dir=None: manifest,
     )
     monkeypatch.setattr(
-        "gardusig_cli.services.notion_sync.notion_task_root",
+        "src.services.notion_sync.notion_task_root",
         lambda config_dir=None: notion_task_root,
     )
     return notion_task_root, manifest
@@ -93,7 +93,7 @@ def test_notion_deploy_503_retries_then_succeeds(notion_paths) -> None:
     client = ExternalClient("notion", sleep=lambda _s: None)
 
     with patch_notion_http(handler):
-        with patch("gardusig_cli.providers.notion.ExternalClient", return_value=client):
+        with patch("src.providers.notion.ExternalClient", return_value=client):
             result = import_tasks(task_root, token="tok", config=cfg, cleanup_first=False)
 
     assert result.processed == 2
@@ -133,7 +133,7 @@ def test_gh_issue_list_happy_path_via_run_gh() -> None:
 
 @pytest.mark.integration
 def test_gh_issue_list_auth_failure_surfaces_hint() -> None:
-    from gardusig_cli.providers.gh import GhProvider
+    from src.providers.gh import GhProvider
 
     with patch_run_gh(side_effect=gh_auth_error()):
         with pytest.raises(ExternalCallError) as exc_info:
@@ -172,7 +172,7 @@ def test_gh_issue_list_transient_503_retries_then_succeeds() -> None:
     client = ExternalClient("gh", sleep=lambda _s: None)
 
     with patch_run_gh(handler=handler):
-        with patch("gardusig_cli.providers.gh.ExternalClient", return_value=client):
+        with patch("src.providers.gh.ExternalClient", return_value=client):
             result = RUNNER.invoke(app, ["gh", "--format", "json", "issue", "list"])
 
     assert result.exit_code == 0
@@ -181,7 +181,7 @@ def test_gh_issue_list_transient_503_retries_then_succeeds() -> None:
 
 @pytest.mark.integration
 def test_drive_upload_happy_path(tmp_path: Path) -> None:
-    from gardusig_cli.services.drive_sync import upload_missing
+    from src.services.drive_sync import upload_missing
 
     workspace = copy_fixture_workspace(DRIVE_WS, tmp_path)
     local_root = workspace / "tags"
@@ -195,7 +195,7 @@ def test_drive_upload_happy_path(tmp_path: Path) -> None:
 
 @pytest.mark.integration
 def test_drive_upload_permanent_list_failure_stops_with_hint(tmp_path: Path) -> None:
-    from gardusig_cli.services.drive_sync import upload_missing
+    from src.services.drive_sync import upload_missing
 
     workspace = copy_fixture_workspace(DRIVE_WS, tmp_path)
     local_root = workspace / "tags"
@@ -214,7 +214,7 @@ def test_drive_upload_permanent_list_failure_stops_with_hint(tmp_path: Path) -> 
 
 @pytest.mark.integration
 def test_drive_upload_transient_list_retries_then_succeeds(tmp_path: Path) -> None:
-    from gardusig_cli.services.drive_sync import upload_missing
+    from src.services.drive_sync import upload_missing
 
     workspace = copy_fixture_workspace(DRIVE_WS, tmp_path)
     local_root = workspace / "tags"
@@ -225,7 +225,7 @@ def test_drive_upload_transient_list_retries_then_succeeds(tmp_path: Path) -> No
     )
     client = ExternalClient("drive", sleep=lambda _s: None)
 
-    with patch("gardusig_cli.providers.drive_client.ExternalClient", return_value=client):
+    with patch("src.providers.drive_client.ExternalClient", return_value=client):
         result = upload_missing(local_root, provider, "backups/tags")
 
     assert result.failed == []

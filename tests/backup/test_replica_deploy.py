@@ -6,8 +6,8 @@ from tests.constants import ROOT
 
 from pathlib import Path
 
-from gardusig_cli.services.replica_deploy import deploy_usb_replica, resolve_deploy_replicas
-from gardusig_cli.utils.config import BackupReplica
+from src.services.replica_deploy import deploy_usb_replica, resolve_deploy_replicas
+from src.utils.config import BackupReplica
 
 
 def test_deploy_usb_replica_copies_missing(tmp_path: Path) -> None:

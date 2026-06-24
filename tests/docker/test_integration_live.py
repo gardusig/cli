@@ -7,10 +7,10 @@ from tests.constants import ROOT
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from gardusig_cli.integration.docker_integration import run_live_docker_checks
+from src.integration.docker_integration import run_live_docker_checks
 
 
-@patch("gardusig_cli.integration.docker_integration.subprocess.run")
+@patch("src.integration.docker_integration.subprocess.run")
 def test_live_docker_checks_success(mock_run: MagicMock) -> None:
     def side_effect(args, **kwargs):
         cmd = args
@@ -32,7 +32,7 @@ def test_live_docker_checks_success(mock_run: MagicMock) -> None:
         "cli-integration-live cli-integration "
         "CPU Images alpine"
     )
-    with patch("gardusig_cli.integration.docker_integration.run_docker_check") as mock_check:
+    with patch("src.integration.docker_integration.run_docker_check") as mock_check:
         mock_check.side_effect = [
             (0, ok_out),
             (0, ok_out),
@@ -50,7 +50,7 @@ def test_live_docker_checks_success(mock_run: MagicMock) -> None:
     assert mock_check.call_count == 9
 
 
-@patch("gardusig_cli.integration.docker_integration.subprocess.run")
+@patch("src.integration.docker_integration.subprocess.run")
 def test_live_docker_daemon_unavailable(mock_run: MagicMock) -> None:
     mock_run.return_value = MagicMock(returncode=1)
     errors = run_live_docker_checks(ROOT)
@@ -58,13 +58,13 @@ def test_live_docker_daemon_unavailable(mock_run: MagicMock) -> None:
     assert "not available" in errors[0]
 
 
-@patch("gardusig_cli.integration.docker_integration.subprocess.run")
+@patch("src.integration.docker_integration.subprocess.run")
 def test_live_docker_delete_reports_still_present(mock_run: MagicMock) -> None:
     mock_run.return_value = MagicMock(returncode=0, stdout="cli-integration-live\n")
-    from gardusig_cli.integration.docker_integration import _LIVE_CONTAINER
+    from src.integration.docker_integration import _LIVE_CONTAINER
 
     with patch(
-        "gardusig_cli.integration.docker_integration.run_docker_check",
+        "src.integration.docker_integration.run_docker_check",
         return_value=(0, "deleted"),
     ):
         errors: list[str] = []

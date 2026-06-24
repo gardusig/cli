@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from gardusig_cli.integration.workspaces import API_WORKSPACES
+from src.integration.workspaces import API_WORKSPACES
 from tests.harness.chrome_harness import chrome_bookmarks_env
 from tests.harness.integration_harness import copy_fixture_workspace, protected_repo_guard
 

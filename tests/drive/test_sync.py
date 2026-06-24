@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from gardusig_cli.services.backup_repository import SyncResult
-from gardusig_cli.services.drive_sync import _scan_local_files, sync_all, upload_missing
-from gardusig_cli.utils.external_client import ExternalCallError
+from src.services.backup_repository import SyncResult
+from src.services.drive_sync import _scan_local_files, sync_all, upload_missing
+from src.utils.external_client import ExternalCallError
 from tests.harness.drive_harness import InMemoryDriveProvider
 
 
@@ -48,7 +48,7 @@ def test_sync_all_ingests_then_uploads(tmp_path: Path, monkeypatch) -> None:
     (tags_root / "demo" / "v1.zip").write_bytes(b"z")
 
     monkeypatch.setattr(
-        "gardusig_cli.services.drive_sync.ingest_repositories",
+        "src.services.drive_sync.ingest_repositories",
         lambda _path=None: [(repo, SyncResult(created=["v1"], replaced=[], failed=[]))],
     )
     provider = FakeProvider()

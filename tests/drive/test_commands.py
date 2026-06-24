@@ -9,21 +9,21 @@ from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
-from gardusig_cli.cli import app
-from gardusig_cli.services.backup_repository import SyncResult
+from src.cli import app
+from src.services.backup_repository import SyncResult
 
 runner = CliRunner()
 
 
-@patch("gardusig_cli.commands.drive.format_status_lines", return_value=["Repository: demo\n"])
-@patch("gardusig_cli.commands.drive.backup_status", return_value=[])
+@patch("src.commands.drive.format_status_lines", return_value=["Repository: demo\n"])
+@patch("src.commands.drive.backup_status", return_value=[])
 def test_drive_status(_status: MagicMock, _lines: MagicMock) -> None:
     result = runner.invoke(app, ["drive", "status"])
     assert result.exit_code == 0
     assert "Repository: demo" in result.stdout
 
 
-@patch("gardusig_cli.commands.drive.ingest_repositories")
+@patch("src.commands.drive.ingest_repositories")
 def test_drive_ingest_all(mock_ingest: MagicMock) -> None:
     repo = Path("/tmp/demo")
     mock_ingest.return_value = [(repo, SyncResult(created=["v1"], replaced=[], failed=[]))]
@@ -33,7 +33,7 @@ def test_drive_ingest_all(mock_ingest: MagicMock) -> None:
     mock_ingest.assert_called_once_with(None)
 
 
-@patch("gardusig_cli.commands.drive.ingest_repositories", side_effect=RuntimeError("no repos"))
+@patch("src.commands.drive.ingest_repositories", side_effect=RuntimeError("no repos"))
 def test_drive_ingest_failure(mock_ingest: MagicMock) -> None:
     result = runner.invoke(app, ["drive", "ingest"])
     assert result.exit_code != 0
@@ -41,16 +41,16 @@ def test_drive_ingest_failure(mock_ingest: MagicMock) -> None:
     mock_ingest.assert_called_once()
 
 
-@patch("gardusig_cli.commands.drive.deploy_replicas")
-@patch("gardusig_cli.commands.drive.ingest_repositories")
-@patch("gardusig_cli.commands.drive.tags_dir_path")
+@patch("src.commands.drive.deploy_replicas")
+@patch("src.commands.drive.ingest_repositories")
+@patch("src.commands.drive.tags_dir_path")
 def test_drive_sync(
     mock_tags: MagicMock,
     mock_ingest: MagicMock,
     mock_deploy: MagicMock,
     tmp_path: Path,
 ) -> None:
-    from gardusig_cli.services.drive_sync import UploadResult
+    from src.services.drive_sync import UploadResult
 
     tags_root = tmp_path / "git-tags"
     tags_root.mkdir()
@@ -67,7 +67,7 @@ def test_drive_sync(
     mock_deploy.assert_called_once()
 
 
-@patch("gardusig_cli.commands.drive.tags_dir_path")
+@patch("src.commands.drive.tags_dir_path")
 def test_drive_sync_missing_local_dir(mock_tags: MagicMock) -> None:
     mock_tags.return_value = Path("/no/such/git-tags")
     result = runner.invoke(app, ["drive", "sync"])
@@ -75,7 +75,7 @@ def test_drive_sync_missing_local_dir(mock_tags: MagicMock) -> None:
     assert "not found" in result.stdout.lower()
 
 
-@patch("gardusig_cli.commands.drive.tags_dir_path")
+@patch("src.commands.drive.tags_dir_path")
 def test_drive_upload_missing_local_dir(mock_tags: MagicMock) -> None:
     mock_tags.return_value = Path("/no/such/git-tags")
     result = runner.invoke(app, ["drive", "upload"])
@@ -83,14 +83,14 @@ def test_drive_upload_missing_local_dir(mock_tags: MagicMock) -> None:
     assert "not found" in result.stdout.lower()
 
 
-@patch("gardusig_cli.commands.drive.deploy_replicas")
-@patch("gardusig_cli.commands.drive.tags_dir_path")
+@patch("src.commands.drive.deploy_replicas")
+@patch("src.commands.drive.tags_dir_path")
 def test_drive_upload_success(
     mock_tags: MagicMock,
     mock_deploy: MagicMock,
     tmp_path: Path,
 ) -> None:
-    from gardusig_cli.services.drive_sync import UploadResult
+    from src.services.drive_sync import UploadResult
 
     tags_root = tmp_path / "git-tags"
     tags_root.mkdir()
@@ -102,8 +102,8 @@ def test_drive_upload_success(
     mock_deploy.assert_called_once()
 
 
-@patch("gardusig_cli.commands.drive.list_downloaded_tags", return_value=["v1", "v2"])
-@patch("gardusig_cli.commands.drive.resolve_repo_path")
+@patch("src.commands.drive.list_downloaded_tags", return_value=["v1", "v2"])
+@patch("src.commands.drive.resolve_repo_path")
 def test_drive_list_tags(mock_resolve: MagicMock, _tags: MagicMock, tmp_path: Path) -> None:
     mock_resolve.return_value = tmp_path / "demo"
     result = runner.invoke(app, ["drive", "list", str(tmp_path / "demo")])
@@ -112,9 +112,9 @@ def test_drive_list_tags(mock_resolve: MagicMock, _tags: MagicMock, tmp_path: Pa
     assert "v2" in result.stdout
 
 
-@patch("gardusig_cli.commands.drive.delete_repo_tag")
-@patch("gardusig_cli.commands.drive.git_worktree_snapshot")
-@patch("gardusig_cli.commands.drive.resolve_repo_path")
+@patch("src.commands.drive.delete_repo_tag")
+@patch("src.commands.drive.git_worktree_snapshot")
+@patch("src.commands.drive.resolve_repo_path")
 def test_drive_delete_with_yes(
     mock_resolve: MagicMock,
     mock_snapshot: MagicMock,

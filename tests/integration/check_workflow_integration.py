@@ -9,12 +9,12 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gardusig_cli.integration.docker_guard import (  # noqa: E402
+from src.integration.docker_guard import (  # noqa: E402
     cleanup_integration_temp_dir,
     integration_temp_dir,
     require_docker_integration,
 )
-from gardusig_cli.integration.workflow_integration import (  # noqa: E402
+from src.integration.workflow_integration import (  # noqa: E402
     WORKFLOW_CHECKS,
     prepare_workflow_git,
     run_all_workflow_checks,

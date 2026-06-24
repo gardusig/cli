@@ -6,7 +6,7 @@ from tests.constants import ROOT
 
 from pathlib import Path
 
-from gardusig_cli.providers.base import DriveProvider
+from src.providers.base import DriveProvider
 
 
 class InMemoryDriveProvider(DriveProvider):

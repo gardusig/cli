@@ -11,8 +11,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from gardusig_cli.cli import app
-from gardusig_cli.services.gh_sequence import SequenceKey, sort_issues_by_sequence
+from src.cli import app
+from src.services.gh_sequence import SequenceKey, sort_issues_by_sequence
 
 runner = CliRunner()
 
@@ -41,7 +41,7 @@ def test_sort_issues_by_sequence() -> None:
     assert [i["number"] for i in ordered] == [2, 1, 3]
 
 
-@patch("gardusig_cli.commands.gh._svc")
+@patch("src.commands.gh._svc")
 def test_issue_list_json(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     mock_factory.return_value = mock_svc
     mock_svc.issue_list.return_value = [{"number": 1, "title": "1 — Epic"}]
@@ -51,7 +51,7 @@ def test_issue_list_json(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     assert data[0]["number"] == 1
 
 
-@patch("gardusig_cli.commands.gh._svc")
+@patch("src.commands.gh._svc")
 def test_issue_create_requires_yes_in_non_tty(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     mock_factory.return_value = mock_svc
     result = runner.invoke(
@@ -62,7 +62,7 @@ def test_issue_create_requires_yes_in_non_tty(mock_factory: MagicMock, mock_svc:
     assert "non-interactive" in result.output.lower() or result.exit_code == 1
 
 
-@patch("gardusig_cli.commands.gh._svc")
+@patch("src.commands.gh._svc")
 def test_issue_create_with_yes(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     mock_factory.return_value = mock_svc
     mock_svc.issue_create.return_value = {"number": 42, "title": "Test", "url": "https://x/42"}
@@ -74,7 +74,7 @@ def test_issue_create_with_yes(mock_factory: MagicMock, mock_svc: MagicMock) -> 
     mock_svc.issue_create.assert_called_once()
 
 
-@patch("gardusig_cli.commands.gh._svc")
+@patch("src.commands.gh._svc")
 def test_backlog_next(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     mock_factory.return_value = mock_svc
     mock_svc.backlog_next.return_value = {"number": 5, "title": "1.1 — Child", "sequence": "1.1 —"}
@@ -84,7 +84,7 @@ def test_backlog_next(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     assert data["number"] == 5
 
 
-@patch("gardusig_cli.commands.gh._svc")
+@patch("src.commands.gh._svc")
 def test_label_sync_with_yes(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     mock_factory.return_value = mock_svc
     mock_svc.label_sync.return_value = {"created": ["epic:test"], "deleted": []}
@@ -101,7 +101,7 @@ def test_gh_help() -> None:
     assert "issue" in result.output
 
 
-@patch("gardusig_cli.commands.gh._svc")
+@patch("src.commands.gh._svc")
 def test_repo_view_json(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     mock_factory.return_value = mock_svc
     mock_svc.repo_view.return_value = {"nameWithOwner": "owner/repo", "owner": {"login": "owner"}}
@@ -115,7 +115,7 @@ def test_repo_view_json(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     mock_svc.repo_view.assert_called_once_with(fields="nameWithOwner,owner")
 
 
-@patch("gardusig_cli.commands.gh._svc")
+@patch("src.commands.gh._svc")
 def test_issue_view_table_format(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     mock_factory.return_value = mock_svc
     mock_svc.issue_view.return_value = {"number": 9, "title": "Nine"}
@@ -124,7 +124,7 @@ def test_issue_view_table_format(mock_factory: MagicMock, mock_svc: MagicMock) -
     assert "Nine" in result.stdout
 
 
-@patch("gardusig_cli.commands.gh._svc")
+@patch("src.commands.gh._svc")
 def test_pr_list_head_base_filters(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     mock_factory.return_value = mock_svc
     mock_svc.pr_list.return_value = [{"number": 1, "title": "PR"}]

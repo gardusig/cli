@@ -9,14 +9,14 @@ from unittest.mock import patch
 
 import pytest
 
-from gardusig_cli.services.contest_docker import RunOutcome, RunStatus
-from gardusig_cli.services.contest_runner import (
+from src.services.contest_docker import RunOutcome, RunStatus
+from src.services.contest_runner import (
     ContestPaths,
     ContestValidateOptions,
     resolve_options,
     validate_contest,
 )
-from gardusig_cli.services.contest_serde import compare_text, normalize_text, unified_diff
+from src.services.contest_serde import compare_text, normalize_text, unified_diff
 
 
 TOY = ROOT / "tests" / "fixtures" / "contest" / "toy"
@@ -86,10 +86,10 @@ def _make_options() -> ContestValidateOptions:
     )
 
 
-@patch("gardusig_cli.services.contest_runner.ensure_contest_image")
-@patch("gardusig_cli.services.contest_runner.compile_fast_solution")
-@patch("gardusig_cli.services.contest_runner.run_fast")
-@patch("gardusig_cli.services.contest_runner.run_brute")
+@patch("src.services.contest_runner.ensure_contest_image")
+@patch("src.services.contest_runner.compile_fast_solution")
+@patch("src.services.contest_runner.run_fast")
+@patch("src.services.contest_runner.run_brute")
 def test_validate_pass_small_match_large_tle(
     mock_brute,
     mock_fast,
@@ -114,10 +114,10 @@ def test_validate_pass_small_match_large_tle(
     assert mock_fast.call_count == 2
 
 
-@patch("gardusig_cli.services.contest_runner.ensure_contest_image")
-@patch("gardusig_cli.services.contest_runner.compile_fast_solution")
-@patch("gardusig_cli.services.contest_runner.run_fast")
-@patch("gardusig_cli.services.contest_runner.run_brute")
+@patch("src.services.contest_runner.ensure_contest_image")
+@patch("src.services.contest_runner.compile_fast_solution")
+@patch("src.services.contest_runner.run_fast")
+@patch("src.services.contest_runner.run_brute")
 def test_validate_small_mismatch_skips_large(
     mock_brute,
     mock_fast,
@@ -139,10 +139,10 @@ def test_validate_small_mismatch_skips_large(
     assert mock_fast.call_count == 1
 
 
-@patch("gardusig_cli.services.contest_runner.ensure_contest_image")
-@patch("gardusig_cli.services.contest_runner.compile_fast_solution")
-@patch("gardusig_cli.services.contest_runner.run_fast")
-@patch("gardusig_cli.services.contest_runner.run_brute")
+@patch("src.services.contest_runner.ensure_contest_image")
+@patch("src.services.contest_runner.compile_fast_solution")
+@patch("src.services.contest_runner.run_fast")
+@patch("src.services.contest_runner.run_brute")
 def test_validate_large_brute_ok_emits_warning(
     mock_brute,
     mock_fast,
@@ -161,8 +161,8 @@ def test_validate_large_brute_ok_emits_warning(
     assert "stress" in result.warnings[0].lower()
 
 
-@patch("gardusig_cli.services.contest_runner.ensure_contest_image")
-@patch("gardusig_cli.services.contest_runner.compile_fast_solution")
+@patch("src.services.contest_runner.ensure_contest_image")
+@patch("src.services.contest_runner.compile_fast_solution")
 def test_validate_compile_error(mock_compile, mock_ensure_image) -> None:
     mock_compile.return_value = RunOutcome(
         RunStatus.COMPILE_ERROR, 0.5, "", "error: expected ';'", 1
@@ -175,10 +175,10 @@ def test_validate_compile_error(mock_compile, mock_ensure_image) -> None:
     assert "compile" in result.error.lower()
 
 
-@patch("gardusig_cli.services.contest_runner.ensure_contest_image")
-@patch("gardusig_cli.services.contest_runner.compile_fast_solution")
-@patch("gardusig_cli.services.contest_runner.run_fast")
-@patch("gardusig_cli.services.contest_runner.run_brute")
+@patch("src.services.contest_runner.ensure_contest_image")
+@patch("src.services.contest_runner.compile_fast_solution")
+@patch("src.services.contest_runner.run_fast")
+@patch("src.services.contest_runner.run_brute")
 def test_validate_fast_tle_on_large_fails(
     mock_brute,
     mock_fast,

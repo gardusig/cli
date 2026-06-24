@@ -9,14 +9,14 @@ from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
-from gardusig_cli.cli import app
+from src.cli import app
 
 runner = CliRunner()
 
 
-@patch("gardusig_cli.commands.pypi.build_distributions")
+@patch("src.commands.pypi.build_distributions")
 def test_pypi_build(mock_build: MagicMock) -> None:
-    mock_build.return_value = [Path("dist/gardusig_cli-1.0.0-py3-none-any.whl")]
+    mock_build.return_value = [Path("dist/src-1.0.0-py3-none-any.whl")]
     result = runner.invoke(app, ["pypi", "build", "--version", "1.0.0"])
     assert result.exit_code == 0
     assert "Built:" in result.stdout
@@ -24,11 +24,11 @@ def test_pypi_build(mock_build: MagicMock) -> None:
     assert kwargs["version"] == "1.0.0"
 
 
-@patch("gardusig_cli.commands.pypi.verify_package_version_on_index")
-@patch("gardusig_cli.commands.pypi.publish_distributions")
-@patch("gardusig_cli.commands.pypi.build_distributions")
-@patch("gardusig_cli.commands.pypi.resolve_pypi_token", return_value="tok")
-@patch("gardusig_cli.commands.pypi.require_write_gate")
+@patch("src.commands.pypi.verify_package_version_on_index")
+@patch("src.commands.pypi.publish_distributions")
+@patch("src.commands.pypi.build_distributions")
+@patch("src.commands.pypi.resolve_pypi_token", return_value="tok")
+@patch("src.commands.pypi.require_write_gate")
 def test_pypi_upload(
     _gate: MagicMock,
     _token: MagicMock,
@@ -44,9 +44,9 @@ def test_pypi_upload(
     assert "Verified on PyPI" in result.stdout
 
 
-@patch("gardusig_cli.commands.pypi.build_distributions")
+@patch("src.commands.pypi.build_distributions")
 def test_publish_pypi_build_only_deprecated(mock_build: MagicMock) -> None:
-    mock_build.return_value = [Path("dist/gardusig_cli-0.1.0-py3-none-any.whl")]
+    mock_build.return_value = [Path("dist/src-0.1.0-py3-none-any.whl")]
     result = runner.invoke(app, ["publish", "pypi", "--build-only"])
     assert result.exit_code == 0
     assert "Built:" in result.stdout

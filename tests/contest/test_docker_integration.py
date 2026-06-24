@@ -10,9 +10,9 @@ from unittest.mock import patch
 import pytest
 from typer.testing import CliRunner
 
-from gardusig_cli.cli import app
-from gardusig_cli.integration.contest_integration import run_all_contest_checks
-from gardusig_cli.services.contest_runner import ContestValidateResult
+from src.cli import app
+from src.integration.contest_integration import run_all_contest_checks
+from src.services.contest_runner import ContestValidateResult
 
 
 TOY = ROOT / "tests" / "fixtures" / "contest" / "toy"
@@ -21,7 +21,7 @@ RUNNER = CliRunner()
 
 @pytest.mark.integration
 def test_contest_validate_mocked_pass() -> None:
-    with patch("gardusig_cli.commands.contest.validate_contest", return_value=ContestValidateResult(passed=True)):
+    with patch("src.commands.contest.validate_contest", return_value=ContestValidateResult(passed=True)):
         result = RUNNER.invoke(
             app,
             [
@@ -42,7 +42,7 @@ def test_contest_validate_mocked_pass() -> None:
 @pytest.mark.integration
 def test_contest_validate_mocked_fail() -> None:
     with patch(
-        "gardusig_cli.commands.contest.validate_contest",
+        "src.commands.contest.validate_contest",
         return_value=ContestValidateResult(passed=False, error="small tier outputs differ"),
     ):
         result = RUNNER.invoke(

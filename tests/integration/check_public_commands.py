@@ -9,16 +9,16 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from gardusig_cli.integration.docker_guard import (  # noqa: E402
+from src.integration.docker_guard import (  # noqa: E402
     cleanup_integration_temp_dir,
     integration_temp_dir,
     require_docker_integration,
 )
-from gardusig_cli.integration.public_commands import (  # noqa: E402
+from src.integration.public_commands import (  # noqa: E402
     public_command_check_count,
     run_all_public_command_checks,
 )
-from gardusig_cli.integration.public_endpoints import prepare_git_repo  # noqa: E402
+from src.integration.public_endpoints import prepare_git_repo  # noqa: E402
 
 
 def main() -> int:

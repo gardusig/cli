@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
-from gardusig_cli.services.gh_service import GhService
+from src.services.gh_service import GhService
 
 
 @pytest.fixture

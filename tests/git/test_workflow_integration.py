@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from gardusig_cli.integration.docker_guard import cleanup_integration_temp_dir, integration_temp_dir
-from gardusig_cli.integration.workflow_integration import (
+from src.integration.docker_guard import cleanup_integration_temp_dir, integration_temp_dir
+from src.integration.workflow_integration import (
     WORKFLOW_CHECKS,
     prepare_workflow_git,
     run_all_workflow_checks,
