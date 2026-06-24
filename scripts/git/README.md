@@ -9,6 +9,7 @@ Shell wrappers for each [cursor-skills git skill](https://github.com/gardusig/cu
 | `branch-delete-all.sh` | `git/branch/delete/all` | `cli git branch delete --all` |
 | `branch-clear.sh` | `git/branch/clear` | `cli git branch clear` |
 | `cherry-pick.sh` | `git/cherry/pick` | `cli git cherry pick` |
+| `clean.sh` | `git/clean` | `cli git clean` |
 | `commit.sh` | `git/commit` | `cli git commit` |
 | `docs.sh` | `git/docs` | `cli git docs` |
 | `large-files.sh` | `git/large/files` | `cli git large files` |

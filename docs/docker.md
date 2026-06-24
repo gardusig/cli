@@ -19,7 +19,7 @@ Shell wrappers: `scripts/docker/` (`reset.sh`, `stop.sh`, `container-delete.sh`,
 
 ## Install vs verify
 
-- **Install (host):** `./scripts/bootstrap.sh` / `./scripts/install.sh` — runtime deps only; use `cli` on macOS.
+- **Install (host):** `./scripts/pypi/install.sh`. Verification: `./scripts/test/unit.sh` (Docker).
 - **Verify (Docker):** everything in this document — pytest, coverage, smoke, public API checks, live docker.
 
 Host `pytest` is intentionally unsupported. Dev dependencies (`pytest`, `pytest-cov`) install only inside the container copy (`CLI_BOOTSTRAP_DEV=1`) or in the pre-built image layer.
@@ -40,7 +40,7 @@ python:3.12-slim
 
 | Target | Tag | Build | Purpose |
 | --- | --- | --- | --- |
-| `python` | `cli:python` | `./scripts/docker/build-image.sh` with `CLI_DOCKER_TARGET=python` | Shared Python + cli dev install |
+| `python` | `cli:python` | `./scripts/docker/build-image.sh` with `CLI_DOCKER_TARGET=python` | Shared Python + gardusig-cli in image |
 | `unit` | `cli:unit` | `docker build --target unit` | Legacy stage (same base as integration; tests use `cli:integration`) |
 | `integration` | `cli:integration` | `./scripts/test/unit.sh` / `./scripts/test/integration.sh` (auto) | Full pytest + smoke + live docker |
 | `integration` | `cli:dev` | alias of integration | Backward-compatible dev/onboard tag |

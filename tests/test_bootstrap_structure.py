@@ -59,6 +59,7 @@ CURSOR_SKILLS_GIT_SCRIPTS = [
     "scripts/git/branch-delete-all.sh",
     "scripts/git/branch-clear.sh",
     "scripts/git/cherry-pick.sh",
+    "scripts/git/clean.sh",
     "scripts/git/commit.sh",
     "scripts/git/docs.sh",
     "scripts/git/large-files.sh",
@@ -110,11 +111,11 @@ REQUIRED_PATHS = [
     "tests/fixtures/notion/tasks/header/sample.yaml",
     "tests/fixtures/notion/tasks/body/sample.md",
     "tests/fixtures/notion/workspace/tasks.pairs.json",
-    "scripts/bootstrap.sh",
-    "scripts/clean-local.sh",
-    "scripts/install.sh",
+    "scripts/docker/bootstrap.sh",
+    "scripts/pypi/install.sh",
     "scripts/_common.sh",
     "scripts/pypi/_common.sh",
+    "scripts/notion/_common.sh",
     "scripts/pypi/build.sh",
     "scripts/pypi/upload.sh",
     "scripts/pypi/release.sh",
@@ -148,8 +149,16 @@ def test_required_paths_exist() -> None:
         assert (ROOT / rel).exists(), f"missing {rel}"
 
 
+def test_install_script_targets_pypi_package() -> None:
+    text = (ROOT / "scripts/pypi/install.sh").read_text(encoding="utf-8")
+    assert "gardusig-cli" in text
+    assert "pip install" in text
+    assert "_common.sh" in text
+    assert "pip install -e" not in text
+
+
 def test_bootstrap_is_runtime_only_by_default() -> None:
-    bootstrap = (ROOT / "scripts/bootstrap.sh").read_text()
+    bootstrap = (ROOT / "scripts/docker/bootstrap.sh").read_text()
     assert "CLI_BOOTSTRAP_DEV" in bootstrap
     assert 'pip install -e ".[dev]"' in bootstrap
     assert 'pip install -e .' in bootstrap

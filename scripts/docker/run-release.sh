@@ -11,7 +11,7 @@ fi
 
 export CLI_CONFIG_DIR="$ROOT/config/ci"
 export CLI_ROOT="$ROOT"
-CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
+CLI_BOOTSTRAP_DEV=1 ./scripts/docker/bootstrap.sh
 # shellcheck disable=SC1091
 source .venv/bin/activate
 

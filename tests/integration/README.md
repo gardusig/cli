@@ -19,5 +19,5 @@ Use `./scripts/test/unit.sh` or `./scripts/test/integration.sh`, not bare `pytho
 Host cleanup after accidental local runs:
 
 ```bash
-./scripts/clean-local.sh
+cli git clean --yes
 ```

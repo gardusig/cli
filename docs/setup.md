@@ -4,46 +4,50 @@
 
 | Lane | Purpose | Entry |
 | --- | --- | --- |
-| **Install** | Run `cli` on macOS | `./scripts/bootstrap.sh` or `./scripts/install.sh` |
+| **Install** | Run `cli` on macOS from PyPI | `./scripts/pypi/install.sh` |
 | **Verify** | Unit + integration gates (CI-equivalent) | `./scripts/test/unit.sh`, `./scripts/test/integration.sh` |
 
-Local `.venv` gets **runtime** dependencies only. Pytest, coverage, and smoke scripts run **inside** Docker (`cli:integration`) so checks never mutate your checkout.
+Pytest, coverage, and smoke scripts run **inside** Docker (`cli:integration`) so checks never mutate your checkout.
 
 ## Requirements
 
-- Python **3.12+** (local CLI via `bootstrap.sh` / `install.sh`)
+- Python **3.12+** (`./scripts/pypi/install.sh` or Homebrew)
 - `git` on PATH
 - `zip` for encrypted tag archives (`encrypted: true` repos)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) for verification (`cli:dev` Linux image)
 - Optional: `gh` for GitHub (used by cursor-skills, not cli)
 
-## Local install (dev — current shell only)
+## Install from PyPI
 
-For development in this repo. Requires `source .venv/bin/activate` in each terminal.
+Package name on PyPI is **`gardusig-cli`**; the command on PATH is still **`cli`**.
+
+```bash
+./scripts/pypi/install.sh
+cli --version
+```
+
+Installs into `~/.local/share/gardusig-cli/venv`, links `~/.local/bin/cli`, and adds `~/.local/bin` to your shell PATH. Re-run anytime to upgrade to the latest PyPI release.
+
+Pin a version: `./scripts/pypi/install.sh --version 1.0.0`
+
+Config loads from **`~/.config/cli/`** — copy `config/` from this repo as a starting point (`CLI_CONFIG_DIR` to override).
+
+Repo clone path and GitHub project name remain **`cli`** — only the PyPI distribution uses the prefixed name.
+
+## Contributors (repo clone)
+
+Docker gates bootstrap a repo `.venv` inside the container — you do not need a host editable install.
 
 ```bash
 git clone https://github.com/gardusig/cli.git
 cd cli
-./scripts/bootstrap.sh
-source .venv/bin/activate
-python -m gardusig_cli --help
+./scripts/test/unit.sh
+./scripts/test/integration.sh
 ```
 
-Manual venv (runtime only): `pip install -r requirements.txt` then `pip install -e .`
-Host dev tools (not needed for Docker verify): `pip install -r requirements-dev.txt` or `pip install -e ".[dev]"`.
+Docker gates bootstrap a repo `.venv` inside the container via `scripts/docker/bootstrap.sh` — not a host install path.
 
 `requirements.txt` / `requirements-dev.txt` stay in sync with `pyproject.toml` (checked by `tests/test_project_hygiene.py`).
-
-## PyPI install (users)
-
-Package name on PyPI is **`gardusig-cli`**; the command on PATH is still **`cli`**:
-
-```bash
-pip install gardusig-cli
-cli --version
-```
-
-Repo clone path and GitHub project name remain **`cli`** — only the PyPI distribution uses the prefixed name.
 
 Maintainers — tag release (PyPI). See [release.md](release.md).
 
@@ -70,19 +74,6 @@ Pull requests run [test.yml](../.github/workflows/test.yml). See [`.github/READM
 | `test` | Pull requests | `./scripts/test/unit.sh` then `./scripts/test/integration.sh` |
 | `release` | Tags `v*` | PyPI upload (`PYPI_API_TOKEN` secret) |
 
-## User install (global — any terminal)
-
-Installs `cli` to `~/.local/bin` and adds it to your shell PATH (`~/.zprofile` / `~/.zshrc`).
-
-```bash
-./scripts/install.sh
-# open a new terminal OR: source ~/.zprofile
-cli --version
-cli git --help
-```
-
-Config loads from the repo `config/` directory (editable install) — no `cd` into the clone required.
-
 ## Verify (Docker)
 
 Same scripts as GitHub Actions. See [docker.md](docker.md).
@@ -102,7 +93,7 @@ Same scripts as GitHub Actions. See [docker.md](docker.md).
 
 Tests use `CLI_CONFIG_DIR=config/ci` (scratch paths under `.integration-scratch/`, not iCloud).
 
-Remove accidental local artifacts: `./scripts/clean-local.sh`
+Remove accidental local artifacts: `cli git clean --yes` (or `./scripts/git/clean.sh --yes`)
 
 ## After install
 
@@ -119,5 +110,5 @@ See [configuration.md](configuration.md) and README **Configuration**.
 - **Dirty tree on `main`** — pass `--yes` to destructive align/reset commands.
 - **`cli git start` deleted my files** — use `--no-prep` to branch in place; default `start` aligns main first.
 - **`docker is not installed`** when testing — install Docker Desktop; verification does not use host Python.
-- **`command not found: cli`** — run `./scripts/install.sh`, then open a new terminal or `source ~/.zprofile`.
+- **`command not found: cli`** — run `./scripts/pypi/install.sh`, then open a new terminal or `source ~/.zprofile`.
 - **`cli git review` fails** — full review calls `./scripts/test/unit.sh`; use `--quick` for shell syntax only.

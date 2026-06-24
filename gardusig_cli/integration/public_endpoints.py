@@ -71,6 +71,7 @@ GIT_SUBCOMMANDS = (
     "push",
     "start",
     "stash",
+    "clean",
     "reset",
     "rebase",
     "revert",
@@ -530,6 +531,7 @@ def endpoint_checks() -> list[EndpointCheck]:
             reset_git=True,
         ),
         EndpointCheck("git main", ("git", "main"), kind="refuse", needle=refuse, needs_git=True),
+        EndpointCheck("git clean", ("git", "clean"), kind="refuse", needle=refuse, needs_git=True),
         EndpointCheck("git reset", ("git", "reset"), kind="refuse", needle=refuse, needs_git=True),
         EndpointCheck(
             "git branch delete",
@@ -615,6 +617,13 @@ def endpoint_checks() -> list[EndpointCheck]:
             reset_git=True,
             feature_branch="checked_out",
             dirty_git=True,
+        ),
+        EndpointCheck(
+            "git clean yes",
+            ("git", "clean", "--yes"),
+            needle="artifacts removed",
+            needs_git=True,
+            reset_git=True,
         ),
         EndpointCheck(
             "git reset main-only yes",

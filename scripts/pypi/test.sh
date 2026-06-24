@@ -17,7 +17,7 @@ set -euo pipefail
 cd '$CONTAINER_WORK'
 export CLI_ROOT='$CONTAINER_WORK'
 export CLI_CONFIG_DIR='$CONTAINER_WORK/config/ci'
-CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
+CLI_BOOTSTRAP_DEV=1 ./scripts/docker/bootstrap.sh
 # shellcheck disable=SC1091
 source .venv/bin/activate
 export CLI_RELEASE_VERSION='$TEST_VERSION'

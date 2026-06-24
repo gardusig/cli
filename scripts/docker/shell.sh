@@ -15,7 +15,7 @@ docker run --rm -it \
     set -euo pipefail
     $(docker_copy_workspace_script)
     cd '$CONTAINER_WORK'
-    CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
+    CLI_BOOTSTRAP_DEV=1 ./scripts/docker/bootstrap.sh
     echo ''
     echo 'Bootstrapped workspace: $CONTAINER_WORK'
     echo 'Try: python -m gardusig_cli --help'

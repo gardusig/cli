@@ -130,6 +130,10 @@ class GitShortcuts:
 
         return excludes
 
+    def clean_worktree(self, *, keep_ignored: bool = False) -> None:
+        """Remove untracked/ignored build and test artifacts (git clean -fdx; keeps .venv)."""
+        self._clean_worktree(keep_ignored=keep_ignored)
+
     def _clean_worktree(self, *, keep_ignored: bool) -> None:
         if keep_ignored:
             run_git(["clean", "-fd"], cwd=self.top)

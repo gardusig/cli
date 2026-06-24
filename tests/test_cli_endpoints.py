@@ -381,6 +381,7 @@ GIT_PUBLIC_COMMANDS = (
     "large",
     "post",
     "cherry",
+    "clean",
     "rebase",
     "reset",
     "revert",

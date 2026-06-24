@@ -26,7 +26,7 @@ resolve_cli() {
     printf '%s\n' "$ROOT/.venv/bin/python -m gardusig_cli"
     return 0
   fi
-  echo "ERROR: cli not found. Run ./scripts/bootstrap.sh or ./scripts/install.sh" >&2
+  echo "ERROR: cli not found. Run ./scripts/pypi/install.sh" >&2
   return 1
 }
 
@@ -35,29 +35,4 @@ exec_cli() {
   cli_cmd=$(resolve_cli)
   # shellcheck disable=SC2086
   exec $cli_cmd "$@"
-}
-
-require_pypi_token() {
-  load_repo_env
-  if [[ -z "${PYPI_API_TOKEN:-}" ]]; then
-    echo "ERROR: PYPI_API_TOKEN is not set (add to .env or export before publish)" >&2
-    echo "Create a token: https://pypi.org/manage/account/token/" >&2
-    return 1
-  fi
-}
-
-require_notion_token() {
-  load_repo_env
-  if [[ -z "${NOTION_TOKEN:-}" ]]; then
-    echo "ERROR: NOTION_TOKEN is not set (add to .env or export before deploy)" >&2
-    return 1
-  fi
-  if [[ -z "${NOTION_DATABASE_ID:-}" ]]; then
-    echo "ERROR: NOTION_DATABASE_ID is not set (required for release deploy)" >&2
-    return 1
-  fi
-  if [[ -z "${NOTION_TASK_ROOT:-}" ]]; then
-    echo "ERROR: NOTION_TASK_ROOT is not set (path to header/body task root)" >&2
-    return 1
-  fi
 }

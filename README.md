@@ -16,7 +16,7 @@ This README is the **long description on [PyPI](https://pypi.org/project/gardusi
 | Where | What you get |
 | --- | --- |
 | **GitHub** ([gardusig/cli](https://github.com/gardusig/cli)) | Source, issues, PR checks (Docker unit + integration), tag releases |
-| **PyPI** (`pip install gardusig-cli`) | Installable package; console command is still `cli` |
+| **PyPI** (`./scripts/pypi/install.sh`) | Installable package from PyPI; console command is `cli` |
 | **Tests** badge | [`test.yml`](.github/workflows/test.yml) on `main` — PR gate only |
 | **Unit coverage** badge | [`coverage-unit.ini`](coverage-unit.ini) — `cli` package, ≥80% (`pytest --cov-fail-under=80` in Docker unit job) |
 | **Release** badge | [`release.yml`](.github/workflows/release.yml) — `v*` tags → PyPI (`gardusig-cli`) |
@@ -28,9 +28,9 @@ Install from PyPI when you only need the tool; clone the repo when you want conf
 | Context | Identifier |
 | --- | --- |
 | **GitHub repo** | [gardusig/cli](https://github.com/gardusig/cli) (clone path is usually `cli/`) |
-| **PyPI package** | `gardusig-cli` — `pip install gardusig-cli` |
+| **PyPI package** | `gardusig-cli` — `./scripts/pypi/install.sh` |
 | **Console command** | `cli` (unchanged after PyPI install) |
-| **Python import** | `cli` |
+| **Python import** | `gardusig_cli` |
 
 The repo stays **`cli`**; only the published distribution name on PyPI is **`gardusig-cli`** (`cli` is taken on PyPI).
 
@@ -39,7 +39,7 @@ The repo stays **`cli`**; only the published distribution name on PyPI is **`gar
 | Tool | Needed for |
 | --- | --- |
 | **macOS** | Primary target for local use |
-| **Python 3.12+** | Local install (`bootstrap.sh` creates a venv) |
+| **Python 3.12+** | `./scripts/pypi/install.sh` or Homebrew |
 | **[Homebrew](https://brew.sh/)** | Recommended way to install Python and git on macOS |
 | **git** | `cli git` (run from inside a repository) |
 | **zip** | Encrypted tag archives (`cli drive ingest` on `encrypted: true` repos) |
@@ -99,24 +99,20 @@ Environment overrides (optional): `CLI_BOOKMARKS_FILE`, `CLI_DOWNLOADS_DIR`, `CL
 
 ## Install (macOS)
 
-**Global install (recommended):** `cli` works in any terminal after one setup.
+Install the latest **`gardusig-cli`** release from PyPI (no repo clone required):
 
 ```bash
-./scripts/install.sh
+./scripts/pypi/install.sh
 # open a new terminal OR: source ~/.zprofile
 cli --version
 cli git --help
 ```
 
-**Dev install (current shell only):** venv + runtime deps for working in this repo.
+Upgrade anytime: re-run `./scripts/pypi/install.sh`
 
-```bash
-./scripts/bootstrap.sh
-source .venv/bin/activate
-python -m gardusig_cli --help
-```
+Config: **`~/.config/cli/`** (copy `config/` from this repo as a starting point; override with `CLI_CONFIG_DIR`).
 
-Verification always runs in Docker — same image locally and in CI. Do not run `pytest` on the host; use `./scripts/test/unit.sh` and `./scripts/test/integration.sh` instead.
+**Contributors** — verification runs in Docker only (`./scripts/test/unit.sh`, `./scripts/test/integration.sh`).
 
 ## Common git commands
 

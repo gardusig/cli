@@ -32,7 +32,7 @@ def test_docker_harness_files_exist() -> None:
 
 def test_docker_harness_mentions_readonly_mount() -> None:
     common = (ROOT / "scripts/docker/common.sh").read_text()
-    bootstrap = (ROOT / "scripts/bootstrap.sh").read_text()
+    bootstrap = (ROOT / "scripts/docker/bootstrap.sh").read_text()
     assert ":ro" in common
     assert "/tmp/cli" in common
     assert "--exclude='.git'" in common
