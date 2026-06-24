@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
-from cli.services.gh_service import GhService
+from gardusig_cli.services.gh_service import GhService
 
 
 @pytest.fixture

@@ -7,11 +7,11 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from cli.integration.cli_api_checks import (
+from gardusig_cli.integration.cli_api_checks import (
     assert_every_api_command_has_ok_and_fail_check,
     cli_api_checks,
 )
-from cli.integration.workspaces import fixture_dir
+from gardusig_cli.integration.workspaces import fixture_dir
 from tests.cli_api_harness import GH_WS, run_cli_api_checks
 
 ROOT = Path(__file__).resolve().parents[1]

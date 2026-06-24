@@ -10,21 +10,21 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from cli.cli import app
-from cli.commands.git import _branch_preview_lines
-from cli.internal.read.safety import OperationKind, classify_operation
-from cli.services.git_shortcuts import GitShortcuts
+from gardusig_cli.cli import app
+from gardusig_cli.commands.git import _branch_preview_lines
+from gardusig_cli.internal.read.safety import OperationKind, classify_operation
+from gardusig_cli.services.git_shortcuts import GitShortcuts
 
 ROOT = Path(__file__).resolve().parents[1]
 runner = CliRunner()
-PATCH = "cli.services.git_shortcuts.run_git"
-SNAPSHOT = "cli.commands.git.git_worktree_snapshot"
+PATCH = "gardusig_cli.services.git_shortcuts.run_git"
+SNAPSHOT = "gardusig_cli.commands.git.git_worktree_snapshot"
 
 
 def test_package_main_entrypoint() -> None:
-    """cli.__main__ runs the Typer app (python -m cli)."""
+    """gardusig_cli.__main__ runs the Typer app (python -m gardusig_cli)."""
     result = subprocess.run(
-        [sys.executable, "-m", "cli", "--help"],
+        [sys.executable, "-m", "gardusig_cli", "--help"],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -105,7 +105,7 @@ def test_git_branch_delete_action(
     mock_delete.assert_called_once()
 
 
-@patch("cli.utils.process.run_git")
+@patch("gardusig_cli.utils.process.run_git")
 def test_git_branch_rename(mock_run: MagicMock) -> None:
     mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
     result = runner.invoke(app, ["git", "branch", "rename", "new-name"])

@@ -10,11 +10,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from cli.cli import app
-from cli.services.git_shortcuts import GitShortcuts
+from gardusig_cli.cli import app
+from gardusig_cli.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
-GIT_SNAPSHOT_PATCH = "cli.commands.git.git_worktree_snapshot"
+GIT_SNAPSHOT_PATCH = "gardusig_cli.commands.git.git_worktree_snapshot"
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def snapshot() -> MagicMock:
     return snap
 
 
-@patch("cli.commands.git._reconcile_tag_push")
+@patch("gardusig_cli.commands.git._reconcile_tag_push")
 @patch.object(GitShortcuts, "prepare_for_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=False)
 @patch.object(GitShortcuts, "create_tag")
@@ -42,7 +42,7 @@ def test_git_tag_creates_and_pushes(
     mock_push.assert_called_once()
 
 
-@patch("cli.commands.git._reconcile_tag_push")
+@patch("gardusig_cli.commands.git._reconcile_tag_push")
 @patch.object(GitShortcuts, "prepare_for_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=True)
 @patch.object(GitShortcuts, "create_tag")
@@ -59,7 +59,7 @@ def test_git_tag_replace_requires_gate(
     mock_create.assert_not_called()
 
 
-@patch("cli.commands.git._reconcile_tag_push")
+@patch("gardusig_cli.commands.git._reconcile_tag_push")
 @patch.object(GitShortcuts, "prepare_for_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=True)
 @patch.object(GitShortcuts, "create_tag")
@@ -76,7 +76,7 @@ def test_git_tag_replace_with_yes(
     mock_create.assert_called_once_with("2026-06-11", replace=True)
 
 
-@patch("cli.commands.git._reconcile_tag_push")
+@patch("gardusig_cli.commands.git._reconcile_tag_push")
 @patch.object(GitShortcuts, "prepare_for_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=True)
 @patch.object(GitShortcuts, "create_tag")
@@ -167,7 +167,7 @@ def test_git_tag_prepare_failure(mock_prepare: MagicMock) -> None:
 
 
 @patch.object(GitShortcuts, "tag_exists_local", return_value=False)
-@patch("cli.commands.git.archive_tag_zip")
+@patch("gardusig_cli.commands.git.archive_tag_zip")
 def test_git_zip_requires_tag(mock_archive: MagicMock, _exists: MagicMock) -> None:
     result = runner.invoke(app, ["git", "zip", "missing-tag"])
     assert result.exit_code != 0
@@ -175,10 +175,10 @@ def test_git_zip_requires_tag(mock_archive: MagicMock, _exists: MagicMock) -> No
     mock_archive.assert_not_called()
 
 
-@patch("cli.commands.git.repo_encrypt_backup", return_value=False)
+@patch("gardusig_cli.commands.git.repo_encrypt_backup", return_value=False)
 @patch.object(GitShortcuts, "tag_exists_local", return_value=True)
 @patch.object(GitShortcuts, "repo_basename", return_value="repo")
-@patch("cli.commands.git.archive_tag_zip")
+@patch("gardusig_cli.commands.git.archive_tag_zip")
 def test_git_zip_with_tag(
     mock_archive: MagicMock,
     _basename: MagicMock,
@@ -194,7 +194,7 @@ def test_git_zip_with_tag(
         return out
 
     mock_archive.side_effect = _write_archive
-    with patch("cli.commands.git.default_zip_path", return_value=dest):
+    with patch("gardusig_cli.commands.git.default_zip_path", return_value=dest):
         result = runner.invoke(app, ["git", "zip", "2026-06-11"])
     assert result.exit_code == 0
     assert ".zip" in result.stdout

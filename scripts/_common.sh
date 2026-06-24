@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared helpers for all scripts/* wrappers (shell only — logic lives in cli/).
+# Shared helpers for all scripts/* wrappers (shell only — logic lives in gardusig_cli/).
 set -euo pipefail
 
 ROOT="${CLI_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
@@ -23,7 +23,7 @@ resolve_cli() {
     return 0
   fi
   if [[ -x "$ROOT/.venv/bin/python" ]]; then
-    printf '%s\n' "$ROOT/.venv/bin/python -m cli"
+    printf '%s\n' "$ROOT/.venv/bin/python -m gardusig_cli"
     return 0
   fi
   echo "ERROR: cli not found. Run ./scripts/bootstrap.sh or ./scripts/install.sh" >&2

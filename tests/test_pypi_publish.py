@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from cli.services.pypi_publish import PyPiPublishError, resolve_pypi_token
+from gardusig_cli.services.pypi_publish import PyPiPublishError, resolve_pypi_token
 
 
 def test_resolve_pypi_token_missing(monkeypatch: pytest.MonkeyPatch) -> None:

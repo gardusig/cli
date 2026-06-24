@@ -19,7 +19,7 @@ WORKDIR /opt/cli
 COPY pyproject.toml README.md requirements.txt requirements-dev.txt ./
 RUN pip install --no-cache-dir -r requirements-dev.txt
 
-COPY cli ./cli
+COPY gardusig_cli ./gardusig_cli
 RUN pip install --no-cache-dir -e .
 
 # -----------------------------------------------------------------------------

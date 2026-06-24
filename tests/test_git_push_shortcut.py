@@ -7,12 +7,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from cli.cli import app
-from cli.commands.git import _push_plan
-from cli.services.git_shortcuts import GitShortcuts
+from gardusig_cli.cli import app
+from gardusig_cli.commands.git import _push_plan
+from gardusig_cli.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
-GIT_SNAPSHOT_PATCH = "cli.commands.git.git_worktree_snapshot"
+GIT_SNAPSHOT_PATCH = "gardusig_cli.commands.git.git_worktree_snapshot"
 
 
 @pytest.fixture

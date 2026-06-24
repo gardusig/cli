@@ -82,6 +82,6 @@ def test_ci_workflow_runs_live_docker_in_container() -> None:
 
 
 def test_public_command_registry_covers_all_commands() -> None:
-    from cli.integration.integration_coverage import assert_integration_coverage_gate
+    from gardusig_cli.integration.integration_coverage import assert_integration_coverage_gate
 
     assert_integration_coverage_gate()

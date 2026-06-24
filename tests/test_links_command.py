@@ -2,7 +2,7 @@
 
 from typer.testing import CliRunner
 
-from cli.cli import app
+from gardusig_cli.cli import app
 
 runner = CliRunner()
 

@@ -50,12 +50,12 @@ Issues = "https://github.com/gardusig/cli/issues"
 Changelog = "https://github.com/gardusig/cli/releases"
 
 [project.scripts]
-cli = "cli.cli:run"
+cli = "gardusig_cli.cli:run"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["cli*"]
-exclude = ["cli.integration*"]
+include = ["gardusig_cli*"]
+exclude = ["gardusig_cli.integration*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -71,7 +71,7 @@ timeout = 30
 timeout_method = "thread"
 
 [tool.coverage.run]
-source = ["cli"]
+source = ["gardusig_cli"]
 branch = false
 
 [tool.coverage.report]
@@ -79,4 +79,4 @@ fail_under = 80
 show_missing = true
 skip_empty = true
 
-# Unit Docker job uses coverage-unit.ini (omits cli/integration/* from coverage totals).
+# Unit Docker job uses coverage-unit.ini (omits gardusig_cli/integration/* from coverage totals).

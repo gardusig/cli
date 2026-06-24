@@ -5,7 +5,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from cli.integration.docker_guard import integration_temp_dir
+from gardusig_cli.integration.docker_guard import integration_temp_dir
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -19,7 +19,7 @@ def create_pypi_workspace() -> Path:
         src = ROOT / name
         if src.is_file():
             shutil.copy2(src, workspace / name)
-    shutil.copytree(ROOT / "cli", workspace / "cli")
+    shutil.copytree(ROOT / "gardusig_cli", workspace / "gardusig_cli")
     return workspace
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from cli.providers.base import DriveProvider
+from gardusig_cli.providers.base import DriveProvider
 
 
 class InMemoryDriveProvider(DriveProvider):

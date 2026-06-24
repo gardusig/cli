@@ -100,7 +100,7 @@ Because tests run from the copied tree in `/tmp`, commands like `cli git start` 
 The container smoke test checks:
 
 - `tests/integration/check_public_endpoints.py` — every public CLI command (56 checks): read-only paths, write-gate refusals, and `--yes` success paths with **remote git mocked** (`fetch` / `push` / `ls-remote` never hit the network)
-- `python -m cli --help` and `--version`
+- `python -m gardusig_cli --help` and `--version`
 - placeholder endpoints: `restore`, `drive`, `notion`, `chrome`
 - shell syntax for `scripts/chrome`, `scripts/git`, and root smoke scripts
 - Chrome bookmark export/import using local fixture files and `CLI_SKIP_CHROME_AUTOMATION=1`

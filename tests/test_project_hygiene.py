@@ -86,7 +86,7 @@ def test_build_artifacts_are_not_tracked() -> None:
 
 
 def test_docker_is_required_for_integration_checks(simulate_host_env: None) -> None:
-    from cli.integration.docker_guard import require_docker_integration
+    from gardusig_cli.integration.docker_guard import require_docker_integration
 
     with pytest.raises(RuntimeError, match="Docker"):
         require_docker_integration(context="hygiene test")

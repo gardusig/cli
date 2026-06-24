@@ -6,11 +6,11 @@ import pytest
 import typer
 from typer.testing import CliRunner
 
-from cli.cli import app
-from cli.internal.read.git import git_worktree_snapshot
-from cli.internal.read.safety import OperationKind, classify_operation
-from cli.internal.write.gate import WRITE_GATE_DELIMITER, write_gate
-from cli.services.git_shortcuts import GitShortcuts
+from gardusig_cli.cli import app
+from gardusig_cli.internal.read.git import git_worktree_snapshot
+from gardusig_cli.internal.read.safety import OperationKind, classify_operation
+from gardusig_cli.internal.write.gate import WRITE_GATE_DELIMITER, write_gate
+from gardusig_cli.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
 
@@ -60,7 +60,7 @@ def test_write_gate_skipped_for_read_operation(capsys: pytest.CaptureFixture[str
 
 
 def test_write_gate_refuses_non_interactive_without_yes() -> None:
-    with patch("cli.internal.write.gate.sys.stdin") as mock_stdin:
+    with patch("gardusig_cli.internal.write.gate.sys.stdin") as mock_stdin:
         mock_stdin.isatty.return_value = False
         with pytest.raises(typer.Exit):
             write_gate("push", ["branch: main"], question="Push?", yes=False)

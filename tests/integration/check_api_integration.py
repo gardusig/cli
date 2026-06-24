@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def main() -> int:
-    from cli.integration.workspaces import INTEGRATION_TEST_MODULES
+    from gardusig_cli.integration.workspaces import INTEGRATION_TEST_MODULES
 
     args = [sys.executable, "-m", "pytest", "-q", "--no-cov"]
     for mod in INTEGRATION_TEST_MODULES:

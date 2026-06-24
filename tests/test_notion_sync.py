@@ -9,11 +9,11 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from cli.integration.workspaces import notion_task_fixture_dir
-from cli.providers.notion import NotionClient
-from cli.services.notion_sync import cleanup_board, export_tasks, import_tasks
-from cli.utils.config import NotionConfig
-from cli.utils.http import default_http_timeout
+from gardusig_cli.integration.workspaces import notion_task_fixture_dir
+from gardusig_cli.providers.notion import NotionClient
+from gardusig_cli.services.notion_sync import cleanup_board, export_tasks, import_tasks
+from gardusig_cli.utils.config import NotionConfig
+from gardusig_cli.utils.http import default_http_timeout
 
 FIXTURE_ROOT = notion_task_fixture_dir()
 NOTION_BASE = "https://api.notion.com/v1"
@@ -28,7 +28,7 @@ def _patch_notion_http(handler):
         return _REAL_HTTPX_CLIENT(**kwargs)
 
     return patch(
-        "cli.providers.notion.httpx.Client",
+        "gardusig_cli.providers.notion.httpx.Client",
         side_effect=_client_factory,
     )
 
@@ -89,11 +89,11 @@ def test_import_tasks_deploys_enabled_pair(tmp_path: Path, monkeypatch) -> None:
 
     cfg = NotionConfig(database_id="db-test", cleanup_before_deploy=True)
     monkeypatch.setattr(
-        "cli.services.notion_sync.notion_pairs_file",
+        "gardusig_cli.services.notion_sync.notion_pairs_file",
         lambda config_dir=None: manifest,
     )
     monkeypatch.setattr(
-        "cli.services.notion_sync.notion_task_root",
+        "gardusig_cli.services.notion_sync.notion_task_root",
         lambda config_dir=None: task_root,
     )
 
@@ -162,7 +162,7 @@ def test_export_tasks_ingest_updates_local(tmp_path: Path, monkeypatch) -> None:
 
     cfg = NotionConfig(database_id="db-test")
     monkeypatch.setattr(
-        "cli.services.notion_sync.notion_pairs_file",
+        "gardusig_cli.services.notion_sync.notion_pairs_file",
         lambda config_dir=None: manifest,
     )
 

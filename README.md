@@ -113,7 +113,7 @@ cli git --help
 ```bash
 ./scripts/bootstrap.sh
 source .venv/bin/activate
-python -m cli --help
+python -m gardusig_cli --help
 ```
 
 Verification always runs in Docker — same image locally and in CI. Do not run `pytest` on the host; use `./scripts/test/unit.sh` and `./scripts/test/integration.sh` instead.

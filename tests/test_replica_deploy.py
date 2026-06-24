@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from cli.services.replica_deploy import deploy_usb_replica, resolve_deploy_replicas
-from cli.utils.config import BackupReplica
+from gardusig_cli.services.replica_deploy import deploy_usb_replica, resolve_deploy_replicas
+from gardusig_cli.utils.config import BackupReplica
 
 
 def test_deploy_usb_replica_copies_missing(tmp_path: Path) -> None:

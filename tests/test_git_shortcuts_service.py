@@ -8,10 +8,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from cli.services.git_shortcuts import GitShortcuts
-from cli.utils.process import GitCommandError
+from gardusig_cli.services.git_shortcuts import GitShortcuts
+from gardusig_cli.utils.process import GitCommandError
 
-PATCH = "cli.services.git_shortcuts.run_git"
+PATCH = "gardusig_cli.services.git_shortcuts.run_git"
 
 
 def _ok(stdout: str = "", returncode: int = 0) -> MagicMock:

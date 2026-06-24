@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from cli.integration.docker_guard import cleanup_integration_temp_dir, integration_temp_dir
-from cli.integration.tag_zip_integration import (
+from gardusig_cli.integration.docker_guard import cleanup_integration_temp_dir, integration_temp_dir
+from gardusig_cli.integration.tag_zip_integration import (
     TAG_ZIP_CHECKS,
     prepare_tag_zip_git,
     run_all_tag_zip_checks,

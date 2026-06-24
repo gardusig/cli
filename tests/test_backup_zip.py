@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from cli.services.backup_zip import archive_tag_zip
+from gardusig_cli.services.backup_zip import archive_tag_zip
 
 
 def _init_repo(path: Path) -> None:

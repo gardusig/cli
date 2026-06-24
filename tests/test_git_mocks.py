@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import subprocess
 
-from cli.integration.git_mocks import patch_remote_git
-from cli.utils import process as process_mod
+from gardusig_cli.integration.git_mocks import patch_remote_git
+from gardusig_cli.utils import process as process_mod
 
 
 def test_patch_remote_git_blocks_push() -> None:

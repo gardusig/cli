@@ -7,7 +7,7 @@ from typing import Any
 
 import httpx
 
-from cli.utils.http import default_http_timeout
+from gardusig_cli.utils.http import default_http_timeout
 
 NOTION_BASE = "https://api.notion.com/v1"
 _REAL_HTTPX_CLIENT = httpx.Client
@@ -23,7 +23,7 @@ def patch_notion_http(handler):
     from unittest.mock import patch
 
     return patch(
-        "cli.providers.notion.httpx.Client",
+        "gardusig_cli.providers.notion.httpx.Client",
         side_effect=_client_factory,
     )
 

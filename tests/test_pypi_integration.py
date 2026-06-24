@@ -9,8 +9,8 @@ from unittest.mock import patch
 import pytest
 from typer.testing import CliRunner
 
-from cli.cli import app
-from cli.services.pypi_publish import (
+from gardusig_cli.cli import app
+from gardusig_cli.services.pypi_publish import (
     PACKAGE_NAME,
     verify_package_version_on_index,
     build_distributions,
@@ -51,7 +51,7 @@ def test_build_distributions_writes_artifacts(pypi_workspace: Path) -> None:
 @pytest.mark.integration
 def test_cli_pypi_build_command(pypi_workspace: Path) -> None:
     repo_version_before = read_repo_version()
-    with patch("cli.commands.pypi.project_root", return_value=pypi_workspace):
+    with patch("gardusig_cli.commands.pypi.project_root", return_value=pypi_workspace):
         result = runner.invoke(
             app,
             ["pypi", "build", "--version", TEST_VERSION],
@@ -66,7 +66,7 @@ def test_cli_pypi_build_command(pypi_workspace: Path) -> None:
 @pytest.mark.integration
 def test_cli_pypi_upload_refuses_without_token(pypi_workspace: Path) -> None:
     build_distributions(pypi_workspace, version=TEST_VERSION)
-    with patch("cli.commands.pypi.project_root", return_value=pypi_workspace):
+    with patch("gardusig_cli.commands.pypi.project_root", return_value=pypi_workspace):
         result = runner.invoke(
             app,
             ["pypi", "upload", "--yes", "--skip-build", "--version", TEST_VERSION],
@@ -81,7 +81,7 @@ def test_release_publish_verifies_testpypi_project_page(pypi_workspace: Path) ->
     """Release path: build + upload to TestPyPI + verify project JSON page."""
     token = _testpypi_token()
     if token:
-        with patch("cli.commands.pypi.project_root", return_value=pypi_workspace):
+        with patch("gardusig_cli.commands.pypi.project_root", return_value=pypi_workspace):
             result = runner.invoke(
                 app,
                 [
@@ -106,10 +106,10 @@ def test_release_publish_verifies_testpypi_project_page(pypi_workspace: Path) ->
         return
 
     with (
-        patch("cli.commands.pypi.project_root", return_value=pypi_workspace),
-        patch("cli.commands.pypi.publish_distributions", return_value=["pkg.whl"]) as mock_publish,
-        patch("cli.commands.pypi.verify_package_version_on_index") as mock_verify,
-        patch("cli.commands.pypi.build_distributions") as mock_build,
+        patch("gardusig_cli.commands.pypi.project_root", return_value=pypi_workspace),
+        patch("gardusig_cli.commands.pypi.publish_distributions", return_value=["pkg.whl"]) as mock_publish,
+        patch("gardusig_cli.commands.pypi.verify_package_version_on_index") as mock_verify,
+        patch("gardusig_cli.commands.pypi.build_distributions") as mock_build,
     ):
         mock_build.return_value = [pypi_workspace / "dist" / f"gardusig_cli-{TEST_VERSION}-py3-none-any.whl"]
         (pypi_workspace / "dist").mkdir(parents=True, exist_ok=True)
@@ -148,7 +148,7 @@ def test_testpypi_project_page_json_api() -> None:
     import urllib.error
     import urllib.request
 
-    from cli.services.pypi_publish import package_index_json_url
+    from gardusig_cli.services.pypi_publish import package_index_json_url
 
     url = package_index_json_url(PACKAGE_NAME, testpypi=True)
     req = urllib.request.Request(url, headers={"Accept": "application/json"})

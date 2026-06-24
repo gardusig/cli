@@ -26,7 +26,7 @@ git clone https://github.com/gardusig/cli.git
 cd cli
 ./scripts/bootstrap.sh
 source .venv/bin/activate
-python -m cli --help
+python -m gardusig_cli --help
 ```
 
 Manual venv (runtime only): `pip install -r requirements.txt` then `pip install -e .`

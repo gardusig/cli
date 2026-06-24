@@ -8,14 +8,14 @@ CLI → Command → Workflow / Service → Provider → External API
 
 ## Current implementation
 
-- **`cli/cli.py`** — Typer app, command registration
-- **`cli/commands/git.py`** — git subcommands (thin)
-- **`cli/services/git_shortcuts.py`** — git business logic + subprocess calls
-- **`cli/utils/process.py`** — `run_git` wrapper
-- **`cli/internal/read/`** — read-only inventory (worktree snapshot, operation classification)
-- **`cli/internal/write/`** — write gate with delimiter + Q&A before mutations
-- **`cli/utils/confirm.py`** — thin re-export of write gate helpers
-- **`cli/commands/{backup,restore,...}`** — placeholders for future workflows
+- **`gardusig_cli/cli.py`** — Typer app, command registration
+- **`gardusig_cli/commands/git.py`** — git subcommands (thin)
+- **`gardusig_cli/services/git_shortcuts.py`** — git business logic + subprocess calls
+- **`gardusig_cli/utils/process.py`** — `run_git` wrapper
+- **`gardusig_cli/internal/read/`** — read-only inventory (worktree snapshot, operation classification)
+- **`gardusig_cli/internal/write/`** — write gate with delimiter + Q&A before mutations
+- **`gardusig_cli/utils/confirm.py`** — thin re-export of write gate helpers
+- **`gardusig_cli/commands/{backup,restore,...}`** — placeholders for future workflows
 - **`scripts/chrome/`** — bookmark export/import (issue #1)
 
 Providers stay unimplemented until backup/sync issues land. Git operations use local `git` only.

@@ -14,7 +14,7 @@ bash -n scripts/chrome/*.sh
 bash -n scripts/docker/*.sh
 python tests/integration/check_integration_coverage.py
 pytest -q -m "not integration" \
-  --cov=cli \
+  --cov=gardusig_cli \
   --cov-config=coverage-unit.ini \
   --cov-report=term-missing \
   --cov-fail-under=80

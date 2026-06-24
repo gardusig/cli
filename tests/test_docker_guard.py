@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from cli.integration.docker_guard import (
+from gardusig_cli.integration.docker_guard import (
     in_docker_integration,
     integration_scratch_dir,
     require_docker_integration,

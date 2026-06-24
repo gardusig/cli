@@ -1,6 +1,6 @@
 # scripts/
 
-Shell-only entry points. Python code lives under [`cli/`](../cli/) and [`tests/`](../tests/).
+Shell-only entry points. Python code lives under [`gardusig_cli/`](../gardusig_cli/) and [`tests/`](../tests/).
 
 | Script / directory | Purpose |
 | --- | --- |

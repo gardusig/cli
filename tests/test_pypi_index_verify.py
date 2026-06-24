@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from cli.services.pypi_publish import (
+from gardusig_cli.services.pypi_publish import (
     PACKAGE_NAME,
     PyPiPublishError,
     package_index_json_url,
@@ -37,7 +37,7 @@ def test_verify_package_version_on_index_ok() -> None:
     response = MagicMock()
     response.__enter__.return_value = response
     response.read.return_value = body
-    with patch("cli.services.pypi_publish.urllib.request.urlopen", return_value=response):
+    with patch("gardusig_cli.services.pypi_publish.urllib.request.urlopen", return_value=response):
         verify_package_version_on_index(PACKAGE_NAME, "v1.0.0", testpypi=True)
 
 
@@ -48,8 +48,8 @@ def test_verify_package_version_on_index_missing_version() -> None:
     response.__enter__.return_value = response
     response.read.return_value = body
     with (
-        patch("cli.services.pypi_publish.urllib.request.urlopen", return_value=response),
-        patch("cli.services.pypi_publish.time.sleep"),
+        patch("gardusig_cli.services.pypi_publish.urllib.request.urlopen", return_value=response),
+        patch("gardusig_cli.services.pypi_publish.time.sleep"),
     ):
         with pytest.raises(PyPiPublishError, match="not listed on TestPyPI"):
             verify_package_version_on_index(
@@ -74,13 +74,13 @@ def test_verify_package_version_on_index_retries() -> None:
 
     with (
         patch(
-            "cli.services.pypi_publish.urllib.request.urlopen",
+            "gardusig_cli.services.pypi_publish.urllib.request.urlopen",
             side_effect=[
                 urllib.error.HTTPError("url", 404, "missing", {}, io.BytesIO(b"")),
                 ok_response,
             ],
         ),
-        patch("cli.services.pypi_publish.time.sleep") as sleep,
+        patch("gardusig_cli.services.pypi_publish.time.sleep") as sleep,
     ):
         verify_package_version_on_index(PACKAGE_NAME, "1.0.0", testpypi=True, retries=2)
     sleep.assert_called_once()

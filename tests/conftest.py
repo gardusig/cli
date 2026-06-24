@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from cli.integration.docker_guard import in_docker_integration
+from gardusig_cli.integration.docker_guard import in_docker_integration
 
 DEFAULT_TEST_TIMEOUT_SECONDS = 30
 INTEGRATION_TEST_TIMEOUT_SECONDS = 300

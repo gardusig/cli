@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from cli.integration.workspaces import API_WORKSPACES
-from cli.services.drive_sync import upload_missing
+from gardusig_cli.integration.workspaces import API_WORKSPACES
+from gardusig_cli.services.drive_sync import upload_missing
 from tests.drive_harness import InMemoryDriveProvider
 from tests.integration_harness import copy_fixture_workspace, protected_repo_guard
 
