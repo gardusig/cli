@@ -12,6 +12,11 @@ SKIP_EXISTING="${CLI_PYPI_SKIP_EXISTING:-1}"
 INNER="$(docker_copy_workspace_script)
 set -euo pipefail
 cd '$CONTAINER_WORK'
+export CLI_ROOT='$CONTAINER_WORK'
+export CLI_CONFIG_DIR='$CONTAINER_WORK/config/ci'
+CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
+# shellcheck disable=SC1091
+source .venv/bin/activate
 export CLI_RELEASE_VERSION='$TEST_VERSION'
 export CLI_PYPI_TEST=0
 export CLI_PYPI_SKIP_EXISTING='$SKIP_EXISTING'

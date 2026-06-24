@@ -22,6 +22,11 @@ def test_project_root_points_at_repo() -> None:
     assert (root / "pyproject.toml").is_file()
 
 
+def test_project_root_respects_cli_root(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("CLI_ROOT", str(tmp_path))
+    assert project_root() == tmp_path.resolve()
+
+
 def test_tags_dir_path_resolves_icloud_absolute(tmp_path: Path) -> None:
     icloud = tmp_path / "Mobile Documents" / "com~apple~CloudDocs" / "git-tags"
     icloud.mkdir(parents=True)

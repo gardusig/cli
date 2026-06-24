@@ -111,6 +111,9 @@ class CliSettings(BaseSettings):
 
 
 def project_root() -> Path:
+    override = os.environ.get("CLI_ROOT", "").strip()
+    if override:
+        return Path(override).expanduser().resolve()
     return Path(__file__).resolve().parents[2]
 
 

@@ -10,6 +10,7 @@ if [[ -z "${PYPI_API_TOKEN:-}" ]]; then
 fi
 
 export CLI_CONFIG_DIR="$ROOT/config/ci"
+export CLI_ROOT="$ROOT"
 CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
 # shellcheck disable=SC1091
 source .venv/bin/activate

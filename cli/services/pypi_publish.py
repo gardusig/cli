@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -110,8 +111,15 @@ def build_distributions(
     release_version = resolve_release_version(version, root=root)
     if release_version:
         sync_version_files(root, release_version)
+        for meta in root.glob("*.egg-info"):
+            if meta.is_dir():
+                shutil.rmtree(meta)
     out = output_dir or root / "dist"
     out.mkdir(parents=True, exist_ok=True)
+    if release_version:
+        for old in out.iterdir():
+            if old.is_file():
+                old.unlink()
     result = subprocess.run(
         [sys.executable, "-m", "build", "--outdir", str(out)],
         cwd=root,
