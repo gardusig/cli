@@ -42,35 +42,35 @@ API_WORKSPACES: tuple[ApiWorkspace, ...] = (
         name="notion",
         fixture_subpath="notion/workspace",
         protected_paths=(),
-        integration_module="tests.test_notion_docker_integration",
+        integration_module="tests.notion.test_docker_integration",
         description="Task pairs: ingest → local files, deploy → Notion API",
     ),
     ApiWorkspace(
         name="chrome",
         fixture_subpath="chrome/workspace",
         protected_paths=(),
-        integration_module="tests.test_chrome_docker_integration",
+        integration_module="tests.chrome.test_docker_integration",
         description="Bookmarks: ingest from Downloads, deploy to local file",
     ),
     ApiWorkspace(
         name="drive",
         fixture_subpath="drive/workspace",
         protected_paths=(),
-        integration_module="tests.test_drive_docker_integration",
+        integration_module="tests.drive.test_docker_integration",
         description="Tag zips: local ingest, mock cloud upload",
     ),
     ApiWorkspace(
         name="gh",
         fixture_subpath="gh/workspace",
         protected_paths=(),
-        integration_module="tests.test_gh_docker_integration",
+        integration_module="tests.gh.test_docker_integration",
         description="GitHub CLI: mocked gh JSON for list/view",
     ),
     ApiWorkspace(
         name="contest",
         fixture_subpath="contest/toy",
         protected_paths=(),
-        integration_module="tests.test_contest_docker_integration",
+        integration_module="tests.contest.test_docker_integration",
         description="Contest validate: mocked Docker runner (no live daemon)",
     ),
 )
@@ -78,7 +78,7 @@ API_WORKSPACES: tuple[ApiWorkspace, ...] = (
 INTEGRATION_TEST_MODULES: tuple[str, ...] = tuple(
     w.integration_module for w in API_WORKSPACES
 ) + (
-    "tests.test_cli_api_integration",
-    "tests.test_external_api_integration",
-    "tests.test_pypi_integration",
+    "tests.cli.test_api_integration",
+    "tests.meta.test_external_api_integration",
+    "tests.pypi.test_integration",
 )

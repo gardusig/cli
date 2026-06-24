@@ -47,7 +47,7 @@ cd cli
 
 Docker gates bootstrap a repo `.venv` inside the container via `scripts/docker/bootstrap.sh` — not a host install path.
 
-`requirements.txt` / `requirements-dev.txt` stay in sync with `pyproject.toml` (checked by `tests/test_project_hygiene.py`).
+`requirements.txt` / `requirements-dev.txt` stay in sync with `pyproject.toml` (checked by `tests/meta/test_project_hygiene.py`).
 
 Maintainers — tag release (PyPI). See [release.md](release.md).
 

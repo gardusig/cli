@@ -541,6 +541,13 @@ def endpoint_checks() -> list[EndpointCheck]:
             needs_git=True,
         ),
         EndpointCheck(
+            "git branch delete merged",
+            ("git", "branch", "delete", "--merged"),
+            kind="refuse",
+            needle=refuse,
+            needs_git=True,
+        ),
+        EndpointCheck(
             "git branch delete all",
             ("git", "branch", "delete", "--all"),
             kind="refuse",
@@ -748,12 +755,20 @@ def endpoint_checks() -> list[EndpointCheck]:
             reset_git=True,
         ),
         EndpointCheck(
+            "git branch delete merged yes",
+            ("git", "branch", "delete", "--merged", "--yes"),
+            needle="deleted",
+            needs_git=True,
+            reset_git=True,
+            feature_branch="merged",
+        ),
+        EndpointCheck(
             "git branch delete all yes",
             ("git", "branch", "delete", "--all", "--yes"),
             needle="deleted",
             needs_git=True,
             reset_git=True,
-            feature_branch="merged",
+            feature_branch="exists",
         ),
         EndpointCheck(
             "git branch clear yes",
@@ -1202,7 +1217,7 @@ def run_all_endpoint_checks(repo_root: Path, git_root: Path | None = None) -> li
                         )
                         continue
                 if check.label == "gh issue list" and shutil.which("gh") is None:
-                    # Mocked gh coverage: tests/test_gh_docker_integration.py
+                    # Mocked gh coverage: tests/gh/test_docker_integration.py
                     continue
                 review_patch = nullcontext()
                 if check.failure == "review_fail":

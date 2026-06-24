@@ -6,12 +6,14 @@ from pathlib import Path
 
 import pytest
 
+from tests.constants import ROOT
+
 from gardusig_cli.integration.docker_guard import in_docker_integration
 
 DEFAULT_TEST_TIMEOUT_SECONDS = 30
 INTEGRATION_TEST_TIMEOUT_SECONDS = 300
 
-ROOT = Path(__file__).resolve().parents[1]
+
 
 _DESELECTED: list[pytest.Item] = []
 

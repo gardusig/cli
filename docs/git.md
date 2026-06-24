@@ -8,7 +8,8 @@ Each command maps to a [cursor-skills git skill](https://github.com/gardusig/cur
 | --- | --- | --- |
 | `@git-branch` | `scripts/git/branch.sh` | `cli git branch` |
 | `@git-branch-delete` | `scripts/git/branch-delete.sh` | `cli git branch delete` |
-| `@git-branch delete --all` | `scripts/git/branch delete --all.sh` | `cli git branch delete --all` |
+| `@git-branch delete --merged` | `scripts/git/branch-delete-merged.sh` | `cli git branch delete --merged` |
+| `@git-branch delete --all` | `scripts/git/branch-delete-all.sh` | `cli git branch delete --all` |
 | `@git-branch-clear` | `scripts/git/branch-clear.sh` | `cli git branch clear` |
 | `@git-cherry-pick` | `scripts/git/cherry-pick.sh` | `cli git cherry pick` |
 | `@git-commit` | `scripts/git/commit.sh` | `cli git commit` |
@@ -97,9 +98,25 @@ cli git commit -m "wip"   # commit only (no push)
 
 `push` shows a write gate with branch, dirty state, commit message, and intent (`add → commit → push`) before running. On `main`, it starts a random branch first unless you pass `--allow-main`.
 
+## Branch delete
+
+`branch delete --merged` removes branches merged into main (lists local + remote in the prompt):
+
+```bash
+cli git branch delete --merged
+cli git branch delete --merged --yes
+```
+
+`branch delete --all` deletes **every** branch except `main`, including unmerged work (local + remote):
+
+```bash
+cli git branch delete --all
+cli git branch delete --all --yes
+```
+
 ## Clear all branches (nuclear local reset)
 
-`branch delete --all` removes only **merged** branches. `branch clear` is stronger:
+`branch clear` resets the working tree, then deletes all local branches except `main`:
 
 ```bash
 cli git branch clear

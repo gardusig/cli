@@ -150,7 +150,7 @@ renames:
 
 ## Tests
 
-Unit tests mock the gh provider: `tests/test_gh_commands.py`.
+Unit tests mock the gh provider: `tests/gh/test_commands.py`.
 
 Run: `./scripts/test/unit.sh`
 

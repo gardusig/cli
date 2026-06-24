@@ -201,9 +201,11 @@ def _reset_branch_intent_lines(
             *_branch_preview_lines("local_branches_to_delete", branches),
         ]
     branches = svc.merged_branch_names(include_current=True)
+    remote_only = svc.merged_remote_branch_names()
     return [
-        "delete_mode: merged branches only",
-        *_branch_preview_lines("merged_branches_to_delete", branches),
+        "delete_mode: merged branches only (local + remote)",
+        *_branch_preview_lines("merged_local_branches", branches),
+        *_branch_preview_lines("merged_remote_branches", remote_only, prefix="origin/"),
     ]
 
 
@@ -286,9 +288,11 @@ def reset_cmd(
         operation = "reset-all-local"
         question = "Delete ALL local branches except main?"
     else:
-        preview = svc.merged_branch_names(include_current=True)
+        local_merged = svc.merged_branch_names(include_current=True)
+        remote_merged = svc.merged_remote_branch_names()
+        preview = local_merged or remote_merged
         operation = "reset-delete-merged"
-        question = "Delete all merged branches? (cli git branch delete --all)"
+        question = "Delete all merged branches? (cli git branch delete --merged)"
 
     if not preview:
         return
@@ -410,29 +414,72 @@ def branch_prune_cmd() -> None:
     rprint("[green]pruned[/green]")
 
 
+def _branch_delete_merged_intent_lines(svc: GitShortcuts) -> list[str]:
+    local = svc.merged_branch_names(include_current=True)
+    remote_only = svc.merged_remote_branch_names()
+    return [
+        "delete_mode: merged branches only (local + remote)",
+        *_branch_preview_lines("merged_local_branches", local),
+        *_branch_preview_lines("merged_remote_branches", remote_only, prefix="origin/"),
+    ]
+
+
+def _branch_delete_all_intent_lines(svc: GitShortcuts) -> list[str]:
+    local = svc.local_branch_names(exclude_main=True)
+    remote = svc.remote_branch_names()
+    return [
+        "delete_mode: all branches except main (including unmerged)",
+        *_branch_preview_lines("local_branches_to_delete", local),
+        *_branch_preview_lines("remote_branches_to_delete", remote, prefix="origin/"),
+    ]
+
+
 @branch_app.command("delete")
 def branch_delete_cmd(
     name: str | None = typer.Argument(None, help="Branch to delete."),
-    all_merged: bool = typer.Option(False, "--all", help="Delete all merged branches."),
+    merged: bool = typer.Option(
+        False, "--merged", help="Delete merged branches (local + remote)."
+    ),
+    all_branches: bool = typer.Option(
+        False, "--all", help="Delete all branches except main (including unmerged)."
+    ),
     force: bool = typer.Option(False, "--force", "-D"),
     remote: bool = typer.Option(True, "--remote/--no-remote"),
     yes: bool = typer.Option(False, "--yes", "-y"),
 ) -> None:
-    """Delete one branch or all merged branches."""
-    if all_merged:
-        _write_gate("branch-delete-all", yes=yes, question="Delete all merged branches?")
-        deleted = _svc().branch_delete_all_merged(yes=True)
-        rprint(f"[green]deleted[/green] {len(deleted)} branches")
+    """Delete one branch, merged branches, or all branches except main."""
+    if merged and all_branches:
+        raise typer.BadParameter("Pass only one of --merged or --all")
+    svc = _svc()
+    if merged:
+        _write_gate(
+            "branch-delete-merged",
+            yes=yes,
+            question="Delete all merged branches (local and remote)?",
+            extra_lines=_branch_delete_merged_intent_lines(svc),
+        )
+        deleted = svc.branch_delete_all_merged(yes=True)
+        rprint(f"[green]deleted[/green] {len(deleted)} branch(es)")
+        return
+    if all_branches:
+        _write_gate(
+            "branch-delete-all",
+            yes=yes,
+            question="Delete ALL branches except main (local and remote)?",
+            extra_lines=_branch_delete_all_intent_lines(svc),
+        )
+        deleted = svc.branch_delete_all(yes=True)
+        rprint(f"[green]deleted[/green] {len(deleted)} branch(es)")
         return
     if not name:
-        raise typer.BadParameter("branch name required (or pass --all)")
+        raise typer.BadParameter("branch name required (or pass --merged or --all)")
     _write_gate(
         "branch-delete",
         yes=yes,
         question=f"Delete branch {name}?",
         extra_lines=[f"target_branch: {name}", f"force: {force}", f"remote: {remote}"],
     )
-    _svc().branch_delete(name, force=force, remote=remote, yes=True)
+    svc.branch_delete(name, force=force, remote=remote, yes=True)
     rprint(f"[green]deleted[/green] {name}")
 
 

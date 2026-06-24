@@ -61,6 +61,7 @@ GIT_SCRIPT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("branch.sh", "git branch"),
     ("branch-clear.sh", "git branch clear"),
     ("branch-delete.sh", "git branch delete"),
+    ("branch-delete-merged.sh", "git branch delete --merged"),
     ("branch-delete-all.sh", "git branch delete --all"),
     ("cherry-pick.sh", "git cherry pick"),
     ("commit.sh", "git commit"),

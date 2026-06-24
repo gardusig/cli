@@ -127,6 +127,8 @@ Run from inside a repository (`cd` into the repo first).
 | Commit only | `cli git commit` |
 | Sync feature branch | `cli git pull` |
 | Delete merged branch | `cli git branch delete BRANCH --yes` |
+| Delete merged branches | `cli git branch delete --merged --yes` |
+| Delete all branches (keep `main`) | `cli git branch delete --all --yes` |
 | Clear all branches (keep `main`) | `cli git branch clear --yes` |
 | Tag on main (default: today) | `cli git tag` · `cli git tag list` · `cli git tag push` |
 | Zip one tag (cwd repo) | `cli git zip` · `cli git zip TAG` |

@@ -277,13 +277,34 @@ class GitShortcuts:
         protected: set[str] = {"main"}
         if not include_current:
             protected.add(current)
-        out = run_git(["branch", "--merged"], cwd=self.top).stdout
+        main_ref = self.best_main_ref()
+        out = run_git(["branch", "--merged", main_ref], cwd=self.top).stdout
         names: list[str] = []
         for line in out.splitlines():
             name = line.strip().lstrip("* ").strip()
             if name and name not in protected:
                 names.append(name)
         return sorted(names)
+
+    def merged_remote_branch_names(self, remote: str = "origin") -> list[str]:
+        """Remote branches merged into main that have no local branch."""
+        if not self.remote_exists(remote):
+            return []
+        main_ref = self.best_main_ref()
+        out = run_git(["branch", "-r", "--merged", main_ref], cwd=self.top).stdout
+        local_names = set(self.local_branch_names(exclude_main=False))
+        remote_prefix = f"{remote}/"
+        protected = {"main", "HEAD"}
+        names: list[str] = []
+        for line in out.splitlines():
+            ref = line.strip().lstrip("* ").strip()
+            if not ref.startswith(remote_prefix):
+                continue
+            short = ref[len(remote_prefix) :]
+            if short in protected or short in local_names:
+                continue
+            names.append(short)
+        return sorted(set(names))
 
     def branch_delete_all_merged(self, *, yes: bool = False) -> list[str]:
         if not yes:
@@ -293,6 +314,32 @@ class GitShortcuts:
         for name in self.merged_branch_names():
             self.branch_delete(name, force=False, remote=True, yes=True)
             deleted.append(name)
+        if self.remote_exists("origin"):
+            for name in self.merged_remote_branch_names():
+                result = run_git(
+                    ["push", "origin", "--delete", name],
+                    cwd=self.top,
+                    check=False,
+                )
+                if result.returncode == 0:
+                    deleted.append(f"origin/{name}")
+        return deleted
+
+    def branch_delete_all(self, *, yes: bool = False) -> list[str]:
+        """Delete every branch except main (local and remote), including unmerged."""
+        if not yes:
+            raise RuntimeError("Pass --yes to delete all branches.")
+        self.branch_prune()
+        if self.current_branch() != "main":
+            if self.is_dirty():
+                raise RuntimeError(
+                    "Checkout main first (working tree is dirty), or stash/commit changes."
+                )
+            run_git(["checkout", "main"], cwd=self.top)
+        deleted: list[str] = []
+        deleted.extend(self.delete_all_local_branches(yes=True))
+        for name in self.delete_remote_branches(yes=True):
+            deleted.append(f"origin/{name}")
         return deleted
 
     def reset(

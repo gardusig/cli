@@ -53,6 +53,7 @@ WRITE_GATED_OPERATIONS = frozenset(
         "reset-delete-merged",
         "reset-all-local",
         "branch-delete",
+        "branch-delete-merged",
         "branch-delete-all",
         "branch-delete-action",
         "branch-clear",
