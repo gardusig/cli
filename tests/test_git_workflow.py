@@ -7,11 +7,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from cli.cli import app
-from cli.services.git_shortcuts import GitShortcuts
+from gardusig_cli.cli import app
+from gardusig_cli.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
-SNAPSHOT = "cli.commands.git.git_worktree_snapshot"
+SNAPSHOT = "gardusig_cli.commands.git.git_worktree_snapshot"
 
 
 @pytest.fixture
@@ -38,7 +38,6 @@ def test_git_reset_main_only_with_yes(mock_reset: MagicMock, snapshot: MagicMock
         yes=True,
         keep_ignored=False,
         main_only=True,
-        all_local=False,
         branch_message=".",
         discard=False,
     )
@@ -64,33 +63,38 @@ def test_git_start_with_yes(
     )
 
 
-@patch.object(GitShortcuts, "reset", return_value=["feat-a"])
+@patch.object(GitShortcuts, "reset", return_value=[])
 def test_git_reset_with_yes(mock_reset: MagicMock, snapshot: MagicMock) -> None:
     with patch(SNAPSHOT, return_value=snapshot):
         result = runner.invoke(app, ["git", "reset", "--yes"])
     assert result.exit_code == 0
-    assert "reset" in result.stdout
+    assert "synced with remote" in result.stdout
     mock_reset.assert_called_once_with(
         yes=True,
         keep_ignored=False,
-        main_only=False,
-        all_local=False,
+        main_only=True,
         branch_message=".",
         discard=False,
     )
 
 
-@patch.object(GitShortcuts, "reset")
-def test_git_reset_all_local(mock_reset: MagicMock, snapshot: MagicMock) -> None:
-    mock_reset.return_value = ["a", "b"]
+@patch.object(GitShortcuts, "delete_all_local_branches", return_value=["a", "b"])
+@patch.object(GitShortcuts, "local_branch_names", return_value=["a", "b"])
+@patch.object(GitShortcuts, "reset", return_value=[])
+def test_git_reset_all_local(
+    mock_reset: MagicMock,
+    _local: MagicMock,
+    mock_delete: MagicMock,
+    snapshot: MagicMock,
+) -> None:
     with patch(SNAPSHOT, return_value=snapshot):
         result = runner.invoke(app, ["git", "reset", "--yes", "--all-local"])
     assert result.exit_code == 0
     mock_reset.assert_called_once_with(
         yes=True,
         keep_ignored=False,
-        main_only=False,
-        all_local=True,
+        main_only=True,
         branch_message=".",
         discard=False,
     )
+    mock_delete.assert_called_once_with(yes=True)

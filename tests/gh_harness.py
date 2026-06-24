@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import patch
 
-from cli.utils.process import GhCommandError
+from gardusig_cli.utils.process import GhCommandError
 
 
 def _load_json(path: Path, default: object) -> object:
@@ -94,8 +94,8 @@ def patch_gh_all(workspace: Path) -> Iterator[None]:
         raise RuntimeError(f"unmocked gh run: {cmd}")
 
     with (
-        patch("cli.providers.gh.GhProvider.run_json", _run_json),
-        patch("cli.providers.gh.GhProvider.run", _run),
+        patch("gardusig_cli.providers.gh.GhProvider.run_json", _run_json),
+        patch("gardusig_cli.providers.gh.GhProvider.run", _run),
     ):
         yield
 
@@ -120,7 +120,7 @@ def patch_run_gh(
             return handler(list(args), cwd=cwd, check=check)
         raise RuntimeError("patch_run_gh: provide handler or side_effect")
 
-    with patch("cli.providers.gh.run_gh", _run_gh):
+    with patch("gardusig_cli.providers.gh.run_gh", _run_gh):
         yield
 
 

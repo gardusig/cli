@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from cli.integration.contest_integration import (
+from gardusig_cli.integration.contest_integration import (
     CONTEST_SUBCOMMANDS,
     assert_every_contest_subcommand_has_ok_check,
     contest_checks,
     run_all_contest_checks,
 )
-from cli.integration.integration_coverage import assert_integration_coverage_gate
+from gardusig_cli.integration.integration_coverage import assert_integration_coverage_gate
 
 ROOT = Path(__file__).resolve().parents[1]
 

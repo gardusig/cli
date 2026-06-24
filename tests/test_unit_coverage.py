@@ -10,21 +10,21 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from cli.cli import app
-from cli.commands.git import _branch_preview_lines
-from cli.internal.read.safety import OperationKind, classify_operation
-from cli.services.git_shortcuts import GitShortcuts
+from gardusig_cli.cli import app
+from gardusig_cli.commands.git import _branch_preview_lines
+from gardusig_cli.internal.read.safety import OperationKind, classify_operation
+from gardusig_cli.services.git_shortcuts import GitShortcuts
 
 ROOT = Path(__file__).resolve().parents[1]
 runner = CliRunner()
-PATCH = "cli.services.git_shortcuts.run_git"
-SNAPSHOT = "cli.commands.git.git_worktree_snapshot"
+PATCH = "gardusig_cli.services.git_shortcuts.run_git"
+SNAPSHOT = "gardusig_cli.commands.git.git_worktree_snapshot"
 
 
 def test_package_main_entrypoint() -> None:
-    """cli.__main__ runs the Typer app (python -m cli)."""
+    """gardusig_cli.__main__ runs the Typer app (python -m gardusig_cli)."""
     result = subprocess.run(
-        [sys.executable, "-m", "cli", "--help"],
+        [sys.executable, "-m", "gardusig_cli", "--help"],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -61,11 +61,19 @@ def test_git_reset_main_only_message(mock_reset: MagicMock, snapshot: MagicMock)
     assert "synced with remote" in result.stdout
 
 
-@patch.object(GitShortcuts, "reset", return_value=["a"])
-def test_git_reset_prune_message(mock_reset: MagicMock, snapshot: MagicMock) -> None:
+@patch.object(GitShortcuts, "branch_delete_all_merged", return_value=["a"])
+@patch.object(GitShortcuts, "merged_branch_names", return_value=["a"])
+@patch.object(GitShortcuts, "reset", return_value=[])
+def test_git_reset_prune_message(
+    mock_reset: MagicMock,
+    _merged: MagicMock,
+    mock_delete: MagicMock,
+    snapshot: MagicMock,
+) -> None:
     with patch(SNAPSHOT, return_value=snapshot):
-        result = runner.invoke(app, ["git", "reset", "--yes"])
+        result = runner.invoke(app, ["git", "reset", "--yes", "--delete-merged"])
     assert "removed 1 branch" in result.stdout
+    mock_delete.assert_called_once_with(yes=True)
 
 
 @patch.object(GitShortcuts, "is_dirty", return_value=True)
@@ -97,10 +105,10 @@ def test_git_branch_delete_action(
     mock_delete.assert_called_once()
 
 
-@patch("cli.utils.process.run_git")
+@patch("gardusig_cli.utils.process.run_git")
 def test_git_branch_rename(mock_run: MagicMock) -> None:
     mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-    result = runner.invoke(app, ["git", "branch", "rename", "--rename", "new-name"])
+    result = runner.invoke(app, ["git", "branch", "rename", "new-name"])
     assert result.exit_code == 0
     assert "renamed" in result.stdout
 
@@ -148,20 +156,14 @@ def test_reset_all_local_deletes_every_branch(mock_run: MagicMock) -> None:
 
 
 @patch(PATCH)
-def test_sync_main_fallback_when_pull_fails(mock_run: MagicMock) -> None:
-    mock_run.side_effect = [
-        MagicMock(returncode=1, stdout="", stderr=""),  # pull --ff-only fails
-        MagicMock(returncode=0, stdout="", stderr=""),  # rev-parse
-        MagicMock(returncode=0, stdout="", stderr=""),  # reset --hard
-        MagicMock(returncode=0, stdout="", stderr=""),  # clean
-    ]
+def test_sync_main_resets_to_best_main(mock_run: MagicMock) -> None:
+    mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
     svc = GitShortcuts(top="/tmp/repo")
     with (
         patch.object(svc, "is_dirty", return_value=False),
         patch.object(svc, "checkout_main"),
         patch.object(svc, "fetch_all"),
-        patch.object(svc, "has_upstream", return_value=True),
-        patch.object(svc, "canonical_main_ref", return_value="origin/main"),
+        patch.object(svc, "best_main_ref", return_value="origin/main"),
     ):
         svc.sync_main(yes=True, keep_ignored=True)
     assert ["reset", "--hard", "origin/main"] in [c.args[0] for c in mock_run.call_args_list]

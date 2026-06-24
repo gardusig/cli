@@ -25,4 +25,4 @@ def test_pypi_urls_point_at_cli_repo() -> None:
 
 
 def test_console_entrypoint_stays_cli() -> None:
-    assert _project()["scripts"]["cli"] == "cli.cli:run"
+    assert _project()["scripts"]["cli"] == "gardusig_cli.cli:run"

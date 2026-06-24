@@ -10,10 +10,10 @@ from pathlib import Path
 
 import pytest
 
-from cli.integration.workspaces import API_WORKSPACES
-from cli.services.notion_pairs import combine_task, load_pairs, pair_file_warning, scan_task_root, task_name
-from cli.services.notion_sync import export_tasks, import_tasks
-from cli.utils.config import NotionConfig
+from gardusig_cli.integration.workspaces import API_WORKSPACES
+from gardusig_cli.services.notion_pairs import combine_task, load_pairs, pair_file_warning, scan_task_root, task_name
+from gardusig_cli.services.notion_sync import export_tasks, import_tasks
+from gardusig_cli.utils.config import NotionConfig
 from tests.integration_harness import copy_fixture_workspace, protected_repo_guard
 from tests.notion_harness import deploy_ok_handler, ingest_handler, notion_page, patch_notion_http
 
@@ -31,11 +31,11 @@ def notion_paths(monkeypatch, isolated_task_root: Path):
     manifest = isolated_task_root / "tasks.pairs.json"
 
     monkeypatch.setattr(
-        "cli.services.notion_sync.notion_pairs_file",
+        "gardusig_cli.services.notion_sync.notion_pairs_file",
         lambda config_dir=None: manifest,
     )
     monkeypatch.setattr(
-        "cli.services.notion_sync.notion_task_root",
+        "gardusig_cli.services.notion_sync.notion_task_root",
         lambda config_dir=None: isolated_task_root,
     )
     return isolated_task_root, manifest
@@ -119,7 +119,7 @@ def test_ingest_mock_notion_writes_files_under_task_root(notion_paths, isolated_
 @pytest.mark.integration
 def test_integration_uses_isolated_task_root_copy(notion_paths, isolated_task_root: Path) -> None:
     """Guard: integration runs against a temp copy, not the committed fixture tree."""
-    from cli.integration.workspaces import fixture_dir
+    from gardusig_cli.integration.workspaces import fixture_dir
 
     repo_fixture = fixture_dir(NOTION_WS)
     assert isolated_task_root != repo_fixture

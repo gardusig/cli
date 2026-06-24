@@ -2,6 +2,27 @@
 
 macOS CLI: **`cli git`** · **`cli drive`** · **`cli chrome`** · **`cli notion`**.
 
+## Status
+
+[![PyPI version](https://img.shields.io/pypi/v/gardusig-cli?label=PyPI)](https://pypi.org/project/gardusig-cli/)
+[![Python](https://img.shields.io/pypi/pyversions/gardusig-cli?label=Python)](https://pypi.org/project/gardusig-cli/)
+[![License: MIT](https://img.shields.io/pypi/l/gardusig-cli?label=License)](https://github.com/gardusig/cli/blob/main/LICENSE)
+[![Tests](https://github.com/gardusig/cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/gardusig/cli/actions/workflows/test.yml)
+[![Unit coverage](https://img.shields.io/badge/unit%20coverage-%E2%89%A580%25-brightgreen?logo=pytest&logoColor=white)](https://github.com/gardusig/cli/blob/main/coverage-unit.ini)
+[![Release](https://github.com/gardusig/cli/actions/workflows/release.yml/badge.svg)](https://github.com/gardusig/cli/actions/workflows/release.yml)
+
+This README is the **long description on [PyPI](https://pypi.org/project/gardusig-cli/)** and the **GitHub project page** — badges link to the same sources of truth on both sites.
+
+| Where | What you get |
+| --- | --- |
+| **GitHub** ([gardusig/cli](https://github.com/gardusig/cli)) | Source, issues, PR checks (Docker unit + integration), tag releases |
+| **PyPI** (`pip install gardusig-cli`) | Installable package; console command is still `cli` |
+| **Tests** badge | [`test.yml`](.github/workflows/test.yml) on `main` — PR gate only |
+| **Unit coverage** badge | [`coverage-unit.ini`](coverage-unit.ini) — `cli` package, ≥80% (`pytest --cov-fail-under=80` in Docker unit job) |
+| **Release** badge | [`release.yml`](.github/workflows/release.yml) — `v*` tags → PyPI (`gardusig-cli`) |
+
+Install from PyPI when you only need the tool; clone the repo when you want config, scripts, and Docker verification.
+
 ## Naming
 
 | Context | Identifier |
@@ -22,7 +43,7 @@ The repo stays **`cli`**; only the published distribution name on PyPI is **`gar
 | **[Homebrew](https://brew.sh/)** | Recommended way to install Python and git on macOS |
 | **git** | `cli git` (run from inside a repository) |
 | **zip** | Encrypted tag archives (`cli drive ingest` on `encrypted: true` repos) |
-| **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** | Verification — `./scripts/test-unit.sh` and `./scripts/test-integration.sh` in Docker |
+| **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** | Verification — `./scripts/test/unit.sh` and `./scripts/test/integration.sh` in Docker |
 
 Install Python and git with Homebrew:
 
@@ -92,10 +113,10 @@ cli git --help
 ```bash
 ./scripts/bootstrap.sh
 source .venv/bin/activate
-python -m cli --help
+python -m gardusig_cli --help
 ```
 
-Verification always runs in Docker — same image locally and in CI. Do not run `pytest` on the host; use `./scripts/test-unit.sh` and `./scripts/test-integration.sh` instead.
+Verification always runs in Docker — same image locally and in CI. Do not run `pytest` on the host; use `./scripts/test/unit.sh` and `./scripts/test/integration.sh` instead.
 
 ## Common git commands
 
@@ -103,14 +124,14 @@ Run from inside a repository (`cd` into the repo first).
 
 | Task | Command |
 | --- | --- |
-| **Sync main** (before/after work) | `cli git reset --yes` (`--main-only` to skip branch prune) |
+| **Sync main** (before/after work) | `cli git reset --yes` (`--delete-merged` to prune; `--main-only` to skip branch prompt) |
 | **Start issue** (align main + branch) | `cli git start issue-9-slug --yes` |
 | **During work** (add + commit + push) | `cli git push --yes` (on `main`, starts random branch first) |
 | Branch in place (no align) | `cli git start [name] --no-prep` |
 | Commit only | `cli git commit` |
 | Sync feature branch | `cli git pull` |
-| Delete merged branch | `cli git branch-delete BRANCH --yes` |
-| Clear all branches (keep `main`) | `cli git branch-clear --yes` |
+| Delete merged branch | `cli git branch delete BRANCH --yes` |
+| Clear all branches (keep `main`) | `cli git branch clear --yes` |
 | Tag on main (default: today) | `cli git tag` · `cli git tag list` · `cli git tag push` |
 | Zip one tag (cwd repo) | `cli git zip` · `cli git zip TAG` |
 
@@ -211,8 +232,8 @@ Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) on ma
 
 ```bash
 ./scripts/docker/build-image.sh   # build once (or auto-build on first test run)
-./scripts/test-unit.sh            # unit tests (≥80% coverage)
-./scripts/test-integration.sh     # full pytest + smoke + live docker
+./scripts/test/unit.sh            # unit tests (≥80% coverage)
+./scripts/test/integration.sh     # full pytest + smoke + live docker
 ./scripts/docker/shell.sh         # onboard: interactive shell in container
 ```
 
@@ -227,14 +248,15 @@ See [docs/docker.md](docs/docker.md).
 
 Configure repo secret **`PYPI_API_TOKEN`** for releases. Require both PR status checks (`Unit tests (Docker)`, `Integration tests (Docker)`) on `main` in GitHub branch protection.
 
-Maintainers — local release before tagging:
+Maintainers — local release (same as CI):
 
 ```bash
-./scripts/release-pypi.sh   # or: cli publish pypi --yes
+export PYPI_API_TOKEN='pypi-...'
+./scripts/pypi/release.sh
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-Details: [`.github/README.md`](.github/README.md) · [docs/setup.md](docs/setup.md).
+Details: [docs/release.md](docs/release.md) · [`.github/README.md`](.github/README.md) · [docs/setup.md](docs/setup.md).
 
 ## Docs
 

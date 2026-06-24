@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from cli.integration.integration_coverage import (  # noqa: E402
+from gardusig_cli.integration.integration_coverage import (  # noqa: E402
     assert_integration_coverage_gate,
     format_integration_coverage_report,
     integration_coverage_summary,

@@ -21,7 +21,7 @@ pip install -e "$ROOT" -q
 
 cat >"$DEST/cli" <<EOF
 #!/usr/bin/env bash
-exec "$PYTHON" -m cli "\$@"
+exec "$PYTHON" -m gardusig_cli "\$@"
 EOF
 chmod +x "$DEST/cli"
 

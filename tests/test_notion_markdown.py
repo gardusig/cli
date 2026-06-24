@@ -1,6 +1,6 @@
 """Tests for notion markdown conversion."""
 
-from cli.services.notion_markdown import blocks_to_markdown, markdown_to_blocks
+from gardusig_cli.services.notion_markdown import blocks_to_markdown, markdown_to_blocks
 
 
 def test_markdown_round_trip_headings_and_todos() -> None:

@@ -42,7 +42,7 @@ python:3.12-slim
 | --- | --- | --- | --- |
 | `python` | `cli:python` | `./scripts/docker/build-image.sh` with `CLI_DOCKER_TARGET=python` | Shared Python + cli dev install |
 | `unit` | `cli:unit` | `docker build --target unit` | Legacy stage (same base as integration; tests use `cli:integration`) |
-| `integration` | `cli:integration` | `./scripts/test-unit.sh` / `./scripts/test-integration.sh` (auto) | Full pytest + smoke + live docker |
+| `integration` | `cli:integration` | `./scripts/test/unit.sh` / `./scripts/test/integration.sh` (auto) | Full pytest + smoke + live docker |
 | `integration` | `cli:dev` | alias of integration | Backward-compatible dev/onboard tag |
 | `contest` | `cli-contest:runner` | `./scripts/docker/build-contest-image.sh` | `cli contest validate` |
 
@@ -50,8 +50,8 @@ python:3.12-slim
 ./scripts/docker/build-images.sh         # build all stages
 ./scripts/docker/build-image.sh          # one stage (CLI_DOCKER_TARGET)
 ./scripts/docker/build-contest-image.sh  # contest stage
-./scripts/test-unit.sh                   # unit tests (CI gate)
-./scripts/test-integration.sh            # integration pytest + smoke + live docker
+./scripts/test/unit.sh                   # unit tests (CI gate)
+./scripts/test/integration.sh            # integration pytest + smoke + live docker
 ./scripts/docker/shell.sh                # onboard: interactive shell
 ```
 
@@ -82,8 +82,8 @@ On `main`, require both PR status checks in **Settings → Branches → Branch p
 
 ```bash
 ./scripts/docker/build-image.sh   # optional; skipped when image already exists
-./scripts/test-unit.sh            # full pytest + coverage gate
-./scripts/test-integration.sh     # full integration gate
+./scripts/test/unit.sh            # full pytest + coverage gate
+./scripts/test/integration.sh     # full integration gate
 ```
 
 The runner:
@@ -100,7 +100,7 @@ Because tests run from the copied tree in `/tmp`, commands like `cli git start` 
 The container smoke test checks:
 
 - `tests/integration/check_public_endpoints.py` — every public CLI command (56 checks): read-only paths, write-gate refusals, and `--yes` success paths with **remote git mocked** (`fetch` / `push` / `ls-remote` never hit the network)
-- `python -m cli --help` and `--version`
+- `python -m gardusig_cli --help` and `--version`
 - placeholder endpoints: `restore`, `drive`, `notion`, `chrome`
 - shell syntax for `scripts/chrome`, `scripts/git`, and root smoke scripts
 - Chrome bookmark export/import using local fixture files and `CLI_SKIP_CHROME_AUTOMATION=1`

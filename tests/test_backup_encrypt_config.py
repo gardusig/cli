@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from cli.utils.config import backup_repository_entry, repo_encrypt_backup
+from gardusig_cli.utils.config import backup_repository_entry, repo_encrypt_backup
 
 
 def test_repo_encrypt_backup_flag(tmp_path: Path) -> None:

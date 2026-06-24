@@ -24,7 +24,7 @@ flowchart TD
     end
 
     subgraph after [4 — After merge]
-        L["cli git reset --yes<br/>sync main · delete merged branches"]
+        L["cli git reset --yes<br/>sync main · optional merged branch cleanup"]
         L2["cli git reset --yes --all-local<br/>delete every local branch except main"]
     end
 
@@ -40,8 +40,8 @@ flowchart TD
 | Start issue | `git start [branch] --yes` | align main + `checkout -b` | — |
 | Publish WIP | `git push --yes` | add + commit + push current branch; on `main`, start random branch first | `git commit` + `git push` |
 | Stay current | `git pull` | fetch + merge upstream/main into feature branch | — |
-| After merge | `git reset --yes` | return to synced main + delete **merged** branches (+ remote) | `git post-merge-cleanup --yes` |
-| Nuclear local | `git reset --yes --all-local` | synced main + delete **all** local branches except main | `git branch-clear --yes` |
+| After merge | `git reset --yes --delete-merged` | return to synced main + delete **merged** branches | `git post merge cleanup --yes` |
+| Nuclear local | `git reset --yes --all-local` | synced main + delete **all** local branches except main | `git branch clear --yes` |
 
 All destructive steps show the **write gate** (branch, dirty state, intent) before running. Pass `--yes` / `-y` to skip the prompt (summary still prints).
 
@@ -63,6 +63,8 @@ cli git push --yes
 
 # After PR merged
 cli git reset --yes
+# answer the follow-up prompt to run `branch delete --all`, or:
+cli git reset --yes --delete-merged
 ```
 
 ## Feature work (start → publish)
@@ -117,10 +119,10 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["PR merged on GitHub"] --> B{"how aggressive?"}
-    B -->|default| C["cli git reset --yes<br/>merged branches only"]
+    B -->|default| C["cli git reset --yes --delete-merged<br/>merged branches only"]
     B -->|nuclear local| D["cli git reset --yes --all-local"]
-    B -->|legacy| E["cli git post-merge-cleanup --yes"]
-    B -->|remote too| F["cli git branch-clear --yes --delete-remote"]
+    B -->|legacy| E["cli git post merge cleanup --yes"]
+    B -->|remote too| F["cli git branch clear --yes --delete-remote"]
 ```
 
 ## Health check & bookmarks
@@ -129,19 +131,19 @@ flowchart TD
 flowchart LR
     subgraph review [Workspace health]
         R1["cli git review"]
-        R2["shell syntax · test-unit.sh in Docker"]
+        R2["shell syntax · test/unit.sh in Docker"]
         R1 --> R2
     end
 
     subgraph bookmarks [Chrome bookmarks]
-        B1["./scripts/chrome/export-bookmarks.sh"]
+        B1["./scripts/chrome/export.sh"]
         B2["configured bookmarks.html"]
-        B3["./scripts/chrome/import-bookmarks.sh"]
+        B3["./scripts/chrome/import.sh"]
         B1 --> B2 --> B3
     end
 
     subgraph docker [Isolated checks]
-        D1["./scripts/test-integration.sh"]
+        D1["./scripts/test/integration.sh"]
         D2["copy repo · pytest · smoke · live docker"]
         D1 --> D2
     end

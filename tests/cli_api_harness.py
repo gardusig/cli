@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-from cli.integration.cli_api_checks import CliApiCheck, validate_cli_api_check
-from cli.integration.workspaces import API_WORKSPACES, fixture_dir
-from cli.services.backup_repository import RepoBackupStatus, SyncResult
-from cli.services.drive_sync import UploadResult
+from gardusig_cli.integration.cli_api_checks import CliApiCheck, validate_cli_api_check
+from gardusig_cli.integration.workspaces import API_WORKSPACES, fixture_dir
+from gardusig_cli.services.backup_repository import RepoBackupStatus, SyncResult
+from gardusig_cli.services.drive_sync import UploadResult
 from tests.gh_harness import gh_auth_error, patch_run_gh
 from tests.integration_harness import copy_fixture_workspace
 from tests.notion_harness import notion_cli_handler, notion_page, patch_notion_http
@@ -59,10 +59,10 @@ def write_drive_config(config_dir: Path, *, tags_dir: Path, repo_path: Path) -> 
 
 def _patch_notion_paths(monkeypatch: Any, task_root: Path, manifest: Path) -> None:
     for target in (
-        "cli.commands.notion.notion_task_root",
-        "cli.commands.notion.notion_pairs_file",
-        "cli.services.notion_sync.notion_task_root",
-        "cli.services.notion_sync.notion_pairs_file",
+        "gardusig_cli.commands.notion.notion_task_root",
+        "gardusig_cli.commands.notion.notion_pairs_file",
+        "gardusig_cli.services.notion_sync.notion_task_root",
+        "gardusig_cli.services.notion_sync.notion_pairs_file",
     ):
         if "pairs_file" in target:
             monkeypatch.setattr(target, lambda config_dir=None, m=manifest: m)
@@ -144,7 +144,7 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
     snapshot = MagicMock()
     snapshot.summary_lines.return_value = ["branch: main"]
 
-    from cli.services.backup_repository import resolve_repo_path as _real_resolve_repo_path
+    from gardusig_cli.services.backup_repository import resolve_repo_path as _real_resolve_repo_path
 
     def _resolve_repo_path(path: str | None = None):
         if path and path.startswith("/no/such"):
@@ -167,17 +167,17 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
         return tags_dir
 
     with (
-        patch("cli.commands.drive.backup_status", _backup_status),
-        patch("cli.commands.drive.ingest_repositories", _ingest_repositories),
+        patch("gardusig_cli.commands.drive.backup_status", _backup_status),
+        patch("gardusig_cli.commands.drive.ingest_repositories", _ingest_repositories),
         patch(
-            "cli.commands.drive.deploy_replicas",
+            "gardusig_cli.commands.drive.deploy_replicas",
             return_value=[("google", UploadResult(uploaded=["demo-repo/demo-repo-v1.0.0.zip"]))],
         ),
-        patch("cli.commands.drive.resolve_repo_path", _resolve_repo_path),
-        patch("cli.commands.drive.list_downloaded_tags", return_value=["v0.0.0", "v1.0.0"]),
-        patch("cli.commands.drive.delete_repo_tag", return_value=zip_path),
-        patch("cli.commands.drive.git_worktree_snapshot", return_value=snapshot),
-        patch("cli.commands.drive.tags_dir_path", _tags_dir_path),
+        patch("gardusig_cli.commands.drive.resolve_repo_path", _resolve_repo_path),
+        patch("gardusig_cli.commands.drive.list_downloaded_tags", return_value=["v0.0.0", "v1.0.0"]),
+        patch("gardusig_cli.commands.drive.delete_repo_tag", return_value=zip_path),
+        patch("gardusig_cli.commands.drive.git_worktree_snapshot", return_value=snapshot),
+        patch("gardusig_cli.commands.drive.tags_dir_path", _tags_dir_path),
     ):
         yield config_dir, tags_dir, str(repo)
 
@@ -212,15 +212,15 @@ def chrome_cli_context(
         return env
 
     with (
-        patch("cli.commands.chrome._bookmarks_env", _bookmarks_env),
-        patch("cli.commands.chrome.bookmarks_file_path", lambda config_dir=None: bookmarks),
-        patch("cli.commands.chrome.chrome_downloads_dir", lambda config_dir=None: workspace / "Downloads"),
+        patch("gardusig_cli.commands.chrome._bookmarks_env", _bookmarks_env),
+        patch("gardusig_cli.commands.chrome.bookmarks_file_path", lambda config_dir=None: bookmarks),
+        patch("gardusig_cli.commands.chrome.chrome_downloads_dir", lambda config_dir=None: workspace / "Downloads"),
     ):
         if skip_export and bookmarks.is_file():
             bookmarks.unlink()
         if use_fixture and not skip_export:
             subprocess.run(
-                ["bash", str(ROOT / "scripts/chrome/export-bookmarks.sh")],
+                ["bash", str(ROOT / "scripts/chrome/export.sh")],
                 env=env,
                 check=True,
                 cwd=ROOT,
@@ -229,7 +229,7 @@ def chrome_cli_context(
 
 
 def run_check_invoke(runner, check: CliApiCheck, *, env: dict[str, str] | None = None):
-    from cli.cli import app
+    from gardusig_cli.cli import app
 
     merged = os.environ.copy()
     if env:

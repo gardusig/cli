@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from cli.services.backup_repository import (
+from gardusig_cli.services.backup_repository import (
     RepoBackupStatus,
     format_status_lines,
     ingest_repositories,
@@ -32,7 +32,7 @@ def test_sync_repo_idempotent(monkeypatch, tmp_path: Path) -> None:
     subprocess.run(["git", "-C", str(repo), "tag", "-a", "v1", "-m", "v1"], check=True)
     tags_root = tmp_path / "tag-folder"
     tags_root.mkdir()
-    monkeypatch.setattr("cli.services.backup_repository.tags_dir_path", lambda _=None: tags_root)
+    monkeypatch.setattr("gardusig_cli.services.backup_repository.tags_dir_path", lambda _=None: tags_root)
 
     first = sync_repo(str(repo))
     assert first.created == ["v1"]
@@ -44,7 +44,7 @@ def test_sync_repo_idempotent(monkeypatch, tmp_path: Path) -> None:
 def test_ingest_repositories_all_configured(monkeypatch, tmp_path: Path) -> None:
     tags_root = tmp_path / "git-tags"
     tags_root.mkdir()
-    monkeypatch.setattr("cli.services.backup_repository.tags_dir_path", lambda _=None: tags_root)
+    monkeypatch.setattr("gardusig_cli.services.backup_repository.tags_dir_path", lambda _=None: tags_root)
     cfg_dir = tmp_path / "cfg"
     cfg_dir.mkdir()
     repo_a = tmp_path / "repo-a"
@@ -71,7 +71,7 @@ def test_ingest_repositories_single_path(monkeypatch, tmp_path: Path) -> None:
     subprocess.run(["git", "-C", str(repo), "tag", "-a", "t1", "-m", "t1"], check=True)
     tags_root = tmp_path / "git-tags"
     tags_root.mkdir()
-    monkeypatch.setattr("cli.services.backup_repository.tags_dir_path", lambda _=None: tags_root)
+    monkeypatch.setattr("gardusig_cli.services.backup_repository.tags_dir_path", lambda _=None: tags_root)
     rows = ingest_repositories(str(repo))
     assert len(rows) == 1
     assert rows[0][1].created == ["t1"]
@@ -102,14 +102,14 @@ def test_format_status_lines_empty_config() -> None:
 
 
 def test_resolve_repo_path_rejects_non_git(tmp_path: Path) -> None:
-    from cli.services.backup_repository import resolve_repo_path
+    from gardusig_cli.services.backup_repository import resolve_repo_path
 
     with pytest.raises(RuntimeError, match="Not a git repository"):
         resolve_repo_path(str(tmp_path))
 
 
 def test_resolve_repo_path_rejects_missing_dir() -> None:
-    from cli.services.backup_repository import resolve_repo_path
+    from gardusig_cli.services.backup_repository import resolve_repo_path
 
     with pytest.raises(RuntimeError, match="Not a directory"):
         resolve_repo_path("/no/such/path")

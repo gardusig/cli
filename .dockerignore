@@ -13,6 +13,15 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+gardusig_cli-*/
+*.whl
+cli-git-*/
+cli-public-*/
+cli-workflow-*/
+cli-tag-zip-*/
+cli-outside-git-*/
+cli-contest-*/
+cli-*-origin.git/
 .env
 .env.local
 .DS_Store

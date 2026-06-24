@@ -1,7 +1,10 @@
 # Integration check entry points
 
-Python runners invoked from `scripts/integration-smoke.sh` and `scripts/docker/run-*.sh`.
-Implementation lives in `cli/integration/`; these files are thin `main()` wrappers.
+Python runners invoked from `scripts/test/smoke.sh` and `scripts/docker/run-*.sh`.
+Implementation lives in `gardusig_cli/integration/`; these files are thin `main()` wrappers.
+
+**Docker only** — each script calls `require_docker_integration()` and exits on the host.
+Use `./scripts/test/unit.sh` or `./scripts/test/integration.sh`, not bare `python tests/integration/...`.
 
 | Script | Purpose |
 | --- | --- |
@@ -13,7 +16,8 @@ Implementation lives in `cli/integration/`; these files are thin `main()` wrappe
 | `check_docker_commands.py` | Docker CLI checks (`--live` for host daemon) |
 | `check_notion_tasks.py` | Alias → `check_api_integration.py` |
 
+Host cleanup after accidental local runs:
+
 ```bash
-python tests/integration/check_integration_coverage.py
-python tests/integration/check_public_commands.py
+./scripts/clean-local.sh
 ```

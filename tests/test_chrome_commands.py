@@ -7,13 +7,13 @@ from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
-from cli.cli import app
+from gardusig_cli.cli import app
 
 runner = CliRunner()
 
 
-@patch("cli.commands.chrome.subprocess.run")
-@patch("cli.commands.chrome.bookmarks_file_path")
+@patch("gardusig_cli.commands.chrome.subprocess.run")
+@patch("gardusig_cli.commands.chrome.bookmarks_file_path")
 def test_chrome_bookmarks_ingest(mock_path: MagicMock, mock_run: MagicMock, tmp_path: Path) -> None:
     dest = tmp_path / "bookmarks.html"
     mock_path.return_value = dest
@@ -24,8 +24,8 @@ def test_chrome_bookmarks_ingest(mock_path: MagicMock, mock_run: MagicMock, tmp_
     mock_run.assert_called_once()
 
 
-@patch("cli.commands.chrome.subprocess.run")
-@patch("cli.commands.chrome.bookmarks_file_path")
+@patch("gardusig_cli.commands.chrome.subprocess.run")
+@patch("gardusig_cli.commands.chrome.bookmarks_file_path")
 def test_chrome_bookmarks_deploy(mock_path: MagicMock, mock_run: MagicMock, tmp_path: Path) -> None:
     src = tmp_path / "bookmarks.html"
     src.write_text("<html></html>", encoding="utf-8")
@@ -36,7 +36,7 @@ def test_chrome_bookmarks_deploy(mock_path: MagicMock, mock_run: MagicMock, tmp_
     assert "deployed" in result.stdout
 
 
-@patch("cli.commands.chrome.bookmarks_file_path")
+@patch("gardusig_cli.commands.chrome.bookmarks_file_path")
 def test_chrome_bookmarks_deploy_missing_backup(mock_path: MagicMock, tmp_path: Path) -> None:
     mock_path.return_value = tmp_path / "missing.html"
     result = runner.invoke(app, ["chrome", "bookmarks", "deploy"])
@@ -45,16 +45,16 @@ def test_chrome_bookmarks_deploy_missing_backup(mock_path: MagicMock, tmp_path: 
 
 
 def test_legacy_bookmarks_export_alias_calls_ingest() -> None:
-    with patch("cli.commands.chrome.subprocess.run") as mock_run:
+    with patch("gardusig_cli.commands.chrome.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0)
-        with patch("cli.commands.chrome.bookmarks_file_path", return_value=Path("/tmp/b.html")):
+        with patch("gardusig_cli.commands.chrome.bookmarks_file_path", return_value=Path("/tmp/b.html")):
             result = runner.invoke(app, ["bookmarks", "export"])
     assert result.exit_code == 0
     assert "ingested" in result.stdout
 
 
-@patch("cli.commands.chrome.subprocess.run")
-@patch("cli.commands.chrome.bookmarks_file_path")
+@patch("gardusig_cli.commands.chrome.subprocess.run")
+@patch("gardusig_cli.commands.chrome.bookmarks_file_path")
 def test_chrome_legacy_export_alias_calls_ingest(mock_path: MagicMock, mock_run: MagicMock, tmp_path: Path) -> None:
     dest = tmp_path / "bookmarks.html"
     mock_path.return_value = dest
@@ -64,8 +64,8 @@ def test_chrome_legacy_export_alias_calls_ingest(mock_path: MagicMock, mock_run:
     assert "ingested" in result.stdout
 
 
-@patch("cli.commands.chrome.subprocess.run")
-@patch("cli.commands.chrome.bookmarks_file_path")
+@patch("gardusig_cli.commands.chrome.subprocess.run")
+@patch("gardusig_cli.commands.chrome.bookmarks_file_path")
 def test_chrome_legacy_import_alias_calls_deploy(mock_path: MagicMock, mock_run: MagicMock, tmp_path: Path) -> None:
     src = tmp_path / "bookmarks.html"
     src.write_text("<html></html>", encoding="utf-8")

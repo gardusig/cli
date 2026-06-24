@@ -2,23 +2,22 @@
 
 from __future__ import annotations
 
-import shutil
-import tempfile
 from pathlib import Path
 
 import pytest
 
-from cli.integration.docker_integration import (
+from gardusig_cli.integration.docker_guard import cleanup_integration_temp_dir, integration_temp_dir
+from gardusig_cli.integration.docker_integration import (
     DOCKER_SUBCOMMANDS,
-    docker_subcommands_with_ok_check,
     docker_subcommands_with_failure_check,
+    docker_subcommands_with_ok_check,
 )
-from cli.integration.public_commands import (
+from gardusig_cli.integration.public_commands import (
     assert_public_command_registry_complete,
     registered_top_level_commands,
     run_all_public_command_checks,
 )
-from cli.integration.public_endpoints import (
+from gardusig_cli.integration.public_endpoints import (
     GIT_SUBCOMMANDS,
     TOP_LEVEL_COMMANDS,
     git_subcommands_with_ok_check,
@@ -27,7 +26,6 @@ from cli.integration.public_endpoints import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRATCH = ROOT / ".integration-scratch"
 
 
 def test_top_level_commands_match_cli_registration() -> None:
@@ -35,7 +33,7 @@ def test_top_level_commands_match_cli_registration() -> None:
 
 
 def test_public_command_registry_is_complete() -> None:
-    from cli.integration.integration_coverage import assert_integration_coverage_gate
+    from gardusig_cli.integration.integration_coverage import assert_integration_coverage_gate
 
     assert_integration_coverage_gate()
     assert git_subcommands_with_ok_check() == set(GIT_SUBCOMMANDS)
@@ -46,7 +44,7 @@ def test_public_command_registry_is_complete() -> None:
 
 
 def test_docker_smoke_runs_public_command_checker() -> None:
-    smoke = (ROOT / "scripts" / "integration-smoke.sh").read_text()
+    smoke = (ROOT / "scripts" / "test" / "smoke.sh").read_text()
     assert "check_integration_coverage.py" in smoke
     assert "check_public_commands.py" in smoke
 
@@ -58,12 +56,10 @@ def test_docker_harness_includes_public_command_checker() -> None:
 
 @pytest.mark.integration
 def test_all_public_commands_in_dockerized_integration() -> None:
-    SCRATCH.mkdir(exist_ok=True)
-    git_dir = Path(tempfile.mkdtemp(prefix="cli-public-", dir=SCRATCH))
+    git_dir = integration_temp_dir("cli-public-")
     try:
         prepare_git_repo(git_dir)
         errors = run_all_public_command_checks(ROOT, git_root=git_dir)
     finally:
-        shutil.rmtree(git_dir, ignore_errors=True)
-        shutil.rmtree(git_dir.parent / f"{git_dir.name}-origin.git", ignore_errors=True)
+        cleanup_integration_temp_dir(git_dir)
     assert errors == [], "\n---\n".join(errors)

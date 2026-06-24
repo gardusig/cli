@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from cli.models.task import TaskPair
-from cli.services.notion_pairs import (
+from gardusig_cli.models.task import TaskPair
+from gardusig_cli.services.notion_pairs import (
     build_from_disk,
     combine_task,
     load_pairs,
@@ -19,9 +19,9 @@ from cli.services.notion_pairs import (
     slugify,
     task_name,
 )
-from cli.services.notion_sync import build_pairs_manifest
-from cli.integration.workspaces import notion_task_fixture_dir
-from cli.services.notion_markdown import normalize_task_body, strip_leading_title_heading
+from gardusig_cli.services.notion_sync import build_pairs_manifest
+from gardusig_cli.integration.workspaces import notion_task_fixture_dir
+from gardusig_cli.services.notion_markdown import normalize_task_body, strip_leading_title_heading
 
 FIXTURE_ROOT = notion_task_fixture_dir()
 
@@ -92,7 +92,7 @@ def test_build_pairs_manifest_writes_split_manifest(tmp_path: Path, monkeypatch)
         f"notion:\n  task_root: {private_root}\n  pairs_file: config/notion/tasks.pairs.json\n",
         encoding="utf-8",
     )
-    monkeypatch.setattr("cli.utils.config.project_root", lambda: repo_root)
+    monkeypatch.setattr("gardusig_cli.utils.config.project_root", lambda: repo_root)
 
     result = build_pairs_manifest(private_root, config_dir=cfg_dir)
 

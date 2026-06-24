@@ -7,12 +7,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from cli.cli import app
-from cli.services.git_shortcuts import GitShortcuts
+from gardusig_cli.cli import app
+from gardusig_cli.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
 
-GIT_SNAPSHOT_PATCH = "cli.commands.git.git_worktree_snapshot"
+GIT_SNAPSHOT_PATCH = "gardusig_cli.commands.git.git_worktree_snapshot"
 
 
 @pytest.fixture
@@ -73,7 +73,7 @@ def test_hidden_git_alias_commit(mock_commit: MagicMock) -> None:
 # --- Git: read / safe write ---------------------------------------------------
 
 
-@patch("cli.commands.git.run_review", return_value=0)
+@patch("gardusig_cli.commands.git.run_review", return_value=0)
 def test_git_review_passes(mock_review: MagicMock) -> None:
     result = runner.invoke(app, ["git", "review", "--no-install"])
     assert result.exit_code == 0
@@ -81,14 +81,14 @@ def test_git_review_passes(mock_review: MagicMock) -> None:
     mock_review.assert_called_once_with(install=False, quick=False)
 
 
-@patch("cli.commands.git.run_review", return_value=0)
+@patch("gardusig_cli.commands.git.run_review", return_value=0)
 def test_git_review_quick(mock_review: MagicMock) -> None:
     result = runner.invoke(app, ["git", "review", "--no-install", "--quick"])
     assert result.exit_code == 0
     mock_review.assert_called_once_with(install=False, quick=True)
 
 
-@patch("cli.commands.git.run_review", return_value=1)
+@patch("gardusig_cli.commands.git.run_review", return_value=1)
 def test_git_review_fails(mock_review: MagicMock) -> None:
     result = runner.invoke(app, ["git", "review", "--no-install"])
     assert result.exit_code == 1
@@ -136,7 +136,7 @@ def test_git_branch_list(mock_list: MagicMock) -> None:
 
 @patch.object(GitShortcuts, "large_files", return_value=[(1024, "big.bin")])
 def test_git_large_files(mock_large: MagicMock) -> None:
-    result = runner.invoke(app, ["git", "large-files", "-n", "1"])
+    result = runner.invoke(app, ["git", "large", "files", "-n", "1"])
     assert result.exit_code == 0
     assert "big.bin" in result.stdout
     mock_large.assert_called_once_with(1, worktree=False)
@@ -165,15 +165,15 @@ def test_git_start_no_prep_safe_by_default(mock_start: MagicMock) -> None:
         ["git", "push"],
         ["git", "main"],
         ["git", "reset"],
-        ["git", "branch-delete", "old"],
-        ["git", "branch-delete-all"],
-        ["git", "branch-clear"],
-        ["git", "post-merge-cleanup"],
+        ["git", "branch", "delete", "old"],
+        ["git", "branch", "delete", "--all"],
+        ["git", "branch", "clear"],
+        ["git", "post", "merge", "cleanup"],
         ["git", "stash", "drop"],
         ["git", "stash", "clear"],
         ["git", "rebase"],
         ["git", "revert", "abc123"],
-        ["git", "cherry-pick", "abc123"],
+        ["git", "cherry", "pick", "abc123"],
     ],
 )
 def test_gated_git_commands_refuse_without_yes(args: list[str], snapshot: MagicMock) -> None:
@@ -194,26 +194,33 @@ def test_git_main_with_yes(mock_align: MagicMock, snapshot: MagicMock) -> None:
     mock_align.assert_called_once_with(yes=True, keep_ignored=False)
 
 
+@patch.object(GitShortcuts, "branch_delete_all_merged", return_value=["a"])
+@patch.object(GitShortcuts, "merged_branch_names", return_value=["a"])
 @patch.object(GitShortcuts, "reset", return_value=[])
-def test_git_reset_with_yes(mock_reset: MagicMock, snapshot: MagicMock) -> None:
+def test_git_reset_with_yes(
+    mock_reset: MagicMock,
+    _merged: MagicMock,
+    mock_delete: MagicMock,
+    snapshot: MagicMock,
+) -> None:
     with _mock_snapshot(snapshot):
-        result = runner.invoke(app, ["git", "reset", "--yes"])
+        result = runner.invoke(app, ["git", "reset", "--yes", "--delete-merged"])
     assert result.exit_code == 0
-    assert "reset" in result.stdout
+    assert "synced with remote" in result.stdout
     mock_reset.assert_called_once_with(
         yes=True,
         keep_ignored=False,
-        main_only=False,
-        all_local=False,
+        main_only=True,
         branch_message=".",
         discard=False,
     )
+    mock_delete.assert_called_once_with(yes=True)
 
 
 @patch.object(GitShortcuts, "branch_delete")
 def test_git_branch_delete_with_yes(mock_delete: MagicMock, snapshot: MagicMock) -> None:
     with _mock_snapshot(snapshot):
-        result = runner.invoke(app, ["git", "branch-delete", "old", "--yes"])
+        result = runner.invoke(app, ["git", "branch", "delete", "old", "--yes"])
     assert result.exit_code == 0
     assert "deleted" in result.stdout
     mock_delete.assert_called_once_with("old", force=False, remote=True, yes=True)
@@ -222,7 +229,7 @@ def test_git_branch_delete_with_yes(mock_delete: MagicMock, snapshot: MagicMock)
 @patch.object(GitShortcuts, "branch_delete_all_merged", return_value=["a", "b"])
 def test_git_branch_delete_all_with_yes(mock_delete: MagicMock, snapshot: MagicMock) -> None:
     with _mock_snapshot(snapshot):
-        result = runner.invoke(app, ["git", "branch-delete-all", "--yes"])
+        result = runner.invoke(app, ["git", "branch", "delete", "--all", "--yes"])
     assert result.exit_code == 0
     assert "deleted 2 branches" in result.stdout
     mock_delete.assert_called_once_with(yes=True)
@@ -238,7 +245,7 @@ def test_git_branch_clear_with_yes(
     snapshot: MagicMock,
 ) -> None:
     with _mock_snapshot(snapshot):
-        result = runner.invoke(app, ["git", "branch-clear", "--yes"])
+        result = runner.invoke(app, ["git", "branch", "clear", "--yes"])
     assert result.exit_code == 0
     assert "cleared 2 local branch" in result.stdout
     mock_clear.assert_called_once_with(yes=True, keep_ignored=False)
@@ -257,7 +264,7 @@ def test_git_branch_clear_delete_remote_with_yes(
     snapshot: MagicMock,
 ) -> None:
     with _mock_snapshot(snapshot):
-        result = runner.invoke(app, ["git", "branch-clear", "--yes", "--delete-remote"])
+        result = runner.invoke(app, ["git", "branch", "clear", "--yes", "--delete-remote"])
     assert result.exit_code == 0
     assert "deleted 1 remote branch" in result.stdout
     mock_delete_remote.assert_called_once_with(yes=True)
@@ -266,7 +273,7 @@ def test_git_branch_clear_delete_remote_with_yes(
 @patch.object(GitShortcuts, "post_merge_cleanup", return_value=["merged"])
 def test_git_post_merge_cleanup_with_yes(mock_cleanup: MagicMock, snapshot: MagicMock) -> None:
     with _mock_snapshot(snapshot):
-        result = runner.invoke(app, ["git", "post-merge-cleanup", "--yes"])
+        result = runner.invoke(app, ["git", "post", "merge", "cleanup", "--yes"])
     assert result.exit_code == 0
     assert "cleanup done" in result.stdout
     mock_cleanup.assert_called_once_with(yes=True)
@@ -302,13 +309,13 @@ def test_git_revert_with_yes(mock_revert: MagicMock, snapshot: MagicMock) -> Non
 @patch.object(GitShortcuts, "cherry_pick")
 def test_git_cherry_pick_with_yes(mock_pick: MagicMock, snapshot: MagicMock) -> None:
     with _mock_snapshot(snapshot):
-        result = runner.invoke(app, ["git", "cherry-pick", "abc123", "--yes"])
+        result = runner.invoke(app, ["git", "cherry", "pick", "abc123", "--yes"])
     assert result.exit_code == 0
     assert "cherry-pick step complete" in result.stdout
     mock_pick.assert_called_once()
 
 
-@patch("cli.commands.git._reconcile_tag_push")
+@patch("gardusig_cli.commands.git._reconcile_tag_push")
 @patch.object(GitShortcuts, "prepare_for_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=False)
 @patch.object(GitShortcuts, "create_tag")
@@ -364,19 +371,23 @@ GIT_PUBLIC_COMMANDS = (
     "start",
     "stash",
     "branch",
-    "branch-delete",
-    "branch-delete-all",
-    "branch-clear",
-    "post-merge-cleanup",
+    "diff",
+    "log",
+    "rev",
+    "rev-list",
+    "remote",
+    "merge-base",
+    "publish",
+    "large",
+    "post",
+    "cherry",
     "rebase",
     "reset",
     "revert",
-    "cherry-pick",
     "tag",
     "zip",
     "review",
     "docs",
-    "large-files",
 )
 
 

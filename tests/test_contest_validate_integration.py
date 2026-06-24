@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from cli.cli import app
-from cli.services.docker_runtime import ensure_docker
+from gardusig_cli.cli import app
+from gardusig_cli.services.docker_runtime import ensure_docker
 
 ROOT = Path(__file__).resolve().parents[1]
 TOY = ROOT / "tests" / "fixtures" / "contest" / "toy"

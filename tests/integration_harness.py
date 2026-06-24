@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from cli.integration.workspaces import ApiWorkspace, fixture_dir, protected_paths
+from gardusig_cli.integration.workspaces import ApiWorkspace, fixture_dir, protected_paths
 
 
 def copy_fixture_workspace(workspace: ApiWorkspace, tmp_path: Path, *, dest_name: str | None = None) -> Path:

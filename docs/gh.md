@@ -152,7 +152,7 @@ renames:
 
 Unit tests mock the gh provider: `tests/test_gh_commands.py`.
 
-Run: `./scripts/test-unit.sh`
+Run: `./scripts/test/unit.sh`
 
 ## See also
 
