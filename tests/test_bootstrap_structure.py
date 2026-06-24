@@ -112,7 +112,6 @@ REQUIRED_PATHS = [
     "tests/fixtures/notion/tasks/body/sample.md",
     "tests/fixtures/notion/workspace/tasks.pairs.json",
     "scripts/bootstrap.sh",
-    "scripts/_install_common.sh",
     "scripts/install.sh",
     "scripts/_common.sh",
     "scripts/pypi/_common.sh",
@@ -153,7 +152,7 @@ def test_install_script_targets_pypi_package() -> None:
     text = (ROOT / "scripts/install.sh").read_text(encoding="utf-8")
     assert "gardusig-cli" in text
     assert "pip install" in text
-    assert "_install_common.sh" in text
+    assert "find_python312" in text
     assert "pip install -e" not in text
 
 
