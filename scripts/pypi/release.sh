@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
-# Tag release: version from git tag / GITHUB_REF_NAME → build + PyPI upload.
+# PyPI release — local and GitHub Actions (cli:release container). See docs/release.md
 set -euo pipefail
 # shellcheck source=_common.sh
 source "$(dirname "$0")/_common.sh"
 
-resolve_release_version() {
+export CLI_DOCKER_TARGET="${CLI_DOCKER_TARGET:-release}"
+export CLI_DOCKER_IMAGE="${CLI_DOCKER_IMAGE:-cli:release}"
+# shellcheck source=../docker/common.sh
+source "$ROOT/scripts/docker/common.sh"
+
+resolve_release_version_host() {
   if [[ -n "${CLI_RELEASE_VERSION:-}" ]]; then
     printf '%s\n' "${CLI_RELEASE_VERSION#v}"
     return 0
@@ -19,11 +24,22 @@ resolve_release_version() {
     printf '%s\n' "${tag#v}"
     return 0
   fi
-  echo "ERROR: set CLI_RELEASE_VERSION or run from an annotated version tag (v*)" >&2
+  echo "ERROR: set CLI_RELEASE_VERSION, push a v* tag, or checkout an exact version tag." >&2
   return 1
 }
 
-export CLI_RELEASE_VERSION
-CLI_RELEASE_VERSION="$(resolve_release_version)"
-echo "==> release version: $CLI_RELEASE_VERSION"
-exec "$PYPI_DIR/upload.sh" "$@"
+if [[ -z "${CLI_RELEASE_VERSION:-}" ]]; then
+  export CLI_RELEASE_VERSION
+  CLI_RELEASE_VERSION="$(resolve_release_version_host)"
+fi
+
+echo "==> PyPI release $CLI_RELEASE_VERSION (image: $IMAGE)"
+
+INNER="$(docker_copy_workspace_script)
+set -euo pipefail
+cd '$CONTAINER_WORK'
+chmod +x scripts/docker/run-release.sh scripts/pypi/*.sh
+./scripts/docker/run-release.sh
+"
+
+docker_run_release "$INNER"

@@ -2,11 +2,11 @@
 # Integration smoke (container only — invoked by scripts/docker/run-integration.sh).
 set -euo pipefail
 if [[ "${CLI_DOCKER_INTEGRATION:-}" != "1" ]]; then
-  echo "ERROR: integration-smoke.sh must run inside the Docker integration image." >&2
+  echo "ERROR: scripts/test/smoke.sh must run inside the Docker integration image." >&2
   exit 1
 fi
 
-ROOT="${CLI_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+ROOT="${CLI_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 cd "$ROOT"
 export CLI_CONFIG_DIR="${CLI_CONFIG_DIR:-$ROOT/config/ci}"
 export PYTHONUNBUFFERED=1
@@ -56,7 +56,7 @@ CLI_ROOT="$tmpdir" \
 CLI_DOWNLOADS_DIR="$downloads" \
 CLI_BOOKMARKS_FILE="$bookmarks_dir/bookmarks.html" \
 CLI_SKIP_CHROME_AUTOMATION=1 \
-scripts/chrome/export-bookmarks.sh
+scripts/chrome/export.sh
 
 test -s "$bookmarks_dir/bookmarks.html"
 grep -q "Cli Test Bookmark" "$bookmarks_dir/bookmarks.html"
@@ -64,7 +64,7 @@ grep -q "Cli Test Bookmark" "$bookmarks_dir/bookmarks.html"
 CLI_ROOT="$tmpdir" \
 CLI_BOOKMARKS_FILE="$bookmarks_dir/bookmarks.html" \
 CLI_SKIP_CHROME_AUTOMATION=1 \
-scripts/chrome/import-bookmarks.sh | grep -q "Import complete"
+scripts/chrome/import.sh | grep -q "Import complete"
 
 git init -b main "$tmpdir/repo" >/dev/null
 git -C "$tmpdir/repo" config user.email "cli@example.test"

@@ -113,8 +113,8 @@ def test_run_review_runs_docker_unit_tests(mock_run: MagicMock, tmp_path) -> Non
     mock_run.return_value = MagicMock(returncode=0)
     with patch("cli.services.git_review.project_root", return_value=root):
         assert run_review(install=False, quick=False) == 0
-    docker_unit = [c for c in mock_run.call_args_list if c.args and c.args[0] == ["./scripts/test-unit.sh"]]
-    assert docker_unit, "expected ./scripts/test-unit.sh"
+    docker_unit = [c for c in mock_run.call_args_list if c.args and c.args[0] == ["./scripts/test/unit.sh"]]
+    assert docker_unit, "expected ./scripts/test/unit.sh"
 
 
 def test_gated_git_write_with_yes() -> None:

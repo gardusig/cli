@@ -78,5 +78,5 @@ def test_run_unit_script_runs_integration_coverage_gate() -> None:
 
 
 def test_smoke_runs_integration_coverage_gate() -> None:
-    smoke = (ROOT / "scripts" / "integration-smoke.sh").read_text(encoding="utf-8")
+    smoke = (ROOT / "scripts" / "test" / "smoke.sh").read_text(encoding="utf-8")
     assert "check_integration_coverage.py" in smoke

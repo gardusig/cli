@@ -220,7 +220,7 @@ def chrome_cli_context(
             bookmarks.unlink()
         if use_fixture and not skip_export:
             subprocess.run(
-                ["bash", str(ROOT / "scripts/chrome/export-bookmarks.sh")],
+                ["bash", str(ROOT / "scripts/chrome/export.sh")],
                 env=env,
                 check=True,
                 cwd=ROOT,

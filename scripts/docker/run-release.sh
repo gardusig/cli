@@ -16,4 +16,4 @@ CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
 source .venv/bin/activate
 
 chmod +x scripts/pypi/*.sh
-exec ./scripts/pypi/release.sh "$@"
+exec ./scripts/pypi/publish.sh "$@"

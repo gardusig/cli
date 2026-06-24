@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # PR gate: build gardusig-cli 1.0.0 and optionally upload to TestPyPI (TESTPYPI_API_TOKEN).
 set -euo pipefail
+# shellcheck source=_common.sh
+source "$(dirname "$0")/_common.sh"
+
 export CLI_DOCKER_TARGET="${CLI_DOCKER_TARGET:-integration}"
 export CLI_DOCKER_IMAGE="${CLI_DOCKER_IMAGE:-cli:integration}"
-# shellcheck source=docker/common.sh
-source "$(dirname "$0")/docker/common.sh"
+# shellcheck source=../docker/common.sh
+source "$ROOT/scripts/docker/common.sh"
 
 TEST_VERSION="${CLI_PYPI_TEST_VERSION:-1.0.0}"
 SKIP_EXISTING="${CLI_PYPI_SKIP_EXISTING:-1}"

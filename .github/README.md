@@ -6,9 +6,9 @@ Runs on **pull requests** only (no branch pushes).
 
 | Status check name | Job | Gate |
 | --- | --- | --- |
-| `Unit tests (Docker)` | `unit` | `./scripts/test-unit.sh` (≥80% coverage) |
-| `Integration tests (Docker)` | `integration` | `./scripts/test-integration.sh` |
-| `PyPI packaging (Docker)` | `pypi-test` | `./scripts/test-pypi.sh` (build `1.0.0`, optional TestPyPI) |
+| `Unit tests (Docker)` | `unit` | `./scripts/test/unit.sh` (≥80% coverage) |
+| `Integration tests (Docker)` | `integration` | `./scripts/test/integration.sh` |
+| `PyPI packaging (Docker)` | `pypi-test` | `./scripts/pypi/test.sh` (build `1.0.0`, optional TestPyPI) |
 
 Require all checks on `main` in GitHub branch protection settings.
 
@@ -26,7 +26,7 @@ Runs on **tag push** `v*` (e.g. `v1.0.0` → publish version `1.0.0`). Full inst
 
 | Job | What |
 | --- | --- |
-| `Publish to PyPI` | `./scripts/release.sh` — Docker `cli:release` image, build + upload |
+| `Publish to PyPI` | `./scripts/pypi/release.sh` — Docker `cli:release` image, build + upload |
 
 ### Secrets (release workflow)
 
@@ -38,5 +38,5 @@ Local release (same as CI):
 
 ```bash
 export PYPI_API_TOKEN=...
-./scripts/release.sh
+./scripts/pypi/release.sh
 ```

@@ -43,7 +43,7 @@ The repo stays **`cli`**; only the published distribution name on PyPI is **`gar
 | **[Homebrew](https://brew.sh/)** | Recommended way to install Python and git on macOS |
 | **git** | `cli git` (run from inside a repository) |
 | **zip** | Encrypted tag archives (`cli drive ingest` on `encrypted: true` repos) |
-| **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** | Verification — `./scripts/test-unit.sh` and `./scripts/test-integration.sh` in Docker |
+| **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** | Verification — `./scripts/test/unit.sh` and `./scripts/test/integration.sh` in Docker |
 
 Install Python and git with Homebrew:
 
@@ -116,7 +116,7 @@ source .venv/bin/activate
 python -m cli --help
 ```
 
-Verification always runs in Docker — same image locally and in CI. Do not run `pytest` on the host; use `./scripts/test-unit.sh` and `./scripts/test-integration.sh` instead.
+Verification always runs in Docker — same image locally and in CI. Do not run `pytest` on the host; use `./scripts/test/unit.sh` and `./scripts/test/integration.sh` instead.
 
 ## Common git commands
 
@@ -232,8 +232,8 @@ Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) on ma
 
 ```bash
 ./scripts/docker/build-image.sh   # build once (or auto-build on first test run)
-./scripts/test-unit.sh            # unit tests (≥80% coverage)
-./scripts/test-integration.sh     # full pytest + smoke + live docker
+./scripts/test/unit.sh            # unit tests (≥80% coverage)
+./scripts/test/integration.sh     # full pytest + smoke + live docker
 ./scripts/docker/shell.sh         # onboard: interactive shell in container
 ```
 
@@ -252,7 +252,7 @@ Maintainers — local release (same as CI):
 
 ```bash
 export PYPI_API_TOKEN='pypi-...'
-./scripts/release.sh
+./scripts/pypi/release.sh
 git tag v0.1.0 && git push origin v0.1.0
 ```
 

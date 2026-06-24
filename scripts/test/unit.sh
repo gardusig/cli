@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Full pytest + coverage gate in cli:integration (mounts host Docker socket).
+# Unit gate: pytest -m "not integration" + ≥80% coverage in cli:integration.
 set -euo pipefail
 export CLI_DOCKER_TARGET=integration
 export CLI_DOCKER_IMAGE="${CLI_DOCKER_IMAGE:-cli:integration}"
-# shellcheck source=docker/common.sh
-source "$(dirname "$0")/docker/common.sh"
+# shellcheck source=../docker/common.sh
+source "$(dirname "$0")/../docker/common.sh"
 
 INNER="$(docker_copy_workspace_script)
 cd '$CONTAINER_WORK'

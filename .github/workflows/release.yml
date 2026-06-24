@@ -1,6 +1,6 @@
 name: release
 
-# Tag push (v*) → ./scripts/release.sh (Docker cli:release → PyPI).
+# Tag push (v*) → ./scripts/pypi/release.sh (Docker cli:release → PyPI).
 # Instructions: docs/release.md
 
 on:
@@ -25,5 +25,5 @@ jobs:
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
-          chmod +x scripts/release.sh scripts/docker/run-release.sh scripts/pypi/*.sh
-          ./scripts/release.sh
+          chmod +x scripts/pypi/*.sh scripts/docker/run-release.sh
+          ./scripts/pypi/release.sh

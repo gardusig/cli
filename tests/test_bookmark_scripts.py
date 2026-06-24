@@ -74,7 +74,7 @@ def test_wait_download_ignores_crdownload(sandbox: dict[str, Path]) -> None:
 
 def test_export_from_fixture(sandbox: dict[str, Path]) -> None:
     result = _run_script(
-        "export-bookmarks.sh",
+        "export.sh",
         {
             "CLI_ROOT": str(sandbox["root"]),
             "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
@@ -90,7 +90,7 @@ def test_export_from_fixture(sandbox: dict[str, Path]) -> None:
 def test_export_overwrites_previous_backup(sandbox: dict[str, Path]) -> None:
     sandbox["bookmarks_file"].write_text("<html>stale</html>")
     _run_script(
-        "export-bookmarks.sh",
+        "export.sh",
         {
             "CLI_ROOT": str(sandbox["root"]),
             "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
@@ -107,7 +107,7 @@ def test_export_from_downloads_dir(sandbox: dict[str, Path]) -> None:
     downloaded = sandbox["downloads"] / "bookmarks_export.html"
     downloaded.write_text(FIXTURE.read_text())
     result = _run_script(
-        "export-bookmarks.sh",
+        "export.sh",
         {
             "CLI_ROOT": str(sandbox["root"]),
             "CLI_DOWNLOADS_DIR": str(sandbox["downloads"]),
@@ -124,7 +124,7 @@ def test_export_from_downloads_dir(sandbox: dict[str, Path]) -> None:
 def test_import_succeeds_with_backup(sandbox: dict[str, Path]) -> None:
     sandbox["bookmarks_file"].write_text(FIXTURE.read_text())
     result = _run_script(
-        "import-bookmarks.sh",
+        "import.sh",
         {
             "CLI_ROOT": str(sandbox["root"]),
             "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
@@ -137,7 +137,7 @@ def test_import_succeeds_with_backup(sandbox: dict[str, Path]) -> None:
 
 def test_import_fails_without_backup(sandbox: dict[str, Path]) -> None:
     result = _run_script(
-        "import-bookmarks.sh",
+        "import.sh",
         {
             "CLI_ROOT": str(sandbox["root"]),
             "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),

@@ -11,7 +11,7 @@ from cli.utils.config import project_root, tags_dir_path
 
 
 def in_docker_integration() -> bool:
-    """True when running under scripts/test-unit.sh or scripts/test-integration.sh."""
+    """True when running under scripts/test/unit.sh or scripts/test/integration.sh."""
     return os.environ.get("CLI_DOCKER_INTEGRATION") == "1"
 
 
@@ -21,7 +21,7 @@ def require_docker_integration(*, context: str = "integration") -> None:
         return
     raise RuntimeError(
         f"{context} must run inside the Docker integration image, not on the host. "
-        "Use ./scripts/test-unit.sh or ./scripts/test-integration.sh."
+        "Use ./scripts/test/unit.sh or ./scripts/test/integration.sh."
     )
 
 

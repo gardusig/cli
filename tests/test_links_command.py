@@ -16,7 +16,7 @@ def test_links_lists_docs_and_defaults() -> None:
     assert "Quick defaults" in result.stdout
     assert "docs/large-files.md" in result.stdout
     assert "scripts/git/start.sh" in result.stdout
-    assert "scripts/chrome/export-bookmarks.sh" in result.stdout
+    assert "scripts/chrome/export.sh" in result.stdout
     assert "wip-YYMMDD" in result.stdout
 
 

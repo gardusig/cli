@@ -131,19 +131,19 @@ flowchart TD
 flowchart LR
     subgraph review [Workspace health]
         R1["cli git review"]
-        R2["shell syntax · test-unit.sh in Docker"]
+        R2["shell syntax · test/unit.sh in Docker"]
         R1 --> R2
     end
 
     subgraph bookmarks [Chrome bookmarks]
-        B1["./scripts/chrome/export-bookmarks.sh"]
+        B1["./scripts/chrome/export.sh"]
         B2["configured bookmarks.html"]
-        B3["./scripts/chrome/import-bookmarks.sh"]
+        B3["./scripts/chrome/import.sh"]
         B1 --> B2 --> B3
     end
 
     subgraph docker [Isolated checks]
-        D1["./scripts/test-integration.sh"]
+        D1["./scripts/test/integration.sh"]
         D2["copy repo · pytest · smoke · live docker"]
         D1 --> D2
     end

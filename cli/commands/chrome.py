@@ -35,7 +35,7 @@ def _run_bookmarks_script(name: str) -> None:
 def bookmarks_ingest_from_chrome() -> None:
     """Chrome → local: ingest bookmarks HTML into configured path."""
     dest = bookmarks_file_path()
-    _run_bookmarks_script("export-bookmarks.sh")
+    _run_bookmarks_script("export.sh")
     rprint(f"[green]ingested[/green] → {dest}")
 
 
@@ -46,7 +46,7 @@ def bookmarks_deploy_to_chrome() -> None:
         raise typer.Exit(
             f"Backup not found: {src}\nRun `cli chrome bookmarks ingest` first."
         )
-    _run_bookmarks_script("import-bookmarks.sh")
+    _run_bookmarks_script("import.sh")
     rprint(f"[green]deployed[/green] to Chrome from {src}")
 
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Integration tests in cli:integration (mounts host Docker socket for live checks).
+# Integration gate: full pytest + smoke + live docker in cli:integration.
 set -euo pipefail
 export CLI_DOCKER_TARGET=integration
 export CLI_DOCKER_IMAGE="${CLI_DOCKER_IMAGE:-cli:integration}"
-# shellcheck source=docker/common.sh
-source "$(dirname "$0")/docker/common.sh"
+# shellcheck source=../docker/common.sh
+source "$(dirname "$0")/../docker/common.sh"
 
 INNER="$(docker_copy_workspace_script)
 cd '$CONTAINER_WORK'

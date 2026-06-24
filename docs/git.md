@@ -143,7 +143,7 @@ cli git review
 ./scripts/git/review.sh
 ```
 
-Runs shell syntax checks; without `--quick`, also `./scripts/test-unit.sh` (Docker — requires Docker Desktop). No commit or push. Use `cli git review --quick` when Docker is unavailable.
+Runs shell syntax checks; without `--quick`, also `./scripts/test/unit.sh` (Docker — requires Docker Desktop). No commit or push. Use `cli git review --quick` when Docker is unavailable.
 
 ## Read-only introspection (cursor-skills)
 

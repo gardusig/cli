@@ -85,10 +85,8 @@ GIT_SCRIPT_COMMANDS: tuple[tuple[str, str], ...] = (
 CHROME_SCRIPTS: tuple[tuple[str, str], ...] = (
     ("ingest.sh", "bookmarks ingest — Chrome → local"),
     ("deploy.sh", "bookmarks deploy — local → Chrome"),
-    ("import.sh", "deprecated wrapper → ingest"),
-    ("export.sh", "deprecated wrapper → deploy"),
-    ("export-bookmarks.sh", "legacy export script"),
-    ("import-bookmarks.sh", "legacy import script"),
+    ("export.sh", "export bookmarks HTML to configured path"),
+    ("import.sh", "import bookmarks HTML into Chrome"),
     ("wait-download.sh", "poll Downloads for newest HTML export"),
 )
 

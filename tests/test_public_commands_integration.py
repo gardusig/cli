@@ -44,7 +44,7 @@ def test_public_command_registry_is_complete() -> None:
 
 
 def test_docker_smoke_runs_public_command_checker() -> None:
-    smoke = (ROOT / "scripts" / "integration-smoke.sh").read_text()
+    smoke = (ROOT / "scripts" / "test" / "smoke.sh").read_text()
     assert "check_integration_coverage.py" in smoke
     assert "check_public_commands.py" in smoke
 

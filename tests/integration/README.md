@@ -1,10 +1,10 @@
 # Integration check entry points
 
-Python runners invoked from `scripts/integration-smoke.sh` and `scripts/docker/run-*.sh`.
+Python runners invoked from `scripts/test/smoke.sh` and `scripts/docker/run-*.sh`.
 Implementation lives in `cli/integration/`; these files are thin `main()` wrappers.
 
 **Docker only** — each script calls `require_docker_integration()` and exits on the host.
-Use `./scripts/test-unit.sh` or `./scripts/test-integration.sh`, not bare `python tests/integration/...`.
+Use `./scripts/test/unit.sh` or `./scripts/test/integration.sh`, not bare `python tests/integration/...`.
 
 | Script | Purpose |
 | --- | --- |

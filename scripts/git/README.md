@@ -36,4 +36,4 @@ Usage:
 
 Set `CLI_BIN` to override the cli executable.
 
-Verification never runs host `pytest`; `review` delegates to `./scripts/test-unit.sh` in Docker when not `--quick`.
+Verification never runs host `pytest`; `review` delegates to `./scripts/test/unit.sh` in Docker when not `--quick`.

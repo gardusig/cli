@@ -9,7 +9,7 @@ from cli.utils.config import project_root
 
 
 def run_review(*, install: bool = True, quick: bool = False) -> int:
-    """Syntax-check shell scripts; full mode runs ./scripts/test-unit.sh (Docker, not host pytest)."""
+    """Syntax-check shell scripts; full mode runs ./scripts/test/unit.sh (Docker, not host pytest)."""
     root = project_root()
     if install and not (root / ".venv" / "bin" / "python").exists():
         subprocess.run(["./scripts/bootstrap.sh"], cwd=root, check=True)
@@ -30,5 +30,5 @@ def run_review(*, install: bool = True, quick: bool = False) -> int:
     if quick:
         return 0
 
-    result = subprocess.run(["./scripts/test-unit.sh"], cwd=root)
+    result = subprocess.run(["./scripts/test/unit.sh"], cwd=root)
     return result.returncode

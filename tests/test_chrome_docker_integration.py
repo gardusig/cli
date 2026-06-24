@@ -23,7 +23,7 @@ def test_export_bookmarks_from_downloads_fixture(tmp_path: Path) -> None:
 
     with protected_repo_guard(CHROME_WS):
         subprocess.run(
-            ["bash", str(ROOT / "scripts/chrome/export-bookmarks.sh")],
+            ["bash", str(ROOT / "scripts/chrome/export.sh")],
             env=env,
             check=True,
             cwd=ROOT,
@@ -42,7 +42,7 @@ def test_import_bookmarks_script_runs(tmp_path: Path) -> None:
     bookmarks_file = Path(env["CLI_BOOKMARKS_FILE"])
 
     subprocess.run(
-        ["bash", str(ROOT / "scripts/chrome/export-bookmarks.sh")],
+        ["bash", str(ROOT / "scripts/chrome/export.sh")],
         env=env,
         check=True,
         cwd=ROOT,
@@ -50,7 +50,7 @@ def test_import_bookmarks_script_runs(tmp_path: Path) -> None:
 
     with protected_repo_guard(CHROME_WS):
         result = subprocess.run(
-            ["bash", str(ROOT / "scripts/chrome/import-bookmarks.sh")],
+            ["bash", str(ROOT / "scripts/chrome/import.sh")],
             env=env,
             capture_output=True,
             text=True,

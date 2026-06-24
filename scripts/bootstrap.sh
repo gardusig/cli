@@ -39,5 +39,5 @@ echo ""
 echo "Done. Activate with: source .venv/bin/activate"
 echo "Try: python -m cli --help"
 if [[ "${CLI_BOOTSTRAP_DEV:-0}" != "1" ]]; then
-  echo "Tests: ./scripts/test-unit.sh (Docker; see docs/docker.md)"
+  echo "Tests: ./scripts/test/unit.sh (Docker; see docs/docker.md)"
 fi
