@@ -1,5 +1,5 @@
 # Dev + test dependencies (keep in sync with pyproject.toml [project.optional-dependencies.dev]).
-# Recommended: CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh  or  pip install -e ".[dev]"
+# Dev deps (see pyproject.toml). Contributors: Docker gates only (CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh in container).
 -r requirements.txt
 build>=1.0
 pytest>=8.0

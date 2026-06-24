@@ -4,7 +4,7 @@ Shell-only entry points. Python code lives under [`gardusig_cli/`](../gardusig_c
 
 | Script / directory | Purpose |
 | --- | --- |
-| `bootstrap.sh`, `install-pypi.sh`, `install.sh` | Host setup (PyPI vs dev editable) |
+| `install.sh`, `bootstrap.sh` | User install (PyPI) vs contributor venv (Docker/CI only) |
 | `test/` | Docker test harness (`unit.sh`, `integration.sh`, `smoke.sh`) |
 | `pypi/` | PyPI build, test, release (`build.sh`, `upload.sh`, `test.sh`, `release.sh`, `publish.sh`) |
 | `drive/` | Drive sync scripts (`status.sh`, `ingest.sh`, …) |

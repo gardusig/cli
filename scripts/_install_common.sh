@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared helpers for install-pypi.sh and install.sh (host global cli on PATH).
+# Shared helpers for install.sh (PyPI release → ~/.local/bin/cli).
 set -euo pipefail
 
 CLI_INSTALL_DEST="${CLI_INSTALL_DIR:-$HOME/.local/bin}"

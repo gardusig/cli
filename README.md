@@ -30,7 +30,7 @@ Install from PyPI when you only need the tool; clone the repo when you want conf
 | **GitHub repo** | [gardusig/cli](https://github.com/gardusig/cli) (clone path is usually `cli/`) |
 | **PyPI package** | `gardusig-cli` — `pip install gardusig-cli` |
 | **Console command** | `cli` (unchanged after PyPI install) |
-| **Python import** | `cli` |
+| **Python import** | `gardusig_cli` |
 
 The repo stays **`cli`**; only the published distribution name on PyPI is **`gardusig-cli`** (`cli` is taken on PyPI).
 
@@ -39,7 +39,7 @@ The repo stays **`cli`**; only the published distribution name on PyPI is **`gar
 | Tool | Needed for |
 | --- | --- |
 | **macOS** | Primary target for local use |
-| **Python 3.12+** | Local install (`bootstrap.sh` creates a venv) |
+| **Python 3.12+** | `./scripts/install.sh` (PyPI) or Homebrew |
 | **[Homebrew](https://brew.sh/)** | Recommended way to install Python and git on macOS |
 | **git** | `cli git` (run from inside a repository) |
 | **zip** | Encrypted tag archives (`cli drive ingest` on `encrypted: true` repos) |
@@ -99,34 +99,26 @@ Environment overrides (optional): `CLI_BOOKMARKS_FILE`, `CLI_DOWNLOADS_DIR`, `CL
 
 ## Install (macOS)
 
-**Global install from PyPI (recommended):** latest `gardusig-cli` release; no repo clone required.
+Install the latest **`gardusig-cli`** release from PyPI (no repo clone required):
 
 ```bash
-# from a clone (or curl the script from GitHub):
-./scripts/install-pypi.sh
+./scripts/install.sh
 # open a new terminal OR: source ~/.zprofile
 cli --version
 cli git --help
 ```
 
-One-liner without cloning:
+One-liner:
 
 ```bash
 pip install gardusig-cli && cli --version
 ```
 
-Upgrade to the latest PyPI release anytime: `./scripts/install-pypi.sh`
+Upgrade anytime: re-run `./scripts/install.sh`
 
-**Dev install (editable, this repo only):** for hacking on `gardusig_cli` before it is tagged.
+Config: **`~/.config/cli/`** (copy `config/` from this repo as a starting point; override with `CLI_CONFIG_DIR`).
 
-```bash
-./scripts/install.sh
-# or shell-only: ./scripts/bootstrap.sh && source .venv/bin/activate
-```
-
-Config after install: **`~/.config/cli/`** (override with `CLI_CONFIG_DIR`). Dev editable install can also use the repo `config/` tree.
-
-Verification always runs in Docker — same image locally and in CI. Do not run `pytest` on the host; use `./scripts/test/unit.sh` and `./scripts/test/integration.sh` instead.
+**Contributors** — verification runs in Docker only (`./scripts/test/unit.sh`, `./scripts/test/integration.sh`). `bootstrap.sh` creates a repo `.venv` for container gates, not for end-user install.
 
 ## Common git commands
 

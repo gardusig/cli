@@ -61,8 +61,8 @@ def links_root() -> None:
 
     rprint("\n[bold]Other scripts[/bold]")
     for rel, note in (
-        ("scripts/bootstrap.sh", "local venv (runtime; tests use Docker)"),
-        ("scripts/install.sh", "install to ~/.local/bin"),
+        ("scripts/bootstrap.sh", "contributor venv (Docker/CI; not user install)"),
+        ("scripts/install.sh", "install cli from PyPI → ~/.local/bin"),
         ("scripts/docker/build-images.sh", "build all Docker stages"),
         ("scripts/docker/build-image.sh", "build one Docker stage"),
         ("scripts/docker/build-contest-image.sh", "build cli-contest:runner image"),

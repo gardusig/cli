@@ -72,9 +72,7 @@ cli git reset --yes --delete-merged
 ```mermaid
 flowchart LR
     subgraph setup [Setup once]
-        A["./scripts/bootstrap.sh"]
-        B["./scripts/install.sh"]
-        A --> B
+        A["./scripts/install.sh"]
     end
 
     subgraph daily [Daily loop]
@@ -88,7 +86,7 @@ flowchart LR
         F -->|no| G
     end
 
-    B --> C
+    A --> C
 ```
 
 ## Sync with main (on feature branch)

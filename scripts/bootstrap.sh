@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local install: venv + editable runtime install (no test tools on host).
+# Contributor/Docker venv: editable install in repo .venv (not end-user install).
 # Container gates set CLI_BOOTSTRAP_DEV=1 for pytest/coverage.
 set -euo pipefail
 
