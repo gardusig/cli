@@ -4,7 +4,8 @@
 
 | Lane | Purpose | Entry |
 | --- | --- | --- |
-| **Install** | Run `cli` on macOS | `./scripts/bootstrap.sh` or `./scripts/install.sh` |
+| **Install (users)** | Run `cli` on macOS from PyPI | `./scripts/install-pypi.sh` or `pip install gardusig-cli` |
+| **Install (dev)** | Editable build from this clone | `./scripts/install.sh` or `./scripts/bootstrap.sh` |
 | **Verify** | Unit + integration gates (CI-equivalent) | `./scripts/test/unit.sh`, `./scripts/test/integration.sh` |
 
 Local `.venv` gets **runtime** dependencies only. Pytest, coverage, and smoke scripts run **inside** Docker (`cli:integration`) so checks never mutate your checkout.
@@ -34,9 +35,20 @@ Host dev tools (not needed for Docker verify): `pip install -r requirements-dev.
 
 `requirements.txt` / `requirements-dev.txt` stay in sync with `pyproject.toml` (checked by `tests/test_project_hygiene.py`).
 
-## PyPI install (users)
+## PyPI install (users — recommended)
 
-Package name on PyPI is **`gardusig-cli`**; the command on PATH is still **`cli`**:
+Package name on PyPI is **`gardusig-cli`**; the command on PATH is still **`cli`**.
+
+```bash
+./scripts/install-pypi.sh
+cli --version
+```
+
+Installs into `~/.local/share/gardusig-cli/venv`, links `~/.local/bin/cli`, and adds `~/.local/bin` to your shell PATH. Re-run anytime to upgrade to the latest PyPI release.
+
+Pin a version: `./scripts/install-pypi.sh --version 1.0.0`
+
+Manual pip (same package, you manage PATH yourself):
 
 ```bash
 pip install gardusig-cli
@@ -72,16 +84,24 @@ Pull requests run [test.yml](../.github/workflows/test.yml). See [`.github/READM
 
 ## User install (global — any terminal)
 
-Installs `cli` to `~/.local/bin` and adds it to your shell PATH (`~/.zprofile` / `~/.zshrc`).
+### From PyPI (recommended)
 
 ```bash
-./scripts/install.sh
+./scripts/install-pypi.sh
 # open a new terminal OR: source ~/.zprofile
 cli --version
 cli git --help
 ```
 
-Config loads from the repo `config/` directory (editable install) — no `cd` into the clone required.
+Config loads from **`~/.config/cli/`** — no repo clone required.
+
+### Dev editable (maintainers)
+
+```bash
+./scripts/install.sh
+```
+
+Uses the repo `config/` directory via editable install — no `cd` into the clone required for `cli` itself.
 
 ## Verify (Docker)
 
@@ -119,5 +139,5 @@ See [configuration.md](configuration.md) and README **Configuration**.
 - **Dirty tree on `main`** — pass `--yes` to destructive align/reset commands.
 - **`cli git start` deleted my files** — use `--no-prep` to branch in place; default `start` aligns main first.
 - **`docker is not installed`** when testing — install Docker Desktop; verification does not use host Python.
-- **`command not found: cli`** — run `./scripts/install.sh`, then open a new terminal or `source ~/.zprofile`.
+- **`command not found: cli`** — run `./scripts/install-pypi.sh`, then open a new terminal or `source ~/.zprofile`.
 - **`cli git review` fails** — full review calls `./scripts/test/unit.sh`; use `--quick` for shell syntax only.

@@ -19,7 +19,7 @@ Shell wrappers: `scripts/docker/` (`reset.sh`, `stop.sh`, `container-delete.sh`,
 
 ## Install vs verify
 
-- **Install (host):** `./scripts/bootstrap.sh` / `./scripts/install.sh` — runtime deps only; use `cli` on macOS.
+- **Install (host):** `./scripts/install-pypi.sh` (PyPI) or `./scripts/install.sh` / `./scripts/bootstrap.sh` (dev editable)
 - **Verify (Docker):** everything in this document — pytest, coverage, smoke, public API checks, live docker.
 
 Host `pytest` is intentionally unsupported. Dev dependencies (`pytest`, `pytest-cov`) install only inside the container copy (`CLI_BOOTSTRAP_DEV=1`) or in the pre-built image layer.

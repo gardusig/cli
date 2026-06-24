@@ -112,6 +112,8 @@ REQUIRED_PATHS = [
     "tests/fixtures/notion/workspace/tasks.pairs.json",
     "scripts/bootstrap.sh",
     "scripts/clean-local.sh",
+    "scripts/_install_common.sh",
+    "scripts/install-pypi.sh",
     "scripts/install.sh",
     "scripts/_common.sh",
     "scripts/pypi/_common.sh",
@@ -146,6 +148,16 @@ REQUIRED_PATHS = [
 def test_required_paths_exist() -> None:
     for rel in REQUIRED_PATHS:
         assert (ROOT / rel).exists(), f"missing {rel}"
+
+
+def test_install_pypi_script_targets_pypi_package() -> None:
+    text = (ROOT / "scripts/install-pypi.sh").read_text(encoding="utf-8")
+    assert "gardusig-cli" in text
+    assert "pip install" in text
+    assert "_install_common.sh" in text
+    dev = (ROOT / "scripts/install.sh").read_text(encoding="utf-8")
+    assert "install-pypi.sh" in dev
+    assert "pip install -e" in dev
 
 
 def test_bootstrap_is_runtime_only_by_default() -> None:

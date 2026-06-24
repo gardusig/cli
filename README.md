@@ -99,22 +99,32 @@ Environment overrides (optional): `CLI_BOOKMARKS_FILE`, `CLI_DOWNLOADS_DIR`, `CL
 
 ## Install (macOS)
 
-**Global install (recommended):** `cli` works in any terminal after one setup.
+**Global install from PyPI (recommended):** latest `gardusig-cli` release; no repo clone required.
 
 ```bash
-./scripts/install.sh
+# from a clone (or curl the script from GitHub):
+./scripts/install-pypi.sh
 # open a new terminal OR: source ~/.zprofile
 cli --version
 cli git --help
 ```
 
-**Dev install (current shell only):** venv + runtime deps for working in this repo.
+One-liner without cloning:
 
 ```bash
-./scripts/bootstrap.sh
-source .venv/bin/activate
-python -m gardusig_cli --help
+pip install gardusig-cli && cli --version
 ```
+
+Upgrade to the latest PyPI release anytime: `./scripts/install-pypi.sh`
+
+**Dev install (editable, this repo only):** for hacking on `gardusig_cli` before it is tagged.
+
+```bash
+./scripts/install.sh
+# or shell-only: ./scripts/bootstrap.sh && source .venv/bin/activate
+```
+
+Config after install: **`~/.config/cli/`** (override with `CLI_CONFIG_DIR`). Dev editable install can also use the repo `config/` tree.
 
 Verification always runs in Docker — same image locally and in CI. Do not run `pytest` on the host; use `./scripts/test/unit.sh` and `./scripts/test/integration.sh` instead.
 
