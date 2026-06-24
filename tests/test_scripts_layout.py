@@ -20,6 +20,40 @@ def test_shared_common_is_sourced() -> None:
         "git/_common.sh",
         "docker/_common.sh",
         "gh/_common.sh",
+        "pypi/_common.sh",
+        "notion/_common.sh",
     ):
         text = (SCRIPTS / rel).read_text(encoding="utf-8")
-        assert "_common.sh" in text
+        assert "scripts/_common.sh" in text or "../_common.sh" in text
+
+
+def test_root_common_has_cli_resolution_only() -> None:
+    text = (SCRIPTS / "_common.sh").read_text(encoding="utf-8")
+    assert "resolve_cli" in text
+    assert "require_pypi_token" not in text
+    assert "require_notion_token" not in text
+
+
+def test_pypi_common_has_token_helper() -> None:
+    text = (SCRIPTS / "pypi/_common.sh").read_text(encoding="utf-8")
+    assert "require_pypi_token" in text
+    assert "PACKAGE_NAME" in text
+    assert "require_notion_token" not in text
+
+
+def test_notion_common_has_token_helper() -> None:
+    text = (SCRIPTS / "notion/_common.sh").read_text(encoding="utf-8")
+    assert "require_notion_token" in text
+    assert "require_pypi_token" not in text
+
+
+def test_pypi_upload_sources_pypi_common() -> None:
+    text = (SCRIPTS / "pypi/upload.sh").read_text(encoding="utf-8")
+    assert 'source "$(dirname "$0")/_common.sh"' in text
+    assert "require_pypi_token" in text
+
+
+def test_notion_release_sources_notion_common() -> None:
+    text = (SCRIPTS / "notion/release.sh").read_text(encoding="utf-8")
+    assert 'source "$(dirname "$0")/_common.sh"' in text
+    assert "require_notion_token" in text
