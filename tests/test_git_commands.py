@@ -161,6 +161,22 @@ def test_git_stash_list(mock_list: MagicMock) -> None:
     mock_list.assert_called_once()
 
 
+@patch.object(GitShortcuts, "clean_worktree")
+def test_git_clean_refuses_without_yes(mock_clean: MagicMock) -> None:
+    result = runner.invoke(app, ["git", "clean"])
+    assert result.exit_code != 0
+    mock_clean.assert_not_called()
+
+
+@patch.object(GitShortcuts, "clean_worktree")
+def test_git_clean_with_yes(mock_clean: MagicMock, snapshot: MagicMock) -> None:
+    with patch(SNAPSHOT, return_value=snapshot):
+        result = runner.invoke(app, ["git", "clean", "--yes"])
+    assert result.exit_code == 0
+    assert "artifacts removed" in result.stdout
+    mock_clean.assert_called_once_with(keep_ignored=False)
+
+
 @patch.object(GitShortcuts, "reset")
 def test_git_reset_refuses_without_yes(mock_reset: MagicMock) -> None:
     result = runner.invoke(app, ["git", "reset"])

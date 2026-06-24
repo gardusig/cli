@@ -100,7 +100,7 @@ Same scripts as GitHub Actions. See [docker.md](docker.md).
 
 Tests use `CLI_CONFIG_DIR=config/ci` (scratch paths under `.integration-scratch/`, not iCloud).
 
-Remove accidental local artifacts: `./scripts/clean-local.sh`
+Remove accidental local artifacts: `cli git clean --yes` (or `./scripts/git/clean.sh --yes`)
 
 ## After install
 

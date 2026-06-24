@@ -208,6 +208,23 @@ def _reset_branch_intent_lines(
 
 
 
+@git_app.command("clean")
+def clean_cmd(
+    yes: bool = typer.Option(False, "--yes", "-y", help="Confirm removing build/test artifacts."),
+    keep_ignored: bool = typer.Option(False, "--keep-ignored", help="Use git clean -fd instead of -fdx."),
+) -> None:
+    """Remove local build/test artifacts (dist, coverage, integration scratch) via git clean."""
+    mode = "git clean -fd" if keep_ignored else "git clean -fdx (excludes .venv)"
+    _write_gate(
+        "clean",
+        yes=yes,
+        question="Remove local build and test artifacts?",
+        extra_lines=[f"intent: {mode}"],
+    )
+    _svc().clean_worktree(keep_ignored=keep_ignored)
+    rprint("[green]clean[/green] — artifacts removed")
+
+
 @git_app.command("reset")
 def reset_cmd(
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirm return to synced main."),
