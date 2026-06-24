@@ -13,6 +13,7 @@ docker_default_image_for_target() {
   case "$1" in
     python) echo "cli:python" ;;
     unit) echo "cli:unit" ;;
+    release) echo "cli:release" ;;
     integration) echo "cli:integration" ;;
     contest) echo "cli-contest:runner" ;;
     *) echo "cli:integration" ;;
@@ -115,5 +116,22 @@ docker_run_in_workspace() {
       -e CLI_CONTEST_WORKSPACE_HOST_ROOT="$ROOT/.integration-scratch/contest"
     )
   fi
+  docker run "${run_args[@]}" "$IMAGE" bash -c "$inner_script"
+}
+
+# Run a script in the release image; pass PYPI / version env from the host.
+docker_run_release() {
+  local inner_script="$1"
+  docker_ensure_image
+  local -a run_args=(
+    --rm
+    -v "$ROOT:$CONTAINER_SRC:ro"
+  )
+  local var
+  for var in PYPI_API_TOKEN GITHUB_REF_NAME CLI_RELEASE_VERSION CLI_PYPI_TEST CLI_PYPI_SKIP_EXISTING; do
+    if [[ -n "${!var:-}" ]]; then
+      run_args+=(-e "$var=${!var}")
+    fi
+  done
   docker run "${run_args[@]}" "$IMAGE" bash -c "$inner_script"
 }

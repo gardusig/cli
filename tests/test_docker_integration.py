@@ -62,7 +62,7 @@ def test_release_workflow_runs_on_tags() -> None:
     assert "tags:" in workflow
     assert "v*" in workflow
     assert "PYPI_API_TOKEN" in workflow
-    assert "pypi/release.sh" in workflow
+    assert "scripts/release.sh" in workflow
     assert "publish-pypi" in workflow
     assert "deploy-notion" not in workflow
 

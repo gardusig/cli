@@ -33,15 +33,16 @@ def test_run_unit_script_enforces_coverage_gate() -> None:
     text = RUN_UNIT.read_text(encoding="utf-8")
     assert "coverage-unit.ini" in text
     assert "--cov-fail-under=80" in text
-    assert '-m "not integration"' not in text
+    assert '-m "not integration"' in text
     assert "--cov=cli" in text
 
 
-def test_test_scripts_do_not_deselect_pytest_markers() -> None:
-    scripts = [
-        ROOT / "scripts/docker/run-unit.sh",
-        ROOT / "scripts/docker/run-integration.sh",
-    ]
-    for path in scripts:
-        text = path.read_text(encoding="utf-8")
-        assert "-m " not in text, f"{path} must not filter pytest markers"
+def test_unit_script_excludes_integration_marker_only() -> None:
+    text = RUN_UNIT.read_text(encoding="utf-8")
+    assert '-m "not integration"' in text
+
+
+def test_integration_script_runs_full_pytest() -> None:
+    text = (ROOT / "scripts/docker/run-integration.sh").read_text(encoding="utf-8")
+    assert "pytest -q" in text
+    assert '-m "not integration"' not in text

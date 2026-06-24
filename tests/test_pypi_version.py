@@ -1,4 +1,4 @@
-"""Tests for PyPI version resolution and file sync."""
+"""PyPI version helpers (pure logic; no subprocess)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ import pytest
 
 from cli.services.pypi_publish import (
     PyPiPublishError,
-    build_distributions,
     normalize_release_version,
     read_project_version,
     resolve_release_version,
@@ -42,25 +41,3 @@ def test_sync_version_files_updates_pyproject_and_init(tmp_path: Path) -> None:
     sync_version_files(tmp_path, "1.0.0")
     assert read_project_version(tmp_path) == "1.0.0"
     assert '__version__ = "1.0.0"' in init_py.read_text(encoding="utf-8")
-
-
-def test_build_distributions_requires_matching_artifact_version(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    pyproject = tmp_path / "pyproject.toml"
-    pyproject.write_text('[project]\nname = "x"\nversion = "0.1.0"\n', encoding="utf-8")
-    (tmp_path / "cli").mkdir()
-    (tmp_path / "cli" / "__init__.py").write_text('__version__ = "0.1.0"\n', encoding="utf-8")
-
-    dist = tmp_path / "dist"
-    dist.mkdir()
-
-    def _fake_run(cmd, **kwargs):
-        (dist / "gardusig_cli-1.0.0-py3-none-any.whl").write_bytes(b"x")
-        from unittest.mock import MagicMock
-
-        return MagicMock(returncode=0)
-
-    monkeypatch.setattr("cli.services.pypi_publish.subprocess.run", _fake_run)
-    artifacts = build_distributions(tmp_path, output_dir=dist, version="1.0.0")
-    assert artifacts[0].name == "gardusig_cli-1.0.0-py3-none-any.whl"

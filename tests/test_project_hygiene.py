@@ -85,7 +85,7 @@ def test_build_artifacts_are_not_tracked() -> None:
             assert not path.startswith(prefix), f"tracked build artifact: {path}"
 
 
-def test_docker_is_required_for_integration_checks() -> None:
+def test_docker_is_required_for_integration_checks(simulate_host_env: None) -> None:
     from cli.integration.docker_guard import require_docker_integration
 
     with pytest.raises(RuntimeError, match="Docker"):

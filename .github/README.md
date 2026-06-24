@@ -18,15 +18,15 @@ Require all checks on `main` in GitHub branch protection settings.
 | --- | --- |
 | `TESTPYPI_API_TOKEN` | Optional — upload `gardusig-cli==1.0.0` to TestPyPI on PRs |
 
-Without `TESTPYPI_API_TOKEN`, the pypi job still builds and verifies `dist/*1.0.0*` artifacts.
+Without `TESTPYPI_API_TOKEN`, the pypi job still builds and verifies `dist/*1.0.0*` artifacts. With the token, upload goes to TestPyPI and the job confirms `gardusig-cli==1.0.0` appears on the [TestPyPI project page](https://test.pypi.org/project/gardusig-cli/) (JSON API).
 
 ## release.yml
 
-Runs on **tag push** `v*` only (e.g. `v1.0.0` → publish version `1.0.0`).
+Runs on **tag push** `v*` (e.g. `v1.0.0` → publish version `1.0.0`). Full instructions: [`docs/release.md`](../docs/release.md).
 
 | Job | What |
 | --- | --- |
-| `Publish to PyPI` | `./scripts/pypi/release.sh` — sets version from tag, build + upload |
+| `Publish to PyPI` | `./scripts/release.sh` — Docker `cli:release` image, build + upload |
 
 ### Secrets (release workflow)
 
@@ -34,12 +34,9 @@ Runs on **tag push** `v*` only (e.g. `v1.0.0` → publish version `1.0.0`).
 | --- | --- |
 | `PYPI_API_TOKEN` | Production PyPI upload |
 
-Local tag release (same as CI):
+Local release (same as CI):
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
-# or locally:
 export PYPI_API_TOKEN=...
-./scripts/pypi/release.sh
+./scripts/release.sh
 ```

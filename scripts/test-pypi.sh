@@ -31,6 +31,12 @@ if [[ -n \"\${TESTPYPI_API_TOKEN:-}\" ]]; then
   export PYPI_API_TOKEN=\"\$TESTPYPI_API_TOKEN\"
   export CLI_PYPI_TEST=1
   ./scripts/pypi/upload.sh
+  echo '==> verify TestPyPI project page'
+  python -c \"
+from cli.services.pypi_publish import PACKAGE_NAME, verify_package_version_on_index
+verify_package_version_on_index(PACKAGE_NAME, '$TEST_VERSION', testpypi=True)
+print('Verified', PACKAGE_NAME + '==$TEST_VERSION', 'on TestPyPI')
+\"
 else
   echo '==> skip TestPyPI upload (TESTPYPI_API_TOKEN not set)'
 fi

@@ -80,4 +80,5 @@ INTEGRATION_TEST_MODULES: tuple[str, ...] = tuple(
 ) + (
     "tests.test_cli_api_integration",
     "tests.test_external_api_integration",
+    "tests.test_pypi_integration",
 )

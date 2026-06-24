@@ -88,6 +88,7 @@ DOCKER_VERIFY_PATHS = [
     "scripts/docker/common.sh",
     "scripts/docker/run-unit.sh",
     "scripts/docker/run-integration.sh",
+    "scripts/docker/run-release.sh",
     "scripts/test-unit.sh",
     "scripts/test-integration.sh",
     ".github/workflows/test.yml",

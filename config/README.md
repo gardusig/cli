@@ -10,7 +10,9 @@
 
 ## CI vs dev
 
-`config/ci/` contains **only** overrides needed inside Docker test runs (fixture paths, fake database id). It does **not** duplicate `drives.yaml` — `load_config` falls back to the parent file when `config/ci/drives.yaml` is absent.
+`config/ci/` contains **only** overrides needed inside Docker test runs (fixture paths, fake database id, scratch `tags_dir`). It does **not** duplicate `drives.yaml` — `load_config` falls back to the parent file when `config/ci/drives.yaml` is absent.
+
+`CLI_CONFIG_DIR=config/ci` is set automatically in Docker test scripts and in `tests/conftest.py` (autouse) so integration never writes to iCloud or home config paths.
 
 ## Contest templates vs test fixtures
 

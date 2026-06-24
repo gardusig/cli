@@ -1,4 +1,4 @@
-"""PyPI CLI commands."""
+"""PyPI CLI commands (mocked service layer — real build in test_pypi_integration)."""
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ def test_pypi_build(mock_build: MagicMock) -> None:
     assert kwargs["version"] == "1.0.0"
 
 
+@patch("cli.commands.pypi.verify_package_version_on_index")
 @patch("cli.commands.pypi.publish_distributions")
 @patch("cli.commands.pypi.build_distributions")
 @patch("cli.commands.pypi.resolve_pypi_token", return_value="tok")
@@ -31,12 +32,14 @@ def test_pypi_upload(
     _token: MagicMock,
     mock_build: MagicMock,
     mock_upload: MagicMock,
+    _verify: MagicMock,
 ) -> None:
     mock_build.return_value = [Path("dist/pkg.whl")]
     mock_upload.return_value = ["pkg.whl"]
     result = runner.invoke(app, ["pypi", "upload", "--yes", "--version", "1.0.0"])
     assert result.exit_code == 0
     assert "Published to PyPI" in result.stdout
+    assert "Verified on PyPI" in result.stdout
 
 
 @patch("cli.commands.pypi.build_distributions")

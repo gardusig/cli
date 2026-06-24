@@ -23,6 +23,14 @@ COPY cli ./cli
 RUN pip install --no-cache-dir -e .
 
 # -----------------------------------------------------------------------------
+# release — PyPI publish (build + twine; same image base as unit)
+# -----------------------------------------------------------------------------
+FROM python AS release
+
+WORKDIR /workspace
+CMD ["bash"]
+
+# -----------------------------------------------------------------------------
 # unit — pytest / coverage (no Docker CLI)
 # -----------------------------------------------------------------------------
 FROM python AS unit

@@ -2,6 +2,27 @@
 
 macOS CLI: **`cli git`** · **`cli drive`** · **`cli chrome`** · **`cli notion`**.
 
+## Status
+
+[![PyPI version](https://img.shields.io/pypi/v/gardusig-cli?label=PyPI)](https://pypi.org/project/gardusig-cli/)
+[![Python](https://img.shields.io/pypi/pyversions/gardusig-cli?label=Python)](https://pypi.org/project/gardusig-cli/)
+[![License: MIT](https://img.shields.io/pypi/l/gardusig-cli?label=License)](https://github.com/gardusig/cli/blob/main/LICENSE)
+[![Tests](https://github.com/gardusig/cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/gardusig/cli/actions/workflows/test.yml)
+[![Unit coverage](https://img.shields.io/badge/unit%20coverage-%E2%89%A580%25-brightgreen?logo=pytest&logoColor=white)](https://github.com/gardusig/cli/blob/main/coverage-unit.ini)
+[![Release](https://github.com/gardusig/cli/actions/workflows/release.yml/badge.svg)](https://github.com/gardusig/cli/actions/workflows/release.yml)
+
+This README is the **long description on [PyPI](https://pypi.org/project/gardusig-cli/)** and the **GitHub project page** — badges link to the same sources of truth on both sites.
+
+| Where | What you get |
+| --- | --- |
+| **GitHub** ([gardusig/cli](https://github.com/gardusig/cli)) | Source, issues, PR checks (Docker unit + integration), tag releases |
+| **PyPI** (`pip install gardusig-cli`) | Installable package; console command is still `cli` |
+| **Tests** badge | [`test.yml`](.github/workflows/test.yml) on `main` — PR gate only |
+| **Unit coverage** badge | [`coverage-unit.ini`](coverage-unit.ini) — `cli` package, ≥80% (`pytest --cov-fail-under=80` in Docker unit job) |
+| **Release** badge | [`release.yml`](.github/workflows/release.yml) — `v*` tags → PyPI (`gardusig-cli`) |
+
+Install from PyPI when you only need the tool; clone the repo when you want config, scripts, and Docker verification.
+
 ## Naming
 
 | Context | Identifier |
@@ -227,14 +248,15 @@ See [docs/docker.md](docs/docker.md).
 
 Configure repo secret **`PYPI_API_TOKEN`** for releases. Require both PR status checks (`Unit tests (Docker)`, `Integration tests (Docker)`) on `main` in GitHub branch protection.
 
-Maintainers — local release before tagging:
+Maintainers — local release (same as CI):
 
 ```bash
-./scripts/pypi/release.sh   # or: cli pypi upload --yes --version $(git describe --tags)
+export PYPI_API_TOKEN='pypi-...'
+./scripts/release.sh
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-Details: [`.github/README.md`](.github/README.md) · [docs/setup.md](docs/setup.md).
+Details: [docs/release.md](docs/release.md) · [`.github/README.md`](.github/README.md) · [docs/setup.md](docs/setup.md).
 
 ## Docs
 

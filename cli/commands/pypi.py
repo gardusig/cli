@@ -9,12 +9,15 @@ import typer
 from cli.internal.write.gate import require_write_gate
 from cli.services.pypi_publish import (
     DEFAULT_REPOSITORY_URL,
+    PACKAGE_NAME,
     TEST_REPOSITORY_URL,
     PyPiPublishError,
     build_distributions,
     publish_distributions,
+    read_project_version,
     resolve_pypi_token,
     resolve_release_version,
+    verify_package_version_on_index,
 )
 from cli.utils.config import project_root
 
@@ -105,7 +108,14 @@ def pypi_upload_cmd(
             repository_url=repo_url,
             skip_existing=skip_existing,
         )
+        published_version = release_version or read_project_version(root)
+        verify_package_version_on_index(
+            PACKAGE_NAME,
+            published_version,
+            testpypi=testpypi,
+        )
         typer.echo(f"Published to {target}: {', '.join(uploaded)}")
+        typer.echo(f"Verified on {target}: {PACKAGE_NAME}=={published_version}")
     except PyPiPublishError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1) from exc

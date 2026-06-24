@@ -44,8 +44,10 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/gardusig/cli"
+Documentation = "https://github.com/gardusig/cli#readme"
 Repository = "https://github.com/gardusig/cli"
 Issues = "https://github.com/gardusig/cli/issues"
+Changelog = "https://github.com/gardusig/cli/releases"
 
 [project.scripts]
 cli = "cli.cli:run"

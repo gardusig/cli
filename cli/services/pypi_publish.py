@@ -2,16 +2,21 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
 import sys
+import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 from cli.utils.config import project_root
 
 DEFAULT_REPOSITORY_URL = "https://upload.pypi.org/legacy/"
 TEST_REPOSITORY_URL = "https://test.pypi.org/legacy/"
+PACKAGE_NAME = "gardusig-cli"
 
 _VERSION_LINE_RE = re.compile(r'^(version\s*=\s*")[^"]+(")\s*$', re.MULTILINE)
 _INIT_VERSION_RE = re.compile(r'^__version__\s*=\s*"[^"]+"\s*$', re.MULTILINE)
@@ -158,3 +163,49 @@ def publish_distributions(
         msg = (result.stderr or result.stdout or "twine upload failed").strip()
         raise PyPiPublishError(msg)
     return [path.name for path in artifacts]
+
+
+def package_index_json_url(package: str, *, testpypi: bool = False) -> str:
+    """Public JSON metadata URL for a package (PyPI or TestPyPI)."""
+    base = "https://test.pypi.org" if testpypi else "https://pypi.org"
+    return f"{base}/pypi/{package}/json"
+
+
+def verify_package_version_on_index(
+    package: str,
+    version: str,
+    *,
+    testpypi: bool = False,
+    timeout: float = 15.0,
+    retries: int = 12,
+    retry_delay: float = 5.0,
+) -> None:
+    """Confirm ``version`` appears on the package project page (JSON API)."""
+    version = normalize_release_version(version)
+    url = package_index_json_url(package, testpypi=testpypi)
+    label = "TestPyPI" if testpypi else "PyPI"
+    last_error: str | None = None
+    for attempt in range(1, retries + 1):
+        try:
+            req = urllib.request.Request(url, headers={"Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = json.loads(resp.read().decode())
+            releases = data.get("releases") or {}
+            if version in releases and releases[version]:
+                return
+            latest = (data.get("info") or {}).get("version")
+            if latest == version:
+                return
+            last_error = (
+                f"{package}=={version} not listed on {label} ({url}); "
+                f"releases={sorted(releases.keys())[-5:]}"
+            )
+        except urllib.error.HTTPError as exc:
+            last_error = f"{label} index HTTP {exc.code} for {url}"
+        except urllib.error.URLError as exc:
+            last_error = f"{label} index unreachable: {exc.reason}"
+        except json.JSONDecodeError:
+            last_error = f"invalid JSON from {label} index ({url})"
+        if attempt < retries:
+            time.sleep(retry_delay)
+    raise PyPiPublishError(last_error or f"failed to verify {package}=={version} on {label}")

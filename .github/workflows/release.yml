@@ -1,7 +1,7 @@
 name: release
 
-# Tag push (v*) → build gardusig-cli at tag version and upload to PyPI.
-# Secret: PYPI_API_TOKEN
+# Tag push (v*) → ./scripts/release.sh (Docker cli:release → PyPI).
+# Instructions: docs/release.md
 
 on:
   push:
@@ -16,24 +16,14 @@ jobs:
   publish-pypi:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install cli + build tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install build twine .
-          pip install -e ".[dev]"
-
-      - name: Build and upload from tag version
+      - name: Publish via release script
         env:
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
-          chmod +x scripts/pypi/*.sh
-          ./scripts/pypi/release.sh
+          chmod +x scripts/release.sh scripts/docker/run-release.sh scripts/pypi/*.sh
+          ./scripts/release.sh

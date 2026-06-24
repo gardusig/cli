@@ -45,21 +45,20 @@ cli --version
 
 Repo clone path and GitHub project name remain **`cli`** — only the PyPI distribution uses the prefixed name.
 
-Maintainers — tag release (PyPI):
+Maintainers — tag release (PyPI). See [release.md](release.md).
 
 ```bash
-cp .env.example .env   # add PYPI_API_TOKEN=pypi-...
-git tag v1.0.0 && git push origin v1.0.0   # CI publishes version from tag
-# or locally:
-./scripts/pypi/release.sh
-# or: cli pypi upload --yes --version 1.0.0
+export PYPI_API_TOKEN='pypi-...'   # or add to .env on host
+git tag v1.0.0 && git push origin v1.0.0   # CI runs ./scripts/release.sh
+# or locally (same script as CI):
+./scripts/release.sh
 ```
 
 | Script | When |
 | --- | --- |
 | `./scripts/test-pypi.sh` | PR CI — build `1.0.0`, optional TestPyPI |
-| `./scripts/pypi/release.sh` | Tag `v*` — production PyPI |
-| `./scripts/pypi/upload.sh` | Local build + upload |
+| `./scripts/release.sh` | Tag `v*` — production PyPI (Docker `cli:release`) |
+| `./scripts/pypi/upload.sh` | Local build + upload (inside container bootstrap) |
 | `./scripts/pypi/build.sh` | Build only |
 
 GitHub Actions — push tag `v*` runs [release.yml](../.github/workflows/release.yml). Configure secret **`PYPI_API_TOKEN`**. Optional PR secret **`TESTPYPI_API_TOKEN`** for TestPyPI uploads.
@@ -95,6 +94,13 @@ Same scripts as GitHub Actions. See [docker.md](docker.md).
 ```
 
 **Do not** run `pytest`, `pip install -e ".[dev]"`, or `scripts/integration-smoke.sh` directly on the host. Integration fixtures (`cli-git-*`, `cli-public-*`, etc.) only run when `CLI_DOCKER_INTEGRATION=1` inside the Docker image; host `pytest` skips `@pytest.mark.integration` tests automatically.
+
+| Script | Scope |
+| --- | --- |
+| `./scripts/test-unit.sh` | Unit only (`pytest -m "not integration"`) — mocks/stubs, no live PyPI/git fixtures |
+| `./scripts/test-integration.sh` | Full suite + smoke + live docker — real builds (PyPI), git fixtures in scratch |
+
+Tests use `CLI_CONFIG_DIR=config/ci` (scratch paths under `.integration-scratch/`, not iCloud).
 
 Remove accidental local artifacts: `./scripts/clean-local.sh`
 

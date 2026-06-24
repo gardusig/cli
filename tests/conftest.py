@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from cli.integration.docker_guard import in_docker_integration
@@ -9,7 +11,23 @@ from cli.integration.docker_guard import in_docker_integration
 DEFAULT_TEST_TIMEOUT_SECONDS = 30
 INTEGRATION_TEST_TIMEOUT_SECONDS = 300
 
+ROOT = Path(__file__).resolve().parents[1]
+
 _DESELECTED: list[pytest.Item] = []
+
+
+@pytest.fixture
+def simulate_host_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pretend tests run on the host (no Docker harness env)."""
+    monkeypatch.delenv("CLI_DOCKER_INTEGRATION", raising=False)
+    monkeypatch.delenv("CLI_INTEGRATION_SCRATCH", raising=False)
+
+
+@pytest.fixture(autouse=True)
+def ci_config_dir(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Use config/ci in Docker so tests never touch dev iCloud paths."""
+    if in_docker_integration():
+        monkeypatch.setenv("CLI_CONFIG_DIR", str(ROOT / "config" / "ci"))
 
 
 def pytest_deselected(items: list[pytest.Item]) -> None:
@@ -34,9 +52,7 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if not _DESELECTED:
         return
-    if not in_docker_integration() and all(
-        item.get_closest_marker("integration") for item in _DESELECTED
-    ):
+    if all(item.get_closest_marker("integration") for item in _DESELECTED):
         return
     sample = ", ".join(item.nodeid for item in _DESELECTED[:5])
     extra = f" (+{len(_DESELECTED) - 5} more)" if len(_DESELECTED) > 5 else ""

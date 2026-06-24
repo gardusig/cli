@@ -156,20 +156,14 @@ def test_reset_all_local_deletes_every_branch(mock_run: MagicMock) -> None:
 
 
 @patch(PATCH)
-def test_sync_main_fallback_when_pull_fails(mock_run: MagicMock) -> None:
-    mock_run.side_effect = [
-        MagicMock(returncode=1, stdout="", stderr=""),  # pull --ff-only fails
-        MagicMock(returncode=0, stdout="", stderr=""),  # rev-parse
-        MagicMock(returncode=0, stdout="", stderr=""),  # reset --hard
-        MagicMock(returncode=0, stdout="", stderr=""),  # clean
-    ]
+def test_sync_main_resets_to_best_main(mock_run: MagicMock) -> None:
+    mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
     svc = GitShortcuts(top="/tmp/repo")
     with (
         patch.object(svc, "is_dirty", return_value=False),
         patch.object(svc, "checkout_main"),
         patch.object(svc, "fetch_all"),
-        patch.object(svc, "has_upstream", return_value=True),
-        patch.object(svc, "canonical_main_ref", return_value="origin/main"),
+        patch.object(svc, "best_main_ref", return_value="origin/main"),
     ):
         svc.sync_main(yes=True, keep_ignored=True)
     assert ["reset", "--hard", "origin/main"] in [c.args[0] for c in mock_run.call_args_list]
