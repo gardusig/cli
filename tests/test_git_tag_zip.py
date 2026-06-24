@@ -10,11 +10,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from shuttle.cli import app
-from shuttle.services.git_shortcuts import GitShortcuts
+from cli.cli import app
+from cli.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
-GIT_SNAPSHOT_PATCH = "shuttle.commands.git.git_worktree_snapshot"
+GIT_SNAPSHOT_PATCH = "cli.commands.git.git_worktree_snapshot"
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def snapshot() -> MagicMock:
     return snap
 
 
-@patch("shuttle.commands.git._reconcile_tag_push")
+@patch("cli.commands.git._reconcile_tag_push")
 @patch.object(GitShortcuts, "prepare_for_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=False)
 @patch.object(GitShortcuts, "create_tag")
@@ -42,7 +42,7 @@ def test_git_tag_creates_and_pushes(
     mock_push.assert_called_once()
 
 
-@patch("shuttle.commands.git._reconcile_tag_push")
+@patch("cli.commands.git._reconcile_tag_push")
 @patch.object(GitShortcuts, "prepare_for_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=True)
 @patch.object(GitShortcuts, "create_tag")
@@ -59,7 +59,7 @@ def test_git_tag_replace_requires_gate(
     mock_create.assert_not_called()
 
 
-@patch("shuttle.commands.git._reconcile_tag_push")
+@patch("cli.commands.git._reconcile_tag_push")
 @patch.object(GitShortcuts, "prepare_for_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=True)
 @patch.object(GitShortcuts, "create_tag")
@@ -140,39 +140,40 @@ def test_git_tag_prepare_failure(mock_prepare: MagicMock) -> None:
 
 
 @patch.object(GitShortcuts, "tag_exists_local", return_value=False)
-@patch.object(GitShortcuts, "zip_tag")
-def test_git_zip_requires_tag(mock_zip: MagicMock, _exists: MagicMock) -> None:
+@patch("cli.commands.git.archive_tag_zip")
+def test_git_zip_requires_tag(mock_archive: MagicMock, _exists: MagicMock) -> None:
     result = runner.invoke(app, ["git", "zip", "missing-tag"])
     assert result.exit_code != 0
     assert "Tag not found" in result.stdout
-    mock_zip.assert_not_called()
+    mock_archive.assert_not_called()
 
 
+@patch("cli.commands.git.repo_encrypt_backup", return_value=False)
 @patch.object(GitShortcuts, "tag_exists_local", return_value=True)
 @patch.object(GitShortcuts, "repo_basename", return_value="repo")
-@patch.object(GitShortcuts, "zip_tag")
+@patch("cli.commands.git.archive_tag_zip")
 def test_git_zip_with_tag(
-    mock_zip: MagicMock,
+    mock_archive: MagicMock,
     _basename: MagicMock,
     _exists: MagicMock,
+    _encrypted: MagicMock,
     tmp_path: Path,
 ) -> None:
     dest = tmp_path / "repo-2026-06-11.zip"
 
-    def _archive(tag: str, out: Path) -> Path:
+    def _write_archive(repo_path: Path, tag: str, out: Path, **kwargs: object) -> Path:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_bytes(b"zip")
         return out
 
-    mock_zip.side_effect = _archive
-    with patch("shuttle.commands.git.default_zip_path", return_value=dest):
+    mock_archive.side_effect = _write_archive
+    with patch("cli.commands.git.default_zip_path", return_value=dest):
         result = runner.invoke(app, ["git", "zip", "2026-06-11"])
     assert result.exit_code == 0
     assert ".zip" in result.stdout
-    mock_zip.assert_called_once()
+    mock_archive.assert_called_once()
 
 
-@pytest.mark.requires_git
 def test_prepare_for_tag_commits_dirty_feature_work_before_sync() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp) / "repo"
@@ -209,7 +210,6 @@ def test_prepare_for_tag_commits_dirty_feature_work_before_sync() -> None:
         ).returncode == 0
 
 
-@pytest.mark.requires_git
 def test_prepare_for_tag_aligns_feature_branch_to_main() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp) / "repo"
@@ -238,7 +238,6 @@ def test_prepare_for_tag_aligns_feature_branch_to_main() -> None:
         assert svc.head_sha() == main_sha
 
 
-@pytest.mark.requires_git
 def test_zip_tag_creates_archive() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp) / "repo"
@@ -257,7 +256,6 @@ def test_zip_tag_creates_archive() -> None:
         assert path.stat().st_size > 0
 
 
-@pytest.mark.requires_git
 def test_tag_push_action_states() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         repo = Path(tmp) / "repo"

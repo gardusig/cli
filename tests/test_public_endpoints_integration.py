@@ -1,4 +1,4 @@
-"""Integration coverage for every public shuttle CLI endpoint."""
+"""Integration coverage for every public cli CLI endpoint."""
 
 from __future__ import annotations
 
@@ -8,16 +8,17 @@ from pathlib import Path
 
 import pytest
 
-from shuttle.integration.public_endpoints import (
+from cli.integration.public_endpoints import (
     GIT_SUBCOMMANDS,
     TOP_LEVEL_COMMANDS,
     assert_every_git_subcommand_checked,
-    assert_every_git_subcommand_has_ok_check,
+    assert_every_git_subcommand_has_ok_and_failure_check,
     assert_every_top_level_command_checked,
     assert_registry_covers_git_commands,
     endpoint_checks,
     git_subcommands_covered_by_checks,
     git_subcommands_with_ok_check,
+    git_subcommands_with_failure_check,
     prepare_git_repo,
     registered_git_subcommands,
     run_all_endpoint_checks,
@@ -38,8 +39,12 @@ def test_every_git_subcommand_has_integration_check() -> None:
 
 
 def test_every_git_subcommand_has_ok_integration_check() -> None:
-    assert_every_git_subcommand_has_ok_check()
     assert git_subcommands_with_ok_check() == set(GIT_SUBCOMMANDS)
+
+
+def test_every_git_subcommand_has_failure_integration_check() -> None:
+    missing = set(GIT_SUBCOMMANDS) - git_subcommands_with_failure_check() - {"docs"}
+    assert missing == set(), f"missing failure checks: {sorted(missing)}"
 
 
 def test_top_level_commands_listed_in_registry() -> None:
@@ -58,7 +63,7 @@ def test_docker_top_level_in_registry() -> None:
 @pytest.mark.integration
 def test_run_all_public_endpoint_checks() -> None:
     SCRATCH.mkdir(exist_ok=True)
-    git_dir = Path(tempfile.mkdtemp(prefix="shuttle-git-", dir=SCRATCH))
+    git_dir = Path(tempfile.mkdtemp(prefix="cli-git-", dir=SCRATCH))
     try:
         prepare_git_repo(git_dir)
         errors = run_all_endpoint_checks(ROOT, git_root=git_dir)

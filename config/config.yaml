@@ -1,23 +1,45 @@
 backup:
   tags_dir: ~/Library/Mobile Documents/com~apple~CloudDocs/git-tags
+  # Public repos: plain git archive zips. Private repo: encrypted zip (BACKUP_ZIP_PASSWORD).
   repositories:
-    - path: ~/git-local/shuttle-cli
+    - path: ~/git-local/cli
+    - path: ~/git-local/cursor-skills
+    - path: ~/git-local/cli
+    # Add your other public repos here (typically six public + one private):
+    # - path: ~/git-local/my-public-repo
+    - path: ~/git-local/private
+      encrypted: true
+  replicas:
+    - type: cloud
+      provider: google
+      root: git-tags
+    - type: cloud
+      provider: onedrive
+      root: git-tags
+    - type: cloud
+      provider: proton
+      root: git-tags
+    # Local USB replica (mount path when drive is plugged in):
+    # - type: usb
+    #   path: /Volumes/Backup/git-tags
+    #   name: usb-backup
 
 notion:
-  database_id: ""                    # Notion database ID (board must exist)
-  task_directory: data/tasks         # local markdown source (one file per task id)
-  cleanup_before_deploy: false
+  database_id: 2f499343-9249-80d1-aae9-ce5343255b8e
+  task_root: ~/git-local/private/configured/tasks
+  pairs_file: config/notion/tasks.pairs.json
+  cleanup_before_deploy: true
   properties:
     title: Name
-    status: Status
-    priority: Priority
-    tags: Tags
-    id: ID
-    created: Created
-    updated: Updated
+    priority: priority
+    tag: tag
+    frequency: frequency
+    interval: interval
+    last_done: last done
+    forced_status: forced status
 
 chrome:
   profile: Default
   # Local bookmarks HTML (Chrome export/import). Absolute or ~ path recommended.
-  bookmarks_file: ~/git-local/shuttle-cli/data/bookmarks/bookmarks.html
+  bookmarks_file: ""                   # private path, e.g. ~/git-local/private/.../bookmarks.html
   downloads_dir: ~/Downloads

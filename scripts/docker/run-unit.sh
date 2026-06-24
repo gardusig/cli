@@ -3,14 +3,14 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
-export SHUTTLE_CONFIG_DIR="$ROOT/config/ci"
-SHUTTLE_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
+export CLI_CONFIG_DIR="$ROOT/config/ci"
+CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
 source .venv/bin/activate
 bash -n scripts/chrome/*.sh
 bash -n scripts/docker/*.sh
-bash -n scripts/integration/*.sh
-pytest -q -m "not integration" \
-  --cov=shuttle \
+python tests/integration/check_integration_coverage.py
+pytest -q \
+  --cov=cli \
   --cov-config=coverage-unit.ini \
   --cov-report=term-missing \
   --cov-fail-under=80

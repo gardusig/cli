@@ -1,0 +1,179 @@
+"""Inventory of docs, scripts, and CLI entrypoints for `cli links`."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+
+from cli.utils.config import project_root
+
+
+@dataclass(frozen=True)
+class CatalogEntry:
+    label: str
+    cli: str | None = None
+    script: str | None = None
+    doc: str | None = None
+    note: str | None = None
+
+
+QUICK_DEFAULTS = (
+    ("git start", "issue start: align main + branch (wip-YYMMDD-NNN or issue slug); --no-prep to branch in place"),
+    ("git commit", "message defaults to '.'"),
+    ("git push", "add + commit + push; on main starts random branch — use --yes -y to skip prompt"),
+    ("git reset", "return to synced main + prune merged branches; --main-only for main sync only — --yes"),
+    ("git stash push", "message defaults to '.'"),
+    ("git tag", "sync main, tag latest main commit (default name: today)"),
+    ("git zip", "zip today's tag into iCloud git-tags/REPO/"),
+    ("drive status", "git tags vs zips in backup.tags_dir (iCloud)"),
+    ("drive ingest", "zip all tags for configured repos into git-tags/"),
+    ("drive upload", "deploy missing zips to cloud replicas"),
+    ("drive deploy", "deploy missing zips to all replicas (cloud + USB)"),
+    ("drive sync", "ingest all repositories, then deploy to replicas"),
+    ("chrome bookmarks ingest", "Chrome → local HTML (chrome.bookmarks_file)"),
+    ("chrome bookmarks deploy", "local HTML → Chrome"),
+    ("notion pairs build", "scan header/ + body/ → tasks.pairs.json"),
+    ("notion ingest", "Notion → local task pairs"),
+    ("notion deploy", "local task pairs → Notion board"),
+    ("notion sync", "ingest from Notion, then deploy local tasks"),
+)
+
+# Lifecycle shortcuts: command → shell wrapper + doc (see docs/workflows.md).
+WORKFLOW_SHORTCUTS: tuple[tuple[str, str, str, str], ...] = (
+    ("git reset", "reset.sh", "docs/workflows.md", "return to synced main + prune branches"),
+    ("git start", "start.sh", "docs/workflows.md", "issue start: align main + named branch"),
+    ("git push", "push.sh", "docs/workflows.md", "push current branch; start on main"),
+)
+
+WORKFLOW_CHAIN = "reset → start → push → (merge PR) → reset"
+
+QUICK_DEFAULT_SCRIPTS: dict[str, str] = {
+    "git start": "scripts/git/start.sh",
+    "git commit": "scripts/git/commit.sh",
+    "git push": "scripts/git/push.sh",
+    "git reset": "scripts/git/reset.sh",
+    "git stash push": "scripts/git/stash.sh",
+    "git tag": "scripts/git/tag.sh",
+}
+
+
+GIT_SCRIPT_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("branch.sh", "git branch"),
+    ("branch-clear.sh", "git branch-clear"),
+    ("branch-delete.sh", "git branch-delete"),
+    ("branch-delete-all.sh", "git branch-delete-all"),
+    ("cherry-pick.sh", "git cherry-pick"),
+    ("commit.sh", "git commit"),
+    ("docs.sh", "git docs"),
+    ("large-files.sh", "git large-files"),
+    ("main.sh", "git main"),
+    ("post-merge-cleanup.sh", "git post-merge-cleanup"),
+    ("pull.sh", "git pull"),
+    ("push.sh", "git push"),
+    ("rebase.sh", "git rebase"),
+    ("reset.sh", "git reset"),
+    ("revert.sh", "git revert"),
+    ("review.sh", "git review"),
+    ("start.sh", "git start"),
+    ("stash.sh", "git stash"),
+    ("tag.sh", "git tag"),
+    ("tag-list.sh", "git tag list"),
+    ("tag-push.sh", "git tag push"),
+    ("zip.sh", "git zip"),
+)
+
+CHROME_SCRIPTS: tuple[tuple[str, str], ...] = (
+    ("ingest.sh", "bookmarks ingest — Chrome → local"),
+    ("deploy.sh", "bookmarks deploy — local → Chrome"),
+    ("import.sh", "deprecated wrapper → ingest"),
+    ("export.sh", "deprecated wrapper → deploy"),
+    ("export-bookmarks.sh", "legacy export script"),
+    ("import-bookmarks.sh", "legacy import script"),
+    ("wait-download.sh", "poll Downloads for newest HTML export"),
+)
+
+TOP_LEVEL_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("git / g", "git shortcuts (see cli git --help)"),
+    ("gh", "GitHub via gh — issues, labels, PRs, backlog (see docs/gh.md)"),
+    ("restore", "restore workflows (placeholder)"),
+    ("drive", "git-tags local store (iCloud) + cloud upload — status, ingest, upload"),
+    ("chrome", "Chrome browser — bookmarks ingest / deploy"),
+    ("notion", "Notion task board — pairs build / ingest / deploy / sync / cleanup"),
+    ("links", "this index — docs, scripts, defaults"),
+    ("docker", "monitor + cleanup — stats, top, stop, delete, reset (see cli docker --help)"),
+)
+
+DOCKER_QUICK_DEFAULTS: tuple[tuple[str, str], ...] = (
+    ("docker stats", "top consumers by cpu, memory, or storage"),
+    ("docker top", "dashboard across cpu, memory, and storage"),
+    ("docker reset", "stop all, delete containers, prune images + cache — --yes"),
+    ("docker stop", "stop running containers — --yes"),
+    ("docker container-delete", "remove containers — --yes"),
+    ("docker image-delete", "prune unused images — --yes"),
+)
+
+DOCKER_SCRIPT_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("stats.sh", "docker stats"),
+    ("reset.sh", "docker reset"),
+    ("stop.sh", "docker stop"),
+    ("container-delete.sh", "docker container-delete"),
+    ("image-delete.sh", "docker image-delete"),
+)
+
+DOCKER_QUICK_DEFAULT_SCRIPTS: dict[str, str] = {
+    "docker reset": "scripts/docker/reset.sh",
+    "docker stop": "scripts/docker/stop.sh",
+    "docker container-delete": "scripts/docker/container-delete.sh",
+    "docker image-delete": "scripts/docker/image-delete.sh",
+    "docker stats": "scripts/docker/stats.sh",
+}
+
+
+def doc_entries(root: Path | None = None) -> list[CatalogEntry]:
+    base = root or project_root()
+    docs_dir = base / "docs"
+    entries: list[CatalogEntry] = []
+    readme = base / "README.md"
+    if readme.is_file():
+        entries.append(CatalogEntry("Root README", doc=str(readme.relative_to(base))))
+    if docs_dir.is_dir():
+        for path in sorted(docs_dir.rglob("*.md")):
+            rel = path.relative_to(base)
+            entries.append(CatalogEntry(path.stem.replace("-", " ").title(), doc=str(rel)))
+    return entries
+
+
+def git_script_entries(root: Path | None = None) -> list[CatalogEntry]:
+    base = root or project_root()
+    git_dir = base / "scripts" / "git"
+    entries: list[CatalogEntry] = []
+    for script_name, cli_cmd in GIT_SCRIPT_COMMANDS:
+        script_path = git_dir / script_name
+        rel = str(script_path.relative_to(base)) if script_path.is_file() else None
+        entries.append(
+            CatalogEntry(
+                script_name.replace(".sh", "").replace("-", " "),
+                cli=f"cli {cli_cmd}",
+                script=rel,
+                doc="docs/git.md",
+            )
+        )
+    return entries
+
+
+def chrome_script_entries(root: Path | None = None) -> list[CatalogEntry]:
+    base = root or project_root()
+    chrome_dir = base / "scripts" / "chrome"
+    entries: list[CatalogEntry] = []
+    for script_name, note in CHROME_SCRIPTS:
+        script_path = chrome_dir / script_name
+        rel = str(script_path.relative_to(base)) if script_path.is_file() else None
+        entries.append(
+            CatalogEntry(
+                script_name.replace(".sh", "").replace("-", " "),
+                script=rel,
+                doc="docs/bookmarks.md",
+                note=note,
+            )
+        )
+    return entries

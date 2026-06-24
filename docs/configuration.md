@@ -2,9 +2,9 @@
 
 Config loads from (first match):
 
-1. `$SHUTTLE_CONFIG_DIR` if set
+1. `$CLI_CONFIG_DIR` if set
 2. Repo `config/` directory (development)
-3. `~/.config/shuttle-cli/`
+3. `~/.config/cli/`
 
 ## Files
 
@@ -12,26 +12,34 @@ Config loads from (first match):
 | --- | --- |
 | `config.yaml` | Backup repos, local git-tags path, Notion, Chrome |
 | `drives.yaml` | Google / OneDrive / Proton upload targets |
+| `ci/config.yaml` | Docker unit/integration overrides (fixture paths); set via `CLI_CONFIG_DIR` |
+| `contest/defaults.yaml` | `cli contest validate` timeout, memory, image defaults |
+| `contest/templates/` | Generator and brute scaffolds for competitive programming |
+
+See [`config/README.md`](../config/README.md) for how CI overrides relate to the root files.
 
 ## Notion tasks
 
 ```yaml
 notion:
   database_id: your-notion-database-id
-  task_directory: data/tasks
-  cleanup_before_deploy: false
+  task_root: ~/git-local/private/configured/tasks
+  pairs_file: config/notion/tasks.pairs.json
+  cleanup_before_deploy: true
   properties:
     title: Name
-    status: Status
     priority: Priority
-    tags: Tags
-    id: ID
-    created: Created
-    updated: Updated
+    tag: Tag
+    frequency: Frequency
+    interval: Interval
+    last_done: "Last done"
+    forced_status: "Forced status"
 ```
 
-- `task_directory` — flat folder of `{id}.md` files (local source of truth)
-- `database_id` — existing Notion database (shuttle never creates schema)
+- `task_root` — private folder with `header/` and `body/` (task content)
+- `pairs_file` — manifest path; use `config/notion/tasks.pairs.json` in this repo (or a bare filename under `task_root` for tests)
+- `header` yaml **`name`** — unique Notion title (required in each yaml)
+- `database_id` — existing Notion database (cli never creates schema)
 - **`NOTION_TOKEN`** — integration token in environment only (not in YAML)
 
 ## Chrome bookmarks
@@ -39,11 +47,11 @@ notion:
 ```yaml
 chrome:
   profile: Default
-  bookmarks_file: ~/git-local/shuttle-cli/data/bookmarks/bookmarks.html
+  bookmarks_file: ~/git-local/private/bookmarks/bookmarks.html
   downloads_dir: ~/Downloads
 ```
 
-- `bookmarks_file` — HTML backup for `shuttle chrome bookmarks ingest` / `deploy`
+- `bookmarks_file` — HTML backup for `cli chrome bookmarks ingest` / `deploy`
 - `downloads_dir` — where ingest waits for Chrome’s downloaded HTML
 - `profile` — reserved for future Chrome profile selection
 
@@ -53,10 +61,22 @@ chrome:
 backup:
   tags_dir: ~/Library/Mobile Documents/com~apple~CloudDocs/git-tags
   repositories:
-    - path: ~/git-local/shuttle-cli
+    - path: ~/git-local/cli
+    - path: ~/git-local/private
+      encrypted: true
+  replicas:
+    - type: cloud
+      provider: google
+      root: git-tags
+    - type: usb
+      path: /Volumes/Backup/git-tags
+      name: usb-backup
 ```
 
-`tags_dir` must be an absolute path or `~`-expanded path on the local machine (typically an iCloud Drive folder on macOS). Tag zips are created and replaced under `git-tags/{repo-name}/`.
+- `tags_dir` — local hub for tag zips (typically iCloud on macOS).
+- `repositories[].encrypted` — when `true`, ingest uses password-protected `zip -er` instead of plain `git archive`.
+- **`BACKUP_ZIP_PASSWORD`** — zip encryption password in environment only (like `NOTION_TOKEN`).
+- `replicas` — deploy targets after ingest: `cloud` (google / onedrive / proton) or `usb` (local mount path). When omitted, enabled entries in `drives.yaml` are used as cloud replicas.
 
 ## Drives (cloud upload)
 
@@ -73,16 +93,17 @@ drives:
     root: git-tags
 ```
 
-`shuttle drive ingest` zips tags into `backup.tags_dir`; `shuttle drive upload` pushes missing files to each enabled provider.
+`cli drive ingest` zips tags into `backup.tags_dir`; `cli drive upload` pushes missing files to each enabled provider.
 
 ## Environment overrides
 
 | Variable | Purpose |
 | --- | --- |
-| `SHUTTLE_CONFIG_DIR` | Override config directory |
-| `SHUTTLE_GIT_ROOT` | Test override for git repo root |
-| `NOTION_TOKEN` | Notion integration token (required for `shuttle notion`) |
-| `SHUTTLE_BOOKMARKS_FILE` | Chrome bookmarks backup path |
-| `SHUTTLE_DOWNLOADS_DIR` | Chrome ingest downloads folder |
+| `CLI_CONFIG_DIR` | Override config directory |
+| `CLI_GIT_ROOT` | Test override for git repo root |
+| `NOTION_TOKEN` | Notion integration token (required for `cli notion`) |
+| `BACKUP_ZIP_PASSWORD` | Zip password for `encrypted: true` backup repositories |
+| `CLI_BOOKMARKS_FILE` | Chrome bookmarks backup path |
+| `CLI_DOWNLOADS_DIR` | Chrome ingest downloads folder |
 
 Git commands use the **current** git repository (`cd` into the repo). Multi-repo backup uses explicit paths in `backup.repositories`.

@@ -1,0 +1,9 @@
+[
+  {
+    "number": 42,
+    "title": "Integration issue",
+    "state": "OPEN",
+    "labels": [{"name": "test"}],
+    "url": "https://github.com/example/repo/issues/42"
+  }
+]

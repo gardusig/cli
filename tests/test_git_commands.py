@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from shuttle.cli import app
-from shuttle.services.git_shortcuts import GitShortcuts
+from cli.cli import app
+from cli.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
 
@@ -90,7 +90,7 @@ def test_canonical_main_same_repo(_remote: MagicMock, canonical: MagicMock) -> N
     assert svc.canonical_main_ref() == "origin/main"
 
 
-@patch("shuttle.services.git_shortcuts.run_git")
+@patch("cli.services.git_shortcuts.run_git")
 def test_repo_root(mock_run: MagicMock) -> None:
     mock_run.return_value.stdout = "/repo\n"
     assert GitShortcuts.repo_root() == "/repo"
@@ -103,7 +103,7 @@ def snapshot() -> MagicMock:
     return snap
 
 
-SNAPSHOT = "shuttle.commands.git.git_worktree_snapshot"
+SNAPSHOT = "cli.commands.git.git_worktree_snapshot"
 
 
 @patch.object(GitShortcuts, "align_main")
@@ -275,7 +275,7 @@ def test_git_cherry_pick_refuses(mock_pick: MagicMock) -> None:
     mock_pick.assert_not_called()
 
 
-@patch("shuttle.commands.git.run_review", return_value=0)
+@patch("cli.commands.git.run_review", return_value=0)
 def test_git_review_quick(mock_review: MagicMock) -> None:
     result = runner.invoke(app, ["git", "review", "--no-install", "--quick"])
     assert result.exit_code == 0
@@ -283,28 +283,30 @@ def test_git_review_quick(mock_review: MagicMock) -> None:
     mock_review.assert_called_once_with(install=False, quick=True)
 
 
+@patch("cli.commands.git.repo_encrypt_backup", return_value=False)
 @patch.object(GitShortcuts, "tag_exists_local", return_value=True)
 @patch.object(GitShortcuts, "repo_basename", return_value="my-repo")
-@patch.object(GitShortcuts, "zip_tag")
-@patch("shuttle.commands.git.default_tag_name", return_value="2026-06-12")
+@patch("cli.commands.git.archive_tag_zip")
+@patch("cli.commands.git.default_tag_name", return_value="2026-06-12")
 def test_git_zip_default_tag(
     _default: MagicMock,
-    mock_zip: MagicMock,
+    mock_archive: MagicMock,
     _basename: MagicMock,
     _exists: MagicMock,
+    _encrypted: MagicMock,
 ) -> None:
-    mock_zip.return_value = Path("/tmp/my-repo-2026-06-12.zip")
+    mock_archive.return_value = Path("/tmp/my-repo-2026-06-12.zip")
     result = runner.invoke(app, ["git", "zip"])
     assert result.exit_code == 0
-    mock_zip.assert_called_once()
-    assert mock_zip.call_args.args[0] == "2026-06-12"
+    mock_archive.assert_called_once()
+    assert mock_archive.call_args.args[1] == "2026-06-12"
 
 
 @patch.object(GitShortcuts, "create_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=False)
 @patch.object(GitShortcuts, "prepare_for_tag")
-@patch("shuttle.commands.git._reconcile_tag_push")
-@patch("shuttle.commands.git.default_tag_name", return_value="2026-06-12")
+@patch("cli.commands.git._reconcile_tag_push")
+@patch("cli.commands.git.default_tag_name", return_value="2026-06-12")
 def test_git_tag_default_name(
     _default: MagicMock,
     _push: MagicMock,
@@ -315,3 +317,19 @@ def test_git_tag_default_name(
     result = runner.invoke(app, ["git", "tag", "--yes"])
     assert result.exit_code == 0
     mock_create.assert_called_once_with("2026-06-12", replace=False)
+
+
+@patch.object(GitShortcuts, "current_branch", return_value="kappap")
+def test_git_branch_current(mock_branch: MagicMock) -> None:
+    result = runner.invoke(app, ["git", "branch-current"])
+    assert result.exit_code == 0
+    assert result.stdout.strip() == "kappap"
+    mock_branch.assert_called_once()
+
+
+@patch.object(GitShortcuts, "diff_stat", return_value=" 2 files changed\n")
+def test_git_diff_stat(mock_diff: MagicMock) -> None:
+    result = runner.invoke(app, ["git", "diff-stat", "--base", "main"])
+    assert result.exit_code == 0
+    assert "files changed" in result.stdout
+    mock_diff.assert_called_once_with("main", "HEAD")

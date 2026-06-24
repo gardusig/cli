@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Local install: venv + editable runtime install (no test tools on host).
-# Container gates set SHUTTLE_BOOTSTRAP_DEV=1 for pytest/coverage.
+# Container gates set CLI_BOOTSTRAP_DEV=1 for pytest/coverage.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -29,7 +29,7 @@ fi
 # shellcheck disable=SC1091
 source .venv/bin/activate
 python -m pip install -U pip
-if [[ "${SHUTTLE_BOOTSTRAP_DEV:-0}" == "1" ]]; then
+if [[ "${CLI_BOOTSTRAP_DEV:-0}" == "1" ]]; then
   pip install -e ".[dev]"
 else
   pip install -e .
@@ -37,7 +37,7 @@ fi
 
 echo ""
 echo "Done. Activate with: source .venv/bin/activate"
-echo "Try: python -m shuttle --help"
-if [[ "${SHUTTLE_BOOTSTRAP_DEV:-0}" != "1" ]]; then
+echo "Try: python -m cli --help"
+if [[ "${CLI_BOOTSTRAP_DEV:-0}" != "1" ]]; then
   echo "Tests: ./scripts/test-unit.sh (Docker; see docs/docker.md)"
 fi

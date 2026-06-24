@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from shuttle.services.backup_repository import SyncResult
-from shuttle.services.drive_sync import sync_all, upload_missing
+from cli.services.backup_repository import SyncResult
+from cli.services.drive_sync import sync_all, upload_missing
 
 
 class FakeProvider:
@@ -44,7 +44,7 @@ def test_sync_all_ingests_then_uploads(tmp_path: Path, monkeypatch) -> None:
     (tags_root / "demo" / "v1.zip").write_bytes(b"z")
 
     monkeypatch.setattr(
-        "shuttle.services.drive_sync.ingest_repositories",
+        "cli.services.drive_sync.ingest_repositories",
         lambda _path=None: [(repo, SyncResult(created=["v1"], replaced=[], failed=[]))],
     )
     provider = FakeProvider()

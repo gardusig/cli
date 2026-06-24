@@ -10,21 +10,21 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from shuttle.cli import app
-from shuttle.commands.git import _branch_preview_lines
-from shuttle.internal.read.safety import OperationKind, classify_operation
-from shuttle.services.git_shortcuts import GitShortcuts
+from cli.cli import app
+from cli.commands.git import _branch_preview_lines
+from cli.internal.read.safety import OperationKind, classify_operation
+from cli.services.git_shortcuts import GitShortcuts
 
 ROOT = Path(__file__).resolve().parents[1]
 runner = CliRunner()
-PATCH = "shuttle.services.git_shortcuts.run_git"
-SNAPSHOT = "shuttle.commands.git.git_worktree_snapshot"
+PATCH = "cli.services.git_shortcuts.run_git"
+SNAPSHOT = "cli.commands.git.git_worktree_snapshot"
 
 
 def test_package_main_entrypoint() -> None:
-    """shuttle.__main__ runs the Typer app (python -m shuttle)."""
+    """cli.__main__ runs the Typer app (python -m cli)."""
     result = subprocess.run(
-        [sys.executable, "-m", "shuttle", "--help"],
+        [sys.executable, "-m", "cli", "--help"],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -97,7 +97,7 @@ def test_git_branch_delete_action(
     mock_delete.assert_called_once()
 
 
-@patch("shuttle.utils.process.run_git")
+@patch("cli.utils.process.run_git")
 def test_git_branch_rename(mock_run: MagicMock) -> None:
     mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
     result = runner.invoke(app, ["git", "branch", "rename", "--rename", "new-name"])

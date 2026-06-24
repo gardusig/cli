@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
-from shuttle.integration.docker_integration import (
+from cli.integration.docker_integration import (
     DOCKER_SUBCOMMANDS,
     assert_docker_registry_covers_commands,
-    assert_every_docker_subcommand_has_ok_check,
+    assert_every_docker_subcommand_has_ok_and_failure_check,
     docker_checks,
     registered_docker_subcommands,
 )
-from shuttle.integration.public_endpoints import (
+from cli.integration.public_endpoints import (
     GIT_SUBCOMMANDS,
     assert_every_git_subcommand_checked,
-    assert_every_git_subcommand_has_ok_check,
+    assert_every_git_subcommand_has_ok_and_failure_check,
     assert_registry_covers_git_commands,
     endpoint_checks,
     registered_git_subcommands,
@@ -24,9 +24,9 @@ def test_git_registry_matches_cli() -> None:
     assert registered_git_subcommands() == set(GIT_SUBCOMMANDS)
 
 
-def test_every_git_subcommand_has_ok_and_refuse_coverage() -> None:
+def test_every_git_subcommand_has_ok_and_failure_coverage() -> None:
     assert_every_git_subcommand_checked()
-    assert_every_git_subcommand_has_ok_check()
+    assert_every_git_subcommand_has_ok_and_failure_check()
 
 
 def test_docker_registry_matches_cli() -> None:
@@ -34,8 +34,8 @@ def test_docker_registry_matches_cli() -> None:
     assert registered_docker_subcommands() == set(DOCKER_SUBCOMMANDS)
 
 
-def test_every_docker_subcommand_has_ok_integration_check() -> None:
-    assert_every_docker_subcommand_has_ok_check()
+def test_every_docker_subcommand_has_ok_and_failure_integration_check() -> None:
+    assert_every_docker_subcommand_has_ok_and_failure_check()
 
 
 def test_git_endpoint_count() -> None:
@@ -44,4 +44,4 @@ def test_git_endpoint_count() -> None:
 
 
 def test_docker_integration_check_count() -> None:
-    assert len(docker_checks()) >= len(DOCKER_SUBCOMMANDS) + 6
+    assert len(docker_checks()) >= len(DOCKER_SUBCOMMANDS) * 2

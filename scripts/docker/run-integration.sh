@@ -3,8 +3,8 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
-export SHUTTLE_CONFIG_DIR="$ROOT/config/ci"
-SHUTTLE_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
+export CLI_CONFIG_DIR="$ROOT/config/ci"
+CLI_BOOTSTRAP_DEV=1 ./scripts/bootstrap.sh
 source .venv/bin/activate
 
 run_step() {
@@ -14,5 +14,5 @@ run_step() {
 }
 
 run_step "pytest" pytest -q
-run_step "integration smoke" ./scripts/integration/smoke.sh
-run_step "live docker checks" python scripts/integration/check_docker_commands.py --live
+run_step "integration smoke" ./scripts/integration-smoke.sh
+run_step "live docker checks" python tests/integration/check_docker_commands.py --live

@@ -3,4 +3,4 @@
 set -euo pipefail
 # shellcheck source=_common.sh
 source "$(dirname "$0")/_common.sh"
-exec_shuttle git large-files "$@"
+exec_cli git large-files "$@"

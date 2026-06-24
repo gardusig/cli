@@ -1,4 +1,4 @@
-"""Behavior tests for every public shuttle CLI endpoint."""
+"""Behavior tests for every public cli CLI endpoint."""
 
 from __future__ import annotations
 
@@ -7,12 +7,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-from shuttle.cli import app
-from shuttle.services.git_shortcuts import GitShortcuts
+from cli.cli import app
+from cli.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
 
-GIT_SNAPSHOT_PATCH = "shuttle.commands.git.git_worktree_snapshot"
+GIT_SNAPSHOT_PATCH = "cli.commands.git.git_worktree_snapshot"
 
 
 @pytest.fixture
@@ -47,7 +47,11 @@ def test_placeholder_top_level_commands(args: list[str], needle: str) -> None:
 
 
 def test_chrome_bookmarks_deploy_without_backup() -> None:
-    result = runner.invoke(app, ["chrome", "bookmarks", "deploy"])
+    result = runner.invoke(
+        app,
+        ["chrome", "bookmarks", "deploy"],
+        env={"CLI_BOOKMARKS_FILE": "/nonexistent/cli/missing-bookmarks.html"},
+    )
     assert result.exit_code != 0
     assert "Backup not found" in result.stdout
 
@@ -69,7 +73,7 @@ def test_hidden_git_alias_commit(mock_commit: MagicMock) -> None:
 # --- Git: read / safe write ---------------------------------------------------
 
 
-@patch("shuttle.commands.git.run_review", return_value=0)
+@patch("cli.commands.git.run_review", return_value=0)
 def test_git_review_passes(mock_review: MagicMock) -> None:
     result = runner.invoke(app, ["git", "review", "--no-install"])
     assert result.exit_code == 0
@@ -77,14 +81,14 @@ def test_git_review_passes(mock_review: MagicMock) -> None:
     mock_review.assert_called_once_with(install=False, quick=False)
 
 
-@patch("shuttle.commands.git.run_review", return_value=0)
+@patch("cli.commands.git.run_review", return_value=0)
 def test_git_review_quick(mock_review: MagicMock) -> None:
     result = runner.invoke(app, ["git", "review", "--no-install", "--quick"])
     assert result.exit_code == 0
     mock_review.assert_called_once_with(install=False, quick=True)
 
 
-@patch("shuttle.commands.git.run_review", return_value=1)
+@patch("cli.commands.git.run_review", return_value=1)
 def test_git_review_fails(mock_review: MagicMock) -> None:
     result = runner.invoke(app, ["git", "review", "--no-install"])
     assert result.exit_code == 1
@@ -304,7 +308,7 @@ def test_git_cherry_pick_with_yes(mock_pick: MagicMock, snapshot: MagicMock) -> 
     mock_pick.assert_called_once()
 
 
-@patch("shuttle.commands.git._reconcile_tag_push")
+@patch("cli.commands.git._reconcile_tag_push")
 @patch.object(GitShortcuts, "prepare_for_tag")
 @patch.object(GitShortcuts, "tag_exists_local", return_value=False)
 @patch.object(GitShortcuts, "create_tag")
