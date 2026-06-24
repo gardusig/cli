@@ -13,7 +13,7 @@ htmlcov/
 dist/
 build/
 *.egg-info/
-gardusig_cli-*/
+src-*/
 *.whl
 cli-git-*/
 cli-public-*/

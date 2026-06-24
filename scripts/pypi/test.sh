@@ -41,7 +41,7 @@ if [[ -n \"\${TESTPYPI_API_TOKEN:-}\" ]]; then
   ./scripts/pypi/upload.sh
   echo '==> verify TestPyPI project page'
   python -c \"
-from gardusig_cli.services.pypi_publish import PACKAGE_NAME, verify_package_version_on_index
+from src.services.pypi_publish import PACKAGE_NAME, verify_package_version_on_index
 verify_package_version_on_index(PACKAGE_NAME, '$TEST_VERSION', testpypi=True)
 print('Verified', PACKAGE_NAME + '==$TEST_VERSION', 'on TestPyPI')
 \"

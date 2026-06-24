@@ -30,7 +30,7 @@ Install from PyPI when you only need the tool; clone the repo when you want conf
 | **GitHub repo** | [gardusig/cli](https://github.com/gardusig/cli) (clone path is usually `cli/`) |
 | **PyPI package** | `gardusig-cli` — `./scripts/pypi/install.sh` |
 | **Console command** | `cli` (unchanged after PyPI install) |
-| **Python import** | `gardusig_cli` |
+| **Python import** | `src` |
 
 The repo stays **`cli`**; only the published distribution name on PyPI is **`gardusig-cli`** (`cli` is taken on PyPI).
 
@@ -127,6 +127,8 @@ Run from inside a repository (`cd` into the repo first).
 | Commit only | `cli git commit` |
 | Sync feature branch | `cli git pull` |
 | Delete merged branch | `cli git branch delete BRANCH --yes` |
+| Delete merged branches | `cli git branch delete --merged --yes` |
+| Delete all branches (keep `main`) | `cli git branch delete --all --yes` |
 | Clear all branches (keep `main`) | `cli git branch clear --yes` |
 | Tag on main (default: today) | `cli git tag` · `cli git tag list` · `cli git tag push` |
 | Zip one tag (cwd repo) | `cli git zip` · `cli git zip TAG` |

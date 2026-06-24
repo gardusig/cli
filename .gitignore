@@ -25,8 +25,8 @@ coverage.xml
 htmlcov/
 
 # --- Build / packaging (never commit) ---
-gardusig_cli-*/
-gardusig_cli.egg-info/
+src-*/
+src.egg-info/
 *.whl
 
 # --- Integration temp dirs (host leaks outside Docker scratch) ---

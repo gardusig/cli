@@ -63,7 +63,7 @@ cli git push --yes
 
 # After PR merged
 cli git reset --yes
-# answer the follow-up prompt to run `branch delete --all`, or:
+# answer the follow-up prompt to run `branch delete --merged`, or:
 cli git reset --yes --delete-merged
 ```
 

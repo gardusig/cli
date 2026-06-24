@@ -18,7 +18,7 @@ docker run --rm -it \
     CLI_BOOTSTRAP_DEV=1 ./scripts/docker/bootstrap.sh
     echo ''
     echo 'Bootstrapped workspace: $CONTAINER_WORK'
-    echo 'Try: python -m gardusig_cli --help'
+    echo 'Try: python -m src --help'
     echo ''
     exec bash
   "
