@@ -32,6 +32,7 @@ Deterministic GitHub operations for agents and humans. Wraps authenticated **`gh
 ```bash
 cli gh issue list --state open --limit 30 --format json
 cli gh issue view 42 --format json
+cli gh issue context 42 --format json
 cli gh issue search "label:bug" --format json
 ```
 
@@ -63,6 +64,23 @@ operations:
     body_file: .cursor/gh/issue/epic-updated.md
 ```
 
+### Issue context (agent rollup)
+
+`cli gh issue context N` returns one JSON object with the issue view, comments, epic parent/siblings (from `epic:*` + `issue-type:*` labels), and `#N` body references resolved from the repo.
+
+```bash
+cli gh issue context 42 --format json
+./scripts/gh/issue-context.sh 42 --format json
+```
+
+### Plan → backlog chain
+
+```bash
+cli gh issue batch --file plan.yaml --yes
+cli gh backlog tree --format json
+cli gh backlog next --format json
+```
+
 ## Label commands
 
 Manifest path: **`config/gh/labels.manifest.yaml`** (repo-owned epic/area taxonomy).
@@ -87,6 +105,22 @@ Host helpers (when `cli` is on PATH):
 ./scripts/gh/sync-labels.sh
 ./scripts/gh/labelize-backlog.sh
 ```
+
+Each `cli gh` subcommand has a thin wrapper under `scripts/gh/` (see [scripts/gh/README.md](../scripts/gh/README.md)).
+
+| Script | CLI |
+| --- | --- |
+| `backlog-next.sh` | `cli gh backlog next` |
+| `backlog-tree.sh` | `cli gh backlog tree` |
+| `issue-view.sh` | `cli gh issue view` |
+| `issue-context.sh` | `cli gh issue context` |
+| `issue-close.sh` | `cli gh issue close` |
+| `pr-create.sh` | `cli gh pr create` |
+| `pr-view.sh` | `cli gh pr view` |
+| `pr-merge.sh` | `cli gh pr merge` |
+| `pr-list.sh` | `cli gh pr list` |
+
+Full table: `cli links` or `scripts/gh/README.md`.
 
 ## Pull request commands
 

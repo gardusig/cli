@@ -28,6 +28,8 @@ fi
 # shellcheck disable=SC1091
 source .venv/bin/activate
 python -m pip install -U pip
+# Stale editable .pth from prior versions can break imports after bumping version.
+find .venv/lib -maxdepth 3 -name '__editable__.*.pth' -delete 2>/dev/null || true
 if [[ "${CLI_BOOTSTRAP_DEV:-0}" == "1" ]]; then
   pip install -e ".[dev]"
 else

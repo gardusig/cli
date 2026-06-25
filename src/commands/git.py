@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import Literal
 
 import typer
 from rich import print as rprint
@@ -12,6 +13,14 @@ from src.internal.write.gate import WRITE_GATE_DELIMITER, require_write_gate
 from src.services.backup_zip import archive_tag_zip
 from src.services.git_review import run_review
 from src.services.git_shortcuts import GitShortcuts
+from src.services.pypi_publish import PyPiPublishError
+from src.services.tag_policy import (
+    latest_tag,
+    policy_summary,
+    resolve_tag_policy,
+    suggest_next_tag,
+    validate_tag_name,
+)
 from src.utils.config import (
     default_zip_path,
     project_root,
@@ -19,7 +28,7 @@ from src.utils.config import (
     require_backup_zip_password,
     tag_zip_basename,
 )
-from src.utils.quick_defaults import default_tag_name, suggest_branch_name
+from src.utils.quick_defaults import suggest_branch_name
 
 git_app = typer.Typer(help="Git shortcuts (commit message defaults to '.').", no_args_is_help=True)
 
@@ -652,6 +661,42 @@ def cherry_pick_cmd(
     rprint("[green]cherry-pick step complete[/green]")
 
 
+TagNamePurpose = Literal["create", "zip", "push"]
+
+
+def _resolve_tag_name(name: str | None, *, purpose: TagNamePurpose) -> str:
+    """Resolve tag name for create (next), zip/push (latest local), or explicit."""
+    svc = _svc()
+    repo = Path(svc.top)
+    all_tags = svc.all_tag_names()
+    local_tags = svc.list_local_tags()
+    policy = resolve_tag_policy(repo, all_tags)
+    try:
+        if name is not None:
+            return validate_tag_name(name, policy, tags=all_tags)
+        if purpose == "create":
+            suggested = suggest_next_tag(all_tags, policy, repo_root=repo)
+            for line in policy_summary(policy, suggested=suggested):
+                rprint(f"[dim]{line}[/dim]")
+            return validate_tag_name(suggested, policy, tags=all_tags)
+        latest = latest_tag(local_tags, policy)
+        if latest is None:
+            raise PyPiPublishError(
+                "no local tags matching "
+                f"{policy.pattern.value}; run `cli git tag` first"
+            )
+        rprint(f"[dim]tag_latest: {latest}[/dim]")
+        return latest
+    except PyPiPublishError as exc:
+        if name is None and purpose == "create":
+            try:
+                fallback = suggest_next_tag(all_tags, policy, repo_root=repo)
+                rprint(f"[yellow]hint:[/yellow] try {fallback!r}")
+            except PyPiPublishError:
+                pass
+        raise typer.Exit(str(exc)) from exc
+
+
 def _reconcile_tag_push(
     svc: GitShortcuts,
     tag_name: str,
@@ -711,7 +756,7 @@ def _tag_list() -> None:
 
 def _tag_create(name: str | None, *, yes: bool, force: bool = False) -> None:
     svc = _svc()
-    tag_name = name or default_tag_name()
+    tag_name = _resolve_tag_name(name, purpose="create")
     try:
         svc.prepare_for_tag(yes=yes)
     except RuntimeError as exc:
@@ -735,8 +780,11 @@ def _tag_create(name: str | None, *, yes: bool, force: bool = False) -> None:
 
 @git_app.command("tag")
 def tag_cmd(
-    action: str | None = typer.Argument(None, help="list, push, or tag name (default: create today)."),
-    name: str | None = typer.Argument(None, help="Tag name for push, or explicit create name."),
+    action: str | None = typer.Argument(
+        None,
+        help="list, push, delete, or tag name (default: next tag per .cli/tag.yaml or detection).",
+    ),
+    name: str | None = typer.Argument(None, help="Tag name for push/delete, or explicit create name."),
     yes: bool = typer.Option(False, "--yes", "-y"),
     force: bool = typer.Option(
         False,
@@ -745,19 +793,23 @@ def tag_cmd(
         help="Replace an existing local tag and/or force-push when remote differs.",
     ),
 ) -> None:
-    """Create tag on main (default today), or: tag list | tag push [NAME]."""
+    """Create release tag on main (default: bumped tag), or: tag list | push | delete."""
     if action == "list":
         _tag_list()
         return
     if action == "push":
-        _reconcile_tag_push(_svc(), name or default_tag_name(), yes=yes, force=force)
+        _reconcile_tag_push(
+            _svc(), _resolve_tag_name(name, purpose="push"), yes=yes, force=force
+        )
         return
     _tag_create(action, yes=yes, force=force)
 
 
 @git_app.command("zip")
 def zip_cmd(
-    tag: str | None = typer.Argument(None, help="Tag to archive (default today YYYY-MM-DD)."),
+    tag: str | None = typer.Argument(
+        None, help="Tag to archive (default: latest local tag for repo pattern)."
+    ),
     output: Path | None = typer.Option(
         None,
         "-o",
@@ -767,7 +819,7 @@ def zip_cmd(
 ) -> None:
     """Create a zip archive of the tree at a git tag."""
     svc = _svc()
-    tag_name = tag or default_tag_name()
+    tag_name = _resolve_tag_name(tag, purpose="zip")
     if not svc.tag_exists_local(tag_name):
         raise typer.Exit(f"Tag not found: {tag_name}. Run `cli git tag` first.")
     dest = output or default_zip_path(svc.repo_basename(), tag_name)

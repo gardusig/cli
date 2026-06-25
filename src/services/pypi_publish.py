@@ -21,6 +21,7 @@ PACKAGE_NAME = "gardusig-cli"
 
 _VERSION_LINE_RE = re.compile(r'^(version\s*=\s*")[^"]+(")\s*$', re.MULTILINE)
 _INIT_VERSION_RE = re.compile(r'^__version__\s*=\s*"[^"]+"\s*$', re.MULTILINE)
+_RELEASE_TAG_RE = re.compile(r"^v\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?$")  # legacy tests
 
 
 class PyPiPublishError(RuntimeError):
@@ -39,6 +40,86 @@ def normalize_release_version(raw: str) -> str:
             f"release version must look like semver (got {value!r}); use tags like v1.0.0"
         )
     return value
+
+
+def validate_release_tag_name(raw: str) -> str:
+    """Require PyPI-style annotated tag names: ``vX.Y.Z`` (``v`` prefix mandatory)."""
+    from src.services.tag_policy import TagPattern, TagPolicy, validate_tag_name
+
+    return validate_tag_name(raw, TagPolicy(pattern=TagPattern.SEMVER_V))
+
+
+def format_release_tag(version: str) -> str:
+    """Build ``vX.Y.Z`` from a version or tag string."""
+    return f"v{normalize_release_version(version)}"
+
+
+def default_release_tag_name(root: Path | None = None) -> str:
+    """Default git tag name from ``pyproject.toml`` in *root* (``v{version}``)."""
+    return format_release_tag(read_project_version(root))
+
+
+def read_version_at_git_ref(ref: str, root: Path | None = None) -> str:
+    """Read ``version`` from ``pyproject.toml`` at a git *ref*."""
+    root = (root or project_root()).resolve()
+    result = subprocess.run(
+        ["git", "-C", str(root), "show", f"{ref}:pyproject.toml"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise PyPiPublishError(f"cannot read pyproject.toml at {ref!r}")
+    match = re.search(r'version\s*=\s*"([^"]+)"', result.stdout)
+    if not match:
+        raise PyPiPublishError(f"version not found in pyproject.toml at {ref!r}")
+    return match.group(1)
+
+
+def read_init_version(root: Path | None = None) -> str:
+    root = (root or project_root()).resolve()
+    init_py = root / "src" / "__init__.py"
+    if not init_py.is_file():
+        raise PyPiPublishError("__init__.py not found")
+    match = re.search(r'__version__\s*=\s*"([^"]+)"', init_py.read_text(encoding="utf-8"))
+    if not match:
+        raise PyPiPublishError("__version__ not found in src/__init__.py")
+    return match.group(1)
+
+
+def assert_versions_in_sync(root: Path | None = None) -> None:
+    root = (root or project_root()).resolve()
+    pyproject_v = read_project_version(root)
+    try:
+        init_v = read_init_version(root)
+    except PyPiPublishError:
+        return
+    if pyproject_v != init_v:
+        raise PyPiPublishError(
+            f"version mismatch: pyproject.toml has {pyproject_v!r}, "
+            f"src/__init__.py has {init_v!r}"
+        )
+
+
+def assert_version_increased_vs_ref(
+    base_ref: str,
+    *,
+    root: Path | None = None,
+) -> str:
+    """Ensure working-tree version is strictly greater than *base_ref*."""
+    from src.services.tag_policy import bump_semver, compare_versions
+
+    root = (root or project_root()).resolve()
+    assert_versions_in_sync(root)
+    base_v = read_version_at_git_ref(base_ref, root)
+    head_v = read_project_version(root)
+    if compare_versions(head_v, base_v) <= 0:
+        suggested = bump_semver(base_v, level="patch")
+        raise PyPiPublishError(
+            f"version {head_v!r} on this branch is not greater than {base_ref} ({base_v!r}). "
+            f"Bump pyproject.toml and src/__init__.py to at least {suggested!r}."
+        )
+    return head_v
 
 
 def read_project_version(root: Path | None = None) -> str:

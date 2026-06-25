@@ -23,8 +23,8 @@ QUICK_DEFAULTS = (
     ("git push", "add + commit + push; on main starts random branch — use --yes -y to skip prompt"),
     ("git reset", "return to synced main; optional --delete-merged or interactive branch cleanup — --yes"),
     ("git stash push", "message defaults to '.'"),
-    ("git tag", "sync main, tag latest main commit (default name: today)"),
-    ("git zip", "zip today's tag into iCloud git-tags/REPO/"),
+    ("git tag", "sync main, tag with per-repo pattern (.cli/tag.yaml)"),
+    ("git zip", "zip a vX.Y.Z tag into iCloud git-tags/REPO/"),
     ("drive status", "git tags vs zips in backup.tags_dir (iCloud)"),
     ("drive ingest", "zip all tags for configured repos into git-tags/"),
     ("drive upload", "deploy missing zips to cloud replicas"),
@@ -45,7 +45,9 @@ WORKFLOW_SHORTCUTS: tuple[tuple[str, str, str, str], ...] = (
     ("git push", "push.sh", "docs/workflows.md", "push current branch; start on main"),
 )
 
-WORKFLOW_CHAIN = "reset → start → push → (merge PR) → reset"
+WORKFLOW_CHAIN = (
+    "backlog next → reset → start → push → review → pr create → pr merge → issue close → reset"
+)
 
 QUICK_DEFAULT_SCRIPTS: dict[str, str] = {
     "git start": "scripts/git/start.sh",
@@ -58,12 +60,17 @@ QUICK_DEFAULT_SCRIPTS: dict[str, str] = {
 
 
 GIT_SCRIPT_COMMANDS: tuple[tuple[str, str], ...] = (
-    ("branch.sh", "git branch"),
+    ("branch.sh", "git branch list"),
+    ("branch-list.sh", "git branch list"),
+    ("branch-current.sh", "git branch current"),
+    ("branch-prune.sh", "git branch prune"),
+    ("branch-rename.sh", "git branch rename"),
     ("branch-clear.sh", "git branch clear"),
     ("branch-delete.sh", "git branch delete"),
     ("branch-delete-merged.sh", "git branch delete --merged"),
     ("branch-delete-all.sh", "git branch delete --all"),
     ("cherry-pick.sh", "git cherry pick"),
+    ("clean.sh", "git clean"),
     ("commit.sh", "git commit"),
     ("docs.sh", "git docs"),
     ("large-files.sh", "git large files"),
@@ -81,6 +88,32 @@ GIT_SCRIPT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("tag-list.sh", "git tag list"),
     ("tag-push.sh", "git tag push"),
     ("zip.sh", "git zip"),
+)
+
+GH_SCRIPT_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("backlog-next.sh", "gh backlog next"),
+    ("backlog-tree.sh", "gh backlog tree"),
+    ("backlog-resequence.sh", "gh backlog resequence"),
+    ("issue-list.sh", "gh issue list"),
+    ("issue-view.sh", "gh issue view"),
+    ("issue-context.sh", "gh issue context"),
+    ("issue-search.sh", "gh issue search"),
+    ("issue-create.sh", "gh issue create"),
+    ("issue-edit.sh", "gh issue edit"),
+    ("issue-close.sh", "gh issue close"),
+    ("issue-comment.sh", "gh issue comment"),
+    ("issue-batch.sh", "gh issue batch"),
+    ("label-list.sh", "gh label list"),
+    ("sync-labels.sh", "gh label sync"),
+    ("labelize-backlog.sh", "gh issue batch"),
+    ("pr-list.sh", "gh pr list"),
+    ("pr-view.sh", "gh pr view"),
+    ("pr-diff.sh", "gh pr diff"),
+    ("pr-create.sh", "gh pr create"),
+    ("pr-edit.sh", "gh pr edit"),
+    ("pr-close.sh", "gh pr close"),
+    ("pr-merge.sh", "gh pr merge"),
+    ("repo-view.sh", "gh repo view"),
 )
 
 CHROME_SCRIPTS: tuple[tuple[str, str], ...] = (
@@ -155,6 +188,24 @@ def git_script_entries(root: Path | None = None) -> list[CatalogEntry]:
                 cli=f"cli {cli_cmd}",
                 script=rel,
                 doc="docs/git.md",
+            )
+        )
+    return entries
+
+
+def gh_script_entries(root: Path | None = None) -> list[CatalogEntry]:
+    base = root or project_root()
+    gh_dir = base / "scripts" / "gh"
+    entries: list[CatalogEntry] = []
+    for script_name, cli_cmd in GH_SCRIPT_COMMANDS:
+        script_path = gh_dir / script_name
+        rel = str(script_path.relative_to(base)) if script_path.is_file() else None
+        entries.append(
+            CatalogEntry(
+                script_name.replace(".sh", "").replace("-", " "),
+                cli=f"cli {cli_cmd}",
+                script=rel,
+                doc="docs/gh.md",
             )
         )
     return entries

@@ -16,8 +16,26 @@ permissions:
   contents: read
 
 jobs:
+  version:
+    name: Version bump (PR)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Require version greater than base branch
+        run: |
+          chmod +x scripts/ci/version-check.sh
+          git fetch origin "${{ github.base_ref }}"
+          ./scripts/ci/version-check.sh "origin/${{ github.base_ref }}"
+
   unit:
     name: Unit tests (Docker)
+    needs: version
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

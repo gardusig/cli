@@ -11,6 +11,7 @@ from src.utils.catalog import (
     WORKFLOW_SHORTCUTS,
     chrome_script_entries,
     doc_entries,
+    gh_script_entries,
     git_script_entries,
 )
 from src.utils.config import project_root
@@ -55,6 +56,11 @@ def links_root() -> None:
             line += " — [dim]docs/large-files.md[/dim]"
         rprint(line)
 
+    rprint("\n[bold]GitHub scripts[/bold] → [dim]scripts/gh/[/dim] (see docs/gh.md)")
+    for entry in gh_script_entries(root):
+        if entry.script:
+            rprint(f"  {entry.script} → {entry.cli}")
+
     rprint("\n[bold]Chrome scripts[/bold] → [dim]scripts/chrome/[/dim] (see docs/bookmarks.md)")
     for entry in chrome_script_entries(root):
         rprint(f"  {entry.script} — {entry.note}")
@@ -77,12 +83,15 @@ def links_root() -> None:
         ("scripts/docker/build-images.sh", "build all Docker stages"),
         ("scripts/docker/build-image.sh", "build one Docker stage"),
         ("scripts/docker/build-contest-image.sh", "build cli-contest:runner image"),
+        ("scripts/test/tags.sh", "host: tag/zip/version unit tests"),
+        ("scripts/test/workflows.sh", "host: workflow E2E tests (mocked gh)"),
+        ("scripts/test/all.sh", "host tags + Docker unit + integration"),
         ("scripts/test/unit.sh", "unit tests in container"),
         ("scripts/test/integration.sh", "integration tests in container"),
         ("scripts/test/smoke.sh", "integration smoke (container only)"),
+        ("scripts/ci/version-check.sh", "PR gate: version > base branch"),
         ("scripts/docker/shell.sh", "onboard shell in container"),
         ("scripts/drive/status.sh", "git-tags backup status"),
-        ("scripts/gh/sync-labels.sh", "sync label manifest to GitHub"),
     ):
         path = root / rel
         if path.is_file():

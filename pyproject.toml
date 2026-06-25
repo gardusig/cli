@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 # PyPI distribution name (repo remains github.com/gardusig/cli).
 name = "gardusig-cli"
-version = "0.1.0"
+version = "0.1.1"
 description = "macOS CLI for git shortcuts, backups, and sync workflows"
 readme = "README.md"
 requires-python = ">=3.12"

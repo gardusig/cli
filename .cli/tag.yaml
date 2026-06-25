@@ -1,0 +1,5 @@
+# Tag naming for this repository (cli git tag reads .cli/tag.yaml from the target repo).
+# Other repos can use semver, date, or plain — see docs/git.md.
+pattern: semver-v
+bump: patch
+require_increase: true

@@ -107,6 +107,13 @@ def issue_view_cmd(
     _emit(data, _ctx_format(ctx))
 
 
+@issue_app.command("context")
+def issue_context_cmd(ctx: typer.Context, number: int) -> None:
+    svc = _svc(_ctx_repo(ctx))
+    data = svc.issue_context(number)
+    _emit(data, _ctx_format(ctx))
+
+
 @issue_app.command("search")
 def issue_search_cmd(
     ctx: typer.Context,

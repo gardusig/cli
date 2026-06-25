@@ -4,7 +4,11 @@ Shell wrappers for each [cursor-skills git skill](https://github.com/gardusig/cu
 
 | Script | cursor-skills skill | CLI |
 | --- | --- | --- |
-| `branch.sh` | `git/branch` | `cli git branch` |
+| `branch.sh` | `git/branch` | `cli git branch list` |
+| `branch-list.sh` | `git/branch` | `cli git branch list` |
+| `branch-current.sh` | — | `cli git branch current` |
+| `branch-prune.sh` | — | `cli git branch prune` |
+| `branch-rename.sh` | — | `cli git branch rename` |
 | `branch-delete.sh` | `git/branch/delete` | `cli git branch delete` |
 | `branch-delete-merged.sh` | `git/branch/delete/merged` | `cli git branch delete --merged` |
 | `branch-delete-all.sh` | `git/branch/delete/all` | `cli git branch delete --all` |
