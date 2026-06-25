@@ -125,7 +125,7 @@ def check_tag_list_empty(git_root: Path, repo_root: Path) -> list[str]:
 
 def check_tag_create_on_main(git_root: Path, repo_root: Path) -> list[str]:
     errors: list[str] = []
-    tag = "integration-create-main"
+    tag = "v0.0.0"
     reset_integration_git(git_root)
     scratch = _tag_zip_scratch("tag-create-main")
     scratch.mkdir(parents=True, exist_ok=True)
@@ -150,7 +150,7 @@ def check_tag_create_on_main(git_root: Path, repo_root: Path) -> list[str]:
 
 def check_tag_list_after_create(git_root: Path, repo_root: Path) -> list[str]:
     errors: list[str] = []
-    tags = ("integration-list-a", "integration-list-b")
+    tags = ("v0.0.1", "v0.0.2")
     reset_integration_git(git_root)
     scratch = _tag_zip_scratch("tag-list-after")
     scratch.mkdir(parents=True, exist_ok=True)
@@ -179,7 +179,7 @@ def check_tag_refuse_dirty_without_yes(git_root: Path, repo_root: Path) -> list[
     code, output = invoke_tag_zip(
         repo_root,
         git_root,
-        ("git", "tag", "integration-dirty-refuse"),
+        ("git", "tag", "v0.0.0"),
         extra_env=isolated_tags_env(scratch),
     )
     if code == 0:
@@ -191,7 +191,7 @@ def check_tag_refuse_dirty_without_yes(git_root: Path, repo_root: Path) -> list[
 
 def check_tag_refuse_replace_without_yes(git_root: Path, repo_root: Path) -> list[str]:
     errors: list[str] = []
-    tag = "integration-replace-refuse"
+    tag = "v0.0.3"
     reset_integration_git(git_root)
     scratch = _tag_zip_scratch("tag-replace-refuse")
     scratch.mkdir(parents=True, exist_ok=True)
@@ -211,7 +211,7 @@ def check_tag_refuse_replace_without_yes(git_root: Path, repo_root: Path) -> lis
 
 def check_tag_replace_with_yes(git_root: Path, repo_root: Path) -> list[str]:
     errors: list[str] = []
-    tag = "integration-replace-yes"
+    tag = "v0.0.4"
     reset_integration_git(git_root)
     scratch = _tag_zip_scratch("tag-replace-yes")
     scratch.mkdir(parents=True, exist_ok=True)
@@ -229,7 +229,7 @@ def check_tag_replace_with_yes(git_root: Path, repo_root: Path) -> list[str]:
 
 def check_tag_push_with_yes(git_root: Path, repo_root: Path) -> list[str]:
     errors: list[str] = []
-    tag = "integration-push-flow"
+    tag = "v0.0.5"
     reset_integration_git(git_root)
     scratch = _tag_zip_scratch("tag-push-yes")
     scratch.mkdir(parents=True, exist_ok=True)
@@ -248,7 +248,7 @@ def check_tag_push_with_yes(git_root: Path, repo_root: Path) -> list[str]:
 def check_tag_push_skip_when_synced(git_root: Path, repo_root: Path) -> list[str]:
     """Real origin: after push, second reconcile skips."""
     errors: list[str] = []
-    tag = "integration-push-skip"
+    tag = "v0.0.6"
     reset_integration_git(git_root)
     scratch = _tag_zip_scratch("tag-push-skip")
     scratch.mkdir(parents=True, exist_ok=True)
@@ -272,7 +272,7 @@ def check_tag_push_skip_when_synced(git_root: Path, repo_root: Path) -> list[str
 def check_tag_from_feature_aligns_main(git_root: Path, repo_root: Path) -> list[str]:
     """On feature branch, tag --yes syncs main first then tags main tip."""
     errors: list[str] = []
-    tag = "integration-from-feature"
+    tag = "v0.0.7"
     reset_integration_git(git_root)
     setup_feature_branch(git_root, "checked_out")
     scratch = _tag_zip_scratch("tag-from-feature")
@@ -302,7 +302,7 @@ def check_zip_missing_tag(git_root: Path, repo_root: Path) -> list[str]:
     code, output = invoke_tag_zip(
         repo_root,
         git_root,
-        ("git", "zip", "no-such-tag"),
+        ("git", "zip", "v9.9.9"),
         extra_env=isolated_tags_env(scratch),
     )
     if code == 0:
@@ -314,7 +314,7 @@ def check_zip_missing_tag(git_root: Path, repo_root: Path) -> list[str]:
 
 def check_zip_after_tag(git_root: Path, repo_root: Path) -> list[str]:
     errors: list[str] = []
-    tag = "integration-zip-tag"
+    tag = "v0.0.8"
     reset_integration_git(git_root)
     scratch = _tag_zip_scratch("zip-after-tag")
     scratch.mkdir(parents=True, exist_ok=True)
@@ -340,7 +340,7 @@ def check_zip_after_tag(git_root: Path, repo_root: Path) -> list[str]:
 
 def check_zip_replaces_existing(git_root: Path, repo_root: Path) -> list[str]:
     errors: list[str] = []
-    tag = "integration-zip-replace"
+    tag = "v0.0.9"
     reset_integration_git(git_root)
     scratch = _tag_zip_scratch("zip-replace")
     scratch.mkdir(parents=True, exist_ok=True)
@@ -373,7 +373,7 @@ def check_zip_replaces_existing(git_root: Path, repo_root: Path) -> list[str]:
 
 def check_zip_custom_output(git_root: Path, repo_root: Path) -> list[str]:
     errors: list[str] = []
-    tag = "integration-zip-custom"
+    tag = "v0.1.0"
     reset_integration_git(git_root)
     scratch = _tag_zip_scratch("zip-custom")
     scratch.mkdir(parents=True, exist_ok=True)
@@ -396,7 +396,7 @@ def check_zip_custom_output(git_root: Path, repo_root: Path) -> list[str]:
 def check_tag_zip_full_workflow(git_root: Path, repo_root: Path) -> list[str]:
     """tag create → list → push → zip in one scenario."""
     errors: list[str] = []
-    tag = "integration-full-workflow"
+    tag = "v0.1.1"
     reset_integration_git(git_root)
     scratch = _tag_zip_scratch("tag-zip-full")
     scratch.mkdir(parents=True, exist_ok=True)

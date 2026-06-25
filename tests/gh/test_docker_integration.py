@@ -25,8 +25,8 @@ def test_gh_issue_list_returns_fixture_json() -> None:
 
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
-    assert payload[0]["number"] == 42
-    assert payload[0]["title"] == "Integration issue"
+    numbers = {row["number"] for row in payload}
+    assert 42 in numbers
 
 
 @pytest.mark.integration

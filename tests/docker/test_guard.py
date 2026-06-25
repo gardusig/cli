@@ -13,6 +13,7 @@ from src.integration.docker_guard import (
 )
 
 
+@pytest.mark.integration
 def test_in_docker_integration_true_in_container() -> None:
     assert in_docker_integration() is True
 

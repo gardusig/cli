@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +49,64 @@ class GhService:
         if comments:
             args.append("--comments")
         return self.provider.run_json(args)
+
+    def issue_context(self, number: int) -> dict[str, Any]:
+        """Full issue rollup: view, comments, epic parent, siblings, body-linked issues."""
+        raw = self.issue_view(number, comments=True)
+        comments = raw.pop("comments", [])
+        labels = [
+            str(lb.get("name", lb)) if isinstance(lb, dict) else str(lb)
+            for lb in raw.get("labels", [])
+        ]
+        epic_label = next((lb for lb in labels if lb.startswith("epic:")), None)
+        epic_info: dict[str, Any] | None = None
+        siblings: list[dict[str, Any]] = []
+        if epic_label:
+            all_issues = self.issue_list(state="open", limit=200)
+            epic_parent: dict[str, Any] | None = None
+            for row in all_issues:
+                row_labels = [
+                    str(lb.get("name", lb)) if isinstance(lb, dict) else str(lb)
+                    for lb in row.get("labels", [])
+                ]
+                if epic_label in row_labels and "issue-type:epic" in row_labels:
+                    epic_parent = {"number": row["number"], "title": row["title"]}
+                    break
+            for row in all_issues:
+                row_labels = [
+                    str(lb.get("name", lb)) if isinstance(lb, dict) else str(lb)
+                    for lb in row.get("labels", [])
+                ]
+                if (
+                    epic_label in row_labels
+                    and "issue-type:child" in row_labels
+                    and int(row["number"]) != number
+                ):
+                    siblings.append({"number": row["number"], "title": row["title"]})
+            epic_info = {"slug": epic_label, "parent": epic_parent}
+        linked: list[dict[str, Any]] = []
+        body = str(raw.get("body", ""))
+        seen: set[int] = set()
+        for match in re.finditer(r"#(\d+)", body):
+            ref_num = int(match.group(1))
+            if ref_num == number or ref_num in seen:
+                continue
+            seen.add(ref_num)
+            try:
+                ref = self.issue_view(ref_num)
+            except Exception:
+                continue
+            linked.append(
+                {"number": ref_num, "title": ref["title"], "relation": "body_ref"}
+            )
+        return {
+            "issue": raw,
+            "comments": comments,
+            "epic": epic_info,
+            "siblings": siblings,
+            "linked_issues": linked,
+            "labels": labels,
+        }
 
     def issue_search(self, query: str, *, limit: int = 30) -> list[dict[str, Any]]:
         args = [

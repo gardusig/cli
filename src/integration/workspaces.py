@@ -79,6 +79,10 @@ INTEGRATION_TEST_MODULES: tuple[str, ...] = tuple(
     w.integration_module for w in API_WORKSPACES
 ) + (
     "tests.cli.test_api_integration",
+    "tests.cli.test_endpoint_integration",
     "tests.meta.test_external_api_integration",
     "tests.pypi.test_integration",
+    "tests.workflows.test_workflow_e2e",
 )
+
+WORKFLOW_MODULES: tuple[str, ...] = ("tests.workflows.test_workflow_e2e",)

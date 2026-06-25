@@ -109,14 +109,20 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
     batch = workspace / "issue-batch.yaml"
     plan = workspace / "resequence.yaml"
     return [
-        CliApiCheck("gh issue list", "gh", ("gh", *fmt, "issue", "list"), "42"),
+        CliApiCheck("gh issue list", "gh", ("gh", *fmt, "issue", "list"), "Integration issue"),
         CliApiCheck("gh issue view", "gh", ("gh", *fmt, "issue", "view", "42"), "fixture body"),
+        CliApiCheck(
+            "gh issue context",
+            "gh",
+            ("gh", *fmt, "issue", "context", "2"),
+            "epic:wf-test",
+        ),
         CliApiCheck("gh issue search", "gh", ("gh", *fmt, "issue", "search", "is:open"), "["),
         CliApiCheck(
             "gh issue create",
             "gh",
             ("gh", *fmt, "issue", "create", "--title", "New", "--body", "b", "--yes"),
-            "99",
+            "example/repo/issues/",
         ),
         CliApiCheck(
             "gh issue edit",

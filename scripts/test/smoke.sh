@@ -25,7 +25,7 @@ smoke_contains() {
 }
 
 python -m src --help >/dev/null
-smoke_contains "0.1.0" python -m src --version
+smoke_contains "0.1.1" python -m src --version
 
 smoke_contains "Repository:" python -m src drive status
 smoke_contains "restore: not implemented yet" python -m src restore
@@ -82,6 +82,7 @@ git -C "$tmpdir/repo" commit -m "initial" >/dev/null
 python tests/integration/check_integration_coverage.py
 python tests/integration/check_public_commands.py
 python tests/integration/check_workflow_integration.py
+python tests/integration/check_workflows.py
 python tests/integration/check_api_integration.py
 
 echo "Docker integration smoke passed."

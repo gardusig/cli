@@ -6,12 +6,17 @@ Each command maps to a [cursor-skills git skill](https://github.com/gardusig/cur
 
 | Skill | Script | Command |
 | --- | --- | --- |
-| `@git-branch` | `scripts/git/branch.sh` | `cli git branch` |
+| `@git-branch` | `scripts/git/branch.sh` | `cli git branch list` |
+| `@git-branch` | `scripts/git/branch-list.sh` | `cli git branch list` |
+| — | `scripts/git/branch-current.sh` | `cli git branch current` |
+| — | `scripts/git/branch-prune.sh` | `cli git branch prune` |
+| — | `scripts/git/branch-rename.sh` | `cli git branch rename` |
 | `@git-branch-delete` | `scripts/git/branch-delete.sh` | `cli git branch delete` |
 | `@git-branch delete --merged` | `scripts/git/branch-delete-merged.sh` | `cli git branch delete --merged` |
 | `@git-branch delete --all` | `scripts/git/branch-delete-all.sh` | `cli git branch delete --all` |
 | `@git-branch-clear` | `scripts/git/branch-clear.sh` | `cli git branch clear` |
 | `@git-cherry-pick` | `scripts/git/cherry-pick.sh` | `cli git cherry pick` |
+| `@git-clean` | `scripts/git/clean.sh` | `cli git clean` |
 | `@git-commit` | `scripts/git/commit.sh` | `cli git commit` |
 | `@git-docs` | `scripts/git/docs.sh` | `cli git docs` |
 | `@git-large-files` | `scripts/git/large-files.sh` | `cli git large files` |
@@ -135,22 +140,47 @@ cli git branch clear --yes --delete-remote
 
 Single-repository only (run from the repo you want to tag).
 
+### Tag naming (per repo)
+
+Put [`.cli/tag.yaml`](../.cli/tag.yaml) in the target repo, or let the CLI **detect** the pattern from existing tags:
+
+| `pattern` | Example | Default when omitted |
+| --- | --- | --- |
+| `semver-v` | `v0.1.0` | Used when `pyproject.toml` exists (this repo) |
+| `semver` | `1.0.0` | — |
+| `date` | `2026-06-24` | Daily snapshot repos |
+| `plain` | `my-release` | No validation / no auto-suggest |
+
+Optional keys: `bump` (`patch` \| `minor` \| `major`), `require_increase: true` (reject tags ≤ latest).
+
+**This repo** (`.cli/tag.yaml`): `semver-v`, patch bump, `require_increase: true`.  
+`cli git tag` with no name **auto-suggests the next tag** (e.g. `v0.1.0` → `v0.1.1`).
+
+PR CI runs [`scripts/ci/version-check.sh`](../scripts/ci/version-check.sh) — `pyproject.toml` version must be **greater than** `main`.
+
 ```bash
-cli git tag                    # sync main, create today's tag, push to origin
-cli git tag 2026-06-11         # named tag
-cli git tag list               # local + remote tags (sorted)
-cli git tag push               # reconcile today's tag with origin
-cli git tag push 2026-06-11 --yes
-cli git tag 2026-06-11 --yes --force   # replace local tag / force-push remote
-cli git zip                    # zip today's tag → git-tags/REPO/REPO-TAG.zip (iCloud)
-cli git zip 2026-06-11 -o out.zip
+cli pypi version suggest      # next package version (patch)
+cli pypi version tag-suggest  # next git tag for current repo
+cli pypi version check        # compare HEAD vs origin/main
 ```
 
-`tag` syncs **main** first (same as `git reset`), creates an annotated tag on the latest main commit, then pushes to `origin` when configured. Default tag name is **today's date** (`YYYY-MM-DD`). Pass `--yes` if the worktree is dirty. Pass `--force` to replace an existing local tag or force-push when the remote tag differs.
+```bash
+cli git tag                    # sync main, suggest next vX.Y.Z, push to origin
+cli git tag v0.1.1             # explicit release tag
+cli git tag list               # local + remote tags (sorted)
+cli git tag push               # push latest local tag to origin
+cli git tag push v0.1.1 --yes --force   # force-push when remote differs
+cli git zip                    # zip latest local tag → git-tags/REPO/
+cli git zip v0.1.1 -o out.zip
+```
+
+`tag` syncs **main** first, creates the **next** tag greater than the latest (per `.cli/tag.yaml`), then pushes to `origin` when configured. `zip` always archives the **latest local** tag unless you pass a name. Subcommands: `list`, `push` (`--force`), and explicit tag names still work.
 
 For multi-repo zip inventory and bulk ingest, use [`cli drive ingest`](drive.md).
 
 Shell wrappers: `scripts/git/tag-list.sh`, `scripts/git/tag-push.sh`, `scripts/git/zip.sh`.
+
+**Debug tests:** `./scripts/test/tags.sh` (fast host pytest) · `./scripts/test/all.sh` (tags + Docker unit + integration).
 
 ## Review (workspace health)
 

@@ -12,6 +12,7 @@ from src.services.pypi_publish import (
     PACKAGE_NAME,
     TEST_REPOSITORY_URL,
     PyPiPublishError,
+    assert_version_increased_vs_ref,
     build_distributions,
     publish_distributions,
     read_project_version,
@@ -19,9 +20,59 @@ from src.services.pypi_publish import (
     resolve_release_version,
     verify_package_version_on_index,
 )
+from src.services.tag_policy import resolve_tag_policy, suggest_next_tag
+from src.services.git_shortcuts import GitShortcuts
 from src.utils.config import project_root
 
 pypi_app = typer.Typer(help="Build and upload gardusig-cli to PyPI.", no_args_is_help=True)
+version_app = typer.Typer(help="Package version checks.", no_args_is_help=True)
+pypi_app.add_typer(version_app, name="version")
+
+
+@version_app.command("check")
+def pypi_version_check_cmd(
+    base: str = typer.Option(
+        "origin/main",
+        "--base",
+        help="Git ref to compare against (must contain pyproject.toml).",
+    ),
+) -> None:
+    """Fail unless working-tree version is strictly greater than *base* (PR gate)."""
+    root = project_root()
+    try:
+        head_v = assert_version_increased_vs_ref(base, root=root)
+        typer.echo(f"version ok: {head_v} > {base}")
+    except PyPiPublishError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+
+
+@version_app.command("suggest")
+def pypi_version_suggest_cmd() -> None:
+    """Print suggested next package version (patch bump from pyproject.toml)."""
+    from src.services.tag_policy import bump_semver
+
+    root = project_root()
+    try:
+        current = read_project_version(root)
+        typer.echo(bump_semver(current, level="patch"))
+    except PyPiPublishError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+
+
+@version_app.command("tag-suggest")
+def pypi_tag_suggest_cmd() -> None:
+    """Print suggested next git tag for the current repo (uses .cli/tag.yaml)."""
+    root = project_root()
+    try:
+        svc = GitShortcuts(top=str(root))
+        policy = resolve_tag_policy(root, svc.all_tag_names())
+        suggested = suggest_next_tag(svc.all_tag_names(), policy, repo_root=root)
+        typer.echo(suggested)
+    except PyPiPublishError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
 
 
 @pypi_app.command("build")

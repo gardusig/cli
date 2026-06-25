@@ -11,6 +11,10 @@ GIT_SCRIPTS = ROOT / "scripts" / "git"
 def test_all_cursor_skills_git_scripts_exist() -> None:
     expected = {
         "branch.sh",
+        "branch-list.sh",
+        "branch-current.sh",
+        "branch-prune.sh",
+        "branch-rename.sh",
         "branch-delete.sh",
         "branch-delete-merged.sh",
         "branch-delete-all.sh",

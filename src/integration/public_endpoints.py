@@ -99,6 +99,15 @@ GIT_SUBCOMMANDS = (
     "cherry pick",
 )
 
+# Every public `cli pypi …` command path.
+PYPI_SUBCOMMANDS = (
+    "build",
+    "upload",
+    "version check",
+    "version suggest",
+    "version tag-suggest",
+)
+
 _GIT_SUBCOMMAND_PATHS: frozenset[tuple[str, ...]] = frozenset(
     ("git", *sub.split()) for sub in GIT_SUBCOMMANDS
 )
@@ -109,7 +118,7 @@ def endpoint_checks() -> list[EndpointCheck]:
     refuse = REFUSE_NEEDLE
     checks: list[EndpointCheck] = [
         EndpointCheck("root --help", ("--help",), needle="git"),
-        EndpointCheck("root --version", ("--version",), needle="0.1.0"),
+        EndpointCheck("root --version", ("--version",), needle="0.1.1"),
         EndpointCheck("drive status", ("drive", "status"), needle="Repository:"),
         EndpointCheck("restore", ("restore",), needle="not implemented yet"),
         EndpointCheck("drive help", ("drive", "--help"), needle="sync"),
@@ -146,11 +155,69 @@ def endpoint_checks() -> list[EndpointCheck]:
             needle="Built:",
         ),
         EndpointCheck(
+            "pypi build missing project",
+            ("pypi", "build"),
+            outside_git=True,
+            needle="pyproject",
+            accept_exit_codes=(1,),
+            failure="missing_pyproject",
+        ),
+        EndpointCheck(
+            "pypi upload build-only",
+            ("pypi", "upload", "--yes", "--build-only"),
+            needle="Built:",
+        ),
+        EndpointCheck(
+            "pypi upload refuse",
+            ("pypi", "upload"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
             "pypi upload missing token",
             ("pypi", "upload", "--yes"),
             needle="PYPI_API_TOKEN",
             accept_exit_codes=(1,),
             failure="missing_pypi_token",
+        ),
+        EndpointCheck(
+            "pypi version suggest",
+            ("pypi", "version", "suggest"),
+            needle="0.",
+        ),
+        EndpointCheck(
+            "pypi version suggest missing project",
+            ("pypi", "version", "suggest"),
+            outside_git=True,
+            needle="pyproject",
+            accept_exit_codes=(1,),
+            failure="missing_pyproject",
+        ),
+        EndpointCheck(
+            "pypi version tag-suggest",
+            ("pypi", "version", "tag-suggest"),
+            needle="v",
+        ),
+        EndpointCheck(
+            "pypi version tag-suggest missing project",
+            ("pypi", "version", "tag-suggest"),
+            outside_git=True,
+            needle="pyproject",
+            accept_exit_codes=(1,),
+            failure="missing_pyproject",
+        ),
+        EndpointCheck(
+            "pypi version check",
+            ("pypi", "version", "check", "--base", "origin/main"),
+            needle="version ok",
+        ),
+        EndpointCheck(
+            "pypi version check not increased",
+            ("pypi", "version", "check", "--base", "HEAD"),
+            needle="not greater",
+            accept_exit_codes=(1,),
+            failure="version_not_increased",
         ),
         EndpointCheck("publish help", ("publish", "--help"), needle="deprecated"),
         EndpointCheck(
@@ -321,8 +388,8 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag local",
-            ("git", "tag", "integration-tag", "--yes"),
-            needle="integration-tag",
+            ("git", "tag", "v0.0.0", "--yes"),
+            needle="v0.0.0",
             needs_git=True,
             reset_git=True,
         ),
@@ -335,15 +402,23 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git zip",
-            ("git", "zip", "integration-tag"),
+            ("git", "zip", "v0.0.0"),
             needle=".zip",
             needs_git=True,
             reset_git=True,
         ),
         EndpointCheck(
             "git zip missing tag",
-            ("git", "zip", "integration-missing-tag"),
+            ("git", "zip", "v9.9.9"),
             needle="Tag not found",
+            needs_git=True,
+            reset_git=True,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "git tag invalid format",
+            ("git", "tag", "2026-06-11", "--yes"),
+            needle="semver-v",
             needs_git=True,
             reset_git=True,
             accept_exit_codes=(1,),
@@ -487,7 +562,7 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag replace refuse",
-            ("git", "tag", "integration-replace-tag"),
+            ("git", "tag", "v0.0.1"),
             kind="refuse",
             needle=refuse,
             needs_git=True,
@@ -495,8 +570,8 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag replace force",
-            ("git", "tag", "integration-replace-tag", "--yes", "--force"),
-            needle="integration-replace-tag",
+            ("git", "tag", "v0.0.1", "--yes", "--force"),
+            needle="v0.0.1",
             needs_git=True,
             reset_git=True,
         ),
@@ -599,7 +674,7 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag push refuse",
-            ("git", "tag", "push", "integration-tag"),
+            ("git", "tag", "push", "v0.0.2"),
             kind="refuse",
             needle=refuse,
             needs_git=True,
@@ -749,8 +824,8 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag push yes",
-            ("git", "tag", "push", "integration-remote-tag", "--yes"),
-            needle="integration-remote-tag",
+            ("git", "tag", "push", "v0.0.3", "--yes"),
+            needle="v0.0.3",
             needs_git=True,
             reset_git=True,
         ),
@@ -806,6 +881,21 @@ def _collect_typer_command_paths(typer_instance, prefix: tuple[str, ...] = ()) -
         if cmd.name:
             paths.add(" ".join(prefix + (cmd.name,)))
     return paths
+
+
+def _pypi_command_path_from_check_args(args: tuple[str, ...]) -> str | None:
+    if not args or args[0] != "pypi":
+        return None
+    rest = [a for a in args[1:] if not a.startswith("-")]
+    if len(rest) >= 2 and rest[0] == "version":
+        candidate = f"version {rest[1]}"
+        if candidate in PYPI_SUBCOMMANDS:
+            return candidate
+    if rest:
+        candidate = rest[0]
+        if candidate in PYPI_SUBCOMMANDS:
+            return candidate
+    return None
 
 
 def _git_command_path_from_check_args(args: tuple[str, ...]) -> str | None:
@@ -884,7 +974,12 @@ def prepare_git_repo(path: Path) -> None:
     )
     readme = path / "README.md"
     readme.write_text("integration\n", encoding="utf-8")
-    subprocess.run(["git", "-C", str(path), "add", "README.md"], check=True, capture_output=True)
+    pyproject = path / "pyproject.toml"
+    pyproject.write_text('[project]\nname = "integration"\nversion = "0.0.0"\n', encoding="utf-8")
+    src_dir = path / "src"
+    src_dir.mkdir(exist_ok=True)
+    (src_dir / "__init__.py").write_text('__version__ = "0.0.0"\n', encoding="utf-8")
+    subprocess.run(["git", "-C", str(path), "add", "README.md", "pyproject.toml", "src/__init__.py"], check=True, capture_output=True)
     subprocess.run(
         ["git", "-C", str(path), "commit", "-m", "initial"],
         check=True,
@@ -987,6 +1082,39 @@ def assert_every_git_subcommand_checked() -> None:
         raise AssertionError(f"integration checks missing git subcommands: {sorted(missing)}")
 
 
+def pypi_subcommands_with_ok_check() -> set[str]:
+    ok: set[str] = set()
+    for check in endpoint_checks():
+        if not _endpoint_check_is_success(check):
+            continue
+        path = _pypi_command_path_from_check_args(check.args)
+        if path:
+            ok.add(path)
+    return ok
+
+
+def pypi_subcommands_with_failure_check() -> set[str]:
+    failed: set[str] = set()
+    for check in endpoint_checks():
+        if not _endpoint_check_is_failure(check):
+            continue
+        path = _pypi_command_path_from_check_args(check.args)
+        if path:
+            failed.add(path)
+    return failed
+
+
+def assert_every_pypi_subcommand_has_ok_and_failure_check() -> None:
+    missing_ok = set(PYPI_SUBCOMMANDS) - pypi_subcommands_with_ok_check()
+    missing_fail = set(PYPI_SUBCOMMANDS) - pypi_subcommands_with_failure_check()
+    if missing_ok:
+        raise AssertionError(f"pypi subcommands without ok integration check: {sorted(missing_ok)}")
+    if missing_fail:
+        raise AssertionError(
+            f"pypi subcommands without failure integration check: {sorted(missing_fail)}"
+        )
+
+
 def git_subcommands_with_ok_check() -> set[str]:
     ok: set[str] = set()
     for check in endpoint_checks():
@@ -1045,9 +1173,11 @@ def assert_every_git_subcommand_has_ok_and_failure_check() -> None:
 
 def assert_every_top_level_command_checked() -> None:
     for name in TOP_LEVEL_COMMANDS:
-        if name == "git":
-            if not any(c.label == "git group help" for c in endpoint_checks()):
+        if name in {"git", "pypi"}:
+            if name == "git" and not any(c.label == "git group help" for c in endpoint_checks()):
                 raise AssertionError("missing integration check for git group help")
+            if name == "pypi" and not any(c.label == "pypi help" for c in endpoint_checks()):
+                raise AssertionError("missing integration check for pypi help")
             continue
         if not any(c.args and c.args[0] == name for c in endpoint_checks()):
             raise AssertionError(f"missing integration check for top-level command: {name}")
@@ -1096,7 +1226,16 @@ def run_endpoint_check(
         )
     if check.failure == "missing_pypi_token":
         env.pop("PYPI_API_TOKEN", None)
-    with _push_cwd(cwd), token_patch:
+    project_patch = nullcontext()
+    version_patch = nullcontext()
+    if check.failure == "missing_pyproject" and outside_git_root is not None:
+        project_patch = patch("src.commands.pypi.project_root", return_value=outside_git_root)
+    if check.label == "pypi version check":
+        version_patch = patch(
+            "src.commands.pypi.assert_version_increased_vs_ref",
+            return_value="0.1.1",
+        )
+    with _push_cwd(cwd), token_patch, project_patch, version_patch:
         result = _CLI_RUNNER.invoke(app, list(check.args), env=env)
     output = result.stdout + (result.stderr or "")
     if result.exception is not None:
@@ -1118,6 +1257,87 @@ class _push_cwd:
         os.chdir(self.previous)
 
 
+def execute_endpoint_integration_check(
+    check: EndpointCheck,
+    *,
+    repo_root: Path,
+    git_root: Path | None,
+    outside_git_root: Path,
+) -> list[str]:
+    """Run one endpoint check with the same setup as run_all_endpoint_checks."""
+    from contextlib import nullcontext
+    from unittest.mock import patch
+
+    errors: list[str] = []
+    if check.reset_git and git_root is not None:
+        reset_integration_git(git_root)
+    if check.label == "git tag replace refuse" and git_root is not None:
+        subprocess.run(
+            ["git", "-C", str(git_root), "tag", "-a", "v0.0.1", "-m", "v0.0.1"],
+            check=True,
+            capture_output=True,
+        )
+    if check.label == "git tag replace force" and git_root is not None:
+        subprocess.run(
+            ["git", "-C", str(git_root), "tag", "-a", "v0.0.1", "-m", "v0.0.1"],
+            check=True,
+            capture_output=True,
+        )
+    if check.label in {"git tag push yes", "git tag push refuse"} and git_root is not None:
+        tag_name = "v0.0.3" if check.label == "git tag push yes" else "v0.0.2"
+        subprocess.run(
+            ["git", "-C", str(git_root), "tag", "-a", tag_name, "-m", tag_name],
+            check=True,
+            capture_output=True,
+        )
+    if check.label == "git zip" and git_root is not None:
+        subprocess.run(
+            ["git", "-C", str(git_root), "tag", "-a", "v0.0.0", "-m", "v0.0.0"],
+            check=True,
+            capture_output=True,
+        )
+    if check.label == "git cherry pick yes" and git_root is not None:
+        setup_cherry_pick(git_root)
+    elif git_root is not None and check.feature_branch != "none":
+        setup_feature_branch(git_root, check.feature_branch)
+    elif check.ensure_second_commit and git_root is not None:
+        add_second_commit(git_root, on_feature=False)
+    if check.dirty_git and git_root is not None:
+        dirty_integration_git(git_root)
+    if check.ensure_stash and git_root is not None:
+        setup_code, setup_out = ensure_stash_entry(repo_root, git_root)
+        if setup_code != 0:
+            return [f"{check.label} setup: stash push failed ({setup_code})\n{setup_out}"]
+    if check.label == "gh issue list" and shutil.which("gh") is None:
+        return []
+    review_patch = nullcontext()
+    if check.failure == "review_fail":
+        review_patch = patch("src.commands.git.run_review", return_value=1)
+    with review_patch:
+        code, output = run_endpoint_check(
+            check,
+            repo_root=repo_root,
+            git_root=git_root,
+            outside_git_root=outside_git_root,
+        )
+    if check.kind == "ok":
+        if code not in check.accept_exit_codes:
+            errors.append(
+                f"{check.label}: expected exit {check.accept_exit_codes}, got {code}\n{output}"
+            )
+            return errors
+    else:
+        if code == 0:
+            errors.append(f"{check.label}: expected refusal, got exit 0\n{output}")
+            return errors
+    for needle in (check.needle, *check.extra_needles):
+        if needle and needle not in output:
+            errors.append(f"{check.label}: missing needle {needle!r}\n{output}")
+    if check.reset_git and git_root is not None:
+        reset_integration_git(git_root)
+    return errors
+
+
 def run_all_endpoint_checks(repo_root: Path, git_root: Path | None = None) -> list[str]:
     """Run every check; return error messages (empty if all passed)."""
     from contextlib import nullcontext
@@ -1128,122 +1348,21 @@ def run_all_endpoint_checks(repo_root: Path, git_root: Path | None = None) -> li
     assert_registry_covers_git_commands()
     assert_every_git_subcommand_checked()
     assert_every_git_subcommand_has_ok_and_failure_check()
+    assert_every_pypi_subcommand_has_ok_and_failure_check()
     assert_every_top_level_command_checked()
     outside_git_root = integration_temp_dir("cli-outside-git-")
     errors: list[str] = []
     try:
         with patch_remote_git():
             for check in endpoint_checks():
-                if check.reset_git and git_root is not None:
-                    reset_integration_git(git_root)
-                if check.label == "git tag replace refuse" and git_root is not None:
-                    subprocess.run(
-                        [
-                            "git",
-                            "-C",
-                            str(git_root),
-                            "tag",
-                            "-a",
-                            "integration-replace-tag",
-                            "-m",
-                            "integration-replace-tag",
-                        ],
-                        check=True,
-                        capture_output=True,
-                    )
-                if check.label == "git tag replace force" and git_root is not None:
-                    subprocess.run(
-                        [
-                            "git",
-                            "-C",
-                            str(git_root),
-                            "tag",
-                            "-a",
-                            "integration-replace-tag",
-                            "-m",
-                            "integration-replace-tag",
-                        ],
-                        check=True,
-                        capture_output=True,
-                    )
-                if check.label in {"git tag push yes", "git tag push refuse"} and git_root is not None:
-                    tag_name = (
-                        "integration-remote-tag"
-                        if check.label == "git tag push yes"
-                        else "integration-tag"
-                    )
-                    subprocess.run(
-                        [
-                            "git",
-                            "-C",
-                            str(git_root),
-                            "tag",
-                            "-a",
-                            tag_name,
-                            "-m",
-                            tag_name,
-                        ],
-                        check=True,
-                        capture_output=True,
-                    )
-                if check.label == "git zip" and git_root is not None:
-                    subprocess.run(
-                        [
-                            "git",
-                            "-C",
-                            str(git_root),
-                            "tag",
-                            "-a",
-                            "integration-tag",
-                            "-m",
-                            "integration-tag",
-                        ],
-                        check=True,
-                        capture_output=True,
-                    )
-                if check.label == "git cherry pick yes" and git_root is not None:
-                    setup_cherry_pick(git_root)
-                elif git_root is not None and check.feature_branch != "none":
-                    setup_feature_branch(git_root, check.feature_branch)
-                elif check.ensure_second_commit and git_root is not None:
-                    add_second_commit(git_root, on_feature=False)
-                if check.dirty_git and git_root is not None:
-                    dirty_integration_git(git_root)
-                if check.ensure_stash and git_root is not None:
-                    setup_code, setup_out = ensure_stash_entry(repo_root, git_root)
-                    if setup_code != 0:
-                        errors.append(
-                            f"{check.label} setup: stash push failed ({setup_code})\n{setup_out}"
-                        )
-                        continue
-                if check.label == "gh issue list" and shutil.which("gh") is None:
-                    # Mocked gh coverage: tests/gh/test_docker_integration.py
-                    continue
-                review_patch = nullcontext()
-                if check.failure == "review_fail":
-                    review_patch = patch("src.commands.git.run_review", return_value=1)
-                with review_patch:
-                    code, output = run_endpoint_check(
+                errors.extend(
+                    execute_endpoint_integration_check(
                         check,
                         repo_root=repo_root,
                         git_root=git_root,
                         outside_git_root=outside_git_root,
                     )
-                if check.kind == "ok":
-                    if code not in check.accept_exit_codes:
-                        errors.append(
-                            f"{check.label}: expected exit {check.accept_exit_codes}, got {code}\n{output}"
-                        )
-                        continue
-                else:
-                    if code == 0:
-                        errors.append(f"{check.label}: expected refusal, got exit 0\n{output}")
-                        continue
-                for needle in (check.needle, *check.extra_needles):
-                    if needle and needle not in output:
-                        errors.append(f"{check.label}: missing needle {needle!r}\n{output}")
-                if check.reset_git and git_root is not None:
-                    reset_integration_git(git_root)
+                )
     finally:
         cleanup_integration_temp_dir(outside_git_root)
     return errors

@@ -6,7 +6,6 @@ from unittest.mock import patch
 
 from src.utils.quick_defaults import (
     default_commit_message,
-    default_tag_name,
     suggest_branch_name,
 )
 
@@ -34,9 +33,3 @@ def test_suggest_branch_name_skips_gaps() -> None:
 
 def test_default_commit_message_is_dot() -> None:
     assert default_commit_message() == "."
-
-
-def test_default_tag_name_is_iso_date() -> None:
-    with patch("src.utils.quick_defaults.date") as mock_date:
-        mock_date.today.return_value.isoformat.return_value = "2026-06-11"
-        assert default_tag_name() == "2026-06-11"

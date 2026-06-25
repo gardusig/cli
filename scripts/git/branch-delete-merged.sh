@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # @git-branch-delete-merged — cursor-skills/skills/git/branch/delete/merged
 set -euo pipefail
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-# shellcheck source=scripts/lib/exec_cli.sh
-source "$ROOT/scripts/lib/exec_cli.sh"
+# shellcheck source=_common.sh
+source "$(dirname "$0")/_common.sh"
 exec_cli git branch delete --merged "$@"

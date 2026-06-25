@@ -13,11 +13,15 @@ def test_links_lists_docs_and_defaults() -> None:
     result = runner.invoke(app, ["links"])
     assert result.exit_code == 0
     assert "Workflow lifecycle" in result.stdout
-    assert "reset → start → push" in result.stdout
+    assert "backlog next" in result.stdout
     assert "scripts/git/push.sh" in result.stdout
+    assert "scripts/gh/pr-merge.sh" in result.stdout
+    assert "GitHub scripts" in result.stdout
     assert "Quick defaults" in result.stdout
     assert "docs/large-files.md" in result.stdout
     assert "scripts/git/start.sh" in result.stdout
+    assert "scripts/test/tags.sh" in result.stdout
+    assert "scripts/test/workflows.sh" in result.stdout
     assert "scripts/chrome/export.sh" in result.stdout
     assert "wip-YYMMDD" in result.stdout
 
