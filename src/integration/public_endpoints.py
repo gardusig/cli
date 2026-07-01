@@ -53,12 +53,16 @@ class EndpointCheck:
 TOP_LEVEL_COMMANDS = (
     "links",
     "git",
+    "gh",
+    "opencode",
+    "test",
+    "deploy",
+    "release",
     "docker",
     "restore",
     "drive",
     "notion",
     "chrome",
-    "gh",
     "contest",
     "pypi",
 )
@@ -139,6 +143,10 @@ def endpoint_checks() -> list[EndpointCheck]:
             extra_env={"CLI_BOOKMARKS_FILE": "/nonexistent/cli/missing-bookmarks.html"},
         ),
         EndpointCheck("gh help", ("gh", "--help"), needle="issue"),
+        EndpointCheck("opencode help", ("opencode", "--help"), needle="chat"),
+        EndpointCheck("test help", ("test", "--help"), needle="unit"),
+        EndpointCheck("deploy help", ("deploy", "--help"), needle="deploy"),
+        EndpointCheck("release help", ("release", "--help"), needle="release"),
         EndpointCheck(
             "gh issue list",
             ("gh", "issue", "list"),
