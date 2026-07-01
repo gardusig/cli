@@ -134,6 +134,7 @@ DOCKER_VERIFY_PATHS = [
     "scripts/ci/version-check.sh",
     "tests/integration/check_workflows.py",
     ".github/workflows/test.yml",
+    ".github/workflows/deploy.yml",
     ".github/workflows/release.yml",
 ]
 

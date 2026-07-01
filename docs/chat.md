@@ -48,7 +48,7 @@ Reusable from other repos:
 ```yaml
 jobs:
   plan:
-    uses: gardusig/cli/.github/workflows/reusable-chat-to-issues.yml@main
+    uses: gardusig/pipelines/.github/workflows/reusable-plan-chat-to-issues.yml@main
     secrets: inherit
     with:
       chat_summary: ${{ inputs.summary }}
