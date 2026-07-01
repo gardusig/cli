@@ -94,7 +94,7 @@ One CLI command and one script per step. See [gh.md](gh.md) and [scripts/gh/READ
 ./scripts/git/reset.sh --yes --delete-merged
 ```
 
-Future: `cli project` ([#72](https://github.com/gardusig/cli/issues/72)) will follow the same `scripts/project/*.sh` pattern.
+GitHub Projects are **not** used from `cli` — use `cli gh backlog organize` and `priority:N` labels instead ([#72](https://github.com/gardusig/cli/issues/72) deferred).
 
 ## Feature work (start → publish)
 
