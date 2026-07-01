@@ -33,7 +33,7 @@ _ISSUE_BODY_SECTIONS = """## Context
 ## Problem
 ## Acceptance
 ## Execution
-(next: `cli craft execute` or `cli craft pr`)"""
+(next: `cli opencode gh execute` or `cli opencode gh pr`)"""
 
 _ISSUE_REVIEW_SYSTEM = f"""You reshape GitHub issues (read-only). Compare target issue to open peers.
 Deliver markdown with sections:
@@ -43,7 +43,7 @@ Deliver markdown with sections:
 ## Proposed reshape (title + body draft using sections:
 {_ISSUE_BODY_SECTIONS})
 ## Verdict (ready_to_execute | needs_reshape | likely_duplicate)
-Do not mutate GitHub — user applies via `cli craft issue`."""
+Do not mutate GitHub — user applies via `cli opencode gh issue`."""
 
 _ISSUE_DEDUPE_SYSTEM = """Compare a candidate issue (title + summary) to open issues inventory.
 Output JSON only:
@@ -76,7 +76,7 @@ _ISSUE_EXECUTE_SYSTEM = """You execute an approved issue plan checkpoint-by-chec
 For each checkpoint output markdown:
 ## Checkpoint N — status (done|blocked|skipped)
 Evidence (command output summary or file paths)
-Then ## Handoff: `cli craft pr` when all done, or blocker description."""
+Then ## Handoff: `cli opencode gh pr` when all done, or blocker description."""
 
 _PR_BODY_SYSTEM = """Write a concise GitHub PR body in markdown:
 ## Summary
@@ -91,7 +91,7 @@ Deliver markdown:
 ## Issue acceptance (bullets vs delivery)
 ## Gaps (tests, docs, edge cases)
 ## Verdict (merge_ready | needs_work | needs_issue_update)
-## Next step (`cli craft pr`, `cli craft issue`, or GitHub UI merge)"""
+## Next step (`cli opencode gh pr`, `cli opencode gh issue`, or GitHub UI merge)"""
 
 
 class CraftAI:

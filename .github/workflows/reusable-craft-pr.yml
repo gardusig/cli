@@ -28,4 +28,4 @@ jobs:
           pip install -e . 2>/dev/null || true
           ARGS=()
           if [ -n "${{ inputs.issue_number }}" ]; then ARGS+=(--number "${{ inputs.issue_number }}"); fi
-          cli craft pr "${ARGS[@]}" --yes --skip-test || echo "craft pr requires local cli install"
+          cli opencode gh pr "${ARGS[@]}" --yes --skip-test || echo "opencode gh pr requires local cli install"

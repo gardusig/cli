@@ -3,8 +3,6 @@ backup:
   # Public repos: plain git archive zips. Private repo: encrypted zip (BACKUP_ZIP_PASSWORD).
   repositories:
     - path: ~/git-local/cli
-    - path: ~/git-local/cursor-skills
-    - path: ~/git-local/cli
     # Add your other public repos here (typically six public + one private):
     # - path: ~/git-local/my-public-repo
     - path: ~/git-local/private

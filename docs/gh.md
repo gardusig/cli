@@ -2,7 +2,7 @@
 
 Deterministic GitHub operations for agents and humans. Wraps authenticated **`gh`** with JSON-first output and write gates (same model as `cli git`).
 
-**AI orchestration:** [craft.md](craft.md) — replaces cursor-skills `@gh-issue*`, `@gh-pr*`, `@gh-pr-review` via `cli craft` / `cli review` + DeepSeek (3 model roles).
+**AI orchestration:** [opencode.md](opencode.md) — `cli opencode gh` for AI-assisted issues/PRs; `cli gh` for deterministic GitHub I/O.
 
 ## Prerequisites
 
@@ -227,5 +227,5 @@ Run: `./scripts/test/unit.sh`
 ## See also
 
 - [architecture.md](architecture.md) — CLI → Service → Provider
-- [craft.md](craft.md) — AI craft/review commands (cursor-skills replacement)
+- [opencode.md](opencode.md) — AI entry point (`cli opencode`)
 - cli epic **01** — GitHub integration

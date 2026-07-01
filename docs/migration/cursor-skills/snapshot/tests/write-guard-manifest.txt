@@ -1,8 +1,0 @@
-skills/gh/issue/execute/SKILL.md
-skills/gh/issue/SKILL.md
-skills/gh/issue/close/SKILL.md
-skills/gh/issue/delete/closed/SKILL.md
-skills/gh/issue/labels/SKILL.md
-skills/gh/issue/backlog/SKILL.md
-skills/gh/pr/SKILL.md
-skills/gh/pr/close/SKILL.md

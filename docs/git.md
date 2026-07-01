@@ -2,43 +2,43 @@
 
 `cli git` wraps common local git workflows. Commit message defaults to `.`.
 
-Each command maps to a [cursor-skills git skill](https://github.com/gardusig/cursor-skills/tree/main/skills/git) and has a shell wrapper under `scripts/git/`:
+Each command has a shell wrapper under `scripts/git/`:
 
-| Skill | Script | Command |
-| --- | --- | --- |
-| `@git-branch` | `scripts/git/branch.sh` | `cli git branch list` |
-| `@git-branch` | `scripts/git/branch-list.sh` | `cli git branch list` |
-| — | `scripts/git/branch-current.sh` | `cli git branch current` |
-| — | `scripts/git/branch-prune.sh` | `cli git branch prune` |
-| — | `scripts/git/branch-rename.sh` | `cli git branch rename` |
-| `@git-branch-delete` | `scripts/git/branch-delete.sh` | `cli git branch delete` |
-| `@git-branch delete --merged` | `scripts/git/branch-delete-merged.sh` | `cli git branch delete --merged` |
-| `@git-branch delete --all` | `scripts/git/branch-delete-all.sh` | `cli git branch delete --all` |
-| `@git-branch-clear` | `scripts/git/branch-clear.sh` | `cli git branch clear` |
-| `@git-cherry-pick` | `scripts/git/cherry-pick.sh` | `cli git cherry pick` |
-| `@git-clean` | `scripts/git/clean.sh` | `cli git clean` |
-| `@git-commit` | `scripts/git/commit.sh` | `cli git commit` |
-| `@git-docs` | `scripts/git/docs.sh` | `cli git docs` |
-| `@git-large-files` | `scripts/git/large-files.sh` | `cli git large files` |
-| `@git-main` | `scripts/git/main.sh` | `cli git main` |
-| `@git-post-merge-cleanup` | `scripts/git/post-merge-cleanup.sh` | `cli git post merge cleanup` |
-| `@git-pull` | `scripts/git/pull.sh` | `cli git pull` |
-| `@git-push` | `scripts/git/push.sh` | `cli git push` |
-| `@git-rebase` | `scripts/git/rebase.sh` | `cli git rebase` |
-| `@git-reset` | `scripts/git/reset.sh` | `cli git reset` |
-| `@git-revert` | `scripts/git/revert.sh` | `cli git revert` |
-| `@git-review` | `scripts/git/review.sh` | `cli git review` |
-| `@git-start` | `scripts/git/start.sh` | `cli git start` |
-| `@git-stash` | `scripts/git/stash.sh` | `cli git stash` |
-| `@git-tag` | `scripts/git/tag.sh` | `cli git tag` |
-| `@git-deploy` | `scripts/git/deploy.sh` | `cli git deploy` |
-| `@git-tag-list` | `scripts/git/tag-list.sh` | `cli git tag list` |
-| `@git-tag-push` | `scripts/git/tag-push.sh` | `cli git tag push` |
-| `@git-zip` | `scripts/git/zip.sh` | `cli git zip` |
+| Script | Command |
+| --- | --- |
+| `scripts/git/branch.sh` | `cli git branch list` |
+| `scripts/git/branch-list.sh` | `cli git branch list` |
+| `scripts/git/branch-current.sh` | `cli git branch current` |
+| `scripts/git/branch-prune.sh` | `cli git branch prune` |
+| `scripts/git/branch-rename.sh` | `cli git branch rename` |
+| `scripts/git/branch-delete.sh` | `cli git branch delete` |
+| `scripts/git/branch-delete-merged.sh` | `cli git branch delete --merged` |
+| `scripts/git/branch-delete-all.sh` | `cli git branch delete --all` |
+| `scripts/git/branch-clear.sh` | `cli git branch clear` |
+| `scripts/git/cherry-pick.sh` | `cli git cherry pick` |
+| `scripts/git/clean.sh` | `cli git clean` |
+| `scripts/git/commit.sh` | `cli git commit` |
+| `scripts/git/docs.sh` | `cli git docs` |
+| `scripts/git/large-files.sh` | `cli git large files` |
+| `scripts/git/main.sh` | `cli git main` |
+| `scripts/git/post-merge-cleanup.sh` | `cli git post merge cleanup` |
+| `scripts/git/pull.sh` | `cli git pull` |
+| `scripts/git/push.sh` | `cli git push` |
+| `scripts/git/rebase.sh` | `cli git rebase` |
+| `scripts/git/reset.sh` | `cli git reset` |
+| `scripts/git/revert.sh` | `cli git revert` |
+| `scripts/git/review.sh` | `cli git review` |
+| `scripts/git/start.sh` | `cli git start` |
+| `scripts/git/stash.sh` | `cli git stash` |
+| `scripts/git/tag.sh` | `cli git tag` |
+| `scripts/git/deploy.sh` | `cli git deploy` |
+| `scripts/git/tag-list.sh` | `cli git tag list` |
+| `scripts/git/tag-push.sh` | `cli git tag push` |
+| `scripts/git/zip.sh` | `cli git zip` |
 
 ## Internal read/write
 
-Pattern mirrors [cursor-skills internal read/write](https://github.com/gardusig/cursor-skills/tree/main/skills/internal):
+Pattern:
 
 1. **Read** (`src/internal/read/`) — worktree snapshot, no prompts
 2. **Write gate** (`src/internal/write/gate.py`) — prints `--- cli write gate ---` with repo context, then asks to proceed
@@ -210,9 +210,9 @@ cli git review
 
 Runs shell syntax checks; without `--quick`, also `./scripts/test/unit.sh` (Docker — requires Docker Desktop). No commit or push. Use `cli git review --quick` when Docker is unavailable.
 
-## Read-only introspection (cursor-skills)
+## Read-only introspection
 
-Used by [`read-cli-git`](https://github.com/gardusig/cursor-skills/blob/main/skills/internal/read/cli/git/SKILL.md) — no write gate:
+No write gate:
 
 ```bash
 cli git branch current
@@ -233,4 +233,4 @@ cli git publish check --remote origin --branch feature-x
 cli git docs
 ```
 
-Lists markdown paths for sync. In-place edits use cursor-skills `@git-docs`.
+Lists markdown paths for sync. In-place edits use `cli git docs`.

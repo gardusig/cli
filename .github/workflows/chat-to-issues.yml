@@ -1,7 +1,7 @@
 name: chat-to-issues
 
 # Dispatch from a chat summary — R1 distill → categorize → file issues per repo.
-# Local equivalent: cli chat issues --from-file summary.md [--apply --yes]
+# Local equivalent: cli opencode chat issues --from-file summary.md [--apply --yes]
 
 on:
   workflow_dispatch:

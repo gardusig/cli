@@ -49,7 +49,7 @@ operations:
     add_labels: ["epic:01-gh", "issue-type:child"]
   - action: edit
     number: 43
-    title: "01.9 — Docs + cursor-skills integration contract"
+    title: "01.9 — Docs + OpenCode integration contract"
     add_labels: ["epic:01-gh", "issue-type:child", "area:skills"]
 
   # 02 — Chrome

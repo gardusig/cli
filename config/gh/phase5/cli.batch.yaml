@@ -8,8 +8,8 @@ operations:
     labels: ["issue-type:epic", "epic:hub-operator", "priority:0"]
 
   - action: create
-    title: "0 — Embed cursor-skills snapshot into cli"
-    body: "Done in docs/migration/cursor-skills/ (commit b7eeb5f)."
+    title: "0 — Hub operator snapshot and docs"
+    body: "Migration archive removed; use docs/opencode.md and cli opencode."
     labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
 
   - action: edit
@@ -106,13 +106,13 @@ operations:
     title: "5 — OpenCode + DeepSeek shot/chat integration"
     labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
   - action: create
-    title: "6 — Implement cli craft issue, craft pr, review pr"
+    title: "6 — Implement cli opencode gh issue, pr, review"
     labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
   - action: create
     title: "7 — Backlog topo sort (gh_topo.py, step prefix parser)"
     labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
   - action: create
-    title: "8 — Port cursor-skills @gh-* to cli + OpenCode"
+    title: "8 — OpenCode gh domain + cli opencode entry point"
     labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
   - action: create
     title: "9 — Expose cli test, deploy, release build"

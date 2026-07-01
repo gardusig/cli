@@ -65,7 +65,6 @@ Inside `test.yml`, `./scripts/test/all.sh` runs **unit then integration** sequen
 |------|-----------|------------------|
 | cli | python:3.12-slim | + docker CLI static binary |
 | chrome-extensions | node:22-alpine | same |
-| cursor-skills | alpine:3.21 | same |
 | computer-science | debian:bookworm-slim | node:22-bookworm-slim |
 | gardusig, private | alpine:3.21 | same (no-op) |
 | yugioh | docker:27-cli | same (+ nested component builds) |

@@ -15,7 +15,7 @@ Pytest, coverage, and smoke scripts run **inside** Docker (`cli:integration`) so
 - `git` on PATH
 - `zip` for encrypted tag archives (`encrypted: true` repos)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) for verification (`cli:dev` Linux image)
-- Optional: `gh` for GitHub (used by cursor-skills, not cli)
+- Optional: `gh` for GitHub (`cli gh` commands)
 
 ## Install from PyPI
 

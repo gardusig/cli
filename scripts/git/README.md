@@ -1,36 +1,35 @@
 # Git scripts
 
-Shell wrappers for each [cursor-skills git skill](https://github.com/gardusig/cursor-skills/tree/main/skills/git). Each script delegates to `cli git <command>`.
+Shell wrappers that delegate to `cli git <command>`.
 
-| Script | cursor-skills skill | CLI |
-| --- | --- | --- |
-| `branch.sh` | `git/branch` | `cli git branch list` |
-| `branch-list.sh` | `git/branch` | `cli git branch list` |
-| `branch-current.sh` | — | `cli git branch current` |
-| `branch-prune.sh` | — | `cli git branch prune` |
-| `branch-rename.sh` | — | `cli git branch rename` |
-| `branch-delete.sh` | `git/branch/delete` | `cli git branch delete` |
-| `branch-delete-merged.sh` | `git/branch/delete/merged` | `cli git branch delete --merged` |
-| `branch-delete-all.sh` | `git/branch/delete/all` | `cli git branch delete --all` |
-| `branch-clear.sh` | `git/branch/clear` | `cli git branch clear` |
-| `cherry-pick.sh` | `git/cherry/pick` | `cli git cherry pick` |
-| `clean.sh` | `git/clean` | `cli git clean` |
-| `commit.sh` | `git/commit` | `cli git commit` |
-| `docs.sh` | `git/docs` | `cli git docs` |
-| `large-files.sh` | `git/large/files` | `cli git large files` |
-| `main.sh` | `git/main` | `cli git main` |
-| `post-merge-cleanup.sh` | `git/post/merge/cleanup` | `cli git post merge cleanup` |
-| `pull.sh` | `git/pull` | `cli git pull` |
-| `push.sh` | `git/push` | `cli git push` |
-| `reset.sh` | `git/reset` | `cli git reset` |
-| `rebase.sh` | `git/rebase` | `cli git rebase` |
-| `reset.sh` | `git/reset` | `cli git reset` |
-| `revert.sh` | `git/revert` | `cli git revert` |
-| `review.sh` | `git/review` | `cli git review` |
-| `start.sh` | `git/start` | `cli git start` |
-| `stash.sh` | `git/stash` | `cli git stash` |
-| `tag.sh` | `git/tag` | `cli git tag` |
-| `zip.sh` | `git/zip` | `cli git zip` |
+| Script | CLI |
+| --- | --- |
+| `branch.sh` | `cli git branch list` |
+| `branch-list.sh` | `cli git branch list` |
+| `branch-current.sh` | `cli git branch current` |
+| `branch-prune.sh` | `cli git branch prune` |
+| `branch-rename.sh` | `cli git branch rename` |
+| `branch-delete.sh` | `cli git branch delete` |
+| `branch-delete-merged.sh` | `cli git branch delete --merged` |
+| `branch-delete-all.sh` | `cli git branch delete --all` |
+| `branch-clear.sh` | `cli git branch clear` |
+| `cherry-pick.sh` | `cli git cherry pick` |
+| `clean.sh` | `cli git clean` |
+| `commit.sh` | `cli git commit` |
+| `docs.sh` | `cli git docs` |
+| `large-files.sh` | `cli git large files` |
+| `main.sh` | `cli git main` |
+| `post-merge-cleanup.sh` | `cli git post merge cleanup` |
+| `pull.sh` | `cli git pull` |
+| `push.sh` | `cli git push` |
+| `reset.sh` | `cli git reset` |
+| `rebase.sh` | `cli git rebase` |
+| `revert.sh` | `cli git revert` |
+| `review.sh` | `cli git review` |
+| `start.sh` | `cli git start` |
+| `stash.sh` | `cli git stash` |
+| `tag.sh` | `cli git tag` |
+| `zip.sh` | `cli git zip` |
 
 Usage:
 

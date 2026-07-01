@@ -55,7 +55,7 @@ INTERNAL_MODULES = [
     "src.internal.write.git",
 ]
 
-CURSOR_SKILLS_GIT_SCRIPTS = [
+GIT_WRAPPER_SCRIPTS = [
     "scripts/git/branch.sh",
     "scripts/git/branch-list.sh",
     "scripts/git/branch-current.sh",
@@ -180,7 +180,7 @@ REQUIRED_PATHS = [
     "scripts/git/_common.sh",
     "src/cli.py",
     "src/__main__.py",
-    *CURSOR_SKILLS_GIT_SCRIPTS,
+    *GIT_WRAPPER_SCRIPTS,
 ]
 
 

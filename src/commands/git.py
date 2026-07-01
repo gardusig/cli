@@ -911,11 +911,11 @@ def review_cmd(
 
 @git_app.command("docs")
 def docs_cmd() -> None:
-    """List doc paths for sync (@git-docs; AI-driven edits via cursor-skills)."""
+    """List doc paths for sync (AI-driven edits via `cli git docs`)."""
     root = project_root()
     docs_dir = root / "docs"
     readme = root / "README.md"
-    rprint("[bold]Documentation inventory[/bold] (edit via cursor-skills @git-docs):")
+    rprint("[bold]Documentation inventory[/bold] (edit via `cli git docs`):")
     if readme.exists():
         rprint(f"  {readme.relative_to(root)}")
     if docs_dir.is_dir():

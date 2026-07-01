@@ -1,13 +1,23 @@
 # scripts/
 
-Shell-only entry points. Python code lives under [`src/`](../src/) and [`tests/`](../tests/).
+**Reusable shell implementation** — invoked by `cli` commands and by `gardusig/pipelines` sequences.
 
-| Script / directory | Purpose |
-| --- | --- |
-| `pypi/` | Local install + release (`install.sh`, `build.sh`, `upload.sh`, `test.sh`, `release.sh`, `publish.sh`) |
-| `test/` | Docker test harness (`unit.sh`, `integration.sh`, `smoke.sh`, `tags.sh`, `all.sh`) |
-| `docker/` | Image build, in-container runners, CI bootstrap (`bootstrap.sh`) |
-| `drive/` | Drive sync scripts (`status.sh`, `ingest.sh`, …) |
-| `git/`, `chrome/`, `notion/`, `gh/` | CLI shell shortcuts |
+Orchestration (what runs, in what order, GitHub events) lives in **[gardusig/pipelines](https://github.com/gardusig/pipelines)**. This directory is *how* each step runs.
 
-Integration check runners (Python): [`tests/integration/`](../tests/integration/).
+| Directory | Purpose | Pipeline domain |
+| --- | --- | --- |
+| `test/` | Docker test harness (`unit.sh`, `integration.sh`, `all.sh`, …) | `ci/test` |
+| `deploy/` | Deploy script | `ci/deploy` |
+| `release/` | Release build | `ci/release` |
+| `docker/` | Image build, in-container runners | used by test/deploy |
+| `git/` | Git shortcuts (`cli git …`) | `git/*`, `issue/*`, `pr/*` |
+| `gh/` | GitHub shortcuts (`cli gh …`) | `issue/*`, `pr/*`, `plan/*` |
+| `craft/` | Thin wrappers → `cli opencode gh` | `issue/*`, `pr/*` |
+| `pypi/`, `drive/`, `chrome/`, `notion/` | Domain-specific ops | ad hoc |
+
+Python code: [`src/`](../src/). Integration checks: [`tests/integration/`](../tests/integration/).
+
+```bash
+# scripts are not workflows — pipelines calls them:
+# sequences/ci/test.pipeline.yaml → run: ./scripts/test/unit.sh
+```

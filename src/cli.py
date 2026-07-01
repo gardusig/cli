@@ -3,6 +3,7 @@ from __future__ import annotations
 import typer
 
 from src import __version__
+from src.commands.opencode_cmd import opencode_app
 from src.commands.ai import ai_app
 from src.commands.backup import backup_app
 from src.commands.bookmarks import bookmarks_app
@@ -34,10 +35,11 @@ app = typer.Typer(
 app.add_typer(links_app, name="links")
 app.add_typer(git_app, name="git")
 app.add_typer(gh_app, name="gh")
-app.add_typer(ai_app, name="ai")
-app.add_typer(chat_app, name="chat")
-app.add_typer(craft_app, name="craft")
-app.add_typer(review_app, name="review")
+app.add_typer(opencode_app, name="opencode")
+app.add_typer(ai_app, name="ai", hidden=True)
+app.add_typer(chat_app, name="chat", hidden=True)
+app.add_typer(craft_app, name="craft", hidden=True)
+app.add_typer(review_app, name="review", hidden=True)
 app.add_typer(test_app, name="test")
 app.add_typer(deploy_app, name="deploy")
 app.add_typer(release_app, name="release")

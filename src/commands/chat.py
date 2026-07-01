@@ -20,7 +20,7 @@ from src.services.chat_distill import (
 from src.services.chat_session import ChatSession, chat_root
 
 chat_app = typer.Typer(
-    help="High-level planning chat (no repo attachment). DeepSeek chat / R1 / categorize.",
+    help="Planning chat (also: cli opencode chat). DeepSeek chat / reason / categorize.",
     no_args_is_help=True,
 )
 
@@ -38,7 +38,7 @@ def _resolve_session(session: str | None) -> ChatSession:
     if not sid and _session_file().is_file():
         sid = _session_file().read_text(encoding="utf-8").strip()
     if not sid:
-        raise typer.BadParameter("No session — run: cli chat start")
+        raise typer.BadParameter("No session — run: cli opencode chat start")
     return ChatSession.load(sid)
 
 

@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 set -euo pipefail
-exec cli craft execute "$@"
+exec cli opencode gh execute "$@"

@@ -1,4 +1,4 @@
-"""Craft commands — cursor-skills @gh-* flows via OpenCode + DeepSeek."""
+"""GitHub domain — AI-assisted issues, PRs, and review (OpenCode + DeepSeek)."""
 
 from __future__ import annotations
 
@@ -20,13 +20,16 @@ from src.services.issue_craft import (
     ship_issue,
     write_draft,
 )
-from src.services.pr_craft import craft_pr, execute_issue
+from src.services.pr_craft import craft_pr, execute_issue, review_pr
 from src.utils.runtime_profile import detect_profile, is_headless
 
-craft_app = typer.Typer(
-    help="Craft issues and PRs — replaces cursor-skills @gh-issue*, @gh-pr.",
+gh_domain_app = typer.Typer(
+    help="GitHub AI flows — issues, PRs, review (no merge).",
     no_args_is_help=True,
 )
+
+# Backward-compatible alias
+craft_app = gh_domain_app
 
 _ROOT = Path(__file__).resolve().parents[2]
 
@@ -39,14 +42,14 @@ def _repo(ctx: typer.Context) -> str | None:
     return (ctx.obj or {}).get("repo") if ctx.obj else None
 
 
-@craft_app.command("issue")
+@gh_domain_app.command("issue")
 def craft_issue_cmd(
     ctx: typer.Context,
     number: int | None = typer.Option(None, "--number", "-n", help="Issue to plan/review/edit."),
     title: str | None = typer.Option(None, "--title", "-t", help="New issue title (ship mode)."),
     body: str | None = typer.Option(None, "--body", "-b", help="Issue body markdown."),
     body_file: Path | None = typer.Option(None, "--body-file", help="Issue body file."),
-    review: bool = typer.Option(False, "--review", help="Read-only reshape report (@gh-issue-review)."),
+    review: bool = typer.Option(False, "--review", help="Read-only reshape report."),
     plan: bool = typer.Option(False, "--plan", help="Generate implementation plan."),
     plan_only: bool = typer.Option(
         False,
@@ -56,7 +59,7 @@ def craft_issue_cmd(
     dedupe_only: bool = typer.Option(False, "--dedupe-only", help="Run dedupe verdict only."),
     yes: bool = typer.Option(False, "--yes", "-y"),
 ) -> None:
-    """@gh-issue / @gh-issue-review / @gh-issue-pick — ship, review, or plan issues."""
+    """Plan, review, ship, or show GitHub issues."""
     repo = _repo(ctx)
     svc = _svc(repo)
     ai = CraftAI()
@@ -119,14 +122,14 @@ def craft_issue_cmd(
     typer.echo(json.dumps(result, indent=2))
 
 
-@craft_app.command("pick")
+@gh_domain_app.command("pick")
 def craft_pick_cmd(
     ctx: typer.Context,
     label: list[str] | None = typer.Option(None, "--label", "-l", help="Filter labels."),
     limit: int = typer.Option(30, "--limit"),
     number: int | None = typer.Option(None, "--number", "-n", help="Pick this issue and show context."),
 ) -> None:
-    """@gh-issue-pick — list open issues; with --number show full context."""
+    """List open issues; with --number show full context."""
     repo = _repo(ctx)
     svc = _svc(repo)
     if number is not None:
@@ -136,9 +139,9 @@ def craft_pick_cmd(
     typer.echo(json.dumps({"repo": svc.repo_display(), "issues": issues}, indent=2))
 
 
-@craft_app.command("next")
+@gh_domain_app.command("next")
 def craft_next_cmd(ctx: typer.Context) -> None:
-    """@gh-issue-next — topo backlog next + issue context."""
+    """Topo backlog next + issue context."""
     repo = _repo(ctx)
     svc = _svc(repo)
     nxt = svc.backlog_next()
@@ -149,7 +152,7 @@ def craft_next_cmd(ctx: typer.Context) -> None:
     typer.echo(json.dumps({"next": nxt, "context": ctx_data}, indent=2))
 
 
-@craft_app.command("execute")
+@gh_domain_app.command("execute")
 def craft_execute_cmd(
     ctx: typer.Context,
     number: int = typer.Argument(..., help="Issue to execute."),
@@ -158,7 +161,7 @@ def craft_execute_cmd(
     comment: bool = typer.Option(True, "--comment/--no-comment"),
     yes: bool = typer.Option(False, "--yes", "-y"),
 ) -> None:
-    """@gh-issue-execute — checkpoint execution; optional --pr handoff."""
+    """Execute issue checkpoints; optional --pr handoff."""
     repo = _repo(ctx)
     svc = _svc(repo)
     if pr:
@@ -181,7 +184,7 @@ def craft_execute_cmd(
     typer.echo(json.dumps(result, indent=2))
 
 
-@craft_app.command("pr")
+@gh_domain_app.command("pr")
 def craft_pr_cmd(
     ctx: typer.Context,
     number: int | None = typer.Option(None, "--number", "-n", help="Issue to implement."),
@@ -189,7 +192,7 @@ def craft_pr_cmd(
     skip_test: bool = typer.Option(False, "--skip-test"),
     yes: bool = typer.Option(False, "--yes", "-y"),
 ) -> None:
-    """@gh-pr — branch, codegen guidance, test, push, open PR."""
+    """Branch, codegen guidance, test, push, open PR."""
     repo = _repo(ctx)
     svc = _svc(repo)
     git = GitShortcuts()
@@ -222,7 +225,7 @@ def craft_pr_cmd(
     typer.echo(json.dumps(pr_result, indent=2))
 
 
-@craft_app.command("draft")
+@gh_domain_app.command("draft")
 def craft_draft_cmd(
     title: str = typer.Argument(...),
     body_file: Path = typer.Option(..., "--body-file", exists=True),
@@ -235,8 +238,26 @@ def craft_draft_cmd(
     typer.echo(json.dumps({"path": str(path)}, indent=2))
 
 
-@craft_app.callback()
-def craft_root(
+@gh_domain_app.command("review")
+def gh_review_pr_cmd(
+    ctx: typer.Context,
+    number: int = typer.Argument(..., help="PR number."),
+    issue: int | None = typer.Option(None, "--issue", "-i", help="Primary linked issue #."),
+    comment: bool = typer.Option(True, "--comment/--no-comment", help="Post review summary."),
+    yes: bool = typer.Option(False, "--yes", "-y"),
+) -> None:
+    """AI PR review vs linked issues (no merge)."""
+    repo = _repo(ctx)
+    svc = _svc(repo)
+    result = review_pr(svc, number, primary_issue=issue)
+    typer.echo(json.dumps(result, indent=2))
+    if comment:
+        require_write_gate("review-pr", svc.snapshot_summary(), yes=yes)
+        svc.pr_comment(number, body=f"## [cli] review\n\n{result['summary']}")
+
+
+@gh_domain_app.callback()
+def gh_domain_root(
     ctx: typer.Context,
     repo: str | None = typer.Option(None, "--repo", help="owner/name"),
 ) -> None:

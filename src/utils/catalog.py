@@ -131,10 +131,7 @@ CHROME_SCRIPTS: tuple[tuple[str, str], ...] = (
 TOP_LEVEL_COMMANDS: tuple[tuple[str, str], ...] = (
     ("git / g", "git shortcuts (see cli git --help)"),
     ("gh", "GitHub via gh — issues, labels, PRs, backlog (see docs/gh.md)"),
-    ("craft", "AI issue/PR flows — replaces cursor-skills @gh-* (see docs/craft.md)"),
-    ("review", "AI PR review — cli review pr (see docs/craft.md)"),
-    ("ai", "Raw DeepSeek tiers — plan / summarize / code / categorize"),
-    ("chat", "Multi-repo planning chat → issues (see docs/chat.md)"),
+    ("opencode", "AI entry point — chat, gh flows, raw prompts (see docs/opencode.md)"),
     ("restore", "restore workflows (placeholder)"),
     ("drive", "git-tags local store (iCloud) + cloud upload — status, ingest, upload"),
     ("chrome", "Chrome browser — bookmarks ingest / deploy"),

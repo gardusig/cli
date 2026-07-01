@@ -1,4 +1,6 @@
-# Planning chat (`cli chat`)
+# Planning chat (`cli opencode chat`)
+
+Also available as hidden alias `cli chat`.
 
 Repo-agnostic conversation for multi-repo planning. Sessions live under `~/.config/cli/chat/` (or `CLI_CHAT_DIR`) — **not** inside any git repository.
 
@@ -19,14 +21,14 @@ Set `DEEPSEEK_API_KEY` locally and as a GitHub Actions secret for workflows.
 ```bash
 export DEEPSEEK_API_KEY=...
 
-cli chat start                    # new session
-cli chat send "cli breaking change may break yugioh workflows"
-cli chat send "also vague idea about notion on laptop only"
-cli chat summary                  # rolling plan summary
-cli chat distill                  # R1 — extract all themes + cross-repo risks
-cli chat categorize               # JSON plan: parent per repo + actions
-cli chat issues                   # distill + categorize (dry-run)
-cli chat issues --apply --yes     # comment/create on GitHub
+cli opencode chat start                    # new session
+cli opencode chat send "cli breaking change may break yugioh workflows"
+cli opencode chat send "also vague idea about notion on laptop only"
+cli opencode chat summary                  # rolling plan summary
+cli opencode chat distill                  # R1 — extract all themes + cross-repo risks
+cli opencode chat categorize               # JSON plan: parent per repo + actions
+cli opencode chat issues                   # distill + categorize (dry-run)
+cli opencode chat issues --apply --yes     # comment/create on GitHub
 ```
 
 ## GitHub workflow
@@ -38,7 +40,7 @@ Paste your chat summary. Optionally enable **apply_issues** to file comments/cre
 Same as:
 
 ```bash
-cli chat issues --from-file summary.md --apply --yes
+cli opencode chat issues --from-file summary.md --apply --yes
 ```
 
 Reusable from other repos:

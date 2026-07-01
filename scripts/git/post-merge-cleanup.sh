@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @git-post-merge-cleanup — cursor-skills/skills/git/post/merge/cleanup
+# cli git wrapper
 set -euo pipefail
 # shellcheck source=_common.sh
 source "$(dirname "$0")/_common.sh"
