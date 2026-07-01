@@ -1,34 +1,14 @@
 name: test
 
-# Sequential PR pipeline — same as ./scripts/test/all.sh (all steps run in Docker).
-# Local: ./scripts/test/all.sh
-
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 concurrency:
   group: test-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-
 jobs:
   pipeline:
-    name: Test pipeline
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Run test pipeline
-        env:
-          GITHUB_BASE_REF: ${{ github.base_ref }}
-          TESTPYPI_API_TOKEN: ${{ secrets.TESTPYPI_API_TOKEN }}
-        run: |
-          chmod +x scripts/test/*.sh scripts/deploy/*.sh scripts/docker/*.sh
-          ./scripts/test/all.sh
+    uses: gardusig/pipelines/.github/workflows/ci/reusable-test.yml@main
+    secrets: inherit
