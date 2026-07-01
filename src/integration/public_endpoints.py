@@ -417,6 +417,14 @@ def endpoint_checks() -> list[EndpointCheck]:
             reset_git=True,
         ),
         EndpointCheck(
+            "git deploy refuse",
+            ("git", "deploy"),
+            kind="refuse",
+            needle=refuse,
+            needs_git=True,
+            reset_git=True,
+        ),
+        EndpointCheck(
             "git zip",
             ("git", "zip", "v0.0.0"),
             needle=".zip",
