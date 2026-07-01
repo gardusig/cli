@@ -4,7 +4,6 @@
 !.github/workflows/test.yml
 !.github/workflows/deploy.yml
 !.github/workflows/release.yml
-!.github/workflows/release.yml
 .cursor/
 .venv/
 __pycache__/
