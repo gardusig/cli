@@ -252,14 +252,19 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
 
 def _gh_failure_checks(workspace: Path) -> list[CliApiCheck]:
     failures: list[CliApiCheck] = []
-    skip_fail_paths = {
-        ("gh", "backlog", "levels"),
-        ("gh", "policy", "list"),
-        ("gh", "pr", "merge"),
-    }
     for ok in _gh_success_checks(workspace):
-        path = command_path(ok.args)
-        if path[:3] in skip_fail_paths:
+        if ok.label == "gh pr merge":
+            failures.append(
+                CliApiCheck(
+                    "gh pr merge fail",
+                    "gh",
+                    _without_yes(ok.args),
+                    kind="fail",
+                    needle="merge blocked",
+                    accept_exit_codes=(1,),
+                    failure="policy_block",
+                )
+            )
             continue
         if ok.accept_exit_codes != (0,):
             continue
@@ -554,11 +559,24 @@ def assert_every_api_command_has_ok_and_fail_check(
     apis: tuple[ApiName, ...] = ("gh", "notion", "drive", "chrome"),
 ) -> None:
     """Each API command path needs one success and one failure integration check."""
+    local_ok_only: dict[ApiName, set[tuple[str, ...]]] = {
+        "gh": {
+            ("gh", "backlog", "levels"),
+            ("gh", "policy", "list"),
+        },
+    }
     assert_cli_api_registry_covers_commands(checks, apis=apis)
     for api in apis:
         for path in sorted(registered_api_command_paths(api)):
             rows = checks_for_path(checks, api=api, path=path)
             kinds = {check.kind for check in rows}
+            if path in local_ok_only.get(api, set()):
+                if "ok" not in kinds:
+                    raise AssertionError(
+                        f"{api} {' '.join(path)} missing ok check "
+                        f"(have kinds={sorted(kinds)}, labels={[c.label for c in rows]})"
+                    )
+                continue
             if "ok" not in kinds or "fail" not in kinds:
                 raise AssertionError(
                     f"{api} {' '.join(path)} missing ok/fail checks "
