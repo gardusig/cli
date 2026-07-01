@@ -1,0 +1,33 @@
+# Copy to .github/workflows/plan-chat-to-issues.yml (optional — hub repos only)
+name: plan-chat-to-issues
+
+on:
+  workflow_dispatch:
+    inputs:
+      chat_summary:
+        description: Rolling chat summary or exported transcript
+        required: true
+        type: string
+      apply_issues:
+        description: Create/update GitHub issues
+        required: false
+        type: boolean
+        default: false
+      skip_distill:
+        description: Skip R1 reasoner pass
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  plan:
+    uses: gardusig/pipelines/.github/workflows/reusable-plan-chat-to-issues.yml@main
+    with:
+      chat_summary: ${{ inputs.chat_summary }}
+      apply_issues: ${{ inputs.apply_issues }}
+      skip_distill: ${{ inputs.skip_distill }}
+    secrets: inherit
