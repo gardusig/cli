@@ -35,8 +35,30 @@ labels:
     description: High priority
   - name: p2
     color: "FBCA04"
-    description: Normal priority
+    description: Normal priority (legacy — migrate to priority:N)
 
+  - name: priority:0
+    color: "B60205"
+    description: Highest priority — ship first
+  - name: priority:1
+    color: "D93F0B"
+    description: High priority
+  - name: priority:2
+    color: "FBCA04"
+    description: Normal priority
+  - name: priority:3
+    color: "0E8A16"
+    description: Lower priority
+  - name: priority:4
+    color: "1D76DB"
+    description: Tech debt / catalogs
+  - name: priority:5
+    color: "C5DEF5"
+    description: Lowest priority
+
+  - name: epic:hub-operator
+    color: "B60205"
+    description: CLI core operator hub (craft, runner, reusables)
   - name: epic:00-infra
     color: "0E8A16"
     description: Backlog infrastructure and repo hygiene

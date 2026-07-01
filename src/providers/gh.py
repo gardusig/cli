@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Sequence
 from typing import Any
 
+from src.services.gh_policy import MergeForbiddenError
 from src.utils.external_client import ExternalClient
 from src.utils.process import run_gh
 
@@ -28,6 +30,13 @@ class GhProvider:
         *,
         check: bool = True,
     ) -> str:
+        if (
+            len(args) >= 2
+            and args[0] == "pr"
+            and args[1] == "merge"
+            and os.environ.get("CLI_ALLOW_GH_MERGE") != "1"
+        ):
+            raise MergeForbiddenError()
         label = " ".join(args[:2]) if len(args) >= 2 else " ".join(args)
 
         def _invoke() -> str:

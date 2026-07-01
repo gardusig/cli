@@ -1,0 +1,26 @@
+name: reusable-craft-issue
+
+on:
+  workflow_call:
+    inputs:
+      issue_number:
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  craft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Craft issue plan
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install -e . 2>/dev/null || true
+          ARGS=()
+          if [ -n "${{ inputs.issue_number }}" ]; then ARGS+=(--number "${{ inputs.issue_number }}"); fi
+          cli craft issue "${ARGS[@]}" --plan --yes || true

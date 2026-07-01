@@ -1,0 +1,31 @@
+name: reusable-craft-pr
+
+on:
+  workflow_call:
+    inputs:
+      issue_number:
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  craft:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: craft-pr-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Craft PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pip install -e . 2>/dev/null || true
+          ARGS=()
+          if [ -n "${{ inputs.issue_number }}" ]; then ARGS+=(--number "${{ inputs.issue_number }}"); fi
+          cli craft pr "${ARGS[@]}" --yes --skip-test || echo "craft pr requires local cli install"

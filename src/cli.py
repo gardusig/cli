@@ -3,10 +3,13 @@ from __future__ import annotations
 import typer
 
 from src import __version__
+from src.commands.ai import ai_app
 from src.commands.backup import backup_app
 from src.commands.bookmarks import bookmarks_app
 from src.commands.chrome import chrome_app
 from src.commands.contest import contest_app
+from src.commands.deploy_cmd import deploy_app
+from src.commands.craft import craft_app
 from src.commands.docker import docker_app
 from src.commands.drive import drive_app
 from src.commands.gh import gh_app
@@ -15,7 +18,10 @@ from src.commands.links import links_app
 from src.commands.notion import notion_app
 from src.commands.pypi import pypi_app
 from src.commands.publish import publish_app
+from src.commands.release_cmd import release_app
 from src.commands.restore import restore_app
+from src.commands.review import review_app
+from src.commands.test_cmd import test_app
 from src.utils.logger import setup_logging
 
 app = typer.Typer(
@@ -27,6 +33,12 @@ app = typer.Typer(
 app.add_typer(links_app, name="links")
 app.add_typer(git_app, name="git")
 app.add_typer(gh_app, name="gh")
+app.add_typer(ai_app, name="ai")
+app.add_typer(craft_app, name="craft")
+app.add_typer(review_app, name="review")
+app.add_typer(test_app, name="test")
+app.add_typer(deploy_app, name="deploy")
+app.add_typer(release_app, name="release")
 app.add_typer(backup_app, name="backup", hidden=True)
 app.add_typer(restore_app, name="restore")
 app.add_typer(drive_app, name="drive")

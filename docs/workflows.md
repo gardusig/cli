@@ -203,3 +203,13 @@ flowchart TD
 ```
 
 See also: [Architecture](architecture.md) · [Docker integration](docker.md) · `cli links`
+
+## Merge policy {#merge-policy}
+
+**Never merge from `cli`.** Use the GitHub UI or enable **auto-merge** on the PR after green checks.
+
+- `cli gh pr merge` exits non-zero with a policy message
+- `scripts/gh/pr-merge.sh` is a warning stub (exit 1)
+- Raw `gh pr merge` is blocked in `GhProvider` unless `CLI_ALLOW_GH_MERGE=1` (break-glass only)
+
+Workflow chain ends at `[UI merge]` — not `cli gh pr merge`.

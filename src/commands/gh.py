@@ -368,10 +368,10 @@ def pr_merge_cmd(
     delete_branch: bool = typer.Option(False, "--delete-branch"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip interactive write gate."),
 ) -> None:
-    svc = _svc(_ctx_repo(ctx))
-    _write_gate("gh-pr-merge", svc, yes=yes, question=f"Merge PR #{number}?")
-    svc.pr_merge(number, merge_method=merge_method, delete_branch=delete_branch)
-    _emit({"number": number, "action": "merge"}, _ctx_format(ctx))
+    from src.services.gh_policy import MERGE_FORBIDDEN_MESSAGE
+
+    typer.echo(MERGE_FORBIDDEN_MESSAGE, err=True)
+    raise typer.Exit(1)
 
 
 # --- Backlog ---

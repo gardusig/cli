@@ -1,0 +1,23 @@
+name: reusable-deploy
+
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    name: Deploy (tag main)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/deploy/*.sh scripts/docker/*.sh 2>/dev/null || true
+          ./scripts/deploy/deploy.sh

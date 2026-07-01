@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# shellcheck source=_common.sh
-source "$(dirname "$0")/_common.sh"
-exec_cli gh pr merge "$@"
+echo "merge blocked: use GitHub UI or enable auto-merge on the PR." >&2
+echo "CLI does not merge PRs (policy). See docs/workflows.md#merge-policy" >&2
+exit 1

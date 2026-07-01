@@ -10,7 +10,9 @@ from typing import Any
 import yaml
 
 from src.providers.gh import GhProvider
-from src.services.gh_sequence import SequenceKey, next_child_issue, sort_issues_by_sequence
+from src.services.gh_policy import MergeForbiddenError
+from src.services.gh_sequence import SequenceKey, sort_issues_by_sequence
+from src.services.gh_topo import StepKey, pick_next_child, sort_children
 
 
 class GhService:
@@ -289,6 +291,9 @@ class GhService:
             ]
         )
 
+    def pr_diff(self, number: int) -> str:
+        return self.provider.run(["pr", "diff", str(number)])
+
     def pr_diff_stat(self, number: int) -> str:
         return self.provider.run(["pr", "diff", str(number), "--stat"])
 
@@ -328,6 +333,9 @@ class GhService:
             args.extend(["--body-file", str(body_file)])
         self.provider.run(args)
 
+    def pr_comment(self, number: int, *, body: str) -> None:
+        self.provider.run(["pr", "comment", str(number), "--body", body])
+
     def pr_close(self, number: int) -> None:
         self.provider.run(["pr", "close", str(number)])
 
@@ -338,10 +346,7 @@ class GhService:
         merge_method: str = "merge",
         delete_branch: bool = False,
     ) -> None:
-        args = ["pr", "merge", str(number), "--merge-method", merge_method]
-        if delete_branch:
-            args.append("--delete-branch")
-        self.provider.run(args)
+        raise MergeForbiddenError()
 
     # --- Backlog ---
 
@@ -372,21 +377,27 @@ class GhService:
         return {"repo": self.repo_display(), "roots": roots, "epics": epics, "issues": ordered}
 
     def backlog_next(self) -> dict[str, Any] | None:
-        issues = self.issue_list(state="open", limit=200)
-        for issue in issues:
+        open_issues = self.issue_list(state="open", limit=200)
+        closed_issues = self.issue_list(state="closed", limit=200)
+        all_issues = open_issues + closed_issues
+        for issue in all_issues:
             labels = issue.get("labels", [])
             issue["labels"] = [
                 lb.get("name", lb) if isinstance(lb, dict) else lb for lb in labels
             ]
-        candidate = next_child_issue(issues)
+        picked = pick_next_child(all_issues)
+        if picked:
+            return picked
+        candidate = sort_children(open_issues)
         if not candidate:
             return None
-        seq = SequenceKey.from_title(str(candidate.get("title", "")))
+        first = candidate[0]
+        step = StepKey.from_title(str(first.get("title", "")))
         return {
-            "number": candidate["number"],
-            "title": candidate["title"],
-            "url": candidate.get("url"),
-            "sequence": seq.prefix() if seq else None,
+            "number": first["number"],
+            "title": first["title"],
+            "url": first.get("url"),
+            "step": step.step if step else None,
         }
 
     def backlog_resequence(self, plan_file: Path) -> list[dict[str, Any]]:

@@ -47,7 +47,7 @@ WORKFLOW_SHORTCUTS: tuple[tuple[str, str, str, str], ...] = (
 )
 
 WORKFLOW_CHAIN = (
-    "backlog next → reset → start → push → review → pr create → pr merge → issue close → reset"
+    "backlog next → reset → start → push → review → pr create → [UI merge] → issue close → reset"
 )
 
 QUICK_DEFAULT_SCRIPTS: dict[str, str] = {
@@ -114,7 +114,7 @@ GH_SCRIPT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("pr-create.sh", "gh pr create"),
     ("pr-edit.sh", "gh pr edit"),
     ("pr-close.sh", "gh pr close"),
-    ("pr-merge.sh", "gh pr merge"),
+    ("pr-merge.sh", "gh pr merge (blocked — policy)"),
     ("repo-view.sh", "gh repo view"),
 )
 

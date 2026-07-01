@@ -1,0 +1,30 @@
+name: orchestrator-dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        description: owner/name of target repository
+        required: true
+        type: string
+      workflow:
+        description: test | deploy | release
+        required: true
+        type: choice
+        options:
+          - test
+          - deploy
+          - release
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger target workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run "${{ inputs.workflow }}.yml" --repo "${{ inputs.target_repo }}"
