@@ -353,12 +353,20 @@ class GhService:
     def backlog_tree(self) -> dict[str, Any]:
         open_issues = self.issue_list(state="open", limit=200)
         closed_issues = self.issue_list(state="closed", limit=100)
+        seen: set[int] = set()
+        merged: list[dict[str, Any]] = []
         for issue in open_issues + closed_issues:
+            number = int(issue.get("number", 0))
+            if number in seen:
+                continue
+            seen.add(number)
+            merged.append(issue)
+        for issue in merged:
             labels = issue.get("labels", [])
             issue["labels"] = [
                 lb.get("name", lb) if isinstance(lb, dict) else lb for lb in labels
             ]
-        organized = build_parent_child_tree(open_issues + closed_issues)
+        organized = build_parent_child_tree(merged)
         return {
             "repo": self.repo_display(),
             **organized,

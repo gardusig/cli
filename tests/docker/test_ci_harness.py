@@ -51,13 +51,7 @@ def test_ci_workflow_runs_on_pull_request_only() -> None:
     assert "pull_request:" in workflow
     assert "\n  push:" not in workflow
     assert "branches: [main]" not in workflow
-    assert "version:" in workflow
-    assert "version-check.sh" in workflow
-    assert "unit:" in workflow or "name: Unit tests" in workflow
-    assert "integration:" in workflow or "name: Integration tests" in workflow
-    assert "needs: unit" in workflow
-    assert "scripts/test/unit.sh" in workflow
-    assert "scripts/test/integration.sh" in workflow
+    assert "gardusig/pipelines/.github/workflows/reusable-ci-test.yml" in workflow
 
 
 def test_release_workflow_runs_on_tags() -> None:
@@ -65,8 +59,8 @@ def test_release_workflow_runs_on_tags() -> None:
     assert "tags:" in workflow
     assert "v*" in workflow
     assert "PYPI_API_TOKEN" in workflow
-    assert "scripts/pypi/release.sh" in workflow
-    assert "publish-pypi" in workflow
+    assert "scripts/release/publish.sh" in workflow
+    assert "Publish to PyPI" in workflow
     assert "deploy-notion" not in workflow
 
 
@@ -80,12 +74,11 @@ def test_docker_smoke_runs_public_command_checker() -> None:
 
 def test_ci_workflow_runs_live_docker_in_container() -> None:
     workflow = (ROOT / ".github/workflows/test.yml").read_text()
-    assert "scripts/test/integration.sh" in workflow
-    assert "scripts/test/unit.sh" in workflow
-    # Unit/integration jobs run in Docker; version job may use setup-python on the host.
-    unit_block = workflow.split("name: Unit tests (Docker)", 1)[1].split("integration:", 1)[0]
-    assert "setup-python" not in unit_block
-    assert "bootstrap.sh" not in unit_block
+    assert "gardusig/pipelines/.github/workflows/reusable-ci-test.yml" in workflow
+    unit = (ROOT / "scripts/test/unit.sh").read_text()
+    integration = (ROOT / "scripts/test/integration.sh").read_text()
+    assert "run-unit.sh" in unit
+    assert "run-integration.sh" in integration
 
 
 def test_public_command_registry_covers_all_commands() -> None:

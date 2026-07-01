@@ -110,7 +110,15 @@ def patch_gh_stateful(workspace: Path) -> Iterator[StatefulGhStore]:
     def _run_json(self, args: list[str]):
         cmd = list(args)
         if cmd[:2] == ["issue", "list"]:
-            return copy.deepcopy(store.issues)
+            state = "open"
+            if "--state" in cmd:
+                state = cmd[cmd.index("--state") + 1].lower()
+            rows = copy.deepcopy(store.issues)
+            if state == "open":
+                return [r for r in rows if str(r.get("state", "OPEN")).upper() == "OPEN"]
+            if state == "closed":
+                return [r for r in rows if str(r.get("state", "OPEN")).upper() != "OPEN"]
+            return rows
         if cmd[:2] == ["issue", "view"]:
             number = int(cmd[2])
             with_comments = "--comments" in cmd

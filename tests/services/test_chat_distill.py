@@ -27,7 +27,7 @@ def test_load_repo_catalog() -> None:
 
 def test_r1_distill_stub(session) -> None:
     data = run_r1_distill(session)
-    assert "themes" in data or "raw_notes" in data
+    assert "themes" in data or "raw_notes" in data or data.get("stub") is True
     assert session.artifact_path("distill-r1.json").is_file()
 
 

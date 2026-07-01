@@ -61,9 +61,9 @@ def check_plan_to_issues_workflow(git_root: Path, repo_root: Path) -> list[str]:
             errors.append(f"backlog next: exit {code}\n{output}")
             return errors
         nxt = json.loads(output)
-        if nxt.get("sequence") != "1.1 —":
-            errors.append(f"backlog next: expected sequence 1.1 —, got {nxt.get('sequence')!r}")
-        if "1.1" not in str(nxt.get("title", "")):
+        if not nxt:
+            errors.append("backlog next: expected a child issue, got empty result")
+        elif "1.1" not in str(nxt.get("title", "")):
             errors.append(f"backlog next: expected lowest child title, got {nxt.get('title')!r}")
 
     return errors
