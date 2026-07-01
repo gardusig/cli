@@ -31,6 +31,7 @@ Each command maps to a [cursor-skills git skill](https://github.com/gardusig/cur
 | `@git-start` | `scripts/git/start.sh` | `cli git start` |
 | `@git-stash` | `scripts/git/stash.sh` | `cli git stash` |
 | `@git-tag` | `scripts/git/tag.sh` | `cli git tag` |
+| `@git-deploy` | `scripts/git/deploy.sh` | `cli git deploy` |
 | `@git-tag-list` | `scripts/git/tag-list.sh` | `cli git tag list` |
 | `@git-tag-push` | `scripts/git/tag-push.sh` | `cli git tag push` |
 | `@git-zip` | `scripts/git/zip.sh` | `cli git zip` |
@@ -175,6 +176,23 @@ cli git zip v0.1.1 -o out.zip
 ```
 
 `tag` syncs **main** first, creates the **next** tag greater than the latest (per `.cli/tag.yaml`), then pushes to `origin` when configured. `zip` always archives the **latest local** tag unless you pass a name. Subcommands: `list`, `push` (`--force`), and explicit tag names still work.
+
+### CI/CD workflows
+
+See [ci-workflows.md](ci-workflows.md) for the standard trio: **`test.yml`** (PR build/test) → **`deploy.yml`** (main → tag) → **`release.yml`** (tag → GitHub Release artifacts).
+
+### Deploy (auto-tag on main)
+
+When `main` has commits not covered by the latest policy tag and there are **no open PRs**, create and push the next tag:
+
+```bash
+cli git deploy --status     # read-only: main vs tag + open PR count
+cli git deploy --dry-run    # same as --status
+cli git deploy              # interactive write gate
+cli git deploy --yes        # CI / automation
+```
+
+Push to `main` runs [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml), which calls `./scripts/git/deploy.sh --yes`. Open PRs block deploy unless you pass `--skip-pr-check`.
 
 For multi-repo zip inventory and bulk ingest, use [`cli drive ingest`](drive.md).
 

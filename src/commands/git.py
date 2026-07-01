@@ -11,8 +11,10 @@ from rich import print as rprint
 from src.internal.read.git import git_worktree_snapshot
 from src.internal.write.gate import WRITE_GATE_DELIMITER, require_write_gate
 from src.services.backup_zip import archive_tag_zip
+from src.services.git_deploy import DeployAssessment, GitDeployError, assess_deploy_readiness
 from src.services.git_review import run_review
 from src.services.git_shortcuts import GitShortcuts
+from src.services.gh_service import GhService
 from src.services.pypi_publish import PyPiPublishError
 from src.services.tag_policy import (
     latest_tag,
@@ -830,6 +832,63 @@ def zip_cmd(
     mode = "encrypted zip" if encrypted else "git archive"
     stem = tag_zip_basename(svc.repo_basename(), tag_name)
     rprint(f"[green]zip[/green] git-tags/{svc.repo_basename()}/{stem}.zip ({mode})")
+
+
+def _print_deploy_assessment(assessment: DeployAssessment) -> None:
+    rprint(f"[bold]deploy[/bold] {assessment.repo}")
+    for line in assessment.summary_lines()[1:]:
+        if line.startswith("  pr #"):
+            rprint(f"[yellow]{line}[/yellow]")
+        else:
+            rprint(f"[dim]{line}[/dim]")
+
+
+@git_app.command("deploy")
+def deploy_cmd(
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt."),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Assess only; never create or push a tag.",
+    ),
+    status: bool = typer.Option(
+        False,
+        "--status",
+        help="Print deploy assessment and exit (read-only).",
+    ),
+    skip_pr_check: bool = typer.Option(
+        False,
+        "--skip-pr-check",
+        help="Allow tagging when open PRs exist.",
+    ),
+) -> None:
+    """Tag main when it differs from the latest tag and no open PRs block release."""
+    svc = _svc()
+    repo = Path(svc.top)
+    try:
+        gh_svc = GhService()
+        assessment = assess_deploy_readiness(svc, repo_root=repo, gh_svc=gh_svc)
+    except GitDeployError as exc:
+        raise typer.Exit(str(exc)) from exc
+    _print_deploy_assessment(assessment)
+    if status or dry_run:
+        raise typer.Exit()
+    if assessment.open_pr_count and not skip_pr_check:
+        rprint("[red]blocked[/red] merge or close open PRs first (or pass --skip-pr-check)")
+        raise typer.Exit(1)
+    if not assessment.needs_tag:
+        rprint("[dim]skip[/dim] main matches latest tag")
+        raise typer.Exit()
+    if assessment.suggested_tag is None:
+        raise typer.Exit("cannot suggest next tag; pass an explicit name via `cli git tag`")
+    _write_gate(
+        "deploy",
+        yes=yes,
+        question=f"Create and push tag {assessment.suggested_tag} on main?",
+        extra_lines=assessment.summary_lines(),
+    )
+    _tag_create(None, yes=yes)
+    rprint(f"[green]deployed[/green] {assessment.suggested_tag}")
 
 
 @git_app.command("review")

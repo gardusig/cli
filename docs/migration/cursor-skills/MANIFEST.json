@@ -1,0 +1,751 @@
+{
+  "source_repo": "gardusig/cursor-skills",
+  "source_commit": "cb9b6e70c995f3daef99f2bc9636952d050942fe",
+  "files": [
+    {
+      "path": ".cursor-README.md",
+      "size": 511,
+      "sha256": "c559f9b803bf334f24755c38f7ba2b3f1e08dcfed1ceaf534575bbd7c7a1f6eb"
+    },
+    {
+      "path": "README.md",
+      "size": 1979,
+      "sha256": "25083847f31fddb272c0c1eba5e58b1b1576bf8f2906d56589a9c8ce5cd38fba"
+    },
+    {
+      "path": "docs/README.md",
+      "size": 7419,
+      "sha256": "4ee067c9fe9c112295cf9aa3070b274057a76d92d668ed1ca48089624e49510e"
+    },
+    {
+      "path": "docs/gh.md",
+      "size": 12586,
+      "sha256": "b96c9508c02568d648ba51bb0c6fe3b3227b3815acf99967751b1dad9b30ba3d"
+    },
+    {
+      "path": "docs/onboarding.md",
+      "size": 4000,
+      "sha256": "6086fb95403c8eb8aee4859022c52eac4923ab46578b07efe526e95dbd372bb5"
+    },
+    {
+      "path": "docs/read.md",
+      "size": 3086,
+      "sha256": "c79010c704215806d726a0370c2db651046b840b898c692a35a0e0968439ae6d"
+    },
+    {
+      "path": "docs/write.md",
+      "size": 1751,
+      "sha256": "c57e833cfe55574bceec35fe078538e67a98e9dbada655198de930b4ee5af7ca"
+    },
+    {
+      "path": "scripts/README.md",
+      "size": 535,
+      "sha256": "efadb70785512b9faa672dbddf5edb11a57bf564d2ab61c0c6ccc7029bda6234"
+    },
+    {
+      "path": "scripts/install.sh",
+      "size": 6253,
+      "sha256": "1dccab9b9f8e253ee776914e227607b0313b6e6abe172728447bf9b07fa2b9b2"
+    },
+    {
+      "path": "scripts/run.sh",
+      "size": 202,
+      "sha256": "c1025521d62edb1c9b1990ef9001c15c8cd5fa642f08727f3c420c1c01281dad"
+    },
+    {
+      "path": "skills/cursor/repo/README.md",
+      "size": 1342,
+      "sha256": "c60e6a8b5f62e6d492e66a43ad2fe1dc0eaff7dac2b27e0bd172f39fcf58fcc0"
+    },
+    {
+      "path": "skills/gh/issue/SKILL.md",
+      "size": 6022,
+      "sha256": "efaec6aeee042d76368b255599a8cd1330a3ea9727ea117edc0e44151ced70dc"
+    },
+    {
+      "path": "skills/gh/issue/backlog/SKILL.md",
+      "size": 2385,
+      "sha256": "3c665c0a84b6eb9accbc2f67cfae94ac75fb0acf5bdc3e53538e18a4d554741c"
+    },
+    {
+      "path": "skills/gh/issue/close/SKILL.md",
+      "size": 2966,
+      "sha256": "ba462ae2d637e0d96fb77c93bd77cf7978556d83abdd8da69d2be692d6eda479"
+    },
+    {
+      "path": "skills/gh/issue/delete/closed/SKILL.md",
+      "size": 3952,
+      "sha256": "6c6f89d211b41796734d764e55ee2ae45b80697fb7e5a572e4f584a893eecf0a"
+    },
+    {
+      "path": "skills/gh/issue/execute/SKILL.md",
+      "size": 2731,
+      "sha256": "3d691c7b47aec4cd27ea848aa518f99d1991dfbafc8b4307f0cd1c69ffce51a3"
+    },
+    {
+      "path": "skills/gh/issue/labels/SKILL.md",
+      "size": 2801,
+      "sha256": "5b8454fac2548359a1d70cfe6f7e3558d24092d7b807ac2bfa62781848f5dfdc"
+    },
+    {
+      "path": "skills/gh/issue/list/SKILL.md",
+      "size": 2978,
+      "sha256": "1c8365c3d0c54f11ba179d0a8d19c04106f6940ae5cd91189bb22f9cbed6a9f9"
+    },
+    {
+      "path": "skills/gh/issue/next/SKILL.md",
+      "size": 2341,
+      "sha256": "3a15749baa088115aefa1a9582f6848b0b267522d11fa45e4640fe18d2fb16b8"
+    },
+    {
+      "path": "skills/gh/issue/pick/SKILL.md",
+      "size": 4187,
+      "sha256": "c888bb25a2a042d72851e5dbf3eb35c998735395555390874cdd98d16b1423b6"
+    },
+    {
+      "path": "skills/gh/issue/review/SKILL.md",
+      "size": 3828,
+      "sha256": "b591686d50edb506dd57a311f7775c524ac0cb43f3bdb7592c247a954a48656c"
+    },
+    {
+      "path": "skills/gh/issue/view/SKILL.md",
+      "size": 3358,
+      "sha256": "3f9840fae6ae6fe987d9bb263c9438188c9ccb362bb7208744a299ffe85da982"
+    },
+    {
+      "path": "skills/gh/pr/SKILL.md",
+      "size": 4911,
+      "sha256": "ef059ecb01b1e134ca65787f7009ce9d1f809640bc8d7b130a8633c8f25c1cdf"
+    },
+    {
+      "path": "skills/gh/pr/close/SKILL.md",
+      "size": 3082,
+      "sha256": "c3274aa969f3093c453c6aa4f9e4098340abed2eb1c7f0bed16ecf676d67f79c"
+    },
+    {
+      "path": "skills/gh/pr/list/SKILL.md",
+      "size": 3104,
+      "sha256": "f826bbabf637f3bffe4e9d8006c47d862dfd0dc3e878ec76720f15c97deedeed"
+    },
+    {
+      "path": "skills/gh/pr/review/SKILL.md",
+      "size": 2841,
+      "sha256": "144b5f53406945c8b43e08c3d72b184f70b0447a556633dae7fff415b79a52bb"
+    },
+    {
+      "path": "skills/gh/pr/view/SKILL.md",
+      "size": 3811,
+      "sha256": "8c9e4da17f6c5ca42c26448c74c1ccce82a8a84f3088d1544e93e46fe3b18fb4"
+    },
+    {
+      "path": "skills/internal/read/config/configuration/SKILL.md",
+      "size": 2236,
+      "sha256": "b003df578e8e1085cfc093b68b0450f9a8d94285702600eb1d959744eac516db"
+    },
+    {
+      "path": "skills/internal/read/dependencies/discover/SKILL.md",
+      "size": 4763,
+      "sha256": "6088a765c5923211e1ac53ed59756f716c733be3355b1302f6628f05882374db"
+    },
+    {
+      "path": "skills/internal/read/diff/summary/SKILL.md",
+      "size": 3071,
+      "sha256": "51cee5a68325b128c68e8b1232eca53263198e3d86a2e908e32e89ac297520d6"
+    },
+    {
+      "path": "skills/internal/read/diff/summary/delta-narrative/SKILL.md",
+      "size": 1411,
+      "sha256": "a1450076ad1c27c45f0af26b2825c54e420c07e22253ae5fafe466ebf924c293"
+    },
+    {
+      "path": "skills/internal/read/docs/exemplars/SKILL.md",
+      "size": 5631,
+      "sha256": "d97b3ed4a7d2d5f318c8d46e7aee1eff6e151108585af0452dee22546b31fae7"
+    },
+    {
+      "path": "skills/internal/read/docs/explanation/SKILL.md",
+      "size": 1289,
+      "sha256": "4c8b4eead44e45f6fc85ecb81b343476360c4418938ccbac105e7a709ce0160d"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/SKILL.md",
+      "size": 5151,
+      "sha256": "00a60b0366795e14a8efc257da946506cea18a458270207d627bfaf8f3f371b1"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/diagrams/diagrams-index/SKILL.md",
+      "size": 557,
+      "sha256": "4b3f7e822c0b8c5fa7a6e820ac3554d00f3f3dcebccf56ebcca7c5f6645f0ae2"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/diagrams/examples/SKILL.md",
+      "size": 535,
+      "sha256": "be4aa1b639d65bcb9fbdd5617f62439f02943be7467ea1b93c680b5348da0075"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/diagrams/palette/SKILL.md",
+      "size": 551,
+      "sha256": "d350bd60388d38013569c6a1145e76e95cadc5a6f1055b3ceb3208632007ac49"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/diagrams/scaffold-dag/SKILL.md",
+      "size": 537,
+      "sha256": "66bf1faf2374e1c34a8515c6b39345bc01c8dde692108e1653fbd11eebfd5ec5"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/diagrams/scaffold-decision/SKILL.md",
+      "size": 552,
+      "sha256": "24b997a75eb01746b257074c8bd4bcb60d80c4f5b76db9dbc37b6b1c9ebaccce"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/diagrams/scaffold-domain-taxonomy/SKILL.md",
+      "size": 586,
+      "sha256": "83eb6f36c9443327aa0476fb5eefa994430d190a6010349abbcf5a0978d5bf9a"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/diagrams/scaffold-flowchart/SKILL.md",
+      "size": 549,
+      "sha256": "9dbdc7a29d81a884e8d08f3b9743c022df13d740593862b1f3d45c8abbf776b0"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/diagrams/scaffold-sequence/SKILL.md",
+      "size": 555,
+      "sha256": "de6b6539a0bfe0751f1fe8c4bbb912ca814b99c22d1c0146ae574a2a9f393900"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/diagrams/scaffold-stakeholder-flow/SKILL.md",
+      "size": 563,
+      "sha256": "bee0bbb3df5b82296e67115de8cd607336e57b371b2de2c0b607dc1f15296a4a"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/diagrams/scaffold-state/SKILL.md",
+      "size": 549,
+      "sha256": "8c112fc6882e7572c06c740d0605786b0d6161661314e7a6b668cce5f28b1704"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/diagrams/scaffold-user-journey/SKILL.md",
+      "size": 555,
+      "sha256": "49ccff43274ba133628323d145521bda31e5fea15b95275979468db631817835"
+    },
+    {
+      "path": "skills/internal/read/docs/graphs/legacy-graphs-pack-scaffold/SKILL.md",
+      "size": 1289,
+      "sha256": "f69d71767b71671e654ba76c1fd347f8369c6e7b3ff574b07b9c3777623dab01"
+    },
+    {
+      "path": "skills/internal/read/docs/index/SKILL.md",
+      "size": 1292,
+      "sha256": "c2d19cc07f2fe14490d541f176edc188f0576a783e8429536ad6ec3a72097ddc"
+    },
+    {
+      "path": "skills/internal/read/docs/mirror-bootstrap/SKILL.md",
+      "size": 1606,
+      "sha256": "15050b788e0cdba97820038b36ef018a606d5e2e8367d686cb3477abafbf6469"
+    },
+    {
+      "path": "skills/internal/read/docs/readme-root/SKILL.md",
+      "size": 4729,
+      "sha256": "59bdbb331c443ee0d99a6136b67ada7e51ec9f3e4e25cfe83cf84d15c1e9926d"
+    },
+    {
+      "path": "skills/internal/read/docs/readme-root/root-readme-scaffold/SKILL.md",
+      "size": 3251,
+      "sha256": "220643559cf286ba019a8fbd3a36b46f6291f45c9b2529c5e63a73a82aeaa724"
+    },
+    {
+      "path": "skills/internal/read/docs/readme-tree/SKILL.md",
+      "size": 2875,
+      "sha256": "9b34f18d106e59c111ca5fb96d0923f860c8b30acb07acc14bd4a3de20d9c5ff"
+    },
+    {
+      "path": "skills/internal/read/docs/reference/SKILL.md",
+      "size": 2698,
+      "sha256": "3cf96605e42bfce7d367266ba78c45b17871caa96c4dedbd9f33986696bc13ed"
+    },
+    {
+      "path": "skills/internal/read/docs/reference/docs-hub-scaffold/SKILL.md",
+      "size": 2362,
+      "sha256": "53c626b885785be9f68a46ab16a4e86fb02ad0eddaa071f9e1bbe873f724ea16"
+    },
+    {
+      "path": "skills/internal/read/docs/reference/reference-readme-scaffold/SKILL.md",
+      "size": 1818,
+      "sha256": "461006f3183e90faa247a4564b0fa73d0a2ae054fde52a7f15531c4859d8e49c"
+    },
+    {
+      "path": "skills/internal/read/docs/reference/wiki-reference-scaffold/SKILL.md",
+      "size": 9552,
+      "sha256": "31aace3e91195cf1ebea1ac2d0cd4242fccb98cf0c0dbde19024a33f7063e23f"
+    },
+    {
+      "path": "skills/internal/read/docs/table/SKILL.md",
+      "size": 1073,
+      "sha256": "f502fd414c06b6d5aa7f46629fa722ef86fc9db28c2a9fc2b07145976bf747c7"
+    },
+    {
+      "path": "skills/internal/read/docs/user-guide/SKILL.md",
+      "size": 2319,
+      "sha256": "b699b0e55410c852a9acb6cd8610cedbda8768f2f28bcb6134c349e112072c89"
+    },
+    {
+      "path": "skills/internal/read/docs/user-guide/user-guide-scaffold/SKILL.md",
+      "size": 4881,
+      "sha256": "cfd4f08a808c3f00147816f447216366f43890c09a6010475aa86b7c57c50ff2"
+    },
+    {
+      "path": "skills/internal/read/docs/wiki/SKILL.md",
+      "size": 2051,
+      "sha256": "26a0d53238c11399a88921b0f222c127090d0e18d67c4589fc1c1b9406bd8fea"
+    },
+    {
+      "path": "skills/internal/read/issue/consolidate/SKILL.md",
+      "size": 971,
+      "sha256": "060a9ff9cf486a3ef0ef5d548258f6de17beef3a2745ab48b59a3cd9e3d1aace"
+    },
+    {
+      "path": "skills/internal/read/issue/dedupe/SKILL.md",
+      "size": 5655,
+      "sha256": "b0abba21b5cc6d06e2740d12a11cbdaf44b1880d1a3ad120df4928a103d60b65"
+    },
+    {
+      "path": "skills/internal/read/issue/dedupe/dedupe-checklist/SKILL.md",
+      "size": 578,
+      "sha256": "85258b80191caec000a233efa6a028fd0dc8e5f39267afd88a1bbde79cd63cf1"
+    },
+    {
+      "path": "skills/internal/read/issue/description/SKILL.md",
+      "size": 4752,
+      "sha256": "a9cc35cd9a89fb030d4005c38cb70281f2426d1a4788e4d48c76b6aca79b3443"
+    },
+    {
+      "path": "skills/internal/read/issue/description/issue-body-skeleton/SKILL.md",
+      "size": 571,
+      "sha256": "54e9b4da7a092b079dd1091b6a9b058c6205d2954af551b0a356f0636515a94c"
+    },
+    {
+      "path": "skills/internal/read/issue/description/issue-context/SKILL.md",
+      "size": 1345,
+      "sha256": "7c144a14d9a5b063f87c3796e6ac8404b220965efc682effa129eada05898a41"
+    },
+    {
+      "path": "skills/internal/read/issue/description/review-report/SKILL.md",
+      "size": 1945,
+      "sha256": "2bd846e398966aa5750a04c4aee86cdb405e2a37e025eec649fc755fc3e8bc01"
+    },
+    {
+      "path": "skills/internal/read/issue/label-manifest/SKILL.md",
+      "size": 1096,
+      "sha256": "a7846970ad1c525eb34be33becd21c423d10a87ddb492ab1c8924e45e4d8bf33"
+    },
+    {
+      "path": "skills/internal/read/issue/labels/SKILL.md",
+      "size": 3535,
+      "sha256": "649d40f0a35d0cc36ebaf793559a4ceb1f94d96440d6fa3b40af622ac88f049e"
+    },
+    {
+      "path": "skills/internal/read/issue/labels/label-decorate/SKILL.md",
+      "size": 2227,
+      "sha256": "f200f878fb331fbb6ec2f96ac13694b05d72ac67318752a8a7a6e862380e8247"
+    },
+    {
+      "path": "skills/internal/read/issue/list/SKILL.md",
+      "size": 998,
+      "sha256": "3f67da97cbe253a02bb52f01626ab0f0b185e2372b7948fa49a7126287ee4b25"
+    },
+    {
+      "path": "skills/internal/read/issue/nesting/SKILL.md",
+      "size": 3639,
+      "sha256": "6722f5f4e5253d3c91f09b4ad8638dee199a9779f48137ff6811c2fc1fc6c38a"
+    },
+    {
+      "path": "skills/internal/read/issue/preflight-qa/SKILL.md",
+      "size": 3306,
+      "sha256": "1a88b1240e60af08e4aafd30d0e1f9ce76ab9000c5d3f00c5401611f0fee2bf7"
+    },
+    {
+      "path": "skills/internal/read/issue/sequence/SKILL.md",
+      "size": 1531,
+      "sha256": "0ebd2c9b68471e43779b22f2404921d45f742b91be60dddf50808c18c85fed07"
+    },
+    {
+      "path": "skills/internal/read/issue/spec/SKILL.md",
+      "size": 3789,
+      "sha256": "ebb1dc380f1a64ed0ec2aa618016cf309fe04ec28bab6b69aa9c84c605c54994"
+    },
+    {
+      "path": "skills/internal/read/issue/split/SKILL.md",
+      "size": 1007,
+      "sha256": "2a5644b2c0916bf3b322a272d06d7f54f3ccf4c272babc0dc772abdbf1e01f09"
+    },
+    {
+      "path": "skills/internal/read/issue/view/SKILL.md",
+      "size": 856,
+      "sha256": "010a2c5f090ea6f3445ba6f5f870a79473786294f5f084f5bdd66bed2ce13b91"
+    },
+    {
+      "path": "skills/internal/read/pr/body-sections/SKILL.md",
+      "size": 1521,
+      "sha256": "197a505075f2d6c0cb2fafe62d4db0565939c8bbc5fbbc10c65453c7410a357a"
+    },
+    {
+      "path": "skills/internal/read/pr/body-sections/section-patterns/SKILL.md",
+      "size": 1358,
+      "sha256": "d689a22aed58abad93261ec9e220d6237f5cad12bd8e10176f06e53f90036ec8"
+    },
+    {
+      "path": "skills/internal/read/pr/branch-context/SKILL.md",
+      "size": 2684,
+      "sha256": "c87102b58acbfe01e0d3a1ea16f1bdf8a52566ebc365ca8981fe18f4d5ed22cd"
+    },
+    {
+      "path": "skills/internal/read/pr/content/SKILL.md",
+      "size": 1543,
+      "sha256": "f9cc0bcdb2ebeaeecbc4dac74d306af2f458198f5cabe2232bab8e4fc6908d68"
+    },
+    {
+      "path": "skills/internal/read/pr/content/pr-body-skeleton/SKILL.md",
+      "size": 1219,
+      "sha256": "ca5235f27b27269ad112e22036ec61f93f0ed21186f5d735a0615d0196c6ce24"
+    },
+    {
+      "path": "skills/internal/read/pr/content/pr-orchestration/SKILL.md",
+      "size": 1125,
+      "sha256": "1a4fd4b1d617ddf8ea338b8c84eeceb89ad6e608fe68c1636b07db0d0f621747"
+    },
+    {
+      "path": "skills/internal/read/pr/content/title-line/SKILL.md",
+      "size": 536,
+      "sha256": "1e386aa58b6df07ae9626bd24b56ea5120aa52fb2c17b6db3c3acc10c13b75d4"
+    },
+    {
+      "path": "skills/internal/read/pr/description/SKILL.md",
+      "size": 8066,
+      "sha256": "1012cde9a4ebf9ff78963d920b48cff5a29ef4d022c8b29d62452a04b0fb05d4"
+    },
+    {
+      "path": "skills/internal/read/pr/list/SKILL.md",
+      "size": 1048,
+      "sha256": "baa6bc86ffcfc9f6dc4c5c1a76daa909b20c8deb268a718f6e82234ee118e375"
+    },
+    {
+      "path": "skills/internal/read/pr/list/list-view-hub/SKILL.md",
+      "size": 658,
+      "sha256": "aa945e50e5122534e0b1edba0362a7dc1f44ce81bb74873d3ea495d86624d9a4"
+    },
+    {
+      "path": "skills/internal/read/pr/preflight-qa/SKILL.md",
+      "size": 2372,
+      "sha256": "f35a92c0c6a7c1919cea08f39e4d60bf5a0d44d0de24187db4dcc73a36d512a2"
+    },
+    {
+      "path": "skills/internal/read/pr/prevalidate/SKILL.md",
+      "size": 3246,
+      "sha256": "4c815e2088cce3536e570cd25f4d47aecd736c372a8709232026fca1daa180af"
+    },
+    {
+      "path": "skills/internal/read/repo/classification/SKILL.md",
+      "size": 3411,
+      "sha256": "0bed1cd4a488d0d17ebda6cc6030ee18fe0f806e214de43446abfafc5926477d"
+    },
+    {
+      "path": "skills/internal/read/repo/discovery/SKILL.md",
+      "size": 4504,
+      "sha256": "3f79b4fb5c353f3fa34023f1cabceb57413220336fd0ea731e62586d61455c5b"
+    },
+    {
+      "path": "skills/internal/read/repo/forms-json/SKILL.md",
+      "size": 1521,
+      "sha256": "c63c62268dd3e9026147a5dc5512b2eae55b1bfd9c3eb19790f2969ed898beb8"
+    },
+    {
+      "path": "skills/internal/read/repo/github/SKILL.md",
+      "size": 564,
+      "sha256": "31ac82aa7d66a6bb6daf6489efaafe3ecccb3a89712fb87b36d75b97b2c1b5a9"
+    },
+    {
+      "path": "skills/internal/read/repo/layout/SKILL.md",
+      "size": 5532,
+      "sha256": "4d3c94d09aee81df18aaf5303d8b743c6905057eda59a4eb57445bd0dc6875a7"
+    },
+    {
+      "path": "skills/internal/read/repo/project-structure-eval/SKILL.md",
+      "size": 4085,
+      "sha256": "4649af47698505c24c42dbfddc9c3e5593a6179ce6eb7e982addb2b93fad8864"
+    },
+    {
+      "path": "skills/internal/read/repo/stream/SKILL.md",
+      "size": 4939,
+      "sha256": "56c7b0f66452a126657e1009df99d5ab08761dcfbfbef38a0f25fbe154b03433"
+    },
+    {
+      "path": "skills/internal/read/safety/language-interaction-rules/SKILL.md",
+      "size": 2661,
+      "sha256": "6aea5103f34cca52e152248859a9b5dfe711d1f51aa53c65a42da65aa19420d7"
+    },
+    {
+      "path": "skills/internal/read/safety/skill-safety/SKILL.md",
+      "size": 4989,
+      "sha256": "d33e1e2ca821ffde6f66f4617f5e5d620ce4bebf95127f1b6cd712d7f9a1d8e7"
+    },
+    {
+      "path": "skills/internal/read/safety/structured-qa/SKILL.md",
+      "size": 16748,
+      "sha256": "fb4198035e19ba19316beb088637a96d9240eecf1dfea08dbbf00df344116399"
+    },
+    {
+      "path": "skills/internal/read/safety/structured-qa/options/SKILL.md",
+      "size": 3583,
+      "sha256": "dc68380547ab38e5faba918f2255d8fdb46829879aa810006577c2908186054d"
+    },
+    {
+      "path": "skills/internal/read/safety/structured-qa/question/SKILL.md",
+      "size": 3376,
+      "sha256": "3255d46e4a85909d61febbde9ab1fab87410b36112a7c4fea540aa6c66464d6b"
+    },
+    {
+      "path": "skills/internal/read/safety/structured-qa/summary/SKILL.md",
+      "size": 2302,
+      "sha256": "76fa0cdc92c24d64a1c6a9d3434762756c12ce5dce14aa50f84d8cfcdba15982"
+    },
+    {
+      "path": "skills/internal/read/shuttle/gh/SKILL.md",
+      "size": 6149,
+      "sha256": "78439c1872164edcf274e764b7ca23a7ed0e05416a79af618812286bac172912"
+    },
+    {
+      "path": "skills/internal/read/shuttle/gh/issue-commands/SKILL.md",
+      "size": 1378,
+      "sha256": "c4828a617763a70a412b2c0430a0bdace7fd1341dd123a0bbfdd0eac49758036"
+    },
+    {
+      "path": "skills/internal/read/shuttle/gh/issue-read/SKILL.md",
+      "size": 1362,
+      "sha256": "b39013c8695ca0c6b7e001ab0d084e62f3e1f6a0b6fe9235ff5451811ada4684"
+    },
+    {
+      "path": "skills/internal/read/shuttle/gh/label-read/SKILL.md",
+      "size": 867,
+      "sha256": "20282c30d3366a2105d370af29724fb7a988c4b76dfcaad70f3924305af41a10"
+    },
+    {
+      "path": "skills/internal/read/shuttle/gh/pr-commands/SKILL.md",
+      "size": 735,
+      "sha256": "182da3e5eec7420103aa056082847ad730fe8e56af0a1a1888b8e83583040927"
+    },
+    {
+      "path": "skills/internal/read/shuttle/gh/pr-read/SKILL.md",
+      "size": 568,
+      "sha256": "b4801c6591e3bfd4b88b03ab9b0a3ed39ff08653152393df53a986923f28491c"
+    },
+    {
+      "path": "skills/internal/read/shuttle/gh/repo-read/SKILL.md",
+      "size": 781,
+      "sha256": "85adf3506edd468c631a86b8564e4b728d8f1f4b01ff66ec02b72cedf2281860"
+    },
+    {
+      "path": "skills/internal/read/shuttle/git/SKILL.md",
+      "size": 1835,
+      "sha256": "b7eec21acd9648d0e0f138c53d9932249913c3fd471d32b02e2a64f2624fda66"
+    },
+    {
+      "path": "skills/internal/read/skill-suggestions/SKILL.md",
+      "size": 3234,
+      "sha256": "ab60195f379db384e6cd47d248596452de30362d3d83580dedde6bc266434303"
+    },
+    {
+      "path": "skills/internal/read/skill-suggestions/next-steps-options/SKILL.md",
+      "size": 3438,
+      "sha256": "9636a6edea76d576192f6ebd5dea3af8a7bf9369a591803342f55410c4eced3e"
+    },
+    {
+      "path": "skills/internal/read/skill-suggestions/qa-alternative-options/SKILL.md",
+      "size": 2118,
+      "sha256": "df07c8a6753d3043ffed538ed2bbac18e94eb03a8a6afe416e2b817a4a5ed5a4"
+    },
+    {
+      "path": "skills/internal/read/skill-suggestions/question-summary/SKILL.md",
+      "size": 2307,
+      "sha256": "ad5fbc40d17aff89d94ccf51ff8fd15d57dcf60fa345d9073f887d6ddeb41981"
+    },
+    {
+      "path": "skills/internal/read/workflow/git/SKILL.md",
+      "size": 574,
+      "sha256": "6868e20607974c73d7ceb31a0bb08e0c2217157add4bd4aec5854f7a825cfa5c"
+    },
+    {
+      "path": "skills/internal/read/workflow/merge-conflicts/SKILL.md",
+      "size": 3949,
+      "sha256": "10ffd733ff64ce9536696e3cc6807ebe2a748f823f407715a0f146bccc849538"
+    },
+    {
+      "path": "skills/internal/read/workflow/workflows/SKILL.md",
+      "size": 3026,
+      "sha256": "bc257973748289d83f69d6309a6e1eecabbc87755c296a1586b702b5c81a51a6"
+    },
+    {
+      "path": "skills/internal/write/SKILL.md",
+      "size": 789,
+      "sha256": "a06344e2f55a485d97de60a56ab14dac8d27f02b20fe8ee8be755ec31da75785"
+    },
+    {
+      "path": "skills/internal/write/dependencies/install/SKILL.md",
+      "size": 2439,
+      "sha256": "205a97f3ae23e64967a95127482f3ae9be21d95071e66c2ce48fcf54cb65e1e2"
+    },
+    {
+      "path": "skills/internal/write/issue/commands/SKILL.md",
+      "size": 1120,
+      "sha256": "2424ba3263cadbde83b9cd0fab921bb537660d0aad6509a1095cd4ac2d091a81"
+    },
+    {
+      "path": "skills/internal/write/issue/commands/close/as/duplicate/SKILL.md",
+      "size": 557,
+      "sha256": "4fb61ed2356047c800421050b3f209d320b7402a877c0008b4fb9d8bc8b524f0"
+    },
+    {
+      "path": "skills/internal/write/issue/commands/create/prompt/SKILL.md",
+      "size": 638,
+      "sha256": "5a223e0dad79f5404921684727a2968bdd5e378b1245698bccf1d113d80034e5"
+    },
+    {
+      "path": "skills/internal/write/issue/commands/delete/closed/SKILL.md",
+      "size": 695,
+      "sha256": "c262685cae684f7f5fb288384f8c0f3d9825c6d2b266a8f8079d7abb3ce60b4c"
+    },
+    {
+      "path": "skills/internal/write/pr/commands/SKILL.md",
+      "size": 1214,
+      "sha256": "f678f509664a8b84d5538f5b1f0dc47092b2f9b665a3b679e326bbf037dd220b"
+    },
+    {
+      "path": "skills/internal/write/quality/documentation/SKILL.md",
+      "size": 3616,
+      "sha256": "e9d4edb227f0b9c6ae630de43779b977b22ae471e6a6fe1bd619bc2cf6ac289a"
+    },
+    {
+      "path": "skills/internal/write/quality/evaluate/SKILL.md",
+      "size": 2921,
+      "sha256": "3cd6d8e76281549fff41962059cbd57dfb04fb11ae9805a7fc25e15e740ca753"
+    },
+    {
+      "path": "skills/internal/write/workflow/git/SKILL.md",
+      "size": 554,
+      "sha256": "102583303bd7196a0ca7a18eeea59c67c927774447339d5678d586e02220908c"
+    },
+    {
+      "path": "tests/README.md",
+      "size": 4683,
+      "sha256": "e3de13b35ef96bab5a8fb5790bd43dae2739b7ff79343e986f303b8b7ddf53d9"
+    },
+    {
+      "path": "tests/check-no-internal-prefix.sh",
+      "size": 880,
+      "sha256": "3a41c81b504f5de956c1e36b60f052ad69c550eda7520d5697977871ccaaaa5c"
+    },
+    {
+      "path": "tests/check-public-invoke-names.py",
+      "size": 1916,
+      "sha256": "6cc2541f312a9d13bea102f933826284ab74cca94b26994f138f771b4a8308fd"
+    },
+    {
+      "path": "tests/check-public-no-qa-orchestration.py",
+      "size": 2231,
+      "sha256": "5fc28c185f741bb843152b454f16601df0fac038a73ba1ee176169d23b2d5b8d"
+    },
+    {
+      "path": "tests/check-public-skill-dag.py",
+      "size": 12768,
+      "sha256": "e0670d841842e9901bb88df882054d2bf5696138d4dd7b57c582642124880bc7"
+    },
+    {
+      "path": "tests/check-public-skill-routing-descriptions.py",
+      "size": 12851,
+      "sha256": "8dab2e03158331a5d61751cb9939ed51af2bd873becd277b2ed8d82010efa8db"
+    },
+    {
+      "path": "tests/check-public-skills.sh",
+      "size": 4296,
+      "sha256": "210235df3a2dc1fd7c13ce91a12cca8a04303aca937f73b985ea7646e01cfc63"
+    },
+    {
+      "path": "tests/check-public-skip-env.py",
+      "size": 1556,
+      "sha256": "2100b5b2c698b2bd604925d16a1aa63e3736e662bfd9311a582a3fa1c3c70c2d"
+    },
+    {
+      "path": "tests/check-read-write-command-ownership.py",
+      "size": 3668,
+      "sha256": "dd5c8d422b9e683bca551a7b38de0534434389c5f519b25ede7442ceb8933fe0"
+    },
+    {
+      "path": "tests/check-shuttle-only-cli.py",
+      "size": 1473,
+      "sha256": "e98e8cb98726a6836e910a5be0b7b5518b5839ca811d07fd7aaf0c881b15fc6a"
+    },
+    {
+      "path": "tests/check-skill-names.sh",
+      "size": 1760,
+      "sha256": "fc31323570bbc309f868919cb08150737bce93887b6b5da7421ff5762650f99a"
+    },
+    {
+      "path": "tests/check-skill-suggestions-catalog.py",
+      "size": 1712,
+      "sha256": "5b714e58db6e5ea9af460afb1f1578a67f6c1e7fd77e589c4b34dc8d11881ae2"
+    },
+    {
+      "path": "tests/check-stale-skill-refs.py",
+      "size": 3422,
+      "sha256": "58dd3f857d4e82f57927d914b97548d294c0252dc483352fd0e1b71a2a1eb17d"
+    },
+    {
+      "path": "tests/check-structured-qa-shape.py",
+      "size": 3149,
+      "sha256": "a961818070b5bd771b744614a50a5194021f7a376276f8ca6a5bdadd7c91703a"
+    },
+    {
+      "path": "tests/check-write-skills-keywords.sh",
+      "size": 1375,
+      "sha256": "0b61357ace9847cb2ef9b1409e456a1197408b8fee21dd98b7aeb9c1a2620e88"
+    },
+    {
+      "path": "tests/fixtures/public-skill-dag/graph.json",
+      "size": 4239,
+      "sha256": "8a9f102f1b00accfa7494433204bafdd31b3db7263bf6d726856004fff2f0204"
+    },
+    {
+      "path": "tests/fixtures/public-skill-routing-tokens.json",
+      "size": 1565,
+      "sha256": "d81c0e8a5c1d70a6eaa1e56c5568303eac6adc62e42e22b127ebe4198ea9ab68"
+    },
+    {
+      "path": "tests/patch-public-skills-qa-boundary.py",
+      "size": 2287,
+      "sha256": "75b14e198257f0e8d20257631a3e6caa66f2797c32bde260156b8fcb3e727fed"
+    },
+    {
+      "path": "tests/patch-public-skills-skip-section.py",
+      "size": 3958,
+      "sha256": "12da6e8307fedc8fc5be64506be6a46b3b397d3a6e76cfc5f6ac62ff7dfb0c9f"
+    },
+    {
+      "path": "tests/public-skills.txt",
+      "size": 478,
+      "sha256": "9417b5bc28a6ca18b9c2c1306f84c9f231e4752ca66af11441c8b96487a7f3c7"
+    },
+    {
+      "path": "tests/run.sh",
+      "size": 899,
+      "sha256": "2a0694c6decb8aafbaaefba14997282658f2e99c936f2fb163039e27a24fef95"
+    },
+    {
+      "path": "tests/skill-link-audit.md",
+      "size": 2060,
+      "sha256": "3a1975807aa7603aef56c25cc2b8849cbe5ac70697110a639914abb1e2bb510b"
+    },
+    {
+      "path": "tests/write-guard-manifest.txt",
+      "size": 243,
+      "sha256": "3c4b64d1f17ca8ad43f6b00f9ec345daed615592dc448783fd61dd6351c0adf8"
+    }
+  ]
+}

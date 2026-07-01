@@ -35,6 +35,7 @@ def test_all_cursor_skills_git_scripts_exist() -> None:
         "start.sh",
         "stash.sh",
         "tag.sh",
+        "deploy.sh",
         "tag-list.sh",
         "tag-push.sh",
         "zip.sh",

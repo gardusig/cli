@@ -84,6 +84,7 @@ def links_root() -> None:
         ("scripts/docker/build-image.sh", "build one Docker stage"),
         ("scripts/docker/build-contest-image.sh", "build cli-contest:runner image"),
         ("scripts/test/tags.sh", "host: tag/zip/version unit tests"),
+        ("scripts/git/deploy.sh", "tag main on push when ahead of latest tag"),
         ("scripts/test/workflows.sh", "host: workflow E2E tests (mocked gh)"),
         ("scripts/test/all.sh", "host tags + Docker unit + integration"),
         ("scripts/test/unit.sh", "unit tests in container"),

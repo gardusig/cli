@@ -1,7 +1,7 @@
 name: release
 
-# Tag push (v*) → ./scripts/pypi/release.sh (Docker cli:release → PyPI).
-# Instructions: docs/release.md
+# Sequential release pipeline — same as ./scripts/release/build.sh + publish.sh (Docker).
+# Local: GITHUB_REF_NAME=v0.1.0 ./scripts/release/build.sh
 
 on:
   push:
@@ -10,20 +10,32 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  publish-pypi:
-    name: Publish to PyPI
+  pipeline:
+    name: Release pipeline
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
-      - name: Publish via release script
+      - name: Build release artifacts
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          chmod +x scripts/release/*.sh scripts/docker/*.sh
+          ./scripts/release/build.sh
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "${{ github.ref_name }}"
+          generate_release_notes: true
+          files: artifacts/*
+
+      - name: Publish to PyPI
         env:
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
-        run: |
-          chmod +x scripts/pypi/*.sh scripts/docker/run-release.sh
-          ./scripts/pypi/release.sh
+        run: ./scripts/release/publish.sh

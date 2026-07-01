@@ -22,6 +22,7 @@ export CLI_CONFIG_DIR="${CLI_CONFIG_DIR:-$ROOT/config/ci}"
 echo "==> tag / zip / version unit tests"
 "$PY" -m pytest \
   tests/git/test_tag_policy.py \
+  tests/git/test_deploy.py \
   tests/git/test_tag_zip.py \
   tests/git/test_commands.py::test_git_zip_defaults_to_latest_local_tag \
   tests/git/test_commands.py::test_git_zip_explicit_tag \

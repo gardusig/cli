@@ -1,0 +1,32 @@
+name: deploy
+
+# Sequential deploy pipeline — same as ./scripts/deploy/deploy.sh (Docker).
+# Local: ./scripts/deploy/deploy.sh
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pipeline:
+    name: Deploy pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag main if needed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/deploy/*.sh scripts/docker/*.sh
+          ./scripts/deploy/deploy.sh

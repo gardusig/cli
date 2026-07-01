@@ -81,6 +81,7 @@ CURSOR_SKILLS_GIT_SCRIPTS = [
     "scripts/git/start.sh",
     "scripts/git/stash.sh",
     "scripts/git/tag.sh",
+    "scripts/git/deploy.sh",
     "scripts/git/tag-list.sh",
     "scripts/git/tag-push.sh",
     "scripts/git/zip.sh",

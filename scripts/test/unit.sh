@@ -1,14 +1,5 @@
 #!/usr/bin/env bash
-# Unit gate: pytest -m "not integration" + ≥80% coverage in cli:integration.
 set -euo pipefail
-export CLI_DOCKER_TARGET=integration
-export CLI_DOCKER_IMAGE="${CLI_DOCKER_IMAGE:-cli:integration}"
-# shellcheck source=../docker/common.sh
-source "$(dirname "$0")/../docker/common.sh"
-
-INNER="$(docker_copy_workspace_script)
-cd '$CONTAINER_WORK'
-$(docker_init_git_workspace "$CONTAINER_WORK" "docker unit snapshot")
-./scripts/docker/run-unit.sh"
-
-docker_run_in_workspace "$INNER" 1
+# shellcheck source=../docker/_common.sh
+source "$(dirname "$0")/../docker/_common.sh"
+run_unit_tests
