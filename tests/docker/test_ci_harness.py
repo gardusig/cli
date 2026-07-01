@@ -77,8 +77,8 @@ def test_ci_workflow_runs_live_docker_in_container() -> None:
     assert "gardusig/pipelines/.github/workflows/reusable-ci-test.yml" in workflow
     unit = (ROOT / "scripts/test/unit.sh").read_text()
     integration = (ROOT / "scripts/test/integration.sh").read_text()
-    assert "run-unit.sh" in unit
-    assert "run-integration.sh" in integration
+    assert "run_unit_tests" in unit
+    assert "run_integration_tests" in integration
 
 
 def test_public_command_registry_covers_all_commands() -> None:
