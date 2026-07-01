@@ -146,7 +146,20 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck("gh help", ("gh", "--help"), needle="issue"),
         EndpointCheck("opencode help", ("opencode", "--help"), needle="chat"),
         EndpointCheck("test help", ("test", "--help"), needle="unit"),
+        EndpointCheck(
+            "test all",
+            ("test", "all"),
+            needle="test",
+            accept_exit_codes=(0, 1),
+        ),
         EndpointCheck("deploy help", ("deploy", "--help"), needle="deploy"),
+        EndpointCheck(
+            "deploy refuse",
+            ("deploy",),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
         EndpointCheck("release help", ("release", "--help"), needle="release"),
         EndpointCheck(
             "gh issue list",
