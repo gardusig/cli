@@ -758,7 +758,19 @@ def _tag_list() -> None:
 
 def _tag_create(name: str | None, *, yes: bool, force: bool = False) -> None:
     svc = _svc()
-    tag_name = _resolve_tag_name(name, purpose="create")
+    repo = Path(svc.top)
+    all_tags = svc.all_tag_names()
+    policy = resolve_tag_policy(repo, all_tags)
+    explicit = name.strip() if name else None
+    replacing = bool(explicit and svc.tag_exists_local(explicit))
+    if replacing and explicit:
+        tag_name = validate_tag_name(
+            explicit,
+            policy,
+            tags=[t for t in all_tags if t != explicit],
+        )
+    else:
+        tag_name = _resolve_tag_name(name, purpose="create")
     try:
         svc.prepare_for_tag(yes=yes)
     except RuntimeError as exc:
