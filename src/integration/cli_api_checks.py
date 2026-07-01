@@ -198,16 +198,49 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
             "gh pr merge",
             "gh",
             ("gh", *fmt, "pr", "merge", "7", "--yes"),
-            "merge",
+            "merge blocked",
+            accept_exit_codes=(1,),
         ),
         CliApiCheck("gh backlog tree", "gh", ("gh", *fmt, "backlog", "tree"), "issues"),
         CliApiCheck("gh backlog next", "gh", ("gh", *fmt, "backlog", "next"), '"number":'),
+        CliApiCheck("gh backlog levels", "gh", ("gh", *fmt, "backlog", "levels"), "levels"),
+        CliApiCheck("gh backlog organize", "gh", ("gh", *fmt, "backlog", "organize"), "priority"),
         CliApiCheck(
             "gh backlog resequence",
             "gh",
             ("gh", *fmt, "backlog", "resequence", "--file", str(plan), "--yes"),
             "Resequenced",
         ),
+        CliApiCheck("gh policy list", "gh", ("gh", *fmt, "policy", "list"), "pr-merge"),
+        *[
+            CliApiCheck(
+                f"gh project {sub}",
+                "gh",
+                ("gh", *fmt, "project", sub),
+                "Projects blocked",
+                accept_exit_codes=(1,),
+            )
+            for sub in (
+                "list",
+                "view",
+                "create",
+                "edit",
+                "delete",
+                "item-add",
+                "item-edit",
+                "field-create",
+            )
+        ],
+        *[
+            CliApiCheck(
+                f"gh ruleset {sub}",
+                "gh",
+                ("gh", *fmt, "ruleset", sub),
+                "Rulesets blocked",
+                accept_exit_codes=(1,),
+            )
+            for sub in ("list", "view", "create", "edit", "delete")
+        ],
         CliApiCheck(
             "gh repo view",
             "gh",
