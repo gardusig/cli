@@ -25,7 +25,6 @@ cli-*-origin.git/
 .env
 .env.local
 .DS_Store
-docs/
-tests/
-*.md
-!README.md
+docs/*
+!docs/migration/
+!docs/large-files.md
