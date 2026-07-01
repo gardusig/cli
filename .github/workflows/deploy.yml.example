@@ -1,0 +1,36 @@
+# Main-only — tag when main is ahead of latest (.cli/tag.yaml). Does not build release artifacts.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tag-main:
+    name: Tag main if needed
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install gardusig-cli
+        run: |
+          pip install "gardusig-cli @ git+https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/gardusig/cli.git@main"
+
+      - name: Create tag when main is ahead of latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: cli git deploy --yes

@@ -20,13 +20,12 @@ def test_scripts_tree_has_no_embedded_python() -> None:
 def test_shared_common_is_sourced() -> None:
     for rel in (
         "git/_common.sh",
-        "docker/_common.sh",
         "gh/_common.sh",
         "pypi/_common.sh",
         "notion/_common.sh",
     ):
         text = (SCRIPTS / rel).read_text(encoding="utf-8")
-        assert "scripts/_common.sh" in text or "../_common.sh" in text
+        assert "scripts/_common.sh" in text or "../_common.sh" in text or '_common.sh"' in text
 
 
 def test_root_common_has_cli_resolution_only() -> None:

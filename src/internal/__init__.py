@@ -1,1 +1,1 @@
-"""Internal read/write libraries (cursor-skills analogue)."""
+"""Internal read/write libraries."""

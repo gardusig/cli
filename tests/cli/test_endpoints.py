@@ -24,6 +24,17 @@ def snapshot() -> MagicMock:
     return snap
 
 
+@pytest.fixture(autouse=True)
+def _isolate_host_git_tags():
+    """Avoid host repo tags affecting tag policy in endpoint unit tests."""
+    with (
+        patch.object(GitShortcuts, "all_tag_names", return_value=[]),
+        patch.object(GitShortcuts, "list_local_tags", return_value=[]),
+        patch.object(GitShortcuts, "list_remote_tags", return_value=[]),
+    ):
+        yield
+
+
 def _mock_snapshot(snapshot: MagicMock):
     return patch(GIT_SNAPSHOT_PATCH, return_value=snapshot)
 
@@ -344,10 +355,10 @@ def test_git_tag_local_only(
     _prepare: MagicMock,
     _push: MagicMock,
 ) -> None:
-    result = runner.invoke(app, ["git", "tag", "2026-06-11"])
+    result = runner.invoke(app, ["git", "tag", "v0.1.1"])
     assert result.exit_code == 0
-    assert "2026-06-11" in result.stdout
-    mock_create.assert_called_once_with("2026-06-11", replace=False)
+    assert "v0.1.1" in result.stdout
+    mock_create.assert_called_once_with("v0.1.1", replace=False)
 
 
 @patch.object(GitShortcuts, "tag_push_action", return_value="push")
@@ -358,7 +369,7 @@ def test_git_tag_push_requires_yes(
     snapshot: MagicMock,
 ) -> None:
     with _mock_snapshot(snapshot):
-        result = runner.invoke(app, ["git", "tag", "push", "2026-06-11"])
+        result = runner.invoke(app, ["git", "tag", "push", "v0.1.1"])
     assert result.exit_code != 0
     mock_push.assert_not_called()
 

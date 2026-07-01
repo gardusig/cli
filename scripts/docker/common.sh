@@ -93,9 +93,11 @@ docker_setup_git_workspace() {
 
 # Run a bash script body inside a fresh container workdir (host repo mounted read-only).
 # Optional second arg mounts /var/run/docker.sock for live integration checks.
+# Optional third arg sets timeout seconds (0 = no limit).
 docker_run_in_workspace() {
   local inner_script="$1"
   local mount_docker_sock="${2:-0}"
+  local timeout_sec="${3:-${CLI_DOCKER_TIMEOUT_SEC:-0}}"
   docker_ensure_image
   local -a run_args=(
     --rm
@@ -116,7 +118,11 @@ docker_run_in_workspace() {
       -e CLI_CONTEST_WORKSPACE_HOST_ROOT="$ROOT/.integration-scratch/contest"
     )
   fi
-  docker run "${run_args[@]}" "$IMAGE" bash -c "$inner_script"
+  if [[ "$timeout_sec" -gt 0 ]]; then
+    timeout "$timeout_sec" docker run "${run_args[@]}" "$IMAGE" bash -c "$inner_script"
+  else
+    docker run "${run_args[@]}" "$IMAGE" bash -c "$inner_script"
+  fi
 }
 
 # Run a script in the release image; pass PYPI / version env from the host.

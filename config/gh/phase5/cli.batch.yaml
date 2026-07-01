@@ -1,0 +1,122 @@
+# Phase 5 — gardusig/cli issue organization
+# Apply: cli gh issue batch --file config/gh/phase5/cli.batch.yaml --yes
+operations:
+  - action: create
+    title: CLI core operator hub
+    body: |
+      Parent epic for headless operator: runner, reusables, craft trilogy, OpenCode.
+    labels: ["issue-type:epic", "epic:hub-operator", "priority:0"]
+
+  - action: create
+    title: "0 — Hub operator snapshot and docs"
+    body: "Migration archive removed; use docs/opencode.md and cli opencode."
+    labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
+
+  - action: edit
+    number: 81
+    title: "1 — CLI test package registry (path → test suite mapping)"
+    add_labels: ["issue-type:child", "epic:00-infra", "priority:2"]
+    remove_labels: ["p2"]
+  - action: edit
+    number: 82
+    title: "2 — Per-CLI test scripts for local and Docker"
+    add_labels: ["issue-type:child", "epic:00-infra", "priority:2"]
+    remove_labels: ["p2"]
+  - action: edit
+    number: 83
+    title: "3 — PR CI: run tests only for changed CLI packages"
+    add_labels: ["issue-type:child", "epic:00-infra", "priority:2"]
+    remove_labels: ["p2"]
+  - action: edit
+    number: 84
+    title: "4 — Split Docker integration gate by CLI package"
+    add_labels: ["issue-type:child", "epic:00-infra", "priority:2"]
+    remove_labels: ["p2"]
+  - action: edit
+    number: 85
+    title: "5 — Nightly full test suite (safety net for selective CI)"
+    add_labels: ["issue-type:child", "epic:00-infra", "priority:2"]
+    remove_labels: ["p2"]
+
+  - action: edit
+    number: 66
+    title: GitHub Projects recurrent board
+    add_labels: ["issue-type:epic", "epic:08-projects", "priority:2"]
+  - action: edit
+    number: 72
+    title: "1 — Project CLI foundation + board read commands"
+    add_labels: ["issue-type:child", "epic:08-projects", "priority:2"]
+  - action: edit
+    number: 73
+    title: "2 — Project board write: add items, move status/fields"
+    add_labels: ["issue-type:child", "epic:08-projects", "priority:2"]
+  - action: edit
+    number: 74
+    title: "3 — Project batch spawn issues to board (YAML)"
+    add_labels: ["issue-type:child", "epic:08-projects", "priority:2"]
+  - action: edit
+    number: 75
+    title: "4 — Project auto-link config + link/unlink/lane workflow"
+    add_labels: ["issue-type:child", "epic:08-projects", "priority:2"]
+
+  - action: edit
+    number: 69
+    title: GitHub hub — full issue/PR CRUD, gh-or-API transport, Projects linking
+    add_labels: ["issue-type:epic", "epic:11-gh-hub", "priority:2"]
+
+  - action: edit
+    number: 2
+    title: Notion task board sync
+    add_labels: ["issue-type:epic", "epic:03-notion", "priority:3"]
+  - action: edit
+    number: 20
+    title: "1 — Notion ingest (board → data/tasks markdown)"
+    add_labels: ["issue-type:child", "epic:03-notion", "priority:3"]
+  - action: edit
+    number: 21
+    title: "2 — Notion deploy (data/tasks → board)"
+    add_labels: ["issue-type:child", "epic:03-notion", "priority:3"]
+  - action: edit
+    number: 22
+    title: "3 — Notion cleanup (archive pages)"
+    add_labels: ["issue-type:child", "epic:03-notion", "priority:3"]
+  - action: edit
+    number: 23
+    title: "4 — Notion auth, mapping, and automation"
+    add_labels: ["issue-type:child", "epic:03-notion", "priority:3"]
+  - action: edit
+    number: 31
+    title: "5 — Notion sync (ingest + deploy)"
+    add_labels: ["issue-type:child", "epic:03-notion", "priority:3"]
+
+  - action: create
+    title: "1 — Merge tag policy, deploy, and Docker test pipeline to main"
+    body: "PR #86 — embed snapshot + Docker CI/deploy."
+    labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
+  - action: create
+    title: "2 — Forbid cli gh pr merge and provider guard"
+    labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
+  - action: create
+    title: "3 — Runner Dockerfile target and ghcr.io publish"
+    labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
+  - action: create
+    title: "4 — Reusable workflow_call test/deploy/craft/review"
+    labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
+  - action: create
+    title: "5 — OpenCode + DeepSeek shot/chat integration"
+    labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
+  - action: create
+    title: "6 — Implement cli opencode gh issue, pr, review"
+    labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
+  - action: create
+    title: "7 — Backlog topo sort (gh_topo.py, step prefix parser)"
+    labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
+  - action: create
+    title: "8 — OpenCode gh domain + cli opencode entry point"
+    labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
+  - action: create
+    title: "9 — Expose cli test, deploy, release build"
+    labels: ["issue-type:child", "epic:hub-operator", "priority:0"]
+  - action: create
+    title: "10 — workflow_dispatch orchestrator + PR failure listener"
+    labels: ["issue-type:child", "epic:hub-operator", "priority:0"]

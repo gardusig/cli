@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
+from src.services.gh_policy import MergeForbiddenError
 from src.services.gh_service import GhService
 
 
@@ -152,7 +153,8 @@ def test_pr_list_view_diff_create(svc: GhService, provider: MagicMock) -> None:
     assert created["number"] == 5
     svc.pr_edit(5, title="Renamed")
     svc.pr_close(5)
-    svc.pr_merge(5, delete_branch=True)
+    with pytest.raises(MergeForbiddenError):
+        svc.pr_merge(5, delete_branch=True)
 
 
 def test_repo_view(svc: GhService, provider: MagicMock) -> None:
@@ -162,12 +164,13 @@ def test_repo_view(svc: GhService, provider: MagicMock) -> None:
 
 def test_backlog_tree_groups_epics(svc: GhService, provider: MagicMock) -> None:
     provider.run_json.return_value = [
-        {"number": 1, "title": "1 — Epic", "labels": ["issue-type:epic"]},
+        {"number": 1, "title": "1 — Epic", "labels": ["issue-type:epic", "epic:foo"]},
         {"number": 2, "title": "1.1 — Child", "labels": ["issue-type:child", "epic:foo"]},
     ]
     tree = svc.backlog_tree()
     assert tree["repo"] == "owner/repo"
-    assert tree["issues"]
+    assert tree["parents"]
+    assert tree["epics"]["epic:foo"]
 
 
 def test_backlog_next_prefers_child_label(svc: GhService, provider: MagicMock) -> None:

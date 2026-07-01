@@ -1,29 +1,17 @@
+# PyPI-enabled release caller — gardusig/cli only
 name: release
-
-# Tag push (v*) → ./scripts/pypi/release.sh (Docker cli:release → PyPI).
-# Instructions: docs/release.md
 
 on:
   push:
-    tags:
-      - "v*"
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  publish-pypi:
-    name: Publish to PyPI
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Publish via release script
-        env:
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
-        run: |
-          chmod +x scripts/pypi/*.sh scripts/docker/run-release.sh
-          ./scripts/pypi/release.sh
+  pipeline:
+    uses: gardusig/pipelines/.github/workflows/reusable-ci-release.yml@main
+    with:
+      publish_pypi: true
+    secrets: inherit

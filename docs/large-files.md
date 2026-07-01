@@ -14,7 +14,7 @@ cli git large files -n 50
 # Include untracked / build artifacts in working tree
 cli git large files --worktree
 
-# Shell wrapper (cursor-skills @git-large-files)
+# Shell wrapper
 ./scripts/git/large-files.sh --worktree -n 30
 ```
 

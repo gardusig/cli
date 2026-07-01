@@ -1,4 +1,4 @@
-"""Workspace health checks (cursor-skills @git-review analogue)."""
+"""Workspace health checks."""
 
 from __future__ import annotations
 

@@ -1,0 +1,18 @@
+# Phase 5 — chrome-extensions
+operations:
+  - action: create
+    title: Extension maintenance
+    body: Parent epic for extension work and hub adoption.
+    labels: ["issue-type:epic", "epic:ext-maintenance", "priority:1"]
+  - action: edit
+    number: 18
+    title: "1 — ChatGPT clipboard automation extension"
+    add_labels: ["issue-type:child", "epic:ext-maintenance", "priority:1"]
+  - action: edit
+    number: 10
+    title: "2 — Recorder: debug empty content export and IndexedDB inspection flow"
+    add_labels: ["issue-type:child", "epic:ext-maintenance", "priority:1"]
+  - action: create
+    title: "3 — Adopt Docker-first test/deploy/release workflows"
+    body: "Thin test/deploy/release.yml + Dockerfile + scripts/test."
+    labels: ["issue-type:child", "epic:ext-maintenance", "priority:1"]

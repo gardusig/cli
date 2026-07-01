@@ -8,6 +8,13 @@ fi
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 export CLI_CONFIG_DIR="$ROOT/config/ci"
+if [[ ! -d .git ]]; then
+  git init -b main >/dev/null
+  git config user.email "cli@example.test"
+  git config user.name "Cli Docker Integration"
+  git add pyproject.toml README.md src scripts tests config/ci
+  git commit -m "docker integration snapshot" >/dev/null
+fi
 CLI_BOOTSTRAP_DEV=1 ./scripts/docker/bootstrap.sh
 source .venv/bin/activate
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @git-cherry-pick — cursor-skills/skills/git/cherry/pick
+# cli git wrapper
 set -euo pipefail
 # shellcheck source=_common.sh
 source "$(dirname "$0")/_common.sh"

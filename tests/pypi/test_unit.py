@@ -10,16 +10,38 @@ import pytest
 
 from src.services.pypi_publish import (
     PyPiPublishError,
+    default_release_tag_name,
+    format_release_tag,
     normalize_release_version,
     read_project_version,
     resolve_release_version,
     sync_version_files,
+    validate_release_tag_name,
 )
 
 
 def test_normalize_release_version_strips_v() -> None:
     assert normalize_release_version("v1.0.0") == "1.0.0"
     assert normalize_release_version("1.0.0") == "1.0.0"
+
+
+def test_validate_release_tag_name_requires_v_prefix() -> None:
+    assert validate_release_tag_name("v0.1.0") == "v0.1.0"
+    with pytest.raises(PyPiPublishError, match="semver-v"):
+        validate_release_tag_name("0.1.0")
+    with pytest.raises(PyPiPublishError, match="semver-v"):
+        validate_release_tag_name("2026-06-11")
+
+
+def test_format_release_tag() -> None:
+    assert format_release_tag("0.1.0") == "v0.1.0"
+    assert format_release_tag("v1.2.3") == "v1.2.3"
+
+
+def test_default_release_tag_name_reads_pyproject(tmp_path: Path) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text('[project]\nname = "x"\nversion = "0.2.5"\n', encoding="utf-8")
+    assert default_release_tag_name(tmp_path) == "v0.2.5"
 
 
 def test_normalize_release_version_rejects_invalid() -> None:

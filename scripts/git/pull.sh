@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @git-pull — cursor-skills/skills/git/pull
+# cli git wrapper
 set -euo pipefail
 # shellcheck source=_common.sh
 source "$(dirname "$0")/_common.sh"

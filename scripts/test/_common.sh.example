@@ -1,0 +1,29 @@
+# Copy to scripts/test/_common.sh — build Dockerfile target and run with timeout.
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+DOCKERFILE="${REPO_DOCKERFILE:-$REPO_ROOT/Dockerfile}"
+UNIT_TIMEOUT_SEC="${REPO_UNIT_TIMEOUT_SEC:-120}"
+INTEGRATION_TIMEOUT_SEC="${REPO_INTEGRATION_TIMEOUT_SEC:-480}"
+
+docker_require() {
+  command -v docker >/dev/null 2>&1 || { echo "ERROR: docker not found" >&2; exit 127; }
+  command -v timeout >/dev/null 2>&1 || { echo "ERROR: timeout not found" >&2; exit 127; }
+}
+
+docker_image_for() {
+  printf '%s\n' "${REPO_DOCKER_IMAGE:-$(basename "$REPO_ROOT"):test-$1}"
+}
+
+docker_run_target() {
+  local target="$1" timeout_sec="$2" image
+  image="$(docker_image_for "$target")"
+  echo "==> docker build --target ${target} -t ${image}"
+  docker build -f "$DOCKERFILE" --target "$target" -t "$image" "$REPO_ROOT"
+  echo "==> docker run (timeout ${timeout_sec}s): ${image}"
+  timeout "$timeout_sec" docker run --rm "$image"
+}
+
+run_unit_tests() { docker_require; docker_run_target unit "$UNIT_TIMEOUT_SEC"; }
+run_integration_tests() { docker_require; docker_run_target integration "$INTEGRATION_TIMEOUT_SEC"; }

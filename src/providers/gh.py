@@ -6,6 +6,7 @@ import json
 from collections.abc import Sequence
 from typing import Any
 
+from src.services.gh_policy import check_gh_args
 from src.utils.external_client import ExternalClient
 from src.utils.process import run_gh
 
@@ -28,6 +29,7 @@ class GhProvider:
         *,
         check: bool = True,
     ) -> str:
+        check_gh_args(args)
         label = " ".join(args[:2]) if len(args) >= 2 else " ".join(args)
 
         def _invoke() -> str:

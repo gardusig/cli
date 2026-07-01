@@ -22,6 +22,7 @@ def test_docker_harness_files_exist() -> None:
         "scripts/test/smoke.sh",
         "tests/integration/check_integration_coverage.py",
         "tests/integration/check_public_commands.py",
+        "tests/integration/check_workflows.py",
         "tests/integration/check_public_endpoints.py",
         "tests/integration/check_docker_commands.py",
     ):
@@ -50,11 +51,7 @@ def test_ci_workflow_runs_on_pull_request_only() -> None:
     assert "pull_request:" in workflow
     assert "\n  push:" not in workflow
     assert "branches: [main]" not in workflow
-    assert "unit:" in workflow or "name: Unit tests" in workflow
-    assert "integration:" in workflow or "name: Integration tests" in workflow
-    assert "needs: unit" in workflow
-    assert "scripts/test/unit.sh" in workflow
-    assert "scripts/test/integration.sh" in workflow
+    assert "gardusig/pipelines/.github/workflows/reusable-ci-test.yml" in workflow
 
 
 def test_release_workflow_runs_on_tags() -> None:
@@ -62,8 +59,8 @@ def test_release_workflow_runs_on_tags() -> None:
     assert "tags:" in workflow
     assert "v*" in workflow
     assert "PYPI_API_TOKEN" in workflow
-    assert "scripts/pypi/release.sh" in workflow
-    assert "publish-pypi" in workflow
+    assert "scripts/release/publish.sh" in workflow
+    assert "Publish to PyPI" in workflow
     assert "deploy-notion" not in workflow
 
 
@@ -71,14 +68,17 @@ def test_docker_smoke_runs_public_command_checker() -> None:
     smoke = (ROOT / "scripts/test/smoke.sh").read_text()
     assert "check_integration_coverage.py" in smoke
     assert "check_public_commands.py" in smoke
+    assert "check_workflows.py" in smoke
     assert "CLI_SKIP_CHROME_AUTOMATION=1" in smoke
 
 
 def test_ci_workflow_runs_live_docker_in_container() -> None:
     workflow = (ROOT / ".github/workflows/test.yml").read_text()
-    assert "scripts/test/integration.sh" in workflow
-    assert "setup-python" not in workflow
-    assert "bootstrap.sh" not in workflow
+    assert "gardusig/pipelines/.github/workflows/reusable-ci-test.yml" in workflow
+    unit = (ROOT / "scripts/test/unit.sh").read_text()
+    integration = (ROOT / "scripts/test/integration.sh").read_text()
+    assert "run_unit_tests" in unit
+    assert "run_integration_tests" in integration
 
 
 def test_public_command_registry_covers_all_commands() -> None:

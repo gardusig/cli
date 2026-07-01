@@ -29,7 +29,7 @@ flowchart TD
     end
 
     P --> K --> loop
-    loop --> PR["open PR · merge on GitHub"]
+    loop --> PR["gh pr create · merge"]
     PR --> L
     L --> P
 ```
@@ -66,6 +66,35 @@ cli git reset --yes
 # answer the follow-up prompt to run `branch delete --merged`, or:
 cli git reset --yes --delete-merged
 ```
+
+## GitHub phase (after PR is open)
+
+One CLI command and one script per step. See [gh.md](gh.md) and [scripts/gh/README.md](../scripts/gh/README.md).
+
+| Step | CLI | Script |
+| --- | --- | --- |
+| Pick next issue | `gh backlog next` | `./scripts/gh/backlog-next.sh` |
+| View issue | `gh issue view N` | `./scripts/gh/issue-view.sh N` |
+| Open PR | `gh pr create … --yes` | `./scripts/gh/pr-create.sh … --yes` |
+| Check PR | `gh pr view N` | `./scripts/gh/pr-view.sh N` |
+| **Merge PR** | **GitHub UI / auto-merge** | *(not `cli gh pr merge` — blocked)* |
+| Close issue | `gh issue close N --yes` | `./scripts/gh/issue-close.sh N --yes` |
+
+**Full chain:** `backlog next → reset → start → push → review → pr create → [UI merge] → issue close → reset`
+
+### Example (GitHub steps)
+
+```bash
+./scripts/gh/backlog-next.sh --format json
+# … git work on branch …
+./scripts/git/review.sh
+./scripts/gh/pr-create.sh --title "." --body "" --yes
+# merge in GitHub UI (or enable auto-merge on the PR)
+./scripts/gh/issue-close.sh 42 --comment "Done" --yes
+./scripts/git/reset.sh --yes --delete-merged
+```
+
+GitHub Projects and Rulesets are **not** used from `cli` — use `cli gh backlog organize` and `priority:N` labels instead ([#72](https://github.com/gardusig/cli/issues/72) deferred).
 
 ## Feature work (start → publish)
 
@@ -147,14 +176,40 @@ flowchart LR
     end
 ```
 
+## Integration workflow tests
+
+Four Docker E2E workflows (fixture config only — never host `~/git-local` or live `config/config.yaml`):
+
+| Workflow | Steps |
+| --- | --- |
+| Plan → issues | `gh issue batch` → `backlog tree` → `backlog next` |
+| Issue context | `gh issue context N` — epic, siblings, comments, linked issues |
+| Dirty branch → PR | `git push --yes` → `gh pr create --yes` |
+| Reset to main | nested dirty branches → `git reset --yes --delete-merged` |
+
+Run on host (mocked `gh`): `./scripts/test/workflows.sh`  
+Docker gate: `tests/integration/check_workflows.py` (wired in `scripts/test/smoke.sh`)
+
+Config isolation: default `CLI_CONFIG_DIR=config/ci`; per-workflow overrides under `tests/fixtures/workflows/<name>/config.yaml`.
+
 ## Discover commands
 
 ```mermaid
 flowchart TD
     A["cli --help"] --> B["cli links<br/>full index"]
     B --> C["docs/README.md"]
-    B --> D["scripts/git/*.sh"]
+    B --> D["scripts/git/*.sh · scripts/gh/*.sh"]
     A --> F["cli git --help"]
 ```
 
 See also: [Architecture](architecture.md) · [Docker integration](docker.md) · `cli links`
+
+## Merge policy {#merge-policy}
+
+**Never merge from `cli`.** Use the GitHub UI or enable **auto-merge** on the PR after green checks.
+
+- `cli gh pr merge` exits non-zero with a policy message
+- `scripts/gh/pr-merge.sh` is a warning stub (exit 1)
+- Raw `gh pr merge` is blocked in `GhProvider` unless `CLI_ALLOW_GH_MERGE=1` (break-glass only)
+
+Workflow chain ends at `[UI merge]` — not `cli gh pr merge`.

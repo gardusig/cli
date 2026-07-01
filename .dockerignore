@@ -1,5 +1,9 @@
 .git/
-.github/
+.github/*
+!.github/workflows/
+!.github/workflows/test.yml
+!.github/workflows/deploy.yml
+!.github/workflows/release.yml
 .cursor/
 .venv/
 __pycache__/
@@ -25,7 +29,6 @@ cli-*-origin.git/
 .env
 .env.local
 .DS_Store
-docs/
-tests/
-*.md
-!README.md
+docs/*
+!docs/opencode.md
+!docs/large-files.md

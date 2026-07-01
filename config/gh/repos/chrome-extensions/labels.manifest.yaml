@@ -1,0 +1,36 @@
+protected:
+  - bug
+  - enhancement
+  - documentation
+
+labels:
+  - name: issue-type:epic
+    color: "5319E7"
+    description: Parent epic
+  - name: issue-type:child
+    color: "C5DEF5"
+    description: Child deliverable
+  - name: issue-type:task
+    color: "BFDADC"
+    description: Standalone task
+  - name: priority:0
+    color: "B60205"
+    description: Highest priority
+  - name: priority:1
+    color: "D93F0B"
+    description: High priority
+  - name: priority:2
+    color: "FBCA04"
+    description: Normal priority
+  - name: priority:3
+    color: "0E8A16"
+    description: Lower priority
+  - name: priority:4
+    color: "1D76DB"
+    description: Tech debt
+  - name: priority:5
+    color: "C5DEF5"
+    description: Lowest priority
+  - name: epic:ext-maintenance
+    color: "F9D0C4"
+    description: Extension maintenance

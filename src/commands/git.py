@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import Literal
 
 import typer
 from rich import print as rprint
@@ -10,8 +11,18 @@ from rich import print as rprint
 from src.internal.read.git import git_worktree_snapshot
 from src.internal.write.gate import WRITE_GATE_DELIMITER, require_write_gate
 from src.services.backup_zip import archive_tag_zip
+from src.services.git_deploy import DeployAssessment, GitDeployError, assess_deploy_readiness
 from src.services.git_review import run_review
 from src.services.git_shortcuts import GitShortcuts
+from src.services.gh_service import GhService
+from src.services.pypi_publish import PyPiPublishError
+from src.services.tag_policy import (
+    latest_tag,
+    policy_summary,
+    resolve_tag_policy,
+    suggest_next_tag,
+    validate_tag_name,
+)
 from src.utils.config import (
     default_zip_path,
     project_root,
@@ -19,7 +30,7 @@ from src.utils.config import (
     require_backup_zip_password,
     tag_zip_basename,
 )
-from src.utils.quick_defaults import default_tag_name, suggest_branch_name
+from src.utils.quick_defaults import suggest_branch_name
 
 git_app = typer.Typer(help="Git shortcuts (commit message defaults to '.').", no_args_is_help=True)
 
@@ -652,6 +663,42 @@ def cherry_pick_cmd(
     rprint("[green]cherry-pick step complete[/green]")
 
 
+TagNamePurpose = Literal["create", "zip", "push"]
+
+
+def _resolve_tag_name(name: str | None, *, purpose: TagNamePurpose) -> str:
+    """Resolve tag name for create (next), zip/push (latest local), or explicit."""
+    svc = _svc()
+    repo = Path(svc.top)
+    all_tags = svc.all_tag_names()
+    local_tags = svc.list_local_tags()
+    policy = resolve_tag_policy(repo, all_tags)
+    try:
+        if name is not None:
+            return validate_tag_name(name, policy, tags=all_tags)
+        if purpose == "create":
+            suggested = suggest_next_tag(all_tags, policy, repo_root=repo)
+            for line in policy_summary(policy, suggested=suggested):
+                rprint(f"[dim]{line}[/dim]")
+            return validate_tag_name(suggested, policy, tags=all_tags)
+        latest = latest_tag(local_tags, policy)
+        if latest is None:
+            raise PyPiPublishError(
+                "no local tags matching "
+                f"{policy.pattern.value}; run `cli git tag` first"
+            )
+        rprint(f"[dim]tag_latest: {latest}[/dim]")
+        return latest
+    except PyPiPublishError as exc:
+        if name is None and purpose == "create":
+            try:
+                fallback = suggest_next_tag(all_tags, policy, repo_root=repo)
+                rprint(f"[yellow]hint:[/yellow] try {fallback!r}")
+            except PyPiPublishError:
+                pass
+        raise typer.Exit(str(exc)) from exc
+
+
 def _reconcile_tag_push(
     svc: GitShortcuts,
     tag_name: str,
@@ -711,7 +758,19 @@ def _tag_list() -> None:
 
 def _tag_create(name: str | None, *, yes: bool, force: bool = False) -> None:
     svc = _svc()
-    tag_name = name or default_tag_name()
+    repo = Path(svc.top)
+    all_tags = svc.all_tag_names()
+    policy = resolve_tag_policy(repo, all_tags)
+    explicit = name.strip() if name else None
+    replacing = bool(explicit and svc.tag_exists_local(explicit))
+    if replacing and explicit:
+        tag_name = validate_tag_name(
+            explicit,
+            policy,
+            tags=[t for t in all_tags if t != explicit],
+        )
+    else:
+        tag_name = _resolve_tag_name(name, purpose="create")
     try:
         svc.prepare_for_tag(yes=yes)
     except RuntimeError as exc:
@@ -735,8 +794,11 @@ def _tag_create(name: str | None, *, yes: bool, force: bool = False) -> None:
 
 @git_app.command("tag")
 def tag_cmd(
-    action: str | None = typer.Argument(None, help="list, push, or tag name (default: create today)."),
-    name: str | None = typer.Argument(None, help="Tag name for push, or explicit create name."),
+    action: str | None = typer.Argument(
+        None,
+        help="list, push, delete, or tag name (default: next tag per .cli/tag.yaml or detection).",
+    ),
+    name: str | None = typer.Argument(None, help="Tag name for push/delete, or explicit create name."),
     yes: bool = typer.Option(False, "--yes", "-y"),
     force: bool = typer.Option(
         False,
@@ -745,19 +807,23 @@ def tag_cmd(
         help="Replace an existing local tag and/or force-push when remote differs.",
     ),
 ) -> None:
-    """Create tag on main (default today), or: tag list | tag push [NAME]."""
+    """Create release tag on main (default: bumped tag), or: tag list | push | delete."""
     if action == "list":
         _tag_list()
         return
     if action == "push":
-        _reconcile_tag_push(_svc(), name or default_tag_name(), yes=yes, force=force)
+        _reconcile_tag_push(
+            _svc(), _resolve_tag_name(name, purpose="push"), yes=yes, force=force
+        )
         return
     _tag_create(action, yes=yes, force=force)
 
 
 @git_app.command("zip")
 def zip_cmd(
-    tag: str | None = typer.Argument(None, help="Tag to archive (default today YYYY-MM-DD)."),
+    tag: str | None = typer.Argument(
+        None, help="Tag to archive (default: latest local tag for repo pattern)."
+    ),
     output: Path | None = typer.Option(
         None,
         "-o",
@@ -767,7 +833,7 @@ def zip_cmd(
 ) -> None:
     """Create a zip archive of the tree at a git tag."""
     svc = _svc()
-    tag_name = tag or default_tag_name()
+    tag_name = _resolve_tag_name(tag, purpose="zip")
     if not svc.tag_exists_local(tag_name):
         raise typer.Exit(f"Tag not found: {tag_name}. Run `cli git tag` first.")
     dest = output or default_zip_path(svc.repo_basename(), tag_name)
@@ -778,6 +844,63 @@ def zip_cmd(
     mode = "encrypted zip" if encrypted else "git archive"
     stem = tag_zip_basename(svc.repo_basename(), tag_name)
     rprint(f"[green]zip[/green] git-tags/{svc.repo_basename()}/{stem}.zip ({mode})")
+
+
+def _print_deploy_assessment(assessment: DeployAssessment) -> None:
+    rprint(f"[bold]deploy[/bold] {assessment.repo}")
+    for line in assessment.summary_lines()[1:]:
+        if line.startswith("  pr #"):
+            rprint(f"[yellow]{line}[/yellow]")
+        else:
+            rprint(f"[dim]{line}[/dim]")
+
+
+@git_app.command("deploy")
+def deploy_cmd(
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt."),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Assess only; never create or push a tag.",
+    ),
+    status: bool = typer.Option(
+        False,
+        "--status",
+        help="Print deploy assessment and exit (read-only).",
+    ),
+    skip_pr_check: bool = typer.Option(
+        False,
+        "--skip-pr-check",
+        help="Allow tagging when open PRs exist.",
+    ),
+) -> None:
+    """Tag main when it differs from the latest tag and no open PRs block release."""
+    svc = _svc()
+    repo = Path(svc.top)
+    try:
+        gh_svc = GhService()
+        assessment = assess_deploy_readiness(svc, repo_root=repo, gh_svc=gh_svc)
+    except GitDeployError as exc:
+        raise typer.Exit(str(exc)) from exc
+    _print_deploy_assessment(assessment)
+    if status or dry_run:
+        raise typer.Exit()
+    if assessment.open_pr_count and not skip_pr_check:
+        rprint("[red]blocked[/red] merge or close open PRs first (or pass --skip-pr-check)")
+        raise typer.Exit(1)
+    if not assessment.needs_tag:
+        rprint("[dim]skip[/dim] main matches latest tag")
+        raise typer.Exit()
+    if assessment.suggested_tag is None:
+        raise typer.Exit("cannot suggest next tag; pass an explicit name via `cli git tag`")
+    _write_gate(
+        "deploy",
+        yes=yes,
+        question=f"Create and push tag {assessment.suggested_tag} on main?",
+        extra_lines=assessment.summary_lines(),
+    )
+    _tag_create(None, yes=yes)
+    rprint(f"[green]deployed[/green] {assessment.suggested_tag}")
 
 
 @git_app.command("review")
@@ -800,11 +923,11 @@ def review_cmd(
 
 @git_app.command("docs")
 def docs_cmd() -> None:
-    """List doc paths for sync (@git-docs; AI-driven edits via cursor-skills)."""
+    """List doc paths for sync (AI-driven edits via `cli git docs`)."""
     root = project_root()
     docs_dir = root / "docs"
     readme = root / "README.md"
-    rprint("[bold]Documentation inventory[/bold] (edit via cursor-skills @git-docs):")
+    rprint("[bold]Documentation inventory[/bold] (edit via `cli git docs`):")
     if readme.exists():
         rprint(f"  {readme.relative_to(root)}")
     if docs_dir.is_dir():

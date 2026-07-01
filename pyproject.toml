@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 # PyPI distribution name (repo remains github.com/gardusig/cli).
 name = "gardusig-cli"
-version = "0.1.0"
+version = "0.1.1"
 description = "macOS CLI for git shortcuts, backups, and sync workflows"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -40,6 +40,16 @@ dev = [
   "pytest-cov>=5.0",
   "pytest-timeout>=2.3",
   "twine>=5.0",
+]
+# Headless operator (craft/review/chat in Docker) — needs DEEPSEEK_API_KEY at runtime.
+operator = []
+chat = []
+# Laptop-only integrations (not required in GitHub Actions runner).
+notion = []
+craft = []
+# Full local dev + CI image.
+all = [
+  "gardusig-cli[dev]",
 ]
 
 [project.urls]

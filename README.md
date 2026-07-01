@@ -51,7 +51,7 @@ Install Python and git with Homebrew:
 brew install python@3.12 git
 ```
 
-Optional: `gh` (GitHub CLI) for [cursor-skills](https://github.com/gardusig/cursor-skills) workflows — not required by cli itself.
+Optional: `gh` (GitHub CLI) for `cli gh` and `cli opencode gh` workflows.
 
 ## Configuration (global)
 
@@ -269,7 +269,7 @@ Details: [docs/release.md](docs/release.md) · [`.github/README.md`](.github/REA
 
 ## Related
 
-- [cursor-skills](https://github.com/gardusig/cursor-skills) — `@gh-*` AI workflows for issues/PRs
+- [OpenCode](docs/opencode.md) — `cli opencode` AI entry point
 - Cloud drive epic: [cli #4](https://github.com/gardusig/cli/issues/4)
 - Bootstrap spec: [cli #3](https://github.com/gardusig/cli/issues/3)
 - Chrome: [cli #24](https://github.com/gardusig/cli/issues/24) · bookmarks scripts [#1](https://github.com/gardusig/cli/issues/1)
