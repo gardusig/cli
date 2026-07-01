@@ -39,22 +39,22 @@ labels:
 
   - name: priority:0
     color: "B60205"
-    description: Highest priority — ship first
+    description: "Level 0 — Emergency: production or release blocker"
   - name: priority:1
     color: "D93F0B"
-    description: High priority
+    description: "Level 1 — Ship now: critical path for current milestone"
   - name: priority:2
     color: "FBCA04"
-    description: Normal priority
+    description: "Level 2 — High: important feature or fix this sprint"
   - name: priority:3
     color: "0E8A16"
-    description: Lower priority
+    description: "Level 3 — Normal: standard backlog"
   - name: priority:4
     color: "1D76DB"
-    description: Tech debt / catalogs
+    description: "Level 4 — Backlog: deferrable catalogs and docs"
   - name: priority:5
     color: "C5DEF5"
-    description: Lowest priority
+    description: "Level 5 — Tech debt: lowest urgency cleanup"
 
   - name: epic:hub-operator
     color: "B60205"

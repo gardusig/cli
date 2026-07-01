@@ -11,8 +11,8 @@ import yaml
 
 from src.providers.gh import GhProvider
 from src.services.gh_policy import MergeForbiddenError
-from src.services.gh_sequence import SequenceKey, sort_issues_by_sequence
-from src.services.gh_topo import StepKey, pick_next_child, sort_children
+from src.services.gh_sequence import SequenceKey
+from src.services.gh_topo import StepKey, build_parent_child_tree, load_priority_levels, pick_next_child, sort_children
 
 
 class GhService:
@@ -351,30 +351,28 @@ class GhService:
     # --- Backlog ---
 
     def backlog_tree(self) -> dict[str, Any]:
-        issues = self.issue_list(state="open", limit=200)
-        ordered = sort_issues_by_sequence(issues)
-        epics: dict[str, list[dict[str, Any]]] = {}
-        roots: list[dict[str, Any]] = []
-        for issue in ordered:
-            labels = [str(lb.get("name", lb)) if isinstance(lb, dict) else str(lb) for lb in issue.get("labels", [])]
-            epic_labels = [lb for lb in labels if lb.startswith("epic:")]
-            seq = SequenceKey.from_title(str(issue.get("title", "")))
-            node = {
-                "number": issue["number"],
-                "title": issue["title"],
-                "labels": labels,
-                "sequence": seq.prefix() if seq else None,
-            }
-            if "issue-type:epic" in labels or (seq and seq.minor is None):
-                roots.append(node)
-            elif epic_labels:
-                slug = epic_labels[0]
-                epics.setdefault(slug, []).append(node)
-            elif seq and seq.minor is not None:
-                epics.setdefault("_unlabeled", []).append(node)
-            else:
-                roots.append(node)
-        return {"repo": self.repo_display(), "roots": roots, "epics": epics, "issues": ordered}
+        open_issues = self.issue_list(state="open", limit=200)
+        closed_issues = self.issue_list(state="closed", limit=100)
+        for issue in open_issues + closed_issues:
+            labels = issue.get("labels", [])
+            issue["labels"] = [
+                lb.get("name", lb) if isinstance(lb, dict) else lb for lb in labels
+            ]
+        organized = build_parent_child_tree(open_issues + closed_issues)
+        return {
+            "repo": self.repo_display(),
+            **organized,
+            # legacy flat keys for older consumers
+            "roots": [p for p in organized["parents"]],
+            "epics": {
+                (p.get("epic") or f"_parent_{p['number']}"): p.get("children", [])
+                for p in organized["parents"]
+            },
+        }
+
+    def backlog_organize(self) -> dict[str, Any]:
+        """Parent/child tree with priority level explanations and readiness."""
+        return self.backlog_tree()
 
     def backlog_next(self) -> dict[str, Any] | None:
         open_issues = self.issue_list(state="open", limit=200)

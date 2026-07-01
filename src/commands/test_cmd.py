@@ -29,6 +29,11 @@ def test_integration_cmd() -> None:
     _run("scripts/test/integration.sh")
 
 
+@test_app.command("regression")
+def test_regression_cmd() -> None:
+    _run("scripts/test/regression.sh")
+
+
 @test_app.command("all")
 def test_all_cmd() -> None:
     _run("scripts/test/all.sh")

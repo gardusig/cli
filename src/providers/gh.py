@@ -7,7 +7,7 @@ import os
 from collections.abc import Sequence
 from typing import Any
 
-from src.services.gh_policy import MergeForbiddenError
+from src.services.gh_policy import MergeForbiddenError, ProjectsForbiddenError
 from src.utils.external_client import ExternalClient
 from src.utils.process import run_gh
 
@@ -37,6 +37,8 @@ class GhProvider:
             and os.environ.get("CLI_ALLOW_GH_MERGE") != "1"
         ):
             raise MergeForbiddenError()
+        if len(args) >= 1 and args[0] == "project":
+            raise ProjectsForbiddenError()
         label = " ".join(args[:2]) if len(args) >= 2 else " ".join(args)
 
         def _invoke() -> str:

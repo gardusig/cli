@@ -41,6 +41,15 @@ dev = [
   "pytest-timeout>=2.3",
   "twine>=5.0",
 ]
+# Headless operator (craft/review in Docker) — core deps only; opencode installed in image.
+operator = []
+# Laptop-only integrations (not required in GitHub Actions runner).
+notion = []
+craft = []
+# Full local dev + CI image.
+all = [
+  "gardusig-cli[dev]",
+]
 
 [project.urls]
 Homepage = "https://github.com/gardusig/cli"

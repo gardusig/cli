@@ -131,8 +131,20 @@ cli gh pr diff 10
 cli gh pr create --title "…" --body-file pr.md --yes
 cli gh pr edit 10 --body-file pr.md --yes
 cli gh pr close 10 --yes
-cli gh pr merge 10 --merge-method squash --yes
+# cli gh pr merge — blocked by policy (use GitHub UI / auto-merge)
 ```
+
+## Projects policy {#projects-policy}
+
+**GitHub Projects are not exposed via `cli gh`.** Use issues + labels + backlog instead:
+
+```bash
+cli gh backlog organize --format json   # parent epics → children (step 1..N)
+cli gh backlog levels --format json     # priority:1..N explanations
+cli gh backlog next --format json
+```
+
+Raw `gh project …` subprocess calls are rejected by the CLI provider.
 
 ## Repo commands
 
@@ -143,10 +155,12 @@ cli gh --format json repo view --json-fields nameWithOwner,owner,issueTemplates,
 
 ## Backlog commands
 
-Sequence titles use **`N — Title`** (epic) and **`N.M — Title`** (child).
+Parent/child organization uses **`issue-type:epic`**, **`issue-type:child`**, **`epic:<slug>`**, and **`priority:N`** labels (levels 1–5; see `config/gh/priority-levels.yaml`). Child titles use **`{step} — {name}`** (step = topological order within the epic).
 
 ```bash
-cli gh backlog tree --format json
+cli gh backlog organize --format json   # parents + sorted children + readiness
+cli gh backlog levels --format json     # priority scale with explanations
+cli gh backlog tree --format json       # same tree as organize (legacy keys included)
 cli gh backlog next --format json
 cli gh backlog resequence --file plan.yaml --yes
 ```

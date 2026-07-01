@@ -9,6 +9,7 @@ import typer
 
 from src.internal.write.gate import require_write_gate
 from src.services.gh_service import GhService
+from src.services.gh_topo import load_priority_levels
 
 gh_app = typer.Typer(help="GitHub via gh — issues, labels, PRs, backlog.", no_args_is_help=True)
 issue_app = typer.Typer(help="Issue read/write.", no_args_is_help=True)
@@ -381,6 +382,20 @@ def pr_merge_cmd(
 def backlog_tree_cmd(ctx: typer.Context) -> None:
     svc = _svc(_ctx_repo(ctx))
     _emit(svc.backlog_tree(), _ctx_format(ctx))
+
+
+@backlog_app.command("organize")
+def backlog_organize_cmd(ctx: typer.Context) -> None:
+    """Parent epics, sorted children (step 1..N), priority explanations, readiness."""
+    svc = _svc(_ctx_repo(ctx))
+    _emit(svc.backlog_organize(), _ctx_format(ctx))
+
+
+@backlog_app.command("levels")
+def backlog_levels_cmd(ctx: typer.Context) -> None:
+    """Show priority:1..N label scale with explanations (no GitHub Projects)."""
+    data = {"levels": load_priority_levels()}
+    _emit(data, _ctx_format(ctx))
 
 
 @backlog_app.command("next")

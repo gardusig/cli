@@ -4,11 +4,16 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
+
+import yaml
 
 _STEP_RE = re.compile(r"^(?P<step>\d+)\s*[—\-]\s*(?P<rest>.+)$")
 _PRIORITY_RE = re.compile(r"^priority:(?P<n>[0-5])$")
 _DEPENDS_RE = re.compile(r"(?:Depends|Blocked-by):\s*#(?P<num>\d+)", re.IGNORECASE)
+
+_PRIORITY_LEVELS_PATH = Path(__file__).resolve().parents[2] / "config" / "gh" / "priority-levels.yaml"
 
 
 @dataclass(frozen=True, order=True)
@@ -104,6 +109,104 @@ def sort_children(issues: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return (step_n, ambiguity_score(issue), str(issue.get("title", "")).lower())
 
     return sorted(issues, key=key)
+
+
+def load_priority_levels() -> list[dict[str, Any]]:
+    if not _PRIORITY_LEVELS_PATH.is_file():
+        return []
+    data = yaml.safe_load(_PRIORITY_LEVELS_PATH.read_text(encoding="utf-8"))
+    return list(data.get("levels") or [])
+
+
+def priority_explanation(level: int | None) -> str | None:
+    if level is None:
+        return None
+    for row in load_priority_levels():
+        if int(row.get("number", -1)) == level:
+            return str(row.get("explanation", ""))
+    return None
+
+
+def priority_name(level: int | None) -> str | None:
+    if level is None:
+        return None
+    for row in load_priority_levels():
+        if int(row.get("number", -1)) == level:
+            return str(row.get("name", ""))
+    return None
+
+
+def build_parent_child_tree(
+    issues: list[dict[str, Any]],
+    *,
+    issue_comments: dict[int, list[dict[str, Any]]] | None = None,
+) -> dict[str, Any]:
+    """Organize open issues into parent epics and sorted children."""
+    open_issues = [i for i in issues if str(i.get("state", "OPEN")).upper() == "OPEN"]
+    closed = closed_numbers(issues)
+    comments_map = issue_comments or {}
+
+    parents: list[dict[str, Any]] = []
+    children_by_epic: dict[str, list[dict[str, Any]]] = {}
+    orphans: list[dict[str, Any]] = []
+
+    for issue in open_issues:
+        labels = _label_names(issue)
+        slug = epic_slug(issue)
+        is_epic = "issue-type:epic" in labels
+        is_child = "issue-type:child" in labels
+        step = StepKey.from_title(str(issue.get("title", "")))
+
+        node = {
+            "number": issue["number"],
+            "title": issue.get("title"),
+            "url": issue.get("url"),
+            "labels": labels,
+            "epic": slug,
+            "step": step.step if step else None,
+            "priority": epic_priority(issue),
+            "priority_name": priority_name(epic_priority(issue)),
+            "priority_explanation": priority_explanation(epic_priority(issue)),
+        }
+
+        if is_epic and slug:
+            parents.append(node)
+        elif is_child and slug:
+            ready = is_child_ready(
+                issue, closed=closed, comments=comments_map.get(int(issue["number"]))
+            )
+            node["ready"] = ready
+            node["blocked_by"] = sorted(
+                depends_on(comments_map.get(int(issue["number"])), str(issue.get("body", "")))
+                - closed
+            )
+            children_by_epic.setdefault(slug, []).append(node)
+        elif step:
+            orphans.append(node)
+        elif is_epic:
+            parents.append(node)
+        else:
+            orphans.append(node)
+
+    parents.sort(
+        key=lambda p: (
+            p["priority"] if p["priority"] is not None else 9,
+            str(p.get("title", "")).lower(),
+        )
+    )
+
+    tree: list[dict[str, Any]] = []
+    for parent in parents:
+        slug = parent.get("epic") or ""
+        kids = sort_children(children_by_epic.get(slug, []))
+        tree.append({**parent, "children": kids})
+
+    ungrouped = sort_children(orphans + children_by_epic.get("_unlabeled", []))
+    return {
+        "parents": tree,
+        "ungrouped": ungrouped,
+        "priority_levels": load_priority_levels(),
+    }
 
 
 def pick_next_child(

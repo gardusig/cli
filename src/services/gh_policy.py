@@ -13,3 +13,16 @@ class MergeForbiddenError(RuntimeError):
 
     def __init__(self) -> None:
         super().__init__(MERGE_FORBIDDEN_MESSAGE)
+
+
+PROJECTS_FORBIDDEN_MESSAGE = (
+    "GitHub Projects blocked from CLI — use issues, labels, and backlog tree instead.\n"
+    "See docs/gh.md#projects-policy"
+)
+
+
+class ProjectsForbiddenError(RuntimeError):
+    """Raised when gh project commands are attempted via CLI."""
+
+    def __init__(self) -> None:
+        super().__init__(PROJECTS_FORBIDDEN_MESSAGE)

@@ -12,6 +12,7 @@ from src.internal.write.gate import require_write_gate
 from src.providers.opencode import OpenCodeProvider
 from src.services.gh_service import GhService
 from src.services.git_shortcuts import GitShortcuts
+from src.utils.runtime_profile import detect_profile, is_headless, optional_integration
 
 craft_app = typer.Typer(help="Craft issues and PRs (headless operator).", no_args_is_help=True)
 
@@ -27,7 +28,12 @@ def craft_issue_cmd(
     ctx: typer.Context,
     number: int | None = typer.Option(None, "--number", "-n", help="Issue to plan/review."),
     review: bool = typer.Option(False, "--review", help="Read-only reshape report."),
-    plan: bool = typer.Option(False, "--plan", help="Append ## [cli] plan comment via AI."),
+    plan: bool = typer.Option(False, "--plan", help="Generate plan (comment or stdout)."),
+    plan_only: bool = typer.Option(
+        False,
+        "--plan-only",
+        help="Print plan to stdout; no git/notion required. Use in container CI.",
+    ),
     yes: bool = typer.Option(False, "--yes", "-y"),
 ) -> None:
     repo = (ctx.obj or {}).get("repo") if ctx.obj else None
@@ -39,16 +45,32 @@ def craft_issue_cmd(
             raise typer.Exit(1)
         number = int(nxt["number"])
     ctx_data = svc.issue_context(number)
-    typer.echo(json.dumps(ctx_data, indent=2))
     if review:
+        typer.echo(json.dumps(ctx_data, indent=2))
         return
-    if plan:
-        require_write_gate("craft-issue-plan", svc.snapshot_summary(), yes=yes)
-        body = OpenCodeProvider().run_prompt(
-            f"Plan implementation for issue #{number}:\n{json.dumps(ctx_data)[:8000]}",
-            tier="plan",
-        )
-        svc.issue_comment(number, body=f"## [cli] plan\n\n{body}")
+    if not plan and not plan_only:
+        typer.echo(json.dumps(ctx_data, indent=2))
+        return
+
+    profile = detect_profile()
+    prompt = (
+        f"Plan implementation for issue #{number} (runtime={profile.value}):\n"
+        f"{json.dumps(ctx_data)[:8000]}"
+    )
+    body = OpenCodeProvider().run_prompt(prompt, tier="plan")
+
+    if plan_only or is_headless():
+        typer.echo(body)
+        if not yes and not plan_only:
+            typer.echo(
+                "\n(plan-only in headless mode — pass --yes to also comment on the issue)",
+                err=True,
+            )
+        if plan_only:
+            return
+
+    require_write_gate("craft-issue-plan", svc.snapshot_summary(), yes=yes)
+    svc.issue_comment(number, body=f"## [cli] plan\n\n{body}")
 
 
 @craft_app.command("pr")
@@ -73,7 +95,12 @@ def craft_pr_cmd(
     br = branch or f"craft/{number}-" + title.split("—")[-1].strip().lower().replace(" ", "-")[:40]
     require_write_gate(
         "craft-pr",
-        [*svc.snapshot_summary(), f"issue: #{number}", f"branch: {br}"],
+        [
+            *svc.snapshot_summary(),
+            f"issue: #{number}",
+            f"branch: {br}",
+            f"notion: {'yes' if optional_integration('notion') else 'skipped'}",
+        ],
         yes=yes,
     )
     git.start(br, yes=True)

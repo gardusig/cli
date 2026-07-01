@@ -86,6 +86,14 @@ RUN chmod +x scripts/docker/run-pypi-test.sh scripts/pypi/*.sh
 CMD ["./scripts/docker/run-pypi-test.sh"]
 
 # -----------------------------------------------------------------------------
+# regression — pack + workflow checks (third PR gate)
+# -----------------------------------------------------------------------------
+FROM integration AS regression
+
+RUN chmod +x scripts/docker/run-regression.sh
+CMD ["./scripts/docker/run-regression.sh"]
+
+# -----------------------------------------------------------------------------
 # deploy — tag main on push (repo mounted at /repo)
 # -----------------------------------------------------------------------------
 FROM python AS deploy

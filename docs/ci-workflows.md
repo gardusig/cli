@@ -6,9 +6,11 @@ Every repository uses the **same local commands as GitHub Actions**. Workflows a
 
 | Phase | Local | Dockerfile target |
 |-------|-------|-------------------|
-| Test | `./scripts/test/all.sh` | `unit` → `integration` |
+| Test | `./scripts/test/all.sh` | `unit` → `integration` → `regression` → `pypi-test` |
 | Deploy | `./scripts/deploy/deploy.sh` | `deploy` |
 | Release | `./scripts/release/build.sh` | `release` |
+
+PR pipeline order: **unit** → **integration** (starts with version drift vs base branch) → **regression** (pack + workflow checks) → **PyPI smoke**.
 
 CLI additionally: `version` and `pypi-test` in test pipeline; `pypi-publish` after release build.
 
@@ -38,6 +40,7 @@ scripts/release/build.sh
 |------|---------|
 | Unit | 120s |
 | Integration | 480s |
+| Regression | 300s |
 | Deploy | 600s |
 | Release build | 900s |
 

@@ -105,6 +105,11 @@ run_integration_tests() {
   docker_run_target integration "$INTEGRATION_TIMEOUT_SEC"
 }
 
+run_regression_tests() {
+  docker_require
+  docker_run_target regression "${REPO_REGRESSION_TIMEOUT_SEC:-300}"
+}
+
 run_deploy() {
   docker_require
   docker_run_target_with_repo deploy "$DEPLOY_TIMEOUT_SEC"
