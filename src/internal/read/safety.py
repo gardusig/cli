@@ -88,6 +88,12 @@ WRITE_GATED_OPERATIONS = frozenset(
         "gh-pr-close",
         "gh-pr-merge",
         "gh-backlog-resequence",
+        "craft-issue",
+        "craft-issue-plan",
+        "craft-pr",
+        "craft-execute",
+        "craft-execute-pr",
+        "review-pr",
         "pypi-publish",
     }
 )

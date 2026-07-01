@@ -8,6 +8,10 @@ from pathlib import Path
 import typer
 
 from src.internal.write.gate import require_write_gate
+from src.services.gh_policy import (
+    blocked_operations_catalog,
+    policy_for_cli_command,
+)
 from src.services.gh_service import GhService
 from src.services.gh_topo import load_priority_levels
 
@@ -16,6 +20,15 @@ issue_app = typer.Typer(help="Issue read/write.", no_args_is_help=True)
 label_app = typer.Typer(help="Label read/write.", no_args_is_help=True)
 pr_app = typer.Typer(help="Pull request read/write.", no_args_is_help=True)
 backlog_app = typer.Typer(help="Backlog tree, next, resequence.", no_args_is_help=True)
+project_app = typer.Typer(
+    help="GitHub Projects (blocked — use backlog + labels).",
+    no_args_is_help=True,
+)
+ruleset_app = typer.Typer(
+    help="GitHub Rulesets (blocked — use GitHub UI).",
+    no_args_is_help=True,
+)
+policy_app = typer.Typer(help="CLI GitHub policy.", no_args_is_help=True)
 
 gh_app.add_typer(issue_app, name="issue")
 gh_app.add_typer(label_app, name="label")
@@ -23,6 +36,9 @@ gh_app.add_typer(pr_app, name="pr")
 repo_app = typer.Typer(help="Repository metadata.", no_args_is_help=True)
 gh_app.add_typer(repo_app, name="repo")
 gh_app.add_typer(backlog_app, name="backlog")
+gh_app.add_typer(project_app, name="project")
+gh_app.add_typer(ruleset_app, name="ruleset")
+gh_app.add_typer(policy_app, name="policy")
 
 
 def _svc(repo: str | None) -> GhService:
@@ -80,6 +96,23 @@ def _ctx_repo(ctx: typer.Context) -> str | None:
 
 def _ctx_format(ctx: typer.Context) -> str:
     return (ctx.obj or {}).get("format") or "json"
+
+
+def _policy_block(group: str, subcommand: str | None = None) -> None:
+    """Exit with policy message — command exists for discoverability only."""
+    op = policy_for_cli_command(group, subcommand)
+    if op is None:
+        typer.echo("blocked by CLI GitHub policy.", err=True)
+        raise typer.Exit(1)
+    typer.echo(op.message, err=True)
+    raise typer.Exit(1)
+
+
+def _blocked_handler(group: str, subcommand: str):
+    def _cmd(ctx: typer.Context) -> None:  # noqa: ARG001
+        _policy_block(group, subcommand)
+
+    return _cmd
 
 
 # --- Issue read ---
@@ -367,12 +400,11 @@ def pr_merge_cmd(
     number: int,
     merge_method: str = typer.Option("merge", "--merge-method"),
     delete_branch: bool = typer.Option(False, "--delete-branch"),
-    yes: bool = typer.Option(False, "--yes", "-y", help="Skip interactive write gate."),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Ignored — merge blocked by policy."),
 ) -> None:
-    from src.services.gh_policy import MERGE_FORBIDDEN_MESSAGE
-
-    typer.echo(MERGE_FORBIDDEN_MESSAGE, err=True)
-    raise typer.Exit(1)
+    """Merge PR (blocked — use GitHub UI or auto-merge)."""
+    _ = (ctx, number, merge_method, delete_branch, yes)
+    _policy_block("pr", "merge")
 
 
 # --- Backlog ---
@@ -439,3 +471,34 @@ def repo_view_cmd(
 ) -> None:
     svc = _svc(_ctx_repo(ctx))
     _emit(svc.repo_view(fields=fields), _ctx_format(ctx))
+
+
+# --- Blocked GitHub surfaces (exist in CLI, always error) ---
+
+
+@policy_app.command("list")
+def policy_list_cmd(ctx: typer.Context) -> None:
+    """List gh operations blocked by CLI policy and their alternatives."""
+    _emit(blocked_operations_catalog(), _ctx_format(ctx))
+
+
+for _sub in (
+    "list",
+    "view",
+    "create",
+    "edit",
+    "delete",
+    "item-add",
+    "item-edit",
+    "field-create",
+):
+    project_app.command(
+        _sub,
+        help="Blocked — use `cli gh backlog organize` and priority labels.",
+    )(_blocked_handler("project", _sub))
+
+for _sub in ("list", "view", "create", "edit", "delete"):
+    ruleset_app.command(
+        _sub,
+        help="Blocked — configure rulesets in the GitHub UI.",
+    )(_blocked_handler("ruleset", _sub))

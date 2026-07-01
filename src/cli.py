@@ -72,6 +72,7 @@ def main(
 
 def run() -> None:
     """CLI entrypoint — surfaces ExternalCallError as a clean user message."""
+    from src.services.gh_policy import GhPolicyError
     from src.utils.config import load_local_env
     from src.utils.external_client import ExternalCallError
 
@@ -80,6 +81,9 @@ def run() -> None:
         app()
     except ExternalCallError as exc:
         typer.echo(exc.user_message, err=True)
+        raise typer.Exit(1) from exc
+    except GhPolicyError as exc:
+        typer.echo(str(exc), err=True)
         raise typer.Exit(1) from exc
 
 

@@ -20,9 +20,9 @@ See [`distill/INDEX.md`](distill/INDEX.md) for `@gh-*` → `cli` command mapping
 
 ## Deletion policy
 
-The standalone `cursor-skills` repository is deprecated. All normative skill content lives here until ported into:
+The standalone `cursor-skills` repository can be deleted. All normative skill content is embedded here and implemented as:
 
-- `cli craft issue` / `cli craft pr` / `cli review pr`
-- `src/providers/opencode.py`
-- `docs/workflows.md`
-- `tests/pack/`
+- `cli craft` / `cli review` / `cli ai` — OpenCode + DeepSeek (3 model roles)
+- `cli gh` — deterministic GitHub I/O
+- `docs/craft.md` — skill → command map
+- `tests/pack/` — port verification

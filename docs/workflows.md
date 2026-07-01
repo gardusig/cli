@@ -67,7 +67,7 @@ cli git reset --yes
 cli git reset --yes --delete-merged
 ```
 
-## GitHub phase (PR merge path)
+## GitHub phase (after PR is open)
 
 One CLI command and one script per step. See [gh.md](gh.md) and [scripts/gh/README.md](../scripts/gh/README.md).
 
@@ -77,10 +77,10 @@ One CLI command and one script per step. See [gh.md](gh.md) and [scripts/gh/READ
 | View issue | `gh issue view N` | `./scripts/gh/issue-view.sh N` |
 | Open PR | `gh pr create … --yes` | `./scripts/gh/pr-create.sh … --yes` |
 | Check PR | `gh pr view N` | `./scripts/gh/pr-view.sh N` |
-| Merge PR | `gh pr merge N --yes` | `./scripts/gh/pr-merge.sh N --yes` |
+| **Merge PR** | **GitHub UI / auto-merge** | *(not `cli gh pr merge` — blocked)* |
 | Close issue | `gh issue close N --yes` | `./scripts/gh/issue-close.sh N --yes` |
 
-**Full chain:** `backlog next → reset → start → push → review → pr create → pr merge → issue close → reset`
+**Full chain:** `backlog next → reset → start → push → review → pr create → [UI merge] → issue close → reset`
 
 ### Example (GitHub steps)
 
@@ -89,12 +89,12 @@ One CLI command and one script per step. See [gh.md](gh.md) and [scripts/gh/READ
 # … git work on branch …
 ./scripts/git/review.sh
 ./scripts/gh/pr-create.sh --title "." --body "" --yes
-./scripts/gh/pr-merge.sh 80 --merge-method squash --yes
+# merge in GitHub UI (or enable auto-merge on the PR)
 ./scripts/gh/issue-close.sh 42 --comment "Done" --yes
 ./scripts/git/reset.sh --yes --delete-merged
 ```
 
-GitHub Projects are **not** used from `cli` — use `cli gh backlog organize` and `priority:N` labels instead ([#72](https://github.com/gardusig/cli/issues/72) deferred).
+GitHub Projects and Rulesets are **not** used from `cli` — use `cli gh backlog organize` and `priority:N` labels instead ([#72](https://github.com/gardusig/cli/issues/72) deferred).
 
 ## Feature work (start → publish)
 

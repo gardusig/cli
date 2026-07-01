@@ -30,3 +30,10 @@ def ai_code_cmd(
 ) -> None:
     m = "chat" if mode == "chat" else "shot"
     typer.echo(OpenCodeProvider().run_prompt(prompt, tier="code", mode=m))
+
+
+@ai_app.command("categorize")
+def ai_categorize_cmd(
+    prompt: str = typer.Argument(..., help="Categorization / issue-ship prompt."),
+) -> None:
+    typer.echo(OpenCodeProvider().run_prompt(prompt, tier="categorize", mode="shot"))

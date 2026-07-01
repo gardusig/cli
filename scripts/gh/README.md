@@ -25,10 +25,12 @@ Shell wrappers for `cli gh` commands. Each script delegates to `cli gh <command>
 | `pr-create.sh` | `cli gh pr create` |
 | `pr-edit.sh` | `cli gh pr edit` |
 | `pr-close.sh` | `cli gh pr close` |
-| `pr-merge.sh` | `cli gh pr merge` |
+| `pr-merge.sh` | `cli gh pr merge` (blocked — exits 1) |
+| `project.sh` | `cli gh project` (blocked — exits 1) |
+| `ruleset.sh` | `cli gh ruleset` (blocked — exits 1) |
 | `repo-view.sh` | `cli gh repo view` |
 
-## PR merge path (granular)
+## PR path (granular)
 
 ```bash
 ./scripts/gh/backlog-next.sh --format json
@@ -38,7 +40,7 @@ Shell wrappers for `cli gh` commands. Each script delegates to `cli gh <command>
 ./scripts/git/push.sh --yes
 ./scripts/git/review.sh
 ./scripts/gh/pr-create.sh --title "." --body "" --yes
-./scripts/gh/pr-merge.sh 80 --merge-method squash --yes
+# merge in GitHub UI — pr-merge.sh is blocked by policy
 ./scripts/gh/issue-close.sh 42 --comment "Done" --yes
 ./scripts/git/reset.sh --yes --delete-merged
 ```
