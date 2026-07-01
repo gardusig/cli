@@ -1367,7 +1367,23 @@ def execute_endpoint_integration_check(
     review_patch = nullcontext()
     if check.failure == "review_fail":
         review_patch = patch("src.commands.git.run_review", return_value=1)
-    with review_patch:
+    deploy_patch = nullcontext()
+    if check.label in {"git deploy status", "git deploy refuse"}:
+        from src.services.git_deploy import DeployAssessment
+
+        deploy_patch = patch(
+            "src.commands.git.assess_deploy_readiness",
+            return_value=DeployAssessment(
+                repo="integration",
+                main_sha="a" * 40,
+                latest_tag=None,
+                tag_sha=None,
+                needs_tag=True,
+                suggested_tag="v0.0.1",
+                open_prs=(),
+            ),
+        )
+    with review_patch, deploy_patch:
         code, output = run_endpoint_check(
             check,
             repo_root=repo_root,

@@ -36,14 +36,6 @@ else
   pip install -e .
 fi
 
-if [[ "${CLI_DOCKER_INTEGRATION:-}" == "1" && ! -d .git ]]; then
-  git init -b main >/dev/null
-  git config user.email "cli@example.test"
-  git config user.name "Cli Docker Test"
-  git add -A
-  git commit -m "docker test snapshot" >/dev/null
-fi
-
 echo ""
 echo "Done. Activate with: source .venv/bin/activate"
 echo "Try: python -m src --help"

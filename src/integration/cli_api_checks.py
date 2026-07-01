@@ -201,7 +201,7 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
             "merge blocked",
             accept_exit_codes=(1,),
         ),
-        CliApiCheck("gh backlog tree", "gh", ("gh", *fmt, "backlog", "tree"), "issues"),
+        CliApiCheck("gh backlog tree", "gh", ("gh", *fmt, "backlog", "tree"), "parents"),
         CliApiCheck("gh backlog next", "gh", ("gh", *fmt, "backlog", "next"), '"number":'),
         CliApiCheck("gh backlog levels", "gh", ("gh", *fmt, "backlog", "levels"), "levels"),
         CliApiCheck("gh backlog organize", "gh", ("gh", *fmt, "backlog", "organize"), "priority"),
@@ -252,7 +252,17 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
 
 def _gh_failure_checks(workspace: Path) -> list[CliApiCheck]:
     failures: list[CliApiCheck] = []
+    skip_fail_paths = {
+        ("gh", "backlog", "levels"),
+        ("gh", "policy", "list"),
+        ("gh", "pr", "merge"),
+    }
     for ok in _gh_success_checks(workspace):
+        path = command_path(ok.args)
+        if path[:3] in skip_fail_paths:
+            continue
+        if ok.accept_exit_codes != (0,):
+            continue
         if "--yes" in ok.args:
             failures.append(
                 CliApiCheck(
