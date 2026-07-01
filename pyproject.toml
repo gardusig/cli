@@ -41,8 +41,9 @@ dev = [
   "pytest-timeout>=2.3",
   "twine>=5.0",
 ]
-# Headless operator (craft/review in Docker) — core deps only; opencode installed in image.
+# Headless operator (craft/review/chat in Docker) — needs DEEPSEEK_API_KEY at runtime.
 operator = []
+chat = []
 # Laptop-only integrations (not required in GitHub Actions runner).
 notion = []
 craft = []

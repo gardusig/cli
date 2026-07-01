@@ -1,0 +1,60 @@
+name: chat-to-issues
+
+# Dispatch from a chat summary — R1 distill → categorize → file issues per repo.
+# Local equivalent: cli chat issues --from-file summary.md [--apply --yes]
+
+on:
+  workflow_dispatch:
+    inputs:
+      chat_summary:
+        description: Rolling chat summary or exported transcript
+        required: true
+        type: string
+      apply_issues:
+        description: Apply creates/comments on GitHub (requires GH_TOKEN write)
+        required: false
+        type: boolean
+        default: false
+      skip_distill:
+        description: Skip R1 reasoner pass (use summary only)
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  categorize:
+    name: Chat → issues per repo
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cli
+        run: pip install -e .
+
+      - name: Write chat summary
+        env:
+          CHAT_SUMMARY: ${{ inputs.chat_summary }}
+        run: |
+          mkdir -p /tmp/chat
+          printf '%s' "$CHAT_SUMMARY" > /tmp/chat/summary.md
+
+      - name: Distill and categorize
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ARGS=(chat issues --from-file /tmp/chat/summary.md)
+          if [ "${{ inputs.skip_distill }}" = "true" ]; then ARGS+=(--skip-distill); fi
+          if [ "${{ inputs.apply_issues }}" = "true" ]; then ARGS+=(--apply --yes); fi
+          cli "${ARGS[@]}" | tee /tmp/chat/result.json
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-categorize-plan
+          path: /tmp/chat/result.json

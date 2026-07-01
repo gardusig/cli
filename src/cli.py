@@ -9,6 +9,7 @@ from src.commands.bookmarks import bookmarks_app
 from src.commands.chrome import chrome_app
 from src.commands.contest import contest_app
 from src.commands.deploy_cmd import deploy_app
+from src.commands.chat import chat_app
 from src.commands.craft import craft_app
 from src.commands.docker import docker_app
 from src.commands.drive import drive_app
@@ -34,6 +35,7 @@ app.add_typer(links_app, name="links")
 app.add_typer(git_app, name="git")
 app.add_typer(gh_app, name="gh")
 app.add_typer(ai_app, name="ai")
+app.add_typer(chat_app, name="chat")
 app.add_typer(craft_app, name="craft")
 app.add_typer(review_app, name="review")
 app.add_typer(test_app, name="test")

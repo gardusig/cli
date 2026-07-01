@@ -1,0 +1,18 @@
+# DeepSeek-only model roles for cli chat and issue categorization.
+# Override via env: DEEPSEEK_MODEL_CHAT, DEEPSEEK_MODEL_REASON, DEEPSEEK_MODEL_CATEGORIZE
+
+api_base: https://api.deepseek.com
+
+roles:
+  chat:
+    model: deepseek-chat
+    description: Cheapest — ongoing conversation and rolling summary
+  reason:
+    model: deepseek-reasoner
+    description: R1 — extensive traversal of ideas discussed in chat
+  categorize:
+    model: deepseek-chat
+    description: R4-class — pick topics and craft parent issues per repo (use deepseek-chat until v4-pro API id is set)
+
+# Map future v4 pro when available:
+# categorize.model: deepseek-v4-pro

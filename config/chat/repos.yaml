@@ -1,0 +1,18 @@
+# Repositories known to the chat → issues categorizer.
+# Each repo is filed separately; shared ideas appear as cross_repo_notes on parents.
+
+owner: gardusig
+
+repos:
+  - name: cli
+    description: Headless operator hub — craft, gh, Docker workflows, PyPI package
+  - name: chrome-extensions
+    description: Browser extensions maintenance
+  - name: computer-science
+    description: Theory, patterns, orchestration across repos
+  - name: gardusig
+    description: Profile / meta repo
+  - name: private
+    description: Private experiments
+  - name: yugioh
+    description: Portfolio app — Spring, CDK, MVP deployment

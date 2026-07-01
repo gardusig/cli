@@ -17,5 +17,5 @@ run_step() {
   "$@"
 }
 
-run_step "pack / migration regression" pytest -q tests/pack tests/migration tests/gh/test_merge_forbidden.py tests/services/test_gh_topo.py
+run_step "pack / migration regression" pytest -q tests/pack tests/migration tests/gh/test_merge_forbidden.py tests/gh/test_projects_and_organize.py tests/services/test_gh_topo.py tests/services/test_chat_session.py tests/services/test_chat_distill.py
 run_step "workflow regression" python tests/integration/check_workflows.py
