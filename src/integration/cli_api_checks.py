@@ -253,20 +253,18 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
 def _gh_failure_checks(workspace: Path) -> list[CliApiCheck]:
     failures: list[CliApiCheck] = []
     for ok in _gh_success_checks(workspace):
-        if ok.label == "gh pr merge":
+        if ok.accept_exit_codes != (0,):
             failures.append(
                 CliApiCheck(
-                    "gh pr merge fail",
-                    "gh",
-                    _without_yes(ok.args),
+                    f"{ok.label} fail",
+                    ok.api,
+                    _without_yes(ok.args) if "--yes" in ok.args else ok.args,
                     kind="fail",
-                    needle="merge blocked",
-                    accept_exit_codes=(1,),
+                    needle=ok.needle,
+                    accept_exit_codes=ok.accept_exit_codes,
                     failure="policy_block",
                 )
             )
-            continue
-        if ok.accept_exit_codes != (0,):
             continue
         if "--yes" in ok.args:
             failures.append(
