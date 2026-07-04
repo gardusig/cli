@@ -1,78 +1,42 @@
 # Release to PyPI
 
-Production releases publish **`gardusig-cli`** to [PyPI](https://pypi.org/project/gardusig-cli/). The console command stays **`cli`**.
+Production releases publish **`gardusig-cli`** to [PyPI](https://pypi.org/project/gardusig-cli/). Pull request CI uses [TestPyPI](https://test.pypi.org/project/gardusig-cli/) only.
 
-## One entrypoint
+## Version source
 
-Everything goes through **`./scripts/pypi/release.sh`** — locally and in GitHub Actions ([`release.yml`](../.github/workflows/release.yml)).
+Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync). PR CI requires the PR version to be **greater** than `origin/main` (Docker `version` target + `scripts/ci/version-check.sh`).
 
-That script:
+Example: `main` ships `1.0.0`; a release candidate PR bumps to **`1.0.1`**.
 
-1. Resolves the version from `GITHUB_REF_NAME` (CI), `CLI_RELEASE_VERSION`, or the current `v*` git tag
-2. Builds the **`cli:release`** Docker image (`Dockerfile` target `release` — Python 3.12, `build`, `twine`, project deps)
-3. Copies the repo into an isolated container workdir (read-only mount; no host `.env`)
-4. Runs [`scripts/docker/run-release.sh`](../scripts/docker/run-release.sh) → [`scripts/pypi/publish.sh`](../scripts/pypi/publish.sh) → `cli pypi upload`
-5. Confirms the version appears on the [PyPI project page](https://pypi.org/project/gardusig-cli/) (JSON API) before finishing
+## Pull request pipeline (main only)
 
-## GitHub Actions
+1. **`./scripts/test/pr-step1-build-testpypi.sh`** ? version gate, unit tests, `./scripts/pypi/publish-testpypi.sh` (needs `TESTPYPI_API_TOKEN`).
+2. **`./scripts/test/pr-step2-testpypi-usability.sh`** ? `./scripts/pypi/install-testpypi.sh` then `./scripts/test/testpypi/run-all.sh`.
 
-Push an annotated tag:
+Local equivalents:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+export TESTPYPI_API_TOKEN='pypi-...'
+./scripts/test/pr-step1-build-testpypi.sh
+./scripts/test/pr-step2-testpypi-usability.sh
 ```
 
-Workflow [`.github/workflows/release.yml`](../.github/workflows/release.yml) only checks out the repo and runs:
+## Production deploy (official PyPI)
+
+**Not TestPyPI.** Uses `PYPI_API_TOKEN` and `./scripts/pypi/deploy.sh` (wraps `./scripts/pypi/release.sh`).
 
 ```bash
-./scripts/pypi/release.sh
-```
-
-| Secret | Required |
-| --- | --- |
-| `PYPI_API_TOKEN` | Yes — PyPI API token with upload scope |
-
-Tag `v1.2.3` publishes version **`1.2.3`** (leading `v` stripped).
-
-## Local release (same as CI)
-
-```bash
-export PYPI_API_TOKEN='pypi-...'   # or add to .env (not copied into the container; export on host)
-./scripts/pypi/release.sh
-```
-
-From an exact tag checkout:
-
-```bash
-git checkout v1.0.0
 export PYPI_API_TOKEN='pypi-...'
-./scripts/pypi/release.sh
+./scripts/pypi/deploy.sh
 ```
 
-Override version without a tag:
+Tag push `vX.Y.Z` should match `pyproject.toml` (see `.cli/tag.yaml`).
 
-```bash
-CLI_RELEASE_VERSION=1.0.0 ./scripts/pypi/release.sh
-```
+## Scripts
 
-Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine). First run builds `cli:release`; set `CLI_DOCKER_SKIP_BUILD=1` if the image already exists.
-
-## Scripts (`scripts/pypi/`)
-
-| Script | Role |
+| Script | Index |
 | --- | --- |
-| [`scripts/pypi/release.sh`](../scripts/pypi/release.sh) | **Canonical** — Docker wrapper (local + CI) |
-| [`scripts/pypi/test.sh`](../scripts/pypi/test.sh) | PR CI — build `1.0.0`, optional TestPyPI |
-| [`scripts/pypi/publish.sh`](../scripts/pypi/publish.sh) | In-container: version resolve → `upload.sh` |
-| [`scripts/pypi/upload.sh`](../scripts/pypi/upload.sh) | `cli pypi upload --yes` |
-| [`scripts/pypi/build.sh`](../scripts/pypi/build.sh) | Build only |
-| [`scripts/docker/run-release.sh`](../scripts/docker/run-release.sh) | In-container bootstrap + `pypi/publish.sh` |
-
-
-## Checklist
-
-- [ ] `PYPI_API_TOKEN` in GitHub repo secrets
-- [ ] `./scripts/test/unit.sh` and `./scripts/test/integration.sh` green on `main`
-- [ ] Tag `vX.Y.Z` on the commit you want to ship
-- [ ] `git push origin vX.Y.Z` — watch **release** workflow on GitHub Actions
+| `scripts/pypi/publish-testpypi.sh` | TestPyPI |
+| `scripts/pypi/install-testpypi.sh` | TestPyPI (pip) |
+| `scripts/pypi/deploy.sh` / `release.sh` | Production PyPI |
+| `scripts/pypi/test.sh` | Wrapper ? `publish-testpypi.sh` |

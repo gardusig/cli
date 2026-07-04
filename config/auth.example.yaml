@@ -1,0 +1,16 @@
+auth:
+  notion:
+    env: NOTION_TOKEN
+    token_file: ~/.config/cli/secrets/notion.token
+  gh:
+    env: GH_TOKEN
+    token_file: ~/.config/cli/secrets/github.token
+  backup:
+    env: BACKUP_ZIP_PASSWORD
+    token_file: ~/.config/cli/secrets/backup.zip.password
+  deepseek:
+    env: DEEPSEEK_API_KEY
+    token_file: ~/.config/cli/secrets/deepseek.token
+  pypi:
+    env: PYPI_API_TOKEN
+    token_file: ~/.config/cli/secrets/pypi.token

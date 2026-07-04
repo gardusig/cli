@@ -1,13 +1,16 @@
 # scripts/
 
-Shell-only entry points. Python code lives under [`src/`](../src/) and [`tests/`](../tests/).
+**Reusable shell implementation** — invoked by `cli` commands and by external CI runners.
 
-| Script / directory | Purpose |
+This directory is *how* each step runs. Orchestration (what runs, in what order, GitHub events) lives outside this repository.
+
+| Directory | Purpose |
 | --- | --- |
-| `pypi/` | Local install + release (`install.sh`, `build.sh`, `upload.sh`, `test.sh`, `release.sh`, `publish.sh`) |
-| `test/` | Docker test harness (`unit.sh`, `integration.sh`, `smoke.sh`) |
-| `docker/` | Image build, in-container runners, CI bootstrap (`bootstrap.sh`) |
-| `drive/` | Drive sync scripts (`status.sh`, `ingest.sh`, …) |
-| `git/`, `chrome/`, `notion/`, `gh/` | CLI shell shortcuts |
+| `git/` | Git shortcuts (`cli git …`) |
+| `gh/` | GitHub shortcuts (`cli gh …`) |
+| `craft/` | Thin wrappers → `cli opencode gh` |
+| `drive/`, `chrome/`, `notion/` | Domain-specific ops |
+| `deploy/`, `release/` | Deploy and release helpers |
+| `ci/` | Version and policy checks |
 
-Integration check runners (Python): [`tests/integration/`](../tests/integration/).
+Python code: [`src/`](../src/). Integration checks: [`tests/integration/`](../tests/integration/).

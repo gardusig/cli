@@ -67,16 +67,14 @@ Build context is always the **repository root**.
 
 Host repo is mounted read-only; each run copies a fresh tree to `/tmp/cli` (see `scripts/docker/common.sh`). Integration tests mount `/var/run/docker.sock` so live `cli docker` checks run against your host daemon without a host Python venv.
 
-## CI (GitHub Actions)
+## CI
 
-| Workflow | Trigger | What runs |
-| --- | --- | --- |
-| [`test`](../.github/workflows/test.yml) | **Pull requests** | Unit + integration Docker gates |
-| [`release`](../.github/workflows/release.yml) | **Tags** `v*` | PyPI publish |
+| Trigger | What runs |
+| --- | --- |
+| **Pull requests** | Unit + integration Docker gates |
+| **Tags** `v*` | PyPI publish |
 
-See [`.github/README.md`](../.github/README.md) for required secrets.
-
-On `main`, require both PR status checks in **Settings → Branches → Branch protection** (no workflow — configure manually in GitHub).
+CI is configured outside this repository. Required secrets: `PYPI_API_TOKEN`; optional `TESTPYPI_API_TOKEN` for TestPyPI smoke on PRs.
 
 ## Run tests
 

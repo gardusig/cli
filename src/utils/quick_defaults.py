@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from datetime import date, datetime
+from datetime import datetime
 
 DEFAULT_COMMIT_MESSAGE = "."
 DEFAULT_STASH_MESSAGE = "."
@@ -15,10 +15,6 @@ def default_commit_message() -> str:
 
 def default_stash_message() -> str:
     return DEFAULT_STASH_MESSAGE
-
-
-def default_tag_name() -> str:
-    return date.today().isoformat()
 
 
 def suggest_branch_name(existing_branches: Iterable[str] | None = None) -> str:

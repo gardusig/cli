@@ -109,14 +109,20 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
     batch = workspace / "issue-batch.yaml"
     plan = workspace / "resequence.yaml"
     return [
-        CliApiCheck("gh issue list", "gh", ("gh", *fmt, "issue", "list"), "42"),
+        CliApiCheck("gh issue list", "gh", ("gh", *fmt, "issue", "list"), "Integration issue"),
         CliApiCheck("gh issue view", "gh", ("gh", *fmt, "issue", "view", "42"), "fixture body"),
+        CliApiCheck(
+            "gh issue context",
+            "gh",
+            ("gh", *fmt, "issue", "context", "2"),
+            "epic:wf-test",
+        ),
         CliApiCheck("gh issue search", "gh", ("gh", *fmt, "issue", "search", "is:open"), "["),
         CliApiCheck(
             "gh issue create",
             "gh",
             ("gh", *fmt, "issue", "create", "--title", "New", "--body", "b", "--yes"),
-            "99",
+            "example/repo/issues/",
         ),
         CliApiCheck(
             "gh issue edit",
@@ -192,16 +198,49 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
             "gh pr merge",
             "gh",
             ("gh", *fmt, "pr", "merge", "7", "--yes"),
-            "merge",
+            "merge blocked",
+            accept_exit_codes=(1,),
         ),
-        CliApiCheck("gh backlog tree", "gh", ("gh", *fmt, "backlog", "tree"), "issues"),
+        CliApiCheck("gh backlog tree", "gh", ("gh", *fmt, "backlog", "tree"), "parents"),
         CliApiCheck("gh backlog next", "gh", ("gh", *fmt, "backlog", "next"), '"number":'),
+        CliApiCheck("gh backlog levels", "gh", ("gh", *fmt, "backlog", "levels"), "levels"),
+        CliApiCheck("gh backlog organize", "gh", ("gh", *fmt, "backlog", "organize"), "priority"),
         CliApiCheck(
             "gh backlog resequence",
             "gh",
             ("gh", *fmt, "backlog", "resequence", "--file", str(plan), "--yes"),
             "Resequenced",
         ),
+        CliApiCheck("gh policy list", "gh", ("gh", *fmt, "policy", "list"), "pr-merge"),
+        *[
+            CliApiCheck(
+                f"gh project {sub}",
+                "gh",
+                ("gh", *fmt, "project", sub),
+                "Projects blocked",
+                accept_exit_codes=(1,),
+            )
+            for sub in (
+                "list",
+                "view",
+                "create",
+                "edit",
+                "delete",
+                "item-add",
+                "item-edit",
+                "field-create",
+            )
+        ],
+        *[
+            CliApiCheck(
+                f"gh ruleset {sub}",
+                "gh",
+                ("gh", *fmt, "ruleset", sub),
+                "Rulesets blocked",
+                accept_exit_codes=(1,),
+            )
+            for sub in ("list", "view", "create", "edit", "delete")
+        ],
         CliApiCheck(
             "gh repo view",
             "gh",
@@ -214,6 +253,19 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
 def _gh_failure_checks(workspace: Path) -> list[CliApiCheck]:
     failures: list[CliApiCheck] = []
     for ok in _gh_success_checks(workspace):
+        if ok.accept_exit_codes != (0,):
+            failures.append(
+                CliApiCheck(
+                    f"{ok.label} fail",
+                    ok.api,
+                    _without_yes(ok.args) if "--yes" in ok.args else ok.args,
+                    kind="fail",
+                    needle=ok.needle,
+                    accept_exit_codes=ok.accept_exit_codes,
+                    failure="policy_block",
+                )
+            )
+            continue
         if "--yes" in ok.args:
             failures.append(
                 CliApiCheck(
@@ -505,11 +557,24 @@ def assert_every_api_command_has_ok_and_fail_check(
     apis: tuple[ApiName, ...] = ("gh", "notion", "drive", "chrome"),
 ) -> None:
     """Each API command path needs one success and one failure integration check."""
+    local_ok_only: dict[ApiName, set[tuple[str, ...]]] = {
+        "gh": {
+            ("gh", "backlog", "levels"),
+            ("gh", "policy", "list"),
+        },
+    }
     assert_cli_api_registry_covers_commands(checks, apis=apis)
     for api in apis:
         for path in sorted(registered_api_command_paths(api)):
             rows = checks_for_path(checks, api=api, path=path)
             kinds = {check.kind for check in rows}
+            if path in local_ok_only.get(api, set()):
+                if "ok" not in kinds:
+                    raise AssertionError(
+                        f"{api} {' '.join(path)} missing ok check "
+                        f"(have kinds={sorted(kinds)}, labels={[c.label for c in rows]})"
+                    )
+                continue
             if "ok" not in kinds or "fail" not in kinds:
                 raise AssertionError(
                     f"{api} {' '.join(path)} missing ok/fail checks "

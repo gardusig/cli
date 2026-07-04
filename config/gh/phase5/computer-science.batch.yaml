@@ -1,0 +1,40 @@
+# Phase 5 — computer-science (subset; pattern catalog children retitled in follow-up)
+operations:
+  - action: create
+    title: Cross-repo orchestration
+    labels: ["issue-type:epic", "epic:cs-orchestration", "priority:1"]
+  - action: edit
+    number: 96
+    title: "1 — Relay-race workspace: cross-repo queues and handoff notes"
+    add_labels: ["issue-type:child", "epic:cs-orchestration", "priority:1"]
+  - action: edit
+    number: 95
+    title: "2 — Docker template catalog for verification gates"
+    add_labels: ["issue-type:child", "epic:cs-orchestration", "priority:1"]
+  - action: edit
+    number: 97
+    title: "3 — Repository ruleset playbook (protected main, PR + green CI)"
+    add_labels: ["issue-type:child", "epic:cs-orchestration", "priority:1"]
+  - action: create
+    title: "4 — Adopt Docker-first test/deploy/release workflows"
+    labels: ["issue-type:child", "epic:cs-orchestration", "priority:1"]
+
+  - action: create
+    title: Load testing and Go driver
+    labels: ["issue-type:epic", "epic:cs-load", "priority:3"]
+  - action: edit
+    number: 102
+    title: "1 — Evaluate Go driver harness structure"
+    add_labels: ["issue-type:child", "epic:cs-load", "priority:3"]
+  - action: edit
+    number: 104
+    title: "2 — Go load driver scaffold: smoke scenario + workflow_dispatch"
+    add_labels: ["issue-type:child", "epic:cs-load", "priority:3"]
+  - action: edit
+    number: 103
+    title: "3 — Dedicated server: bare-metal parity with Docker verification gates"
+    add_labels: ["issue-type:child", "epic:cs-load", "priority:3"]
+
+  - action: create
+    title: Build pattern catalogs
+    labels: ["issue-type:epic", "epic:cs-patterns", "priority:4"]

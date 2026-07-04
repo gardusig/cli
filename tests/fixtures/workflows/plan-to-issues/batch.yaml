@@ -1,0 +1,13 @@
+operations:
+  - action: create
+    title: "1 — Plan epic"
+    body: "Epic created from plan batch fixture."
+    labels: ["epic:wf-plan", "issue-type:epic"]
+  - action: create
+    title: "1.1 — First deliverable"
+    body: "First child issue from plan."
+    labels: ["epic:wf-plan", "issue-type:child"]
+  - action: create
+    title: "1.2 — Second deliverable"
+    body: "Second child issue from plan."
+    labels: ["epic:wf-plan", "issue-type:child"]

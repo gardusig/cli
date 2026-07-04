@@ -52,6 +52,24 @@ def test_issue_list_json(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
 
 
 @patch("src.commands.gh._svc")
+def test_issue_context_json(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
+    mock_factory.return_value = mock_svc
+    mock_svc.issue_context.return_value = {
+        "issue": {"number": 2, "title": "1.1 — Child"},
+        "comments": [{"body": "note"}],
+        "epic": {"slug": "epic:wf", "parent": {"number": 1, "title": "Epic"}},
+        "siblings": [{"number": 3, "title": "1.2 — Other"}],
+        "linked_issues": [],
+        "labels": ["epic:wf"],
+    }
+    result = runner.invoke(app, ["gh", "--format", "json", "issue", "context", "2"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert data["epic"]["parent"]["number"] == 1
+    mock_svc.issue_context.assert_called_once_with(2)
+
+
+@patch("src.commands.gh._svc")
 def test_issue_create_requires_yes_in_non_tty(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     mock_factory.return_value = mock_svc
     result = runner.invoke(
@@ -72,6 +90,12 @@ def test_issue_create_with_yes(mock_factory: MagicMock, mock_svc: MagicMock) -> 
     )
     assert result.exit_code == 0
     mock_svc.issue_create.assert_called_once()
+
+
+def test_issue_close_blocked() -> None:
+    result = runner.invoke(app, ["gh", "issue", "close", "42", "--yes"])
+    assert result.exit_code != 0
+    assert "issue close blocked" in result.output
 
 
 @patch("src.commands.gh._svc")
@@ -134,3 +158,28 @@ def test_pr_list_head_base_filters(mock_factory: MagicMock, mock_svc: MagicMock)
     )
     assert result.exit_code == 0
     mock_svc.pr_list.assert_called_once_with(state="open", limit=30, head="feature", base="main")
+
+
+@patch("src.commands.gh._svc")
+def test_repo_list_json(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
+    mock_factory.return_value = mock_svc
+    mock_svc.repo_list.return_value = [{"name": "python-cli", "description": "CLI"}]
+    result = runner.invoke(app, ["gh", "--format", "json", "repo", "list"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert data[0]["name"] == "python-cli"
+    mock_svc.repo_list.assert_called_once()
+
+
+@patch("src.services.gh_repo_readme.sync_profile_readme")
+def test_repo_readme_sync_dry_run(mock_sync: MagicMock, tmp_path: Path) -> None:
+    readme = tmp_path / "README.md"
+    readme.write_text("before\n", encoding="utf-8")
+    mock_sync.return_value = ("after\n", [{"name": "cli"}])
+    result = runner.invoke(
+        app,
+        ["gh", "repo", "readme-sync", "--readme", str(readme), "--dry-run"],
+    )
+    assert result.exit_code == 0
+    assert "after" in result.stdout
+    assert readme.read_text(encoding="utf-8") == "before\n"

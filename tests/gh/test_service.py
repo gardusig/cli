@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
+from src.services.gh_policy import IssueCloseForbiddenError, MergeForbiddenError
 from src.services.gh_service import GhService
 
 
@@ -74,10 +75,11 @@ def test_issue_create_parses_number_from_url(svc: GhService, provider: MagicMock
     assert "--label" in args
 
 
-def test_issue_edit_and_close(svc: GhService, provider: MagicMock) -> None:
+def test_issue_edit_and_close_policy(svc: GhService, provider: MagicMock) -> None:
     svc.issue_edit(3, title="New", add_labels=["x"], remove_labels=["y"])
-    svc.issue_close(3, comment="done")
-    assert provider.run.call_count == 2
+    with pytest.raises(IssueCloseForbiddenError):
+        svc.issue_close(3, comment="done")
+    assert provider.run.call_count == 1
 
 
 def test_issue_delete_and_comment(svc: GhService, provider: MagicMock) -> None:
@@ -86,7 +88,7 @@ def test_issue_delete_and_comment(svc: GhService, provider: MagicMock) -> None:
     assert provider.run.call_count == 2
 
 
-def test_issue_batch_create_and_edit(tmp_path: Path, svc: GhService, provider: MagicMock) -> None:
+def test_issue_batch_rejects_close(tmp_path: Path, svc: GhService, provider: MagicMock) -> None:
     batch = tmp_path / "batch.yaml"
     batch.write_text(
         yaml.safe_dump(
@@ -101,8 +103,8 @@ def test_issue_batch_create_and_edit(tmp_path: Path, svc: GhService, provider: M
         encoding="utf-8",
     )
     provider.run.return_value = "https://github.com/o/r/issues/10"
-    results = svc.issue_batch(batch)
-    assert len(results) == 3
+    with pytest.raises(ValueError, match="issue close is blocked"):
+        svc.issue_batch(batch)
 
 
 def test_issue_batch_unknown_action(tmp_path: Path, svc: GhService) -> None:
@@ -152,7 +154,8 @@ def test_pr_list_view_diff_create(svc: GhService, provider: MagicMock) -> None:
     assert created["number"] == 5
     svc.pr_edit(5, title="Renamed")
     svc.pr_close(5)
-    svc.pr_merge(5, delete_branch=True)
+    with pytest.raises(MergeForbiddenError):
+        svc.pr_merge(5, delete_branch=True)
 
 
 def test_repo_view(svc: GhService, provider: MagicMock) -> None:
@@ -162,12 +165,13 @@ def test_repo_view(svc: GhService, provider: MagicMock) -> None:
 
 def test_backlog_tree_groups_epics(svc: GhService, provider: MagicMock) -> None:
     provider.run_json.return_value = [
-        {"number": 1, "title": "1 — Epic", "labels": ["issue-type:epic"]},
+        {"number": 1, "title": "1 — Epic", "labels": ["issue-type:epic", "epic:foo"]},
         {"number": 2, "title": "1.1 — Child", "labels": ["issue-type:child", "epic:foo"]},
     ]
     tree = svc.backlog_tree()
     assert tree["repo"] == "owner/repo"
-    assert tree["issues"]
+    assert tree["parents"]
+    assert tree["epics"]["epic:foo"]
 
 
 def test_backlog_next_prefers_child_label(svc: GhService, provider: MagicMock) -> None:

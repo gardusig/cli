@@ -1,0 +1,7 @@
+operations:
+  - action: create
+    title: Hub workflow adoption
+    labels: ["issue-type:epic", "epic:private-hub", "priority:2"]
+  - action: create
+    title: "1 — Adopt Docker-first test workflows"
+    labels: ["issue-type:child", "epic:private-hub", "priority:2"]

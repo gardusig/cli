@@ -1,0 +1,17 @@
+protected:
+  - bug
+  - enhancement
+
+labels:
+  - name: issue-type:epic
+    color: "5319E7"
+    description: Parent epic
+  - name: issue-type:child
+    color: "C5DEF5"
+    description: Child deliverable
+  - name: priority:2
+    color: "FBCA04"
+    description: Normal priority
+  - name: epic:private-hub
+    color: "407092"
+    description: Hub workflow adoption

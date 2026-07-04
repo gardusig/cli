@@ -50,3 +50,42 @@ def test_publish_pypi_build_only_deprecated(mock_build: MagicMock) -> None:
     result = runner.invoke(app, ["publish", "pypi", "--build-only"])
     assert result.exit_code == 0
     assert "Built:" in result.stdout
+
+
+@patch("src.commands.pypi.assert_version_increased_vs_ref", return_value="0.1.1")
+def test_pypi_version_check_ok(_assert: MagicMock) -> None:
+    result = runner.invoke(app, ["pypi", "version", "check", "--base", "origin/main"])
+    assert result.exit_code == 0
+    assert "version ok" in result.stdout
+
+
+@patch(
+    "src.commands.pypi.assert_version_increased_vs_ref",
+    side_effect=__import__(
+        "src.services.pypi_publish", fromlist=["PyPiPublishError"]
+    ).PyPiPublishError(
+        "version 0.1.0 on this branch is not greater than origin/main (0.1.0). "
+        "Bump pyproject.toml and src/__init__.py to at least '0.1.1'."
+    ),
+)
+def test_pypi_version_check_fails(_assert: MagicMock) -> None:
+    result = runner.invoke(app, ["pypi", "version", "check"])
+    assert result.exit_code != 0
+    assert "0.1.1" in (result.stdout + (result.stderr or ""))
+
+
+@patch("src.commands.pypi.read_project_version", return_value="0.1.0")
+@patch("src.services.tag_policy.bump_semver", return_value="0.1.1")
+def test_pypi_version_suggest(_bump: MagicMock, _read: MagicMock) -> None:
+    result = runner.invoke(app, ["pypi", "version", "suggest"])
+    assert result.exit_code == 0
+    assert result.stdout.strip() == "0.1.1"
+
+
+@patch("src.commands.pypi.suggest_next_tag", return_value="v0.1.1")
+@patch("src.commands.pypi.resolve_tag_policy")
+@patch("src.services.git_shortcuts.GitShortcuts.all_tag_names", return_value=[])
+def test_pypi_tag_suggest(_tags: MagicMock, _policy: MagicMock, _suggest: MagicMock) -> None:
+    result = runner.invoke(app, ["pypi", "version", "tag-suggest"])
+    assert result.exit_code == 0
+    assert result.stdout.strip() == "v0.1.1"

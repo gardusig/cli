@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from src.utils.process import GitCommandError, run_git
-from src.utils.quick_defaults import default_tag_name, suggest_branch_name
+from src.utils.quick_defaults import suggest_branch_name
 
 # Remotes consulted for canonical main (fork workflow: upstream → fork → origin).
 MAIN_REMOTES = ("upstream", "fork", "origin")
@@ -584,6 +584,10 @@ class GitShortcuts:
             if ref.startswith("refs/tags/"):
                 tags.add(ref.removeprefix("refs/tags/"))
         return sorted(tags)
+
+    def all_tag_names(self, remote: str = "origin") -> list[str]:
+        """Union of local and remote tag names (sorted)."""
+        return sorted(set(self.list_local_tags()) | set(self.list_remote_tags(remote)))
 
     def tag_local_sha(self, name: str) -> str | None:
         result = run_git(

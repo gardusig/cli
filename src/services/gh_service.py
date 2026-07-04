@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 from src.providers.gh import GhProvider
-from src.services.gh_sequence import SequenceKey, next_child_issue, sort_issues_by_sequence
+from src.services.gh_policy import MergeForbiddenError
+from src.services.gh_sequence import SequenceKey
+from src.services.gh_topo import StepKey, build_parent_child_tree, load_priority_levels, pick_next_child, sort_children
 
 
 class GhService:
@@ -27,6 +30,7 @@ class GhService:
         state: str = "open",
         label: list[str] | None = None,
         limit: int = 30,
+        fields: str = "number,title,state,labels,url,closedAt",
     ) -> list[dict[str, Any]]:
         args = [
             "issue",
@@ -36,11 +40,22 @@ class GhService:
             "--limit",
             str(limit),
             "--json",
-            "number,title,state,labels,url",
+            fields,
         ]
         for lb in label or []:
             args.extend(["--label", lb])
         return self.provider.run_json(args)
+
+    def issue_list_all(
+        self,
+        *,
+        state: str = "open",
+        label: list[str] | None = None,
+        limit: int = 500,
+        fields: str = "number,title,state,labels,url,closedAt",
+    ) -> list[dict[str, Any]]:
+        # `gh issue list` is not offset-based. Use a high cap and keep the cap explicit.
+        return self.issue_list(state=state, label=label, limit=limit, fields=fields)
 
     def issue_view(self, number: int, *, comments: bool = False) -> dict[str, Any]:
         fields = "number,title,body,state,labels,url,author,createdAt,updatedAt"
@@ -48,6 +63,64 @@ class GhService:
         if comments:
             args.append("--comments")
         return self.provider.run_json(args)
+
+    def issue_context(self, number: int) -> dict[str, Any]:
+        """Full issue rollup: view, comments, epic parent, siblings, body-linked issues."""
+        raw = self.issue_view(number, comments=True)
+        comments = raw.pop("comments", [])
+        labels = [
+            str(lb.get("name", lb)) if isinstance(lb, dict) else str(lb)
+            for lb in raw.get("labels", [])
+        ]
+        epic_label = next((lb for lb in labels if lb.startswith("epic:")), None)
+        epic_info: dict[str, Any] | None = None
+        siblings: list[dict[str, Any]] = []
+        if epic_label:
+            all_issues = self.issue_list(state="open", limit=200)
+            epic_parent: dict[str, Any] | None = None
+            for row in all_issues:
+                row_labels = [
+                    str(lb.get("name", lb)) if isinstance(lb, dict) else str(lb)
+                    for lb in row.get("labels", [])
+                ]
+                if epic_label in row_labels and "issue-type:epic" in row_labels:
+                    epic_parent = {"number": row["number"], "title": row["title"]}
+                    break
+            for row in all_issues:
+                row_labels = [
+                    str(lb.get("name", lb)) if isinstance(lb, dict) else str(lb)
+                    for lb in row.get("labels", [])
+                ]
+                if (
+                    epic_label in row_labels
+                    and "issue-type:child" in row_labels
+                    and int(row["number"]) != number
+                ):
+                    siblings.append({"number": row["number"], "title": row["title"]})
+            epic_info = {"slug": epic_label, "parent": epic_parent}
+        linked: list[dict[str, Any]] = []
+        body = str(raw.get("body", ""))
+        seen: set[int] = set()
+        for match in re.finditer(r"#(\d+)", body):
+            ref_num = int(match.group(1))
+            if ref_num == number or ref_num in seen:
+                continue
+            seen.add(ref_num)
+            try:
+                ref = self.issue_view(ref_num)
+            except Exception:
+                continue
+            linked.append(
+                {"number": ref_num, "title": ref["title"], "relation": "body_ref"}
+            )
+        return {
+            "issue": raw,
+            "comments": comments,
+            "epic": epic_info,
+            "siblings": siblings,
+            "linked_issues": linked,
+            "labels": labels,
+        }
 
     def issue_search(self, query: str, *, limit: int = 30) -> list[dict[str, Any]]:
         args = [
@@ -139,8 +212,10 @@ class GhService:
                 )
                 results.append({"number": op["number"], "action": "edit"})
             elif kind == "close":
-                self.issue_close(int(op["number"]), comment=op.get("comment"))
-                results.append({"number": op["number"], "action": "close"})
+                raise ValueError(
+                    "issue close is blocked by policy; merge a PR in the GitHub UI "
+                    "and let linked issues auto-close"
+                )
             else:
                 raise ValueError(f"Unknown batch action: {kind}")
         return results
@@ -212,6 +287,29 @@ class GhService:
             args.extend(["--base", base])
         return self.provider.run_json(args)
 
+    def repo_list(
+        self,
+        *,
+        owner: str,
+        limit: int = 100,
+        visibility: str | None = "public",
+        fields: str = "name,description,visibility,url",
+    ) -> list[dict[str, Any]]:
+        args = [
+            "repo",
+            "list",
+            "--owner",
+            owner,
+            "--limit",
+            str(limit),
+            "--json",
+            fields,
+        ]
+        if visibility:
+            args.extend(["--visibility", visibility])
+        rows = self.provider.run_json(args)
+        return sorted(rows, key=lambda row: str(row.get("name", "")).lower())
+
     def repo_view(
         self,
         *,
@@ -229,6 +327,9 @@ class GhService:
                 "number,title,body,state,url,headRefName,baseRefName,commits,files",
             ]
         )
+
+    def pr_diff(self, number: int) -> str:
+        return self.provider.run(["pr", "diff", str(number)])
 
     def pr_diff_stat(self, number: int) -> str:
         return self.provider.run(["pr", "diff", str(number), "--stat"])
@@ -269,6 +370,9 @@ class GhService:
             args.extend(["--body-file", str(body_file)])
         self.provider.run(args)
 
+    def pr_comment(self, number: int, *, body: str) -> None:
+        self.provider.run(["pr", "comment", str(number), "--body", body])
+
     def pr_close(self, number: int) -> None:
         self.provider.run(["pr", "close", str(number)])
 
@@ -279,55 +383,64 @@ class GhService:
         merge_method: str = "merge",
         delete_branch: bool = False,
     ) -> None:
-        args = ["pr", "merge", str(number), "--merge-method", merge_method]
-        if delete_branch:
-            args.append("--delete-branch")
-        self.provider.run(args)
+        raise MergeForbiddenError()
 
     # --- Backlog ---
 
     def backlog_tree(self) -> dict[str, Any]:
-        issues = self.issue_list(state="open", limit=200)
-        ordered = sort_issues_by_sequence(issues)
-        epics: dict[str, list[dict[str, Any]]] = {}
-        roots: list[dict[str, Any]] = []
-        for issue in ordered:
-            labels = [str(lb.get("name", lb)) if isinstance(lb, dict) else str(lb) for lb in issue.get("labels", [])]
-            epic_labels = [lb for lb in labels if lb.startswith("epic:")]
-            seq = SequenceKey.from_title(str(issue.get("title", "")))
-            node = {
-                "number": issue["number"],
-                "title": issue["title"],
-                "labels": labels,
-                "sequence": seq.prefix() if seq else None,
-            }
-            if "issue-type:epic" in labels or (seq and seq.minor is None):
-                roots.append(node)
-            elif epic_labels:
-                slug = epic_labels[0]
-                epics.setdefault(slug, []).append(node)
-            elif seq and seq.minor is not None:
-                epics.setdefault("_unlabeled", []).append(node)
-            else:
-                roots.append(node)
-        return {"repo": self.repo_display(), "roots": roots, "epics": epics, "issues": ordered}
-
-    def backlog_next(self) -> dict[str, Any] | None:
-        issues = self.issue_list(state="open", limit=200)
-        for issue in issues:
+        open_issues = self.issue_list(state="open", limit=200)
+        closed_issues = self.issue_list(state="closed", limit=100)
+        seen: set[int] = set()
+        merged: list[dict[str, Any]] = []
+        for issue in open_issues + closed_issues:
+            number = int(issue.get("number", 0))
+            if number in seen:
+                continue
+            seen.add(number)
+            merged.append(issue)
+        for issue in merged:
             labels = issue.get("labels", [])
             issue["labels"] = [
                 lb.get("name", lb) if isinstance(lb, dict) else lb for lb in labels
             ]
-        candidate = next_child_issue(issues)
+        organized = build_parent_child_tree(merged)
+        return {
+            "repo": self.repo_display(),
+            **organized,
+            # legacy flat keys for older consumers
+            "roots": [p for p in organized["parents"]],
+            "epics": {
+                (p.get("epic") or f"_parent_{p['number']}"): p.get("children", [])
+                for p in organized["parents"]
+            },
+        }
+
+    def backlog_organize(self) -> dict[str, Any]:
+        """Parent/child tree with priority level explanations and readiness."""
+        return self.backlog_tree()
+
+    def backlog_next(self) -> dict[str, Any] | None:
+        open_issues = self.issue_list(state="open", limit=200)
+        closed_issues = self.issue_list(state="closed", limit=200)
+        all_issues = open_issues + closed_issues
+        for issue in all_issues:
+            labels = issue.get("labels", [])
+            issue["labels"] = [
+                lb.get("name", lb) if isinstance(lb, dict) else lb for lb in labels
+            ]
+        picked = pick_next_child(all_issues)
+        if picked:
+            return picked
+        candidate = sort_children(open_issues)
         if not candidate:
             return None
-        seq = SequenceKey.from_title(str(candidate.get("title", "")))
+        first = candidate[0]
+        step = StepKey.from_title(str(first.get("title", "")))
         return {
-            "number": candidate["number"],
-            "title": candidate["title"],
-            "url": candidate.get("url"),
-            "sequence": seq.prefix() if seq else None,
+            "number": first["number"],
+            "title": first["title"],
+            "url": first.get("url"),
+            "step": step.step if step else None,
         }
 
     def backlog_resequence(self, plan_file: Path) -> list[dict[str, Any]]:

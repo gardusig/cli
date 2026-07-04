@@ -6,29 +6,25 @@ macOS CLI: **`cli git`** · **`cli drive`** · **`cli chrome`** · **`cli notion
 
 [![PyPI version](https://img.shields.io/pypi/v/gardusig-cli?label=PyPI)](https://pypi.org/project/gardusig-cli/)
 [![Python](https://img.shields.io/pypi/pyversions/gardusig-cli?label=Python)](https://pypi.org/project/gardusig-cli/)
-[![License: MIT](https://img.shields.io/pypi/l/gardusig-cli?label=License)](https://github.com/gardusig/cli/blob/main/LICENSE)
-[![Tests](https://github.com/gardusig/cli/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/gardusig/cli/actions/workflows/test.yml)
-[![Unit coverage](https://img.shields.io/badge/unit%20coverage-%E2%89%A580%25-brightgreen?logo=pytest&logoColor=white)](https://github.com/gardusig/cli/blob/main/coverage-unit.ini)
-[![Release](https://github.com/gardusig/cli/actions/workflows/release.yml/badge.svg)](https://github.com/gardusig/cli/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/pypi/l/gardusig-cli?label=License)](https://github.com/gardusig/python-cli/blob/main/LICENSE)
 
 This README is the **long description on [PyPI](https://pypi.org/project/gardusig-cli/)** and the **GitHub project page** — badges link to the same sources of truth on both sites.
 
 | Where | What you get |
 | --- | --- |
-| **GitHub** ([gardusig/cli](https://github.com/gardusig/cli)) | Source, issues, PR checks (Docker unit + integration), tag releases |
-| **PyPI** (`./scripts/pypi/install.sh`) | Installable package from PyPI; console command is `cli` |
-| **Tests** badge | [`test.yml`](.github/workflows/test.yml) on `main` — PR gate only |
-| **Unit coverage** badge | [`coverage-unit.ini`](coverage-unit.ini) — `cli` package, ≥80% (`pytest --cov-fail-under=80` in Docker unit job) |
-| **Release** badge | [`release.yml`](.github/workflows/release.yml) — `v*` tags → PyPI (`gardusig-cli`) |
+| **GitHub** ([gardusig/python-cli](https://github.com/gardusig/python-cli)) | Source and issues — **application code only** |
+| **PyPI** (`pip install gardusig-cli`) | Installable package; console command is `cli` |
+| **CI / release** | External Docker pipelines — not in this repo |
+| **Unit coverage** | [`coverage-unit.ini`](coverage-unit.ini) — `cli` package, ≥80% |
 
-Install from PyPI when you only need the tool; clone the repo when you want config, scripts, and Docker verification.
+Install from PyPI when you only need the tool; clone the repo when you want config and product scripts.
 
 ## Naming
 
 | Context | Identifier |
 | --- | --- |
-| **GitHub repo** | [gardusig/cli](https://github.com/gardusig/cli) (clone path is usually `cli/`) |
-| **PyPI package** | `gardusig-cli` — `./scripts/pypi/install.sh` |
+| **GitHub repo** | [gardusig/python-cli](https://github.com/gardusig/python-cli) |
+| **PyPI package** | `gardusig-cli` — `pip install gardusig-cli` |
 | **Console command** | `cli` (unchanged after PyPI install) |
 | **Python import** | `src` |
 
@@ -51,7 +47,7 @@ Install Python and git with Homebrew:
 brew install python@3.12 git
 ```
 
-Optional: `gh` (GitHub CLI) for [cursor-skills](https://github.com/gardusig/cursor-skills) workflows — not required by cli itself.
+Optional: `gh` (GitHub CLI) for `cli gh` and `cli opencode gh` workflows.
 
 ## Configuration (global)
 
@@ -228,33 +224,18 @@ Destructive commands use the write gate; pass `--yes` in scripts.
 
 Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) on macOS (or Docker Engine on Linux). The `cli:dev` Linux image is the only supported test environment:
 
-```bash
-./scripts/docker/build-image.sh   # build once (or auto-build on first test run)
-./scripts/test/unit.sh            # unit tests (≥80% coverage)
-./scripts/test/integration.sh     # full pytest + smoke + live docker
-./scripts/docker/shell.sh         # onboard: interactive shell in container
-```
-
-See [docs/docker.md](docs/docker.md).
-
 ## CI and release
 
-| Trigger | Workflow | What runs |
-| --- | --- | --- |
-| **Pull request** | [`test.yml`](.github/workflows/test.yml) | Unit + integration Docker gates |
-| **Tag** `v*` | [`release.yml`](.github/workflows/release.yml) | Publish `gardusig-cli` to PyPI |
+CI and Docker run **outside this repository** (central DevOps). This repo has no `.github/` workflows or `Dockerfile`.
 
-Configure repo secret **`PYPI_API_TOKEN`** for releases. Require both PR status checks (`Unit tests (Docker)`, `Integration tests (Docker)`) on `main` in GitHub branch protection.
+| Trigger | What runs |
+| --- | --- |
+| **Pull request** | Unit → integration → PyPI packaging (Docker) |
+| **Tag** `v*` | Publish `gardusig-cli` to PyPI |
 
-Maintainers — local release (same as CI):
+Configure release secrets on the central CI system (`PYPI_API_TOKEN`, `TESTPYPI_API_TOKEN`). Tag pushes trigger release via `repository_dispatch`.
 
-```bash
-export PYPI_API_TOKEN='pypi-...'
-./scripts/pypi/release.sh
-git tag v0.1.0 && git push origin v0.1.0
-```
-
-Details: [docs/release.md](docs/release.md) · [`.github/README.md`](.github/README.md) · [docs/setup.md](docs/setup.md).
+Details: [docs/release.md](docs/release.md) · [docs/setup.md](docs/setup.md).
 
 ## Docs
 
@@ -269,7 +250,7 @@ Details: [docs/release.md](docs/release.md) · [`.github/README.md`](.github/REA
 
 ## Related
 
-- [cursor-skills](https://github.com/gardusig/cursor-skills) — `@gh-*` AI workflows for issues/PRs
+- [OpenCode](docs/opencode.md) — `cli opencode` AI entry point
 - Cloud drive epic: [cli #4](https://github.com/gardusig/cli/issues/4)
 - Bootstrap spec: [cli #3](https://github.com/gardusig/cli/issues/3)
 - Chrome: [cli #24](https://github.com/gardusig/cli/issues/24) · bookmarks scripts [#1](https://github.com/gardusig/cli/issues/1)

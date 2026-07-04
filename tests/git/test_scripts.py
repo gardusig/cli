@@ -8,9 +8,13 @@ from pathlib import Path
 GIT_SCRIPTS = ROOT / "scripts" / "git"
 
 
-def test_all_cursor_skills_git_scripts_exist() -> None:
+def test_all_git_wrapper_scripts_exist() -> None:
     expected = {
         "branch.sh",
+        "branch-list.sh",
+        "branch-current.sh",
+        "branch-prune.sh",
+        "branch-rename.sh",
         "branch-delete.sh",
         "branch-delete-merged.sh",
         "branch-delete-all.sh",
@@ -31,6 +35,7 @@ def test_all_cursor_skills_git_scripts_exist() -> None:
         "start.sh",
         "stash.sh",
         "tag.sh",
+        "deploy.sh",
         "tag-list.sh",
         "tag-push.sh",
         "zip.sh",

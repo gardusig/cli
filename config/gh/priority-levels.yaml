@@ -1,0 +1,30 @@
+# Priority scale for backlog sorting (lower number = ship sooner).
+# Sync labels via config/gh/labels.manifest.yaml — one priority:N label per issue.
+#
+# Apply: cli gh label sync --manifest config/gh/labels.manifest.yaml --yes
+
+levels:
+  - number: 0
+    label: priority:0
+    name: Emergency
+    explanation: Drop everything — production or release blocker.
+  - number: 1
+    label: priority:1
+    name: Ship now
+    explanation: Critical path for the current milestone; blocks other epics.
+  - number: 2
+    label: priority:2
+    name: High
+    explanation: Important feature or fix; schedule this sprint.
+  - number: 3
+    label: priority:3
+    name: Normal
+    explanation: Standard backlog — do when higher priorities are clear.
+  - number: 4
+    label: priority:4
+    name: Backlog
+    explanation: Valuable but deferrable — catalogs, docs, nice-to-haves.
+  - number: 5
+    label: priority:5
+    name: Tech debt
+    explanation: Lowest urgency — cleanup, refactors without user impact.

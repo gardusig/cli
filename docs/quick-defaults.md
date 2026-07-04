@@ -10,8 +10,8 @@ Cli favors **suggested values** over prompts so common flows are one command.
 | `cli git reset` | Return to synced main; optional `--delete-merged` or interactive branch cleanup | `cli git reset --yes` |
 | `cli git reset --main-only` | Sync main only (skip branch prompt) | `cli git reset --yes --main-only` |
 | `cli git stash push` | Message `.` | `cli git stash push` |
-| `cli git tag` | Name `YYYY-MM-DD` (today) | `cli git tag` |
-| `cli git zip` | Tag `YYYY-MM-DD` (today) | `cli git zip` → iCloud `git-tags/REPO/REPO-TAG.zip` |
+| `cli git tag` | Next tag per `.cli/tag.yaml` or detection (e.g. `v0.1.1`) | `cli git tag` |
+| `cli git zip` | Latest **local** tag for repo pattern | `cli git zip` |
 
 ## Branch names
 

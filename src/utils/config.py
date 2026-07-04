@@ -97,11 +97,40 @@ class ChromeConfig(BaseModel):
     downloads_dir: str = ""
 
 
+class GhIssuesPruneConfig(BaseModel):
+    closed_older_than: str = "7d"
+
+
+class GhIssuesConfig(BaseModel):
+    repo: str = ""
+    labels_manifest: str = ""
+    prune: GhIssuesPruneConfig = Field(default_factory=GhIssuesPruneConfig)
+
+
+class GhConfig(BaseModel):
+    issues: GhIssuesConfig = Field(default_factory=GhIssuesConfig)
+
+
+class AuthCredentialConfig(BaseModel):
+    env: str = ""
+    token_file: str = ""
+
+
+class AuthConfig(BaseModel):
+    notion: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
+    gh: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
+    backup: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
+    deepseek: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
+    pypi: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
+
+
 class CliConfig(BaseModel):
     backup: BackupConfig = Field(default_factory=BackupConfig)
     drives: DrivesConfig = Field(default_factory=DrivesConfig)
     notion: NotionConfig = Field(default_factory=NotionConfig)
+    gh: GhConfig = Field(default_factory=GhConfig)
     chrome: ChromeConfig = Field(default_factory=ChromeConfig)
+    auth: AuthConfig = Field(default_factory=AuthConfig)
 
 
 class CliSettings(BaseSettings):
@@ -172,7 +201,38 @@ def load_config(config_dir: Path | None = None) -> CliConfig:
     if "drives" in drives_data:
         merged["drives"] = _normalize_drives(drives_data["drives"])
 
+    auth_data = load_yaml(base / "auth.yaml")
+    if auth_data:
+        merged.update(auth_data)
+
+    board_file = os.environ.get("CLI_BOARD_FILE", "").strip()
+    if board_file:
+        board_data = load_yaml(Path(board_file).expanduser())
+        for key, value in board_data.items():
+            if isinstance(value, dict) and isinstance(merged.get(key), dict):
+                merged[key].update(value)
+            else:
+                merged[key] = value
+
     return CliConfig.model_validate(merged)
+
+
+def _credential_token(cfg: CliConfig, name: str, fallback_env: str) -> str | None:
+    auth = getattr(cfg.auth, name)
+    env_name = auth.env.strip() or fallback_env
+    value = os.environ.get(env_name, "").strip()
+    if value:
+        return value
+    raw_file = auth.token_file.strip()
+    if not raw_file:
+        return None
+    path = Path(raw_file).expanduser()
+    if not path.is_absolute():
+        path = default_config_dir() / path
+    if not path.is_file():
+        return None
+    token = path.read_text(encoding="utf-8").strip()
+    return token or None
 
 
 def tags_dir_path(config_dir: Path | None = None) -> Path:
@@ -283,19 +343,19 @@ def notion_database_id(
 
 def require_notion_token(cfg: CliConfig | None = None) -> str:
     """Notion integration token from NOTION_TOKEN (never commit to config)."""
-    token = os.environ.get("NOTION_TOKEN", "").strip()
+    cfg = cfg or load_config()
+    token = _credential_token(cfg, "notion", "NOTION_TOKEN")
     if not token:
         raise RuntimeError(
-            "NOTION_TOKEN is not set. Export a Notion integration token to your environment."
+            "NOTION_TOKEN is not set. Export it or configure auth.notion.token_file."
         )
-    notion_database_id((cfg or load_config()).notion)
+    notion_database_id(cfg.notion)
     return token
 
 
 def backup_zip_password() -> str | None:
     """Zip encryption password from BACKUP_ZIP_PASSWORD (never commit to config)."""
-    value = os.environ.get("BACKUP_ZIP_PASSWORD", "").strip()
-    return value or None
+    return _credential_token(load_config(), "backup", "BACKUP_ZIP_PASSWORD")
 
 
 def require_backup_zip_password() -> str:
@@ -334,3 +394,25 @@ def chrome_downloads_dir(config_dir: Path | None = None) -> Path:
     if raw:
         return Path(raw).expanduser().resolve()
     return Path.home() / "Downloads"
+
+
+def gh_issues_repo(config_dir: Path | None = None) -> str:
+    repo = load_config(config_dir).gh.issues.repo.strip()
+    if not repo:
+        raise RuntimeError("gh.issues.repo is not configured.")
+    return repo
+
+
+def gh_issues_labels_manifest(config_dir: Path | None = None) -> Path:
+    cfg = load_config(config_dir)
+    raw = cfg.gh.issues.labels_manifest.strip()
+    if not raw:
+        return notion_task_root(config_dir) / "labels.manifest.yaml"
+    path = Path(raw).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    return (notion_task_root(config_dir) / path).resolve()
+
+
+def gh_issues_closed_older_than(config_dir: Path | None = None) -> str:
+    return load_config(config_dir).gh.issues.prune.closed_older_than

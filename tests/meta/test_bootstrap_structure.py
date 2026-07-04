@@ -55,8 +55,12 @@ INTERNAL_MODULES = [
     "src.internal.write.git",
 ]
 
-CURSOR_SKILLS_GIT_SCRIPTS = [
+GIT_WRAPPER_SCRIPTS = [
     "scripts/git/branch.sh",
+    "scripts/git/branch-list.sh",
+    "scripts/git/branch-current.sh",
+    "scripts/git/branch-prune.sh",
+    "scripts/git/branch-rename.sh",
     "scripts/git/branch-delete.sh",
     "scripts/git/branch-delete-merged.sh",
     "scripts/git/branch-delete-all.sh",
@@ -77,6 +81,7 @@ CURSOR_SKILLS_GIT_SCRIPTS = [
     "scripts/git/start.sh",
     "scripts/git/stash.sh",
     "scripts/git/tag.sh",
+    "scripts/git/deploy.sh",
     "scripts/git/tag-list.sh",
     "scripts/git/tag-push.sh",
     "scripts/git/zip.sh",
@@ -84,6 +89,34 @@ CURSOR_SKILLS_GIT_SCRIPTS = [
     "scripts/drive/ingest.sh",
     "scripts/drive/upload.sh",
     "scripts/drive/sync.sh",
+]
+
+GH_WORKFLOW_SCRIPTS = [
+    "scripts/gh/_common.sh",
+    "scripts/gh/README.md",
+    "scripts/gh/backlog-next.sh",
+    "scripts/gh/backlog-tree.sh",
+    "scripts/gh/issue-view.sh",
+    "scripts/gh/issue-context.sh",
+    "scripts/gh/issue-close.sh",
+    "scripts/gh/pr-create.sh",
+    "scripts/gh/pr-view.sh",
+    "scripts/gh/pr-list.sh",
+    "scripts/gh/pr-merge.sh",
+    "scripts/gh/sync-labels.sh",
+    "scripts/gh/labelize-backlog.sh",
+    "scripts/gh/issue-list.sh",
+    "scripts/gh/issue-search.sh",
+    "scripts/gh/issue-create.sh",
+    "scripts/gh/issue-edit.sh",
+    "scripts/gh/issue-comment.sh",
+    "scripts/gh/issue-batch.sh",
+    "scripts/gh/backlog-resequence.sh",
+    "scripts/gh/label-list.sh",
+    "scripts/gh/pr-diff.sh",
+    "scripts/gh/pr-edit.sh",
+    "scripts/gh/pr-close.sh",
+    "scripts/gh/repo-view.sh",
 ]
 
 DOCKER_VERIFY_PATHS = [
@@ -95,7 +128,13 @@ DOCKER_VERIFY_PATHS = [
     "scripts/test/unit.sh",
     "scripts/test/integration.sh",
     "scripts/test/smoke.sh",
+    "scripts/test/tags.sh",
+    "scripts/test/workflows.sh",
+    "scripts/test/all.sh",
+    "scripts/ci/version-check.sh",
+    "tests/integration/check_workflows.py",
     ".github/workflows/test.yml",
+    ".github/workflows/deploy.yml",
     ".github/workflows/release.yml",
 ]
 
@@ -125,8 +164,7 @@ REQUIRED_PATHS = [
     "scripts/pypi/publish.sh",
     "scripts/pypi/test.sh",
     "scripts/notion/release.sh",
-    "scripts/gh/sync-labels.sh",
-    "scripts/gh/labelize-backlog.sh",
+    *GH_WORKFLOW_SCRIPTS,
     *DOCKER_VERIFY_PATHS,
     "scripts/chrome/ingest.sh",
     "scripts/chrome/deploy.sh",
@@ -143,7 +181,7 @@ REQUIRED_PATHS = [
     "scripts/git/_common.sh",
     "src/cli.py",
     "src/__main__.py",
-    *CURSOR_SKILLS_GIT_SCRIPTS,
+    *GIT_WRAPPER_SCRIPTS,
 ]
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @git-review — cursor-skills/skills/git/review
+# cli git wrapper
 set -euo pipefail
 # shellcheck source=_common.sh
 source "$(dirname "$0")/_common.sh"

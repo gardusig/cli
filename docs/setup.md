@@ -15,7 +15,7 @@ Pytest, coverage, and smoke scripts run **inside** Docker (`cli:integration`) so
 - `git` on PATH
 - `zip` for encrypted tag archives (`encrypted: true` repos)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) for verification (`cli:dev` Linux image)
-- Optional: `gh` for GitHub (used by cursor-skills, not cli)
+- Optional: `gh` for GitHub (`cli gh` commands)
 
 ## Install from PyPI
 
@@ -65,9 +65,9 @@ git tag v1.0.0 && git push origin v1.0.0   # CI runs ./scripts/pypi/release.sh
 | `./scripts/pypi/upload.sh` | Local build + upload (inside container bootstrap) |
 | `./scripts/pypi/build.sh` | Build only |
 
-GitHub Actions — push tag `v*` runs [release.yml](../.github/workflows/release.yml). Configure secret **`PYPI_API_TOKEN`**. Optional PR secret **`TESTPYPI_API_TOKEN`** for TestPyPI uploads.
+CI runs outside this repository. Configure **`PYPI_API_TOKEN`** (and optional PR secret **`TESTPYPI_API_TOKEN`** for TestPyPI uploads) on the central CI system.
 
-Pull requests run [test.yml](../.github/workflows/test.yml). See [`.github/README.md`](../.github/README.md).
+Pull requests and tag `v*` pushes trigger pipelines via `repository_dispatch`.
 
 | Workflow | Trigger | Gate |
 | --- | --- | --- |

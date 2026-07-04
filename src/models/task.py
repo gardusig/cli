@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class TaskMetadata(BaseModel):
@@ -18,6 +18,7 @@ class TaskMetadata(BaseModel):
     interval: int | None = None
     last_done: str | None = None
     forced_status: str | None = None
+    labels: list[str] = Field(default_factory=list)
     enabled: bool = True
 
     @field_validator("name")
