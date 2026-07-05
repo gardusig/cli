@@ -12,7 +12,7 @@ import yaml
 
 from src.services.pypi_publish import PyPiPublishError, read_project_version
 
-TAG_POLICY_REL = Path(".cli") / "tag.yaml"
+TAG_POLICY_REL = Path("config") / "tag.yaml"
 
 _SEMVER_CORE = r"\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?"
 
@@ -116,7 +116,7 @@ def detect_tag_pattern(tags: list[str]) -> TagPattern | None:
 
 
 def infer_tag_pattern(repo_root: Path, tags: list[str]) -> TagPattern:
-    """Resolve policy when ``.cli/tag.yaml`` is absent."""
+    """Resolve policy when ``config/tag.yaml`` is absent."""
     detected = detect_tag_pattern(tags)
     if detected is not None:
         return detected

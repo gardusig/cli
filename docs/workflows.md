@@ -91,14 +91,14 @@ cli git reset --yes --delete-merged
 
 ## GitHub phase (after PR is open)
 
-One CLI command and one script per step. See [gh.md](gh.md) and [scripts/gh/README.md](../scripts/gh/README.md).
+One CLI command and one script per step. See [gh.md](gh.md) and [src/scripts/gh/README.md](../src/scripts/gh/README.md).
 
 | Step | CLI | Script |
 | --- | --- | --- |
-| Pick next issue | `gh backlog next` | `./scripts/gh/backlog-next.sh` |
-| View issue | `gh issue view N` | `./scripts/gh/issue-view.sh N` |
-| Open PR | `gh pr create … --yes` | `./scripts/gh/pr-create.sh … --yes` |
-| Check PR | `gh pr view N` | `./scripts/gh/pr-view.sh N` |
+| Pick next issue | `gh backlog next` | `./src/scripts/gh/backlog-next.sh` |
+| View issue | `gh issue view N` | `./src/scripts/gh/issue-view.sh N` |
+| Open PR | `gh pr create … --yes` | `./src/scripts/gh/pr-create.sh … --yes` |
+| Check PR | `gh pr view N` | `./src/scripts/gh/pr-view.sh N` |
 | **Merge PR** | **GitHub UI / auto-merge** | *(not `cli gh pr merge` — blocked)* |
 | Close issue | GitHub auto-close from merged PR body | *(not `cli gh issue close` — blocked)* |
 
@@ -107,12 +107,12 @@ One CLI command and one script per step. See [gh.md](gh.md) and [scripts/gh/READ
 ### Example (GitHub steps)
 
 ```bash
-./scripts/gh/backlog-next.sh --format json
+./src/scripts/gh/backlog-next.sh --format json
 # … git work on branch …
-./scripts/git/review.sh
-./scripts/gh/pr-create.sh --title "." --body "" --yes
+./src/scripts/git/review.sh
+./src/scripts/gh/pr-create.sh --title "." --body "" --yes
 # merge in GitHub UI with "Fixes #42" in the PR body, or enable auto-merge
-./scripts/git/reset.sh --yes --delete-merged
+./src/scripts/git/reset.sh --yes --delete-merged
 ```
 
 Ad hoc GitHub Projects and Rulesets are **not** used from `cli`. Project membership/order updates are reserved for named task-board workflows in `github-pipelines`; otherwise use `cli gh backlog organize` and `priority:N` labels.
@@ -122,7 +122,7 @@ Ad hoc GitHub Projects and Rulesets are **not** used from `cli`. Project members
 ```mermaid
 flowchart LR
     subgraph setup [Setup once]
-        A["./scripts/pypi/install.sh"]
+        A["pip install gardusig-cli"]
     end
 
     subgraph daily [Daily loop]
@@ -184,14 +184,14 @@ flowchart LR
     end
 
     subgraph bookmarks [Chrome bookmarks]
-        B1["./scripts/chrome/export.sh"]
+        B1["./src/scripts/chrome/export.sh"]
         B2["configured bookmarks.html"]
-        B3["./scripts/chrome/import.sh"]
+        B3["./src/scripts/chrome/import.sh"]
         B1 --> B2 --> B3
     end
 
     subgraph docker [Isolated checks]
-        D1["./scripts/test/integration.sh"]
+        D1["cli test python integration ."]
         D2["copy repo · pytest · smoke · live docker"]
         D1 --> D2
     end
@@ -208,8 +208,8 @@ Four Docker E2E workflows (fixture config only — never host `~/git-local` or l
 | Dirty branch → PR | `git push --yes` → `gh pr create --yes` |
 | Reset to main | nested dirty branches → `git reset --yes --delete-merged` |
 
-Run on host (mocked `gh`): `./scripts/test/workflows.sh`  
-Docker gate: `tests/integration/check_workflows.py` (wired in `scripts/test/smoke.sh`)
+Run on host (mocked `gh`): `cli test python command-surface .`  
+Docker gate: `tests/integration/check_workflows.py` (wired in `cli test python command-surface .`)
 
 Config isolation: default `CLI_CONFIG_DIR=config/ci`; per-workflow overrides under `tests/fixtures/workflows/<name>/config.yaml`.
 
@@ -219,7 +219,7 @@ Config isolation: default `CLI_CONFIG_DIR=config/ci`; per-workflow overrides und
 flowchart TD
     A["cli --help"] --> B["cli links<br/>full index"]
     B --> C["docs/README.md"]
-    B --> D["scripts/git/*.sh · scripts/gh/*.sh"]
+    B --> D["scripts/git/*.sh · src/scripts/gh/*.sh"]
     A --> F["cli git --help"]
 ```
 
@@ -230,7 +230,7 @@ See also: [Architecture](architecture.md) · [Docker integration](docker.md) · 
 **Never merge from `cli`.** Use the GitHub UI or enable **auto-merge** on the PR after green checks.
 
 - `cli gh pr merge` exits non-zero with a policy message
-- `scripts/gh/pr-merge.sh` is a warning stub (exit 1)
+- `src/scripts/gh/pr-merge.sh` is a warning stub (exit 1)
 - Raw `gh pr merge` is blocked in `GhProvider` unless `CLI_ALLOW_GH_MERGE=1` (break-glass only)
 
 Workflow chain ends at `[UI merge]` — not `cli gh pr merge`.

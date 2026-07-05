@@ -1,6 +1,6 @@
 # GitHub Issues Sync
 
-`cli gh issues` syncs `gardusig/private/tasks` with GitHub Issues on `gardusig/private`.
+`cli gh issues` syncs `gardusig/database/tasks` with GitHub Issues on `gardusig/database`.
 
 ## Deploy
 

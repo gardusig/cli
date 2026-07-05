@@ -24,7 +24,7 @@ backup:
 
 notion:
   database_id: 2f499343-9249-80d1-aae9-ce5343255b8e
-  task_root: ~/git-local/private/private/tasks
+  task_root: ~/github/private/database/tasks
   pairs_file: tasks.pairs.json
   cleanup_before_deploy: true
   properties:
@@ -44,7 +44,7 @@ chrome:
 
 gh:
   issues:
-    repo: gardusig/private
+    repo: gardusig/database
     labels_manifest: labels.manifest.yaml
     prune:
       closed_older_than: 7d

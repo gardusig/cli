@@ -1,5 +1,5 @@
 # Runtime dependencies (keep in sync with pyproject.toml [project.dependencies]).
-# Runtime deps (see pyproject.toml). Install: ./scripts/pypi/install.sh
+# Runtime deps (see pyproject.toml). Install: pip install gardusig-cli
 typer>=0.12
 pydantic>=2.0
 pydantic-settings>=2.0

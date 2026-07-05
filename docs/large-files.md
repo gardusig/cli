@@ -15,7 +15,7 @@ cli git large files -n 50
 cli git large files --worktree
 
 # Shell wrapper
-./scripts/git/large-files.sh --worktree -n 30
+./src/scripts/git/large-files.sh --worktree -n 30
 ```
 
 Output is size in bytes (right-aligned) and path relative to the repo root.

@@ -1,6 +1,8 @@
 # Gardusig CI/CD — Docker pipeline
 
-CI and Docker run **outside this repository** (central DevOps). This repo has no `Dockerfile`, `scripts/docker/`, or `.github/workflows/`.
+CI and Docker workflow definitions run **outside this repository** (central DevOps).
+This repo has no root `Dockerfile` or `.github/workflows/`; local helper wrappers
+live under `src/scripts/`.
 
 ## Triggers
 

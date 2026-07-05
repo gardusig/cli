@@ -40,16 +40,16 @@ def _labels(meta: TaskMetadata) -> list[str]:
     return list(dict.fromkeys(labels))
 
 
-def _ensure_private_repo(repo: str) -> None:
+def _ensure_database_repo(repo: str) -> None:
     if os.environ.get("CLI_GH_ISSUES_DEPLOY_ALLOW") == "1":
         return
-    if repo.split("/")[-1] != "private":
-        raise RuntimeError("GitHub issue sync is restricted to repositories named 'private'.")
+    if repo.split("/")[-1] != "database":
+        raise RuntimeError("GitHub issue sync is restricted to repositories named 'database'.")
 
 
 def deploy_issues(*, svc: GhService | None = None, dry_run: bool = False) -> IssueSyncResult:
     repo = gh_issues_repo()
-    _ensure_private_repo(repo)
+    _ensure_database_repo(repo)
     svc = svc or GhService(repo=repo)
     root = notion_task_root()
     pairs = load_pairs(notion_pairs_file(), task_root=root)
@@ -89,7 +89,7 @@ def deploy_issues(*, svc: GhService | None = None, dry_run: bool = False) -> Iss
 
 def ingest_issues(*, svc: GhService | None = None) -> IssueSyncResult:
     repo = gh_issues_repo()
-    _ensure_private_repo(repo)
+    _ensure_database_repo(repo)
     svc = svc or GhService(repo=repo)
     root = notion_task_root()
     existing_pairs = {
@@ -142,7 +142,7 @@ def prune_issues(
     dry_run: bool = False,
 ) -> IssueSyncResult:
     repo = gh_issues_repo()
-    _ensure_private_repo(repo)
+    _ensure_database_repo(repo)
     svc = svc or GhService(repo=repo)
     age = _parse_duration(closed_older_than or gh_issues_closed_older_than())
     cutoff = datetime.now(UTC) - age

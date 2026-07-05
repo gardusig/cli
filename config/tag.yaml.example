@@ -1,0 +1,13 @@
+# Copy to `<repo>/config/tag.yaml` -- read by gardusig-cli (`cli git tag`, `cli git deploy`).
+#
+# Patterns:
+#   date      -- YYYY-MM-DD snapshot (most gardusig repos)
+#   semver-v  -- v1.2.3 (cli / PyPI releases)
+#   semver    -- 1.2.3
+#   plain     -- explicit tag names only
+#
+# Optional (semver only):
+#   bump: patch | minor | major
+#   require_increase: true
+
+pattern: date

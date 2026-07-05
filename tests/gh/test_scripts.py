@@ -1,13 +1,13 @@
 from tests.constants import ROOT
 
-"""Verify scripts/gh wrappers exist."""
+"""Verify src/scripts/gh wrappers exist."""
 
 from pathlib import Path
 
 from src.utils.catalog import GH_SCRIPT_COMMANDS
 
 
-GH_SCRIPTS = ROOT / "scripts" / "gh"
+GH_SCRIPTS = ROOT / "src" / "scripts" / "gh"
 
 
 def test_all_gh_script_wrappers_exist() -> None:

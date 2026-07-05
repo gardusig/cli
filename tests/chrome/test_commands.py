@@ -90,7 +90,7 @@ import pytest
 
 
 FIXTURE = ROOT / "tests" / "fixtures" / "bookmarks.html"
-CHROME_DIR = ROOT / "scripts" / "chrome"
+CHROME_DIR = ROOT / "src" / "scripts" / "chrome"
 
 
 def _run_script(name: str, env: dict[str, str], *, check: bool = True) -> subprocess.CompletedProcess[str]:

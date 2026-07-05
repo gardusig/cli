@@ -45,7 +45,7 @@ def ensure_contest_image(image: str) -> None:
     if result.returncode != 0:
         raise RuntimeError(
             f"contest image not found: {image}\n"
-            f"Build with: ./scripts/docker/build-contest-image.sh"
+            f"Build with the central github-pipelines contest Dockerfile"
         )
 
 

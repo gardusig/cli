@@ -181,6 +181,16 @@ def resolve_pypi_token() -> str:
     return token
 
 
+def resolve_testpypi_token() -> str:
+    token = os.environ.get("TESTPYPI_API_TOKEN", "").strip() or os.environ.get("PYPI_API_TOKEN", "").strip()
+    if not token:
+        raise PyPiPublishError(
+            "TESTPYPI_API_TOKEN is not set. Add it to CI secrets or export it before publishing to TestPyPI.\n"
+            "Create a token: https://test.pypi.org/manage/account/token/"
+        )
+    return token
+
+
 def build_distributions(
     root: Path | None = None,
     *,

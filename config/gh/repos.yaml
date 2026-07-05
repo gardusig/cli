@@ -1,0 +1,64 @@
+owner: gardusig
+
+repositories:
+  - slug: python-cli
+    repository: gardusig/python-cli
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: Headless operator CLI and automation package.
+  - slug: chrome-extensions
+    repository: gardusig/chrome-extensions
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: Browser extensions and recorder tooling.
+  - slug: computer-science
+    repository: gardusig/computer-science
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    pipelines:
+      - resume
+      - mermaid
+      - cpp
+    description: Computer science notes, interview prep, and resume assets.
+  - slug: gardusig
+    repository: gardusig/gardusig
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: GitHub profile repository.
+  - slug: static-puzzles
+    repository: gardusig/static-puzzles
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: Static puzzle launcher and catalog.
+  - slug: animated-games
+    repository: gardusig/animated-games
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: Browser game experiments and full-stack game apps.
+  - slug: github-pipelines
+    repository: gardusig/github-pipelines
+    visibility: public
+    profile: true
+    pr_pipeline: false
+    description: Central reusable GitHub Actions and Docker pipeline repository.
+  - slug: database
+    repository: gardusig/database
+    visibility: private
+    profile: false
+    pr_pipeline: true
+    wiki_inventory: true
+    description: Private vault, task board, and catalog data.
+  - slug: wiki
+    repository: gardusig/wiki
+    visibility: private
+    profile: false
+    # Generated markdown inventory; no PR pipeline until it has an app-repo caller workflow.
+    pr_pipeline: false
+    wiki_inventory: false
+    description: Private ops hub, collections, and studied/watched catalogs.

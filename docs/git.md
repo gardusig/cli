@@ -2,39 +2,39 @@
 
 `cli git` wraps common local git workflows. Commit message defaults to `.`.
 
-Each command has a shell wrapper under `scripts/git/`:
+Each command has a shell wrapper under `src/scripts/git/`:
 
 | Script | Command |
 | --- | --- |
-| `scripts/git/branch.sh` | `cli git branch list` |
-| `scripts/git/branch-list.sh` | `cli git branch list` |
-| `scripts/git/branch-current.sh` | `cli git branch current` |
-| `scripts/git/branch-prune.sh` | `cli git branch prune` |
-| `scripts/git/branch-rename.sh` | `cli git branch rename` |
-| `scripts/git/branch-delete.sh` | `cli git branch delete` |
-| `scripts/git/branch-delete-merged.sh` | `cli git branch delete --merged` |
-| `scripts/git/branch-delete-all.sh` | `cli git branch delete --all` |
-| `scripts/git/branch-clear.sh` | `cli git branch clear` |
-| `scripts/git/cherry-pick.sh` | `cli git cherry pick` |
-| `scripts/git/clean.sh` | `cli git clean` |
-| `scripts/git/commit.sh` | `cli git commit` |
-| `scripts/git/docs.sh` | `cli git docs` |
-| `scripts/git/large-files.sh` | `cli git large files` |
-| `scripts/git/main.sh` | `cli git main` |
-| `scripts/git/post-merge-cleanup.sh` | `cli git post merge cleanup` |
-| `scripts/git/pull.sh` | `cli git pull` |
-| `scripts/git/push.sh` | `cli git push` |
-| `scripts/git/rebase.sh` | `cli git rebase` |
-| `scripts/git/reset.sh` | `cli git reset` |
-| `scripts/git/revert.sh` | `cli git revert` |
-| `scripts/git/review.sh` | `cli git review` |
-| `scripts/git/start.sh` | `cli git start` |
-| `scripts/git/stash.sh` | `cli git stash` |
-| `scripts/git/tag.sh` | `cli git tag` |
-| `scripts/git/deploy.sh` | `cli git deploy` |
-| `scripts/git/tag-list.sh` | `cli git tag list` |
-| `scripts/git/tag-push.sh` | `cli git tag push` |
-| `scripts/git/zip.sh` | `cli git zip` |
+| `src/scripts/git/branch.sh` | `cli git branch list` |
+| `src/scripts/git/branch-list.sh` | `cli git branch list` |
+| `src/scripts/git/branch-current.sh` | `cli git branch current` |
+| `src/scripts/git/branch-prune.sh` | `cli git branch prune` |
+| `src/scripts/git/branch-rename.sh` | `cli git branch rename` |
+| `src/scripts/git/branch-delete.sh` | `cli git branch delete` |
+| `src/scripts/git/branch-delete-merged.sh` | `cli git branch delete --merged` |
+| `src/scripts/git/branch-delete-all.sh` | `cli git branch delete --all` |
+| `src/scripts/git/branch-clear.sh` | `cli git branch clear` |
+| `src/scripts/git/cherry-pick.sh` | `cli git cherry pick` |
+| `src/scripts/git/clean.sh` | `cli git clean` |
+| `src/scripts/git/commit.sh` | `cli git commit` |
+| `src/scripts/git/docs.sh` | `cli git docs` |
+| `src/scripts/git/large-files.sh` | `cli git large files` |
+| `src/scripts/git/main.sh` | `cli git main` |
+| `src/scripts/git/post-merge-cleanup.sh` | `cli git post merge cleanup` |
+| `src/scripts/git/pull.sh` | `cli git pull` |
+| `src/scripts/git/push.sh` | `cli git push` |
+| `src/scripts/git/rebase.sh` | `cli git rebase` |
+| `src/scripts/git/reset.sh` | `cli git reset` |
+| `src/scripts/git/revert.sh` | `cli git revert` |
+| `src/scripts/git/review.sh` | `cli git review` |
+| `src/scripts/git/start.sh` | `cli git start` |
+| `src/scripts/git/stash.sh` | `cli git stash` |
+| `src/scripts/git/tag.sh` | `cli git tag` |
+| `src/scripts/git/deploy.sh` | `cli git deploy` |
+| `src/scripts/git/tag-list.sh` | `cli git tag list` |
+| `src/scripts/git/tag-push.sh` | `cli git tag push` |
+| `src/scripts/git/zip.sh` | `cli git zip` |
 
 ## Internal read/write
 
@@ -143,7 +143,7 @@ Single-repository only (run from the repo you want to tag).
 
 ### Tag naming (per repo)
 
-Put [`.cli/tag.yaml`](../.cli/tag.yaml) in the target repo, or let the CLI **detect** the pattern from existing tags:
+Put [`config/tag.yaml`](../config/tag.yaml) in the target repo, or let the CLI **detect** the pattern from existing tags:
 
 | `pattern` | Example | Default when omitted |
 | --- | --- | --- |
@@ -154,10 +154,10 @@ Put [`.cli/tag.yaml`](../.cli/tag.yaml) in the target repo, or let the CLI **det
 
 Optional keys: `bump` (`patch` \| `minor` \| `major`), `require_increase: true` (reject tags ≤ latest).
 
-**This repo** (`.cli/tag.yaml`): `semver-v`, patch bump, `require_increase: true`.  
+**This repo** (`config/tag.yaml`): `semver-v`, patch bump, `require_increase: true`.  
 `cli git tag` with no name **auto-suggests the next tag** (e.g. `v0.1.0` → `v0.1.1`).
 
-PR CI runs [`scripts/ci/version-check.sh`](../scripts/ci/version-check.sh) — `pyproject.toml` version must be **greater than** `main`.
+PR CI runs [`src/scripts/ci/version-check.sh`](../src/scripts/ci/version-check.sh) — `pyproject.toml` version must be **greater than** `main`.
 
 ```bash
 cli pypi version suggest      # next package version (patch)
@@ -175,7 +175,7 @@ cli git zip                    # zip latest local tag → git-tags/REPO/
 cli git zip v0.1.1 -o out.zip
 ```
 
-`tag` syncs **main** first, creates the **next** tag greater than the latest (per `.cli/tag.yaml`), then pushes to `origin` when configured. `zip` always archives the **latest local** tag unless you pass a name. Subcommands: `list`, `push` (`--force`), and explicit tag names still work.
+`tag` syncs **main** first, creates the **next** tag greater than the latest (per `config/tag.yaml`), then pushes to `origin` when configured. `zip` always archives the **latest local** tag unless you pass a name. Subcommands: `list`, `push` (`--force`), and explicit tag names still work.
 
 ### CI/CD workflows
 
@@ -192,23 +192,23 @@ cli git deploy              # interactive write gate
 cli git deploy --yes        # CI / automation
 ```
 
-Push to `main` can trigger deploy via external CI, which calls `./scripts/git/deploy.sh --yes`. Open PRs block deploy unless you pass `--skip-pr-check`.
+Push to `main` can trigger deploy via external CI, which calls `./src/scripts/git/deploy.sh --yes`. Open PRs block deploy unless you pass `--skip-pr-check`.
 
 For multi-repo zip inventory and bulk ingest, use [`cli drive ingest`](drive.md).
 
-Shell wrappers: `scripts/git/tag-list.sh`, `scripts/git/tag-push.sh`, `scripts/git/zip.sh`.
+Shell wrappers: `src/scripts/git/tag-list.sh`, `src/scripts/git/tag-push.sh`, `src/scripts/git/zip.sh`.
 
-**Debug tests:** `./scripts/test/tags.sh` (fast host pytest) · `./scripts/test/all.sh` (tags + Docker unit + integration).
+**Debug tests:** `cli test python unit .` (fast host pytest) · `cli test python integration .` (tags + Docker unit + integration).
 
 ## Review (workspace health)
 
 ```bash
 cli git review
 # or
-./scripts/git/review.sh
+./src/scripts/git/review.sh
 ```
 
-Runs shell syntax checks; without `--quick`, also `./scripts/test/unit.sh` (Docker — requires Docker Desktop). No commit or push. Use `cli git review --quick` when Docker is unavailable.
+Runs shell syntax checks; without `--quick`, also `cli test python unit .` (Docker — requires Docker Desktop). No commit or push. Use `cli git review --quick` when Docker is unavailable.
 
 ## Read-only introspection
 

@@ -24,7 +24,7 @@ Templates: [`config/contest/templates/`](../config/contest/templates/)
 Build the contest runner image once (see [docker.md](docker.md#dev--test-image)):
 
 ```bash
-./scripts/docker/build-contest-image.sh
+central github-pipelines contest Dockerfile
 ```
 
 Requires Docker on the host.

@@ -70,7 +70,7 @@ operations:
 
 ```bash
 cli gh issue context 42 --format json
-./scripts/gh/issue-context.sh 42 --format json
+./src/scripts/gh/issue-context.sh 42 --format json
 ```
 
 ### Plan → backlog chain
@@ -102,11 +102,11 @@ cli gh issue batch --file config/gh/backlog-labelize.batch.yaml --yes
 Host helpers (when `cli` is on PATH):
 
 ```bash
-./scripts/gh/sync-labels.sh
-./scripts/gh/labelize-backlog.sh
+./src/scripts/gh/sync-labels.sh
+./src/scripts/gh/labelize-backlog.sh
 ```
 
-Each `cli gh` subcommand has a thin wrapper under `scripts/gh/` (see [scripts/gh/README.md](../scripts/gh/README.md)).
+Each `cli gh` subcommand has a thin wrapper under `src/scripts/gh/` (see [src/scripts/gh/README.md](../src/scripts/gh/README.md)).
 
 | Script | CLI |
 | --- | --- |
@@ -122,7 +122,7 @@ Each `cli gh` subcommand has a thin wrapper under `scripts/gh/` (see [scripts/gh
 | `ruleset.sh` | `cli gh ruleset` (blocked — policy) |
 | `pr-list.sh` | `cli gh pr list` |
 
-Full table: `cli links` or `scripts/gh/README.md`.
+Full table: `cli links` or `src/scripts/gh/README.md`.
 
 ## Pull request commands
 
@@ -226,7 +226,7 @@ renames:
 
 Unit tests mock the gh provider: `tests/gh/test_commands.py`.
 
-Run: `./scripts/test/unit.sh`
+Run: `cli test python unit .`
 
 ## See also
 

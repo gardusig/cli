@@ -12,7 +12,7 @@ repos:
     description: Theory, patterns, orchestration across repos
   - name: gardusig
     description: Profile / meta repo
-  - name: private
-    description: Private experiments
+  - name: database
+    description: Private vault, task board, and catalog data
   - name: yugioh
     description: Portfolio app — Spring, CDK, MVP deployment

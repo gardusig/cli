@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 from typer.testing import CliRunner
 
 from src.cli import app
+from src.services.pypi_publish import resolve_testpypi_token
 
 runner = CliRunner()
 
@@ -42,6 +43,13 @@ def test_pypi_upload(
     assert result.exit_code == 0
     assert "Published to PyPI" in result.stdout
     assert "Verified on PyPI" in result.stdout
+
+
+def test_resolve_testpypi_token_prefers_testpypi_env(monkeypatch) -> None:
+    monkeypatch.setenv("PYPI_API_TOKEN", "prod-token")
+    monkeypatch.setenv("TESTPYPI_API_TOKEN", "test-token")
+
+    assert resolve_testpypi_token() == "test-token"
 
 
 @patch("src.commands.pypi.build_distributions")

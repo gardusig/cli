@@ -1,0 +1,53 @@
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+
+import pytest
+
+from src.services.toolkit.catalog import command_spec
+from src.services.toolkit.detect import ToolkitDetectionError, confirm_markers, repo_languages
+from src.services.toolkit.runner import run_cli_command
+
+
+def test_catalog_maps_command_to_shell_script() -> None:
+    spec = command_spec("lint", "java")
+    assert spec.script == "scripts/java/lint.sh"
+    assert spec.requires_bins == ("java", "javac")
+
+
+def test_confirm_markers_rejects_wrong_language(tmp_path: Path) -> None:
+    (tmp_path / "package.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(ToolkitDetectionError, match="missing one of"):
+        confirm_markers(tmp_path, ("pom.xml", "build.gradle"))
+
+
+def test_repo_languages_uses_known_profile_when_markers_present(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    root = tmp_path / "python-cli"
+    root.mkdir()
+    (root / "pyproject.toml").write_text("[project]\n", encoding="utf-8")
+    (root / "README.md").write_text("# hi\n", encoding="utf-8")
+    (root / "scripts").mkdir()
+    (root / "scripts" / "x.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args, 1, "", ""))
+    assert repo_languages(root) == ("markdown", "python", "shell")
+
+
+def test_runner_invokes_related_shell_script(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    (tmp_path / "pom.xml").write_text("<project />\n", encoding="utf-8")
+    seen: dict[str, object] = {}
+    monkeypatch.setattr("src.services.toolkit.prereqs.shutil.which", lambda name: f"/usr/bin/{name}")
+
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        seen["cmd"] = cmd
+        seen["env"] = kwargs["env"]
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    assert run_cli_command("test", "java", tmp_path, suite="unit") == 0
+    assert seen["cmd"][0] == "bash"
+    assert str(seen["cmd"][1]).endswith("scripts/java/test-unit.sh")
+    env = seen["env"]
+    assert isinstance(env, dict)
+    assert env["WORKSPACE"] == str(tmp_path.resolve())
+

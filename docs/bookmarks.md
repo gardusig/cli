@@ -17,8 +17,8 @@ chrome:
 
 | Direction | CLI | Script |
 | --- | --- | --- |
-| Chrome → local | `cli chrome bookmarks ingest` | `./scripts/chrome/ingest.sh` |
-| Local → Chrome | `cli chrome bookmarks deploy` | `./scripts/chrome/deploy.sh` |
+| Chrome → local | `cli chrome bookmarks ingest` | `./src/scripts/chrome/ingest.sh` |
+| Local → Chrome | `cli chrome bookmarks deploy` | `./src/scripts/chrome/deploy.sh` |
 
 Hidden legacy: `import` / `export` on `chrome bookmarks`, and `cli bookmarks …` (top-level).
 
