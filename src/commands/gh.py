@@ -53,7 +53,7 @@ def _svc(repo: str | None, transport: GhTransportMode = "cli") -> GhService:
 
 
 def _project_svc(repo: str | None, transport: GhTransportMode = "cli") -> ProjectService:
-    return ProjectService(repo=repo, gh_service=_svc(repo, transport))
+    return ProjectService(gh_service=_svc(repo, transport))
 
 
 def _pr_shortcut(repo: str | None, transport: GhTransportMode = "cli") -> GhPrShortcut:
@@ -766,9 +766,6 @@ def project_view_cmd(
 ) -> None:
     svc = _project_svc(_ctx_repo(ctx), _ctx_transport(ctx))
     ref = svc.ref(owner=owner, number=number)
-    if _ctx_transport(ctx) == "api":
-        _emit(svc.project_node(ref), _ctx_format(ctx))
-        return
     _emit(svc.project_view(ref.require_number(), owner=ref.owner), _ctx_format(ctx))
 
 

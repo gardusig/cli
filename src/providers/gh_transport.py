@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import shutil
@@ -162,6 +163,8 @@ class GhApiTransport:
             return self._pr_review(args)
         if args[:2] == ["pr", "ready"]:
             return self._pr_ready(args)
+        if args[:2] == ["pr", "diff"]:
+            return self._pr_diff(args)
         if args[:2] == ["repo", "view"]:
             return self._repo_view(args)
         if args[:2] == ["repo", "list"]:
@@ -321,6 +324,38 @@ class GhApiTransport:
         node_id = pr.get("node_id") or pr.get("id")
         return self.graphql(query, {"id": node_id})
 
+    def _pr_diff(self, args: list[str]) -> str:
+        number = args[2]
+        if "--stat" in args:
+            files = self._request("GET", self._repo_path(f"/pulls/{number}/files"))
+            if not isinstance(files, list):
+                files = []
+            changed = len(files)
+            additions = sum(int(row.get("additions") or 0) for row in files if isinstance(row, dict))
+            deletions = sum(int(row.get("deletions") or 0) for row in files if isinstance(row, dict))
+            noun = "file" if changed == 1 else "files"
+            return f"{changed} {noun} changed, {additions} insertions(+), {deletions} deletions(-)"
+        pr = self._pr_view(args)
+        diff_url = str(pr.get("diff_url") or "")
+        if not diff_url:
+            return ""
+        return self._fetch_text(diff_url)
+
+    def _fetch_text(self, url: str) -> str:
+        def _invoke() -> str:
+            with httpx.Client(
+                timeout=default_http_timeout(),
+                headers={
+                    "Authorization": f"Bearer {self.token}",
+                    "Accept": "application/vnd.github.diff",
+                },
+            ) as client:
+                response = client.get(url)
+                response.raise_for_status()
+                return response.text
+
+        return self._external.call(f"github-api GET {url}", _invoke)
+
     def _repo_view(self, args: list[str]) -> dict[str, Any]:
         fields = (_option(args, "--json", "nameWithOwner") or "nameWithOwner").split(",")
         repo = self.default_repo()
@@ -332,7 +367,10 @@ class GhApiTransport:
             elif field == "owner":
                 payload[field] = data.get("owner")
             elif field in {"issueTemplates", "pullRequestTemplates"}:
-                payload[field] = []
+                if field == "pullRequestTemplates":
+                    payload[field] = self._pull_request_templates()
+                else:
+                    payload[field] = []
             else:
                 payload[field] = data.get(field)
         return payload
@@ -341,6 +379,32 @@ class GhApiTransport:
         owner = _required_option(args, "--owner")
         limit = int(_option(args, "--limit", "100"))
         return self._request("GET", f"/users/{owner}/repos", params={"per_page": limit})
+
+    def _pull_request_templates(self) -> list[dict[str, str]]:
+        templates: list[dict[str, str]] = []
+        repo = self.default_repo()
+        paths = [".github/pull_request_template.md"]
+        directory = self._request("GET", self._repo_path("/contents/.github/PULL_REQUEST_TEMPLATE"))
+        if isinstance(directory, list):
+            for row in directory:
+                if isinstance(row, dict) and str(row.get("name", "")).endswith(".md"):
+                    paths.append(f".github/PULL_REQUEST_TEMPLATE/{row['name']}")
+        for path in paths:
+            try:
+                payload = self._request("GET", self._repo_path(f"/contents/{path}"))
+            except Exception:
+                continue
+            if not isinstance(payload, dict):
+                continue
+            body = self._decode_content(payload.get("content"))
+            name = path.rsplit("/", 1)[-1]
+            templates.append({"name": name, "body": body, "filename": path})
+        return templates
+
+    def _decode_content(self, raw: object) -> str:
+        if not isinstance(raw, str) or not raw:
+            return ""
+        return base64.b64decode(raw).decode("utf-8")
 
     def _default_head(self) -> str:
         return os.environ.get("CLI_GH_HEAD", "HEAD")

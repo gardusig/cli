@@ -308,6 +308,39 @@ def api_check_context(
                 patch("src.commands.git._interactive_allow_main", return_value=False),
             ):
                 yield env
+        elif check.label in {"gh issue list api", "gh pr checks api"}:
+            from tests.gh.test_transport import FakeClient
+
+            monkeypatch.setenv("GITHUB_TOKEN", "token")
+            if check.label == "gh issue list api":
+                FakeClient.responses = [[{"number": 1, "title": "issue"}]]
+            else:
+                FakeClient.responses = [
+                    {"number": 7, "head": {"sha": "abc"}},
+                    {"check_runs": [{"name": "ci", "status": "completed"}]},
+                ]
+            with patch("src.providers.gh_transport.httpx.Client", FakeClient):
+                yield env
+        elif check.label == "gh project view api":
+            from tests.gh.test_commands import FakeProjectService
+
+            monkeypatch.setenv("GITHUB_TOKEN", "token")
+            with patch("src.commands.gh._project_svc", return_value=FakeProjectService()):
+                yield env
+        elif check.label == "gh project item add api":
+            from tests.gh.test_commands import FakeProjectService
+
+            monkeypatch.setenv("GITHUB_TOKEN", "token")
+            with patch("src.commands.gh._project_svc", return_value=FakeProjectService()):
+                yield env
+        elif check.failure == "gh_transport":
+            monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+            monkeypatch.delenv("GH_TOKEN", raising=False)
+            with (
+                patch("src.providers.gh_transport.GhCliTransport.is_authenticated", return_value=False),
+                patch("src.providers.gh_transport.github_token", return_value=None),
+            ):
+                yield env
         else:
             from tests.harness.gh_harness import patch_gh_all
 

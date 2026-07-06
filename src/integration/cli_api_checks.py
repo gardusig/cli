@@ -125,6 +125,53 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
     plan = workspace / "resequence.yaml"
     return [
         CliApiCheck("gh issue list", "gh", ("gh", *fmt, "issue", "list"), "Integration issue"),
+        CliApiCheck(
+            "gh issue list api",
+            "gh",
+            ("gh", "--transport", "api", "--repo", "example/repo", *fmt, "issue", "list"),
+            '"number"',
+        ),
+        CliApiCheck(
+            "gh pr checks api",
+            "gh",
+            ("gh", "--transport", "api", "--repo", "example/repo", *fmt, "pr", "checks", "7"),
+            "ci",
+        ),
+        CliApiCheck(
+            "gh project view api",
+            "gh",
+            ("gh", "--transport", "api", "project", "view", "1", "--owner", "owner"),
+            "graphql",
+        ),
+        CliApiCheck(
+            "gh project item add api",
+            "gh",
+            (
+                "gh",
+                "--transport",
+                "api",
+                "--yes",
+                "project",
+                "item",
+                "add",
+                "--project",
+                "1",
+                "--owner",
+                "owner",
+                "--issue",
+                "42",
+            ),
+            "ITEM_1",
+        ),
+        CliApiCheck(
+            "gh transport refuse",
+            "gh",
+            ("gh", "--transport", "api", *fmt, "issue", "list"),
+            kind="fail",
+            needle="GitHub API transport needs",
+            accept_exit_codes=(1,),
+            failure="gh_transport",
+        ),
         CliApiCheck("gh issue view", "gh", ("gh", *fmt, "issue", "view", "42"), "fixture body"),
         CliApiCheck(
             "gh issue context",

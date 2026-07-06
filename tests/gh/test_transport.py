@@ -7,6 +7,18 @@ import pytest
 
 from src.providers.gh_transport import GhApiTransport, GhAutoTransport, GhTransportError
 
+# P0 issue/PR commands exercised on API transport (see docs/gh.md Transport parity).
+PARITY_P0_API_COMMANDS: tuple[tuple[list[str], str], ...] = (
+    (["issue", "list"], "GET"),
+    (["issue", "view", "1"], "GET"),
+    (["issue", "reopen", "1"], "PATCH"),
+    (["pr", "list"], "GET"),
+    (["pr", "checks", "7"], "GET"),
+    (["pr", "review", "7", "--approve"], "POST"),
+    (["pr", "ready", "7"], "POST"),
+    (["pr", "diff", "7", "--stat"], "GET"),
+)
+
 
 class FakeResponse:
     def __init__(self, data: Any, *, status_code: int = 200) -> None:
@@ -106,3 +118,66 @@ def test_auto_transport_requires_cli_or_token(
         GhAutoTransport(repo="owner/repo")
     mock_token.assert_called_once()
     mock_auth.assert_called_once()
+
+
+@patch("src.providers.gh_transport.httpx.Client", FakeClient)
+def test_api_transport_pr_diff_stat(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "token")
+    FakeClient.responses = [
+        [{"filename": "a.py", "additions": 3, "deletions": 1}],
+    ]
+    transport = GhApiTransport(repo="owner/repo")
+
+    text = transport.run(["pr", "diff", "7", "--stat"])
+
+    assert "1 file changed" in text
+    assert FakeClient.calls[0][0:2] == ("GET", "/repos/owner/repo/pulls/7/files")
+
+
+@patch("src.providers.gh_transport.httpx.Client", FakeClient)
+def test_api_transport_repo_pull_request_templates(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "token")
+    import base64
+
+    body = base64.b64encode(b"Bugfix body\n").decode("ascii")
+    FakeClient.responses = [
+        {"default_branch": "main"},
+        [],
+        {"content": body, "encoding": "base64", "name": "pull_request_template.md"},
+    ]
+    transport = GhApiTransport(repo="owner/repo")
+
+    payload = transport.run_json(["repo", "view", "--json", "pullRequestTemplates"])
+
+    assert payload["pullRequestTemplates"][0]["body"] == "Bugfix body\n"
+
+
+@pytest.mark.parametrize(("argv", "expected_method"), PARITY_P0_API_COMMANDS)
+@patch("src.providers.gh_transport.httpx.Client", FakeClient)
+def test_api_transport_p0_commands(
+    argv: list[str],
+    expected_method: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "token")
+    if argv[:2] == ["pr", "diff"]:
+        FakeClient.responses = [[{"filename": "a.py", "additions": 1, "deletions": 0}]]
+        transport = GhApiTransport(repo="owner/repo")
+        transport.run(argv)
+        assert FakeClient.calls[0][0] == expected_method
+        return
+    FakeClient.responses = [
+        [] if argv[1] == "list" else {"number": 7, "head": {"sha": "abc"}, "node_id": "PR_1"},
+        {"check_runs": [{"name": "ci", "status": "completed"}]} if argv[1] == "checks" else None,
+        {"id": "REV_1"} if argv[1] == "review" else None,
+        {"data": {"markPullRequestReadyForReview": {"pullRequest": {"id": "PR_1"}}}}
+        if argv[1] == "ready"
+        else None,
+    ]
+    FakeClient.responses = [row for row in FakeClient.responses if row is not None]
+    transport = GhApiTransport(repo="owner/repo")
+
+    transport.run_json(argv)
+
+    call_idx = 1 if argv[:2] == ["pr", "ready"] else 0
+    assert FakeClient.calls[call_idx][0] == expected_method

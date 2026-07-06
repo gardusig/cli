@@ -241,7 +241,7 @@ class FakeProjectService:
         return [{"number": 1, "title": "Roadmap", "owner": owner, "limit": limit}]
 
     def project_view(self, number: int, *, owner: str):
-        return {"number": number, "owner": owner}
+        return {"number": number, "owner": owner, "source": "graphql"}
 
     def project_node(self, ref: ProjectRef):
         return {"id": ref.project_id, "number": ref.number, "owner": ref.owner, "source": "graphql"}

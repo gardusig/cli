@@ -1,6 +1,6 @@
 # GitHub integration (`cli gh`)
 
-Deterministic GitHub operations for agents and humans. Uses authenticated **`gh`** by default, with an API token fallback for supported issue/PR/repo/Projects reads. Output is JSON-first and writes use the same write-gate model as `cli git`.
+Deterministic GitHub operations for agents and humans. Uses authenticated **`gh`** by default, with an API token fallback for issue/PR REST operations and full Projects v2 GraphQL when `--transport api` or `auto` selects the API path. Output is JSON-first and writes use the same write-gate model as `cli git`.
 
 **AI orchestration:** [opencode.md](opencode.md) — `cli opencode gh` for AI-assisted issues/PRs; `cli gh` for deterministic GitHub I/O.
 
@@ -23,6 +23,108 @@ Transport rules:
 - `cli`: force subprocess `gh` behavior.
 - `api`: use GitHub REST/GraphQL adapters; requires `--repo owner/name` or configured `gh.issues.repo` for repo-scoped operations.
 - `auto`: use authenticated `gh` when available, otherwise use `GITHUB_TOKEN`, `GH_TOKEN`, or `auth.gh.token_file`.
+
+When neither authenticated `gh` nor a token is available, `auto` and `api` fail with a single actionable error: *GitHub API transport needs GITHUB_TOKEN, GH_TOKEN, or auth.gh.token_file.*
+
+### Transport selection
+
+| Context | Recommended transport |
+| --- | --- |
+| Local dev with `gh auth login` | `auto` (default) |
+| CI / headless agents with PAT | `api` + `--repo owner/name` |
+| Debugging CLI vs API drift | force `cli` or `api` explicitly |
+
+### Token scopes
+
+API transport needs a GitHub token with scopes matching the operation:
+
+| Surface | Classic PAT scopes | Fine-grained equivalent |
+| --- | --- | --- |
+| Issues, PRs, labels, repo reads | `repo` | Repository: Issues, Pull requests, Contents (read); Metadata |
+| Projects v2 (`cli gh project`) | `repo`, `project` | Repository + Projects (read/write) |
+| Org-owned projects | above + org membership | Organization project permissions |
+
+Configure via `GITHUB_TOKEN`, `GH_TOKEN`, or `auth.gh.token_file` in config.
+
+### Transport parity
+
+Every **shipped** command below works on both transports unless noted. This table is the acceptance checklist for Epic 11 (#69); `tests/gh/test_transport.py` parametrizes the P0 issue/PR API rows.
+
+#### Issues
+
+| Command | CLI | API | Policy / notes |
+| --- | --- | --- | --- |
+| `issue list` | yes | yes | REST |
+| `issue view` | yes | yes | REST; `--comments` supported |
+| `issue search` | yes | yes | REST search |
+| `issue create` | yes | yes | REST |
+| `issue edit` | yes | yes | REST |
+| `issue reopen` | yes | yes | REST |
+| `issue delete` | yes | yes | REST |
+| `issue comment` | yes | yes | REST |
+| `issue status` | yes | CLI | uses `gh` status aggregate |
+| `issue context` | yes | CLI | multi-read rollup; not API-transported |
+| `issue batch` | yes | CLI-only | YAML batch orchestration |
+| `issue close` | blocked | blocked | policy — merge PR with Fixes/Closes |
+
+#### Pull requests
+
+| Command | CLI | API | Policy / notes |
+| --- | --- | --- | --- |
+| `pr list` | yes | yes | REST |
+| `pr view` | yes | yes | REST |
+| `pr diff` | yes | yes | REST files API (`--stat`) or diff URL |
+| `pr create` | yes | yes | REST |
+| `pr edit` | yes | yes | REST |
+| `pr comment` | yes | yes | REST |
+| `pr close` | yes | yes | REST |
+| `pr reopen` | yes | yes | REST |
+| `pr checks` | yes | yes | REST check-runs |
+| `pr review` | yes | yes | REST |
+| `pr ready` | yes | yes | REST GraphQL mutation via transport |
+| `pr status` | yes | CLI | uses `gh` status aggregate |
+| `pr` (shortcut) | yes | yes | API path uses REST + Contents API for `--template` |
+| `pr merge` | blocked | blocked | policy — use GitHub UI / auto-merge |
+
+#### Labels
+
+| Command | CLI | API | Policy / notes |
+| --- | --- | --- | --- |
+| `label list` | yes | yes | REST |
+| `label create` | yes | yes | REST |
+| `label delete` | yes | yes | REST |
+| `label sync` | yes | CLI | manifest diff + subprocess |
+
+#### Projects (`cli gh project`)
+
+| Command | CLI | API | Policy / notes |
+| --- | --- | --- | --- |
+| `project list` | yes | yes | GraphQL `projectsV2` |
+| `project view` | yes | yes | GraphQL `projectV2` node |
+| `project create` | yes | yes | GraphQL `createProjectV2` |
+| `project edit` | yes | yes | GraphQL `updateProjectV2` |
+| `project delete` | yes | yes | GraphQL `deleteProjectV2` |
+| `project item list` | yes | yes | GraphQL items pagination |
+| `project item view` | yes | yes | GraphQL item node |
+| `project item add` | yes | yes | GraphQL `addProjectV2ItemById` |
+| `project item edit` | yes | yes | GraphQL `updateProjectV2ItemFieldValue` |
+| `project item delete` | yes | yes | GraphQL `deleteProjectV2Item` |
+
+`--transport api` selects the GraphQL project provider; `--transport cli` uses `gh project` subprocess.
+
+#### Repo & backlog (CLI-first)
+
+| Command | CLI | API | Policy / notes |
+| --- | --- | --- | --- |
+| `repo view` | yes | partial | API: `pullRequestTemplates` via Contents API |
+| `repo list` | yes | yes | REST |
+| `repo readme-sync` | yes | CLI | write path via subprocess |
+| `backlog *` | yes | CLI-only | label/topo logic over `gh` reads |
+
+#### Boundary with Epic 08
+
+- **`cli gh project`** — low-level GitHub Projects v2 CRUD hub; honors `--transport`.
+- **`cli project`** — product workflow (pairs, lanes, deploy/ingest/sync, recurrence). See [project.md](project.md). Top-level `cli project` uses default `auto` transport unless extended.
 
 ## Double-gate contract
 

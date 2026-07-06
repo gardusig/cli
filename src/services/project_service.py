@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-from src.providers.gh_project import GhProjectProvider
+from src.providers.gh_project import GhProjectProvider, make_project_provider
 from src.services.gh_service import GhService
 from src.services.notion_pairs import build_from_disk, combine_task, load_pairs, save_pairs, slugify
 from src.utils.config import ProjectConfig, load_config, project_pairs_file, project_task_root
@@ -158,8 +158,12 @@ class ProjectService:
         config: ProjectConfig | None = None,
         repo: str | None = None,
     ) -> None:
-        self.provider = provider or GhProjectProvider()
         self.gh = gh_service or GhService(repo=repo)
+        self.provider = provider or make_project_provider(
+            repo=self.gh.provider.repo,
+            transport=self.gh.provider.transport_mode,
+            graphql=self.gh.provider.graphql,
+        )
         self.config = config or load_config().project
 
     def snapshot_summary(self, ref: ProjectRef | None = None) -> list[str]:
@@ -198,7 +202,21 @@ class ProjectService:
         return self.provider.run_json(["list", "--owner", owner, "--limit", str(limit), "--format", "json"])
 
     def project_view(self, number: int, *, owner: str) -> object:
-        return self.provider.run_json(["view", str(number), "--owner", owner, "--format", "json"])
+        from src.providers.gh_project_graphql import GhProjectGraphqlProvider
+
+        payload = self.provider.run_json(["view", str(number), "--owner", owner, "--format", "json"])
+        if isinstance(payload, dict) and isinstance(self.provider, GhProjectGraphqlProvider):
+            return {**payload, "source": "graphql"}
+        return payload
+
+    def _project_global_id(self, ref: ProjectRef) -> str:
+        if ref.project_id and str(ref.project_id).startswith("PVT"):
+            return ref.project_id
+        from src.providers.gh_project_graphql import GhProjectGraphqlProvider
+
+        if isinstance(self.provider, GhProjectGraphqlProvider):
+            return str(self.project_node(ref)["id"])
+        return ref.project_id or str(ref.require_number())
 
     def project_create(
         self,
@@ -374,10 +392,11 @@ class ProjectService:
         value_kind: str = "text",
     ) -> dict[str, Any]:
         field_row = self.resolve_field(ref, field)
+        project_id = self._project_global_id(ref)
         args = [
             "item-edit",
             "--project-id",
-            ref.project_id or str(ref.require_number()),
+            project_id,
             "--id",
             item_id,
             "--field-id",
@@ -406,7 +425,8 @@ class ProjectService:
         return {"id": item_id, "action": "archived"}
 
     def item_delete(self, ref: ProjectRef, *, item_id: str) -> dict[str, Any]:
-        self.provider.run(["item-delete", "--project-id", ref.project_id or str(ref.require_number()), "--id", item_id])
+        project_id = self._project_global_id(ref)
+        self.provider.run(["item-delete", "--project-id", project_id, "--id", item_id])
         return {"id": item_id, "action": "deleted"}
 
     def spawn(self, manifest_path: Path, *, dry_run: bool = False) -> dict[str, Any]:
