@@ -75,6 +75,9 @@ def config_resolve_cmd(
     job: str = typer.Option("", "--job"),
     action: str = typer.Option("", "--action"),
     dry_run: str = typer.Option("", "--dry-run"),
+    app_src: Path | None = typer.Option(None, "--app-src"),
+    selective_base: str = typer.Option("", "--selective-base"),
+    selective_head: str = typer.Option("", "--selective-head"),
 ) -> None:
     args = [
         "--family",
@@ -98,6 +101,12 @@ def config_resolve_cmd(
         "--dry-run",
         dry_run,
     ]
+    if app_src is not None:
+        args.extend(["--app-src", str(app_src)])
+    if selective_base:
+        args.extend(["--selective-base", selective_base])
+    if selective_head:
+        args.extend(["--selective-head", selective_head])
     _run_pipeline_runtime(resolve_config, _namespace_from_args(args))
 
 

@@ -28,6 +28,9 @@ def main() -> None:
     resolve.add_argument("--job", default="")
     resolve.add_argument("--action", default="")
     resolve.add_argument("--dry-run", default="")
+    resolve.add_argument("--app-src", type=Path, default=None)
+    resolve.add_argument("--selective-base", default="")
+    resolve.add_argument("--selective-head", default="")
 
     docker = sub.add_parser("docker-run")
     docker.add_argument("--job-json", required=True)
@@ -205,7 +208,33 @@ def _validate_repo(cfg: dict[str, Any], requested_slug: str, requested_repositor
     return config_slug, config_repository
 
 
-def _stage_jobs(cfg: dict[str, Any], requested_job: str = "") -> list[list[dict[str, Any]]]:
+def _apply_selective_jobs_if_configured(
+    jobs: dict[str, dict[str, Any]],
+    cfg: dict[str, Any],
+    *,
+    app_src: Path | None,
+    selective_base: str,
+    selective_head: str,
+) -> dict[str, dict[str, Any]]:
+    from src.services.pipeline_selective import apply_selective_jobs
+
+    return apply_selective_jobs(
+        jobs,
+        cfg=cfg,
+        app_src=app_src,
+        selective_base=selective_base,
+        selective_head=selective_head,
+    )
+
+
+def _stage_jobs(
+    cfg: dict[str, Any],
+    requested_job: str = "",
+    *,
+    app_src: Path | None = None,
+    selective_base: str = "",
+    selective_head: str = "",
+) -> list[list[dict[str, Any]]]:
     raw_jobs = cfg.get("jobs") or []
     if not isinstance(raw_jobs, list):
         raise SystemExit("jobs must be a list")
@@ -217,6 +246,13 @@ def _stage_jobs(cfg: dict[str, Any], requested_job: str = "") -> list[list[dict[
         if jid in jobs:
             raise SystemExit(f"duplicate job id: {jid}")
         jobs[jid] = dict(raw)
+    jobs = _apply_selective_jobs_if_configured(
+        jobs,
+        cfg,
+        app_src=app_src,
+        selective_base=selective_base,
+        selective_head=selective_head,
+    )
     if requested_job:
         if requested_job not in jobs:
             raise SystemExit(f"unknown job: {requested_job}")
@@ -305,7 +341,13 @@ def _resolve_job_family(args: argparse.Namespace, client: dict[str, Any]) -> dic
     config = _config_path(args.pipeline_src, args.family, repo_slug, pipeline)
     cfg = _load_yaml(config)
     config_slug, config_repository = _validate_repo(cfg, repo_slug, repository)
-    stages = _stage_jobs(cfg, requested_job=requested_job)
+    stages = _stage_jobs(
+        cfg,
+        requested_job=requested_job,
+        app_src=getattr(args, "app_src", None),
+        selective_base=str(getattr(args, "selective_base", "") or ""),
+        selective_head=str(getattr(args, "selective_head", "") or ""),
+    )
     outputs: dict[str, Any] = {
         "repo_slug": config_slug,
         "repository": config_repository,
