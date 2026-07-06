@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from tests.constants import ROOT
 
+import shutil
 import subprocess
 import zipfile
 from pathlib import Path
@@ -34,8 +35,9 @@ def test_archive_tag_zip_plain(tmp_path: Path) -> None:
         assert "README.md" in zf.namelist()
 
 
+@pytest.mark.integration
 def test_archive_tag_zip_encrypted(tmp_path: Path) -> None:
-    if subprocess.run(["which", "zip"], capture_output=True).returncode != 0:
+    if shutil.which("zip") is None:
         pytest.fail("zip is required for encrypted tag archives (install via apt/brew)")
     repo = tmp_path / "repo"
     repo.mkdir()
