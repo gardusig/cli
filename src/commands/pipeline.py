@@ -48,16 +48,19 @@ def run_cmd(
         payload["pipeline"] = pipeline
     if sha:
         payload["sha"] = sha
+    body = json.dumps({"event_type": family, "client_payload": payload})
     subprocess.run(
         [
             "gh",
             "api",
+            "--method",
+            "POST",
             "repos/gardusig/github-pipelines/dispatches",
-            "-F",
-            f"event_type={family}",
-            "-F",
-            f"client_payload:={json.dumps(payload)}",
+            "--input",
+            "-",
         ],
+        input=body,
+        text=True,
         check=True,
     )
     typer.echo(f"dispatched {family} for {repo}")
