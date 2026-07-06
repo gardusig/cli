@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import fnmatch
 from pathlib import Path
 import re
@@ -217,7 +217,9 @@ def _check_structure(
                 if entry.name not in root_dirs:
                     errors.append(f"unexpected root directory: {entry.name}/")
             elif entry.is_file() and entry.name not in root_files:
-                if policy is None or not policy.allows(entry, entry.name):
+                if enforce_root_allowlist:
+                    errors.append(f"unexpected root file: {entry.name}")
+                elif policy is None or not policy.allows(entry, entry.name):
                     errors.append(f"unexpected root file: {entry.name}")
 
     if max_depth is None:
@@ -235,6 +237,12 @@ def _check_structure(
         if depth > max_depth:
             errors.append(f"directory exceeds max depth {max_depth}: {rel}/")
     return errors
+
+
+def policy_with_ignored_paths(policy: HygienePolicy, paths: frozenset[str]) -> HygienePolicy:
+    if not paths:
+        return policy
+    return replace(policy, ignored_paths=frozenset({*policy.ignored_paths, *paths}))
 
 
 def check_repo_hygiene(

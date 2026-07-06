@@ -8,7 +8,7 @@ from pathlib import Path
 
 from src.services.database_validator import validate_database_repo
 from src.services.notion_pairs import load_pairs, pair_file_warning, scan_task_root
-from src.services.repo_hygiene import check_repo_hygiene, load_hygiene_policy
+from src.services.repo_hygiene import check_repo_hygiene, load_hygiene_policy, policy_with_ignored_paths
 from src.services.toolkit.catalog import CommandSpec, languages, specs_for_language
 from src.services.toolkit.detect import repo_languages
 
@@ -313,7 +313,14 @@ def _structure_check(spec: CommandSpec, workspace: Path, extra_env: dict[str, st
     policy_file = extra_env.get("POLICY_FILE", "").strip()
     if policy_file:
         try:
-            policy = load_hygiene_policy(Path(policy_file))
+            policy_path = Path(policy_file)
+            policy = load_hygiene_policy(policy_path)
+            if policy_path.is_file():
+                try:
+                    rel = policy_path.resolve().relative_to(workspace.resolve()).as_posix()
+                    policy = policy_with_ignored_paths(policy, frozenset({rel}))
+                except ValueError:
+                    pass
         except (OSError, ValueError) as exc:
             errors.append(f"invalid hygiene policy: {exc}")
     errors.extend(
