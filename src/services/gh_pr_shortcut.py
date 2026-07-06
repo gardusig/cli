@@ -47,6 +47,7 @@ class PrShortcutPlan:
             f"title: {self.title}",
             f"body_source: {self.body_source}",
             f"intent: {' → '.join(intent_parts)}",
+            *(f"warning: {w}" for w in self.push_plan.warnings),
         ]
 
 

@@ -194,8 +194,8 @@ def test_push_plan_warns_when_main_tracks_feature_upstream() -> None:
         dirty=False,
         message=".",
         allow_main=True,
+        warnings=("on main but upstream tracks 'feat-x'",),
     )
-    svc.tracking_branch.return_value = "feat-x"
     _, lines = _push_plan(svc, ".", allow_main=True)
     assert "warning: on main but upstream tracks 'feat-x'" in lines
 
@@ -295,4 +295,31 @@ def test_git_push_shows_write_gate(mock_push: MagicMock, snapshot: MagicMock) ->
     assert result.exit_code == 0
     assert "--- cli write gate ---" in result.stdout
     assert "operation: push" in result.stdout
+    mock_push.assert_called_once()
+
+
+@patch.object(GitShortcuts, "is_detached_head", return_value=True)
+def test_git_push_refuses_detached_head(_detached: MagicMock) -> None:
+    result = runner.invoke(app, ["git", "push", "--yes"])
+    assert result.exit_code != 0
+    assert "detached HEAD" in result.stdout
+
+
+@patch.object(
+    GitShortcuts,
+    "push",
+    return_value=GitPushResult(
+        branch="feat-x",
+        pushed=True,
+        remote="origin",
+        warnings=("branch 'feat-x' is already merged into main",),
+    ),
+)
+def test_git_push_json_format(mock_push: MagicMock, snapshot: MagicMock) -> None:
+    with patch(GIT_SNAPSHOT_PATCH, return_value=snapshot):
+        result = runner.invoke(app, ["git", "push", "--yes", "--format", "json"])
+    assert result.exit_code == 0
+    assert '"pushed": true' in result.stdout
+    assert '"warnings"' in result.stdout
+    assert "merged into main" in result.stdout
     mock_push.assert_called_once()

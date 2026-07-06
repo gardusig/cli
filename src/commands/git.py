@@ -153,13 +153,11 @@ def _push_plan(
             f"dirty: {plan.dirty}",
             f"remote: {remote}",
         ]
-        return question, lines
-
-    if plan.remote is None:
+    elif plan.remote is None:
         question = (
             f"Commit local work on {plan.target_branch!r} without pushing?"
             if plan.target_branch != "main"
-            else f"Commit local work on main without pushing?"
+            else "Commit local work on main without pushing?"
         )
         lines = [
             "intent: git add -A → commit (no remote push)",
@@ -171,21 +169,18 @@ def _push_plan(
         ]
         if plan.target_branch == "main":
             lines.append("note: local-only commit on main (no remote to push)")
-        return question, lines
-
-    question = f"Commit and push {plan.target_branch!r} to {remote}?"
-    lines = [
-        "intent: git add -A → commit → push origin HEAD",
-        f"branch: {plan.target_branch}",
-        f"commit_message: {plan.message!r}",
-        f"dirty: {plan.dirty}",
-        f"remote: {remote}",
-    ]
-    tracking = svc.tracking_branch()
-    if plan.source_branch == "main" and tracking and tracking != "main":
-        lines.append(f"warning: on main but upstream tracks {tracking!r}")
+    else:
+        question = f"Commit and push {plan.target_branch!r} to {remote}?"
+        lines = [
+            "intent: git add -A → commit → push origin HEAD",
+            f"branch: {plan.target_branch}",
+            f"commit_message: {plan.message!r}",
+            f"dirty: {plan.dirty}",
+            f"remote: {remote}",
+        ]
     if plan.source_branch == "main" and allow_main:
         lines.append("note: pushing directly on main (--allow-main)")
+    lines.extend(f"warning: {warning}" for warning in plan.warnings)
     return question, lines
 
 
@@ -215,13 +210,33 @@ def push_cmd(
         "-y",
         help="Skip confirmation prompt; stage, commit, and push.",
     ),
+    format: str = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Stage if dirty, commit, and push (start first when on main)."""
+    if format not in {"table", "json"}:
+        raise typer.Exit("Error: --format expected one of: table, json")
     svc = _svc()
+    if svc.is_detached_head():
+        raise typer.Exit("Cannot push from detached HEAD; checkout a branch first.")
     allow_main = _interactive_allow_main(svc, allow_main=allow_main, yes=yes, message=message)
     question, intent_lines = _push_plan(svc, message, allow_main=allow_main)
     _write_gate("push", yes=yes, question=question, extra_lines=intent_lines)
     result = svc.push(allow_main=allow_main, message=message, yes=True)
+    if format == "json":
+        typer.echo(
+            json.dumps(
+                {
+                    "branch": result.branch,
+                    "pushed": result.pushed,
+                    "remote": result.remote,
+                    "created_branch": result.created_branch,
+                    "committed": result.committed,
+                    "warnings": list(result.warnings),
+                },
+                indent=2,
+            )
+        )
+        return
     rprint(_push_result_message(result))
 
 

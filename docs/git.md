@@ -89,8 +89,21 @@ cli git commit -m "wip"   # commit only (no push)
 | `main` with `--allow-main` and with `origin` | commit if dirty and push `main`; the write gate calls this out explicitly |
 | No `origin` remote | commit local work only and report that nothing was pushed |
 | `main` without `origin` | commit on `main` locally after confirmation (no push target) |
+| Detached HEAD | refused before the write gate (`Cannot push from detached HEAD`) |
 
 On `main` with `origin`, an interactive `cli git push` asks whether to push directly to `main` before starting a generated `wip-*` branch. Non-interactive runs keep the wip-branch default unless you pass `--allow-main`.
+
+Before the write gate, `push` may surface **warnings** (informational; they do not block unless you decline the gate):
+
+| Warning | When |
+| --- | --- |
+| `on main but upstream tracks '…'` | `--allow-main` on `main` and upstream is not `main` |
+| `branch '…' is already merged into main` | current branch is merged into `main` |
+| `branch '…' has no upstream` | `origin` exists but the branch has no tracking ref |
+
+```bash
+cli git push --yes --format json   # structured result: branch, pushed, remote, warnings, …
+```
 
 The no-remote case avoids failing late after staging/committing. Add a remote and rerun `cli git push --yes` when you are ready to publish.
 

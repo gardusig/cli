@@ -551,16 +551,20 @@ def _invoke_push(
     extra_args: tuple[str, ...] = (),
     from_main: bool | None = None,
     branch: str | None = None,
+    output_format: str = "table",
 ) -> tuple[bool, str]:
-    code, output = invoke_workflow(
-        repo_root,
-        git_root,
-        ("git", "push", "--yes", "-m", message, *extra_args),
-    )
+    cli_args: list[str] = ["git", "push", "--yes", "-m", message, *extra_args]
+    if output_format == "json":
+        cli_args.extend(["--format", "json"])
+    code, output = invoke_workflow(repo_root, git_root, tuple(cli_args))
     if code != 0:
         errors.append(f"{prefix}: exit {code}\n{output}")
         return False, output
-    if "pushed" not in output:
+    if output_format == "json":
+        if '"pushed"' not in output:
+            errors.append(f"{prefix}: missing JSON pushed field\n{output}")
+            return False, output
+    elif "pushed" not in output:
         errors.append(f"{prefix}: missing success message\n{output}")
         return False, output
     if from_main is not None:
@@ -754,6 +758,78 @@ def check_push_from_clean_main(git_root: Path, repo_root: Path) -> list[str]:
     return errors
 
 
+def check_push_refuses_detached_head(git_root: Path, repo_root: Path) -> list[str]:
+    """Detached HEAD → push --yes must refuse before the write gate."""
+    errors: list[str] = []
+    reset_integration_git(git_root)
+    tip = _git(git_root, "rev-parse", "HEAD").stdout.strip()
+    _git(git_root, "checkout", tip)
+    detached = _git(git_root, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+    if detached != "HEAD":
+        return [f"push detached setup: expected detached HEAD, got {detached!r}"]
+
+    code, output = invoke_workflow(repo_root, git_root, ("git", "push", "--yes"))
+    if code == 0:
+        errors.append(f"push from detached HEAD: expected refusal\n{output}")
+    elif "detached HEAD" not in output:
+        errors.append(f"push from detached HEAD: missing error message\n{output}")
+    return errors
+
+
+def check_push_warns_on_merged_branch(git_root: Path, repo_root: Path) -> list[str]:
+    """On merged feature branch → push gate includes merged-into-main warning."""
+    errors: list[str] = []
+    reset_integration_git(git_root)
+    setup_feature_branch(git_root, "merged")
+    _git(git_root, "checkout", FEATURE_BRANCH)
+    if _current_branch(git_root) != FEATURE_BRANCH:
+        return ["push merged-branch setup: expected feature branch checkout"]
+
+    ok, output = _invoke_push(
+        repo_root,
+        git_root,
+        errors,
+        prefix="push from merged branch",
+        from_main=False,
+        branch=FEATURE_BRANCH,
+    )
+    if not ok:
+        return errors
+    if "warning:" not in output or "merged into main" not in output:
+        errors.append(f"push from merged branch: expected merged warning in gate\n{output}")
+    return errors
+
+
+def check_push_json_output(git_root: Path, repo_root: Path) -> list[str]:
+    """Feature branch push --format json returns structured result after gate."""
+    errors: list[str] = []
+    branch = "feat-push-json"
+    reset_integration_git(git_root)
+    _commit_on_branch(
+        git_root,
+        branch,
+        filename="push-json.txt",
+        message="json push",
+    )
+    if _is_dirty(git_root):
+        return ["push json setup: expected clean tree"]
+
+    ok, output = _invoke_push(
+        repo_root,
+        git_root,
+        errors,
+        prefix="push json output",
+        from_main=False,
+        branch=branch,
+        output_format="json",
+    )
+    if not ok:
+        return errors
+    if '"branch"' not in output or '"warnings"' not in output:
+        errors.append(f"push json output: missing expected JSON keys\n{output}")
+    return errors
+
+
 RESET_WORKFLOW_CHECKS: tuple[tuple[str, Callable[[Path, Path], list[str]]], ...] = (
     ("reset from clean main", check_reset_from_clean_main),
     ("reset from dirty main", check_reset_from_dirty_main),
@@ -779,6 +855,9 @@ PUSH_WORKFLOW_CHECKS: tuple[tuple[str, Callable[[Path, Path], list[str]]], ...] 
     ("push from dirty branch", check_push_from_dirty_branch),
     ("push from nested branch", check_push_from_nested_branch),
     ("push from clean branch", check_push_from_clean_branch),
+    ("push refuses detached head", check_push_refuses_detached_head),
+    ("push warns on merged branch", check_push_warns_on_merged_branch),
+    ("push json output", check_push_json_output),
 )
 
 WORKFLOW_CHECKS: tuple[tuple[str, Callable[[Path, Path], list[str]]], ...] = (

@@ -22,6 +22,7 @@ class GitPushPlan:
     message: str
     allow_main: bool = False
     create_branch_first: bool = False
+    warnings: tuple[str, ...] = ()
 
     @property
     def will_push(self) -> bool:
@@ -37,6 +38,7 @@ class GitPushResult:
     remote: str | None
     created_branch: bool = False
     committed: bool = False
+    warnings: tuple[str, ...] = ()
 
 
 class GitShortcuts:
@@ -51,6 +53,36 @@ class GitShortcuts:
 
     def current_branch(self) -> str:
         return run_git(["branch", "--show-current"], cwd=self.top).stdout.strip()
+
+    def is_detached_head(self) -> bool:
+        result = run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=self.top, check=False)
+        if result.returncode != 0:
+            return True
+        ref = result.stdout.strip()
+        return ref == "HEAD" or not ref
+
+    def is_branch_merged_into_main(self, branch: str) -> bool:
+        if not branch or branch == "main":
+            return False
+        return branch in self.merged_branch_names(include_current=True)
+
+    def push_warnings(self, *, branch: str | None = None, allow_main: bool = False) -> list[str]:
+        """Informational warnings before push (never blocks without the write gate)."""
+        branch = branch or self.current_branch()
+        warnings: list[str] = []
+        if branch == "main":
+            if allow_main:
+                tracking = self.tracking_branch()
+                if tracking and tracking != "main":
+                    warnings.append(f"on main but upstream tracks {tracking!r}")
+            return warnings
+        if not branch:
+            return warnings
+        if self.is_branch_merged_into_main(branch):
+            warnings.append(f"branch {branch!r} is already merged into main")
+        if self.remote_exists("origin") and not self.has_upstream():
+            warnings.append(f"branch {branch!r} has no upstream; push will set origin HEAD")
+        return warnings
 
     def status_short(self) -> str:
         return run_git(["status", "--short"], cwd=self.top).stdout
@@ -230,6 +262,7 @@ class GitShortcuts:
             if create_branch
             else current
         )
+        warnings = tuple(self.push_warnings(branch=current, allow_main=allow_main))
         return GitPushPlan(
             source_branch=current,
             target_branch=target,
@@ -238,6 +271,7 @@ class GitShortcuts:
             message=message,
             allow_main=allow_main,
             create_branch_first=create_branch,
+            warnings=warnings,
         )
 
     def push(
@@ -265,6 +299,7 @@ class GitShortcuts:
                 remote=None,
                 created_branch=created_branch,
                 committed=committed,
+                warnings=plan.warnings,
             )
         run_git(["push", "-u", plan.remote, "HEAD"], cwd=self.top)
         return GitPushResult(
@@ -273,6 +308,7 @@ class GitShortcuts:
             remote=plan.remote,
             created_branch=created_branch,
             committed=committed,
+            warnings=plan.warnings,
         )
 
     def pull(self, *, merge_branch: str | None = None) -> None:

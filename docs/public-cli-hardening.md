@@ -6,7 +6,7 @@ Epic [#57](https://github.com/gardusig/python-cli/issues/57) reviewed the public
 
 | Issue | Surface | Status | Notes |
 | --- | --- | --- | --- |
-| [#58](https://github.com/gardusig/python-cli/issues/58) | `cli git` | **Pass** | `public_endpoints` git subcommands, remote mocks (`git_mocks.py`), `docs/git.md`, `cli links` entries. Residual branch-policy work tracked in Epic 09 (#67). |
+| [#58](https://github.com/gardusig/python-cli/issues/58) | `cli git` | **Pass** | `public_endpoints` git subcommands, remote mocks (`git_mocks.py`), `docs/git.md`, push warnings + `--format json`, workflow push scenarios. Epic 09 (#67) closes branch-policy edge cases. |
 | [#59](https://github.com/gardusig/python-cli/issues/59) | `cli drive` | **Pass** | Epic 04: providers, partial failure, `--dry-run`/JSON, Proton deferral, `cli_api_checks`. Close #4 epic. |
 | [#60](https://github.com/gardusig/python-cli/issues/60) | `cli notion` | **Pass** | Epic 03: pairs, repo-derived `link`, partial failure, `cli tasks` shortcuts, `tests/notion/`. Close #2 epic. |
 | [#61](https://github.com/gardusig/python-cli/issues/61) | `cli chrome` | **Pass** | Epic 02: merge/snapshot/`--profile`, `docs/chrome.md`, Photos deferral (#50). Close #24 epic. |
@@ -18,7 +18,7 @@ Epic [#57](https://github.com/gardusig/python-cli/issues/57) reviewed the public
 
 ## Output policy (#51)
 
-- Agent-facing commands expose `--format json` where structured output helps automation (`gh`, `docker`, `project`, many `git` reads).
+- Agent-facing commands expose `--format json` where structured output helps automation (`gh`, `docker`, `project`, `git push`, many `git` reads).
 - Human-readable Rich tables and color remain on commands that already use them; do not introduce a global theme layer.
 - Errors use `[red]error:[/red]` or actionable `RuntimeError` messages (missing tokens, manifests, config paths).
 - Write gates print `Refusing write in non-interactive mode` unless `--yes` is passed.
@@ -61,5 +61,6 @@ python tests/integration/check_api_integration.py
 - Close **#57** when verification passes and child issues #58–#65 + #51 are closed.
 - Close product epics **#2**, **#4**, **#24**, **#54**, **#66–#70** when [PR #88](https://github.com/gardusig/python-cli/pull/88) merges with evidence.
 - Epic **00-infra** ([#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85)): selective CI contract in this repo; `github-pipelines` consumes `cli test packages`.
-- Leave **#50** (Chrome Photos) and **#52** (git push edge cases) open for future work.
+- Leave **#50** (Chrome Photos) open for future work.
+- Close **#52** / Epic **09** (#67) when push warnings, detached-HEAD refusal, and `git push --format json` land on [PR #88](https://github.com/gardusig/python-cli/pull/88).
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
