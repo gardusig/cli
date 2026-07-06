@@ -194,7 +194,7 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
     ),
     _pkg(
         "deploy",
-        source=("src/commands/deploy_cmd.py", "src/services/pipeline_runtime.py"),
+        source=("src/commands/deploy_cmd.py", "src/services/pipeline_dispatch.py", "src/services/pipeline_runtime.py"),
         tests=("tests/services/test_pipeline_runtime.py",),
         checks=("deploy --help",),
     ),

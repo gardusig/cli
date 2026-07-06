@@ -239,7 +239,7 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck("deploy help", ("deploy", "--help"), needle="deploy"),
         EndpointCheck(
             "deploy refuse",
-            ("deploy",),
+            ("deploy", "pull-request", "python-cli"),
             kind="refuse",
             needle=refuse,
             accept_exit_codes=(1,),

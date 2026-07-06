@@ -20,6 +20,14 @@ def test_hub_operator_docs_exist() -> None:
     assert "operator-test.yml" in hub
     assert "operator-craft-plan.yml" in hub
     assert "operator-review.yml" in hub
+    assert "operator-dispatch.yml" in hub
+
+
+def test_deploy_help_lists_lanes() -> None:
+    result = RUNNER.invoke(app, ["deploy", "--help"])
+    assert result.exit_code == 0
+    assert "pull-request" in result.stdout
+    assert "operator" in result.stdout
 
 
 def test_hub_operator_batch_manifest_exists() -> None:

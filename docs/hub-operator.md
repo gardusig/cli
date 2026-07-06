@@ -37,7 +37,10 @@ See [opencode.md](opencode.md).
 | `cli opencode gh execute` | AI implementation → PR (explicit `--yes`) |
 | `cli opencode gh review` | AI PR review (no merge) |
 | `cli pipeline run pull-request …` | Dispatch hub CI for an app repo |
-| `cli release main --yes` | PyPI + tag (maintainer, `PYPI_API_TOKEN`) |
+| `cli deploy pull-request …` | Same as `pipeline run pull-request` (operator alias) |
+| `cli deploy operator LANE …` | Dispatch `operator-dispatch.yml` (`test`/`plan`/`execute`/`review`) |
+| `cli deploy release …` | Dispatch hub release workflow |
+| `cli release main --yes` | PyPI + tag locally (maintainer, `PYPI_API_TOKEN`) |
 
 **Blocked by policy:** `cli gh pr merge`, `cli gh issue close`, `cli gh ruleset` — merge in
 GitHub UI. See [gh.md](gh.md#blocked-commands).
@@ -75,6 +78,39 @@ cli pipeline run pull-request python-cli \
 
 Hub workflow: `gardusig/github-pipelines` → **Pull request** (`repository_dispatch`).
 
+Equivalent deploy aliases:
+
+```bash
+cli deploy pull-request python-cli \
+  --repository gardusig/python-cli \
+  --ref feat/language-first-cli-and-structure \
+  --sha "$(git rev-parse HEAD)" --yes
+
+cli deploy operator test \
+  --repository gardusig/python-cli \
+  --ref feat/language-first-cli-and-structure \
+  --sha "$(git rev-parse HEAD)" --yes
+
+cli deploy operator plan \
+  --repository gardusig/python-cli \
+  --issue 81 \
+  --ref main --yes
+```
+
+### Selective resolve JSON contract
+
+`cli test packages resolve --format json` returns:
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `changed_paths` | `string[]` | Normalized repo-relative paths |
+| `package_names` | `string[]` | Packages to run in selective CI |
+| `packages` | `object[]` | Full package records + match reasons |
+| `full_suite` | `bool` | When true, run full PR pipeline |
+| `full_suite_reasons` | `string[]` | Why selective CI was skipped |
+| `requires_ai` / `costs_api_tokens` | `bool` | Matched packages need OpenCode |
+| `pipeline_contract` | `object` | Hub job names for package legs |
+
 ### Runner image (Phase B)
 
 Slim image for workflow jobs that only need `cli`, `git`, `gh`, and optional Docker socket:
@@ -95,12 +131,19 @@ Pin `CLI_VERSION` at build time after PyPI releases; local dev may use editable 
 | `operator-craft-plan.yml` | **Shipped** — issue context + `cli opencode gh issue --plan-only` |
 | `operator-craft-execute.yml` | **Shipped** — `cli opencode gh execute` (`yes` gate + `DEEPSEEK_API_KEY`) |
 | `operator-review.yml` | **Shipped** — `cli opencode gh review` (no merge) |
+| `operator-dispatch.yml` | **Shipped** — routes `lane` → test/plan/execute/review reusables |
 
 Docs: `github-pipelines/docs/workflows/operator.md`.
 
 Dispatch examples:
 
 ```bash
+gh workflow run operator-dispatch.yml -R gardusig/github-pipelines \
+  -f lane=test \
+  -f repository=gardusig/python-cli \
+  -f ref=feat/language-first-cli-and-structure \
+  -f sha="$(git rev-parse HEAD)"
+
 gh workflow run operator-test.yml -R gardusig/github-pipelines \
   -f repository=gardusig/python-cli \
   -f ref=feat/language-first-cli-and-structure \
@@ -140,8 +183,8 @@ Break-glass: `CLI_ALLOW_GH_MERGE=1` allows raw `gh pr merge` inside providers (e
 | 3 — runner image + ghcr | **Done** ([github-pipelines #11](https://github.com/gardusig/github-pipelines/pull/11)) |
 | 4 — reusable `workflow_call` | **Done** — test + craft plan/execute + review |
 | 5–8 — OpenCode + `gh_topo` | Shipped on PR #88 |
-| 9 — `test` / `deploy` / `release` | `test` + `release` shipped; `deploy` stub |
-| 10 — dispatch orchestrator | Planned |
+| 9 — `test` / `deploy` / `release` | **Done** — `test` + `release` + `cli deploy` dispatch |
+| 10 — dispatch orchestrator | **Done** (`operator-dispatch.yml`) |
 
 ## See also
 

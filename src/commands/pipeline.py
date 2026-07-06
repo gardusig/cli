@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from argparse import Namespace
 from pathlib import Path
 
 import typer
 
+from src.services.pipeline_dispatch import dispatch_repository_event
 from src.services.pipeline_runtime import resolve_config, run_docker_job, run_task_action
 
 pipeline_app = typer.Typer(help="Dispatch centralized workflows.", no_args_is_help=True)
@@ -34,7 +34,7 @@ def run_cmd(
     dry_run: bool = typer.Option(False, "--dry-run"),
 ) -> None:
     """POST repository_dispatch to gardusig/github-pipelines."""
-    payload = {
+    payload: dict[str, object] = {
         "repo_slug": repo,
         "repository": repository or f"gardusig/{repo}",
         "ref": ref,
@@ -48,22 +48,11 @@ def run_cmd(
         payload["pipeline"] = pipeline
     if sha:
         payload["sha"] = sha
-    body = json.dumps({"event_type": family, "client_payload": payload})
-    subprocess.run(
-        [
-            "gh",
-            "api",
-            "--method",
-            "POST",
-            "repos/gardusig/github-pipelines/dispatches",
-            "--input",
-            "-",
-        ],
-        input=body,
-        text=True,
-        check=True,
-    )
-    typer.echo(f"dispatched {family} for {repo}")
+    result = dispatch_repository_event(family, payload, dry_run=dry_run)
+    if dry_run:
+        typer.echo(json.dumps(result, indent=2))
+    else:
+        typer.echo(f"dispatched {family} for {repo}")
 
 
 @config_app.command("resolve")
