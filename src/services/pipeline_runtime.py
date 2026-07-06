@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -93,10 +94,16 @@ def run_docker_job(args: argparse.Namespace) -> None:
         tag,
     ]
     dockerignore = str(job.get("dockerignore") or "")
+    ignore_backup: Path | None = None
+    ignore_dst: Path | None = None
     if dockerignore:
-        ignorefile = args.pipeline_src / dockerignore
-        if ignorefile.is_file():
-            cmd.extend(["--ignorefile", str(ignorefile)])
+        ignore_src = args.pipeline_src / dockerignore
+        if ignore_src.is_file():
+            ignore_dst = args.app_src / ".dockerignore"
+            if ignore_dst.is_file():
+                ignore_backup = args.app_src / ".dockerignore.pipeline-backup"
+                shutil.copy(ignore_dst, ignore_backup)
+            shutil.copy(ignore_src, ignore_dst)
 
     for key, value in _build_args(job, args.release_version).items():
         cmd.extend(["--build-arg", f"{key}={value}"])
@@ -106,7 +113,17 @@ def run_docker_job(args: argparse.Namespace) -> None:
 
     cmd.append(str(args.app_src))
     print("==>", " ".join(shlex.quote(part) for part in cmd))
-    subprocess.run(cmd, check=True)
+    try:
+        subprocess.run(cmd, check=True)
+    finally:
+        if ignore_dst is not None and ignore_dst.is_file():
+            if ignore_backup and ignore_backup.is_file():
+                shutil.copy(ignore_backup, ignore_dst)
+                ignore_backup.unlink()
+            else:
+                ignore_dst.unlink()
+        if ignore_backup and ignore_backup.is_file():
+            ignore_backup.unlink()
     _append_summary(job, target, dockerfile)
 
     if job.get("docker_socket"):
