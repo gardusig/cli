@@ -9,8 +9,13 @@ from pathlib import Path
 import typer
 import yaml
 
-from src.services.notion_pairs import load_pairs
-from src.utils.config import default_config_dir, gh_issues_labels_manifest, gh_issues_repo, load_config, notion_pairs_file, notion_task_root
+from src.commands.configure_cmd import (
+    check_cmd as configure_check_cmd,
+    import_env_cmd as configure_import_env_cmd,
+    list_cmd as configure_list_cmd,
+    set_cmd as configure_set_cmd,
+)
+from src.utils.config import default_config_dir, load_config
 
 config_app = typer.Typer(help="Configure cli paths and secrets.", no_args_is_help=True)
 secrets_app = typer.Typer(help="Secret setup helpers.", no_args_is_help=True)
@@ -36,12 +41,12 @@ def init_cmd(
             {
                 "notion": {
                     "database_id": "your-notion-database-id",
-                    "task_root": "~/git-local/private/private/tasks",
+                    "task_root": "~/github/private/database/tasks",
                     "pairs_file": "tasks.pairs.json",
                 },
                 "gh": {
                     "issues": {
-                        "repo": "gardusig/private",
+                        "repo": "gardusig/database",
                         "labels_manifest": "labels.manifest.yaml",
                     }
                 },
@@ -62,33 +67,15 @@ def show_cmd() -> None:
 @config_app.command("check")
 def check_cmd(tasks: bool = typer.Option(False, "--tasks")) -> None:
     """Validate paths and required credentials for configured features."""
-    root = notion_task_root()
-    pairs = notion_pairs_file()
-    if tasks:
-        if not root.is_dir():
-            raise typer.Exit(f"task root not found: {root}")
-        if not pairs.is_file():
-            raise typer.Exit(f"pairs manifest not found: {pairs}")
-        load_pairs(pairs, task_root=root)
-        labels = gh_issues_labels_manifest()
-        if not labels.is_file():
-            raise typer.Exit(f"labels manifest not found: {labels}")
-        gh_issues_repo()
-    typer.echo("config ok")
+    typer.echo("cli config check is deprecated; use cli configure check")
+    configure_check_cmd(tasks=tasks, pypi=False)
 
 
 @config_app.command("set")
 def set_cmd(key: str, value: str, config_dir: Path = typer.Option(default_config_dir(), "--config-dir")) -> None:
     """Set a dotted key in config.yaml."""
-    path = config_dir.expanduser() / "config.yaml"
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}
-    cur = data
-    parts = key.split(".")
-    for part in parts[:-1]:
-        cur = cur.setdefault(part, {})
-    cur[parts[-1]] = value
-    _write_yaml(path, data)
-    typer.echo(f"set {key}")
+    typer.echo("cli config set is deprecated; use cli configure set")
+    configure_set_cmd(key=key, value=value, stdin=False, config_dir=config_dir)
 
 
 @secrets_app.command("init")
@@ -122,12 +109,15 @@ def secrets_init_cmd(config_dir: Path = typer.Option(default_config_dir(), "--co
 @secrets_app.command("list")
 def secrets_list_cmd() -> None:
     """List expected secret names, without values."""
-    rows = [
-        {"id": "notion", "env": "NOTION_TOKEN", "ci": "github-pipelines/tasks"},
-        {"id": "github", "env": "CENTRAL_PIPELINE_PAT", "ci": "github-pipelines/tasks"},
-        {"id": "pypi", "env": "PYPI_API_TOKEN", "ci": "github-pipelines/release"},
-        {"id": "testpypi", "env": "TESTPYPI_API_TOKEN", "ci": "github-pipelines/pull-request"},
-        {"id": "backup", "env": "BACKUP_ZIP_PASSWORD", "ci": "local-only"},
-        {"id": "deepseek", "env": "DEEPSEEK_API_KEY", "ci": "local-only"},
-    ]
-    typer.echo(json.dumps(rows, indent=2))
+    typer.echo("cli config secrets list is deprecated; use cli configure list")
+    configure_list_cmd(json_output=True, config_dir=default_config_dir())
+
+
+@secrets_app.command("import-env")
+def secrets_import_env_cmd(
+    persist: bool = typer.Option(False, "--persist"),
+    config_dir: Path = typer.Option(default_config_dir(), "--config-dir"),
+) -> None:
+    """Deprecated alias for cli configure import-env."""
+    typer.echo("cli config secrets import-env is deprecated; use cli configure import-env")
+    configure_import_env_cmd(persist=persist, config_dir=config_dir)

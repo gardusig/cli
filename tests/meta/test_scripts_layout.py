@@ -1,4 +1,4 @@
-"""Shell scripts stay thin — no embedded Python in scripts/."""
+"""Shell scripts stay thin — no embedded Python in src/scripts/."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from tests.constants import ROOT
 from pathlib import Path
 
 
-SCRIPTS = ROOT / "scripts"
+SCRIPTS = ROOT / "src" / "scripts"
 
 
 def test_scripts_tree_has_no_embedded_python() -> None:
@@ -25,7 +25,7 @@ def test_shared_common_is_sourced() -> None:
         "notion/_common.sh",
     ):
         text = (SCRIPTS / rel).read_text(encoding="utf-8")
-        assert "scripts/_common.sh" in text or "../_common.sh" in text or '_common.sh"' in text
+        assert "src/scripts/_common.sh" in text or "../_common.sh" in text or '_common.sh"' in text
 
 
 def test_root_common_has_cli_resolution_only() -> None:

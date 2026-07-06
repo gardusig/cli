@@ -42,7 +42,7 @@ cli drive deploy usb-backup
 cli drive sync                        # ingest all + deploy all replicas
 ```
 
-Shell wrappers: `./scripts/drive/status.sh`, `ingest.sh`, `upload.sh`, `sync.sh`.
+Shell wrappers: `./src/scripts/drive/status.sh`, `ingest.sh`, `upload.sh`, `sync.sh`.
 
 See [issue #30](https://github.com/gardusig/cli/issues/30) for sync hardening (dry-run, logging, launchd).
 

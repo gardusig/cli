@@ -1,11 +1,11 @@
 # Task Shortcuts
 
-Task data lives in `gardusig/private/tasks`. The CLI provides reusable shortcuts only; workflow policy lives in `gardusig/github-pipelines`.
+Task data lives in `gardusig/database/tasks`. The CLI provides reusable shortcuts only; workflow policy lives in `gardusig/github-pipelines`.
 
 ## Pair validation
 
 ```bash
-cli tasks pairs validate
+cli validate tasks
 cli tasks pairs build
 ```
 
@@ -21,7 +21,7 @@ The command only stages `tasks/`, commits to a sync branch, pushes, and opens a 
 ## Pipeline dispatch
 
 ```bash
-cli pipeline run tasks private --action github-deploy
+cli pipeline run tasks database --action github-deploy
 cli pipeline run repo-review python-cli --job version-check
 ```
 
@@ -33,7 +33,7 @@ The merged workflow catalog treats task operations as named workflows, not arbit
 
 | Workflow | Sequence |
 | --- | --- |
-| `private-notion-deploy` | `cli tasks pairs build` -> `cli tasks pairs validate` -> `cli notion deploy --yes` |
+| `private-notion-deploy` | `cli tasks pairs build` -> `cli validate tasks` -> `cli notion deploy --yes` |
 | `private-notion-ingest-pr` | `cli tasks ingest-pr --source notion --yes` |
 | `private-gh-issues-deploy` | delete all repo issues -> insert all task issues -> update board/project order |
 | `private-gh-issues-ingest-pr` | `cli tasks ingest-pr --source github --yes` |

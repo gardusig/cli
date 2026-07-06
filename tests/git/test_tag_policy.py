@@ -53,9 +53,9 @@ def test_validate_require_increase() -> None:
 
 
 def test_load_tag_policy_from_repo(tmp_path: Path) -> None:
-    cli_dir = tmp_path / ".cli"
-    cli_dir.mkdir()
-    (cli_dir / "tag.yaml").write_text(
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "tag.yaml").write_text(
         "pattern: date\nbump: patch\n",
         encoding="utf-8",
     )

@@ -35,11 +35,11 @@ The repo stays **`cli`**; only the published distribution name on PyPI is **`gar
 | Tool | Needed for |
 | --- | --- |
 | **macOS** | Primary target for local use |
-| **Python 3.12+** | `./scripts/pypi/install.sh` or Homebrew |
+| **Python 3.12+** | `pip install gardusig-cli` or Homebrew |
 | **[Homebrew](https://brew.sh/)** | Recommended way to install Python and git on macOS |
 | **git** | `cli git` (run from inside a repository) |
 | **zip** | Encrypted tag archives (`cli drive ingest` on `encrypted: true` repos) |
-| **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** | Verification — `./scripts/test/unit.sh` and `./scripts/test/integration.sh` in Docker |
+| **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** | Verification — `cli test python unit .` and `cli test python integration .` in Docker |
 
 Install Python and git with Homebrew:
 
@@ -98,17 +98,17 @@ Environment overrides (optional): `CLI_BOOKMARKS_FILE`, `CLI_DOWNLOADS_DIR`, `CL
 Install the latest **`gardusig-cli`** release from PyPI (no repo clone required):
 
 ```bash
-./scripts/pypi/install.sh
+pip install gardusig-cli
 # open a new terminal OR: source ~/.zprofile
 cli --version
 cli git --help
 ```
 
-Upgrade anytime: re-run `./scripts/pypi/install.sh`
+Upgrade anytime: re-run `pip install gardusig-cli`
 
 Config: **`~/.config/cli/`** (copy `config/` from this repo as a starting point; override with `CLI_CONFIG_DIR`).
 
-**Contributors** — verification runs in Docker only (`./scripts/test/unit.sh`, `./scripts/test/integration.sh`).
+**Contributors** — verification runs in Docker only (`cli test python unit .`, `cli test python integration .`).
 
 ## Common git commands
 
@@ -131,7 +131,7 @@ Run from inside a repository (`cd` into the repo first).
 
 Short alias: `cli g push --yes` == `cli git push --yes`.
 
-Shell wrappers: `scripts/git/` (e.g. `./scripts/git/review.sh`). See [docs/git.md](docs/git.md).
+Shell wrappers: `src/scripts/git/` (e.g. `./src/scripts/git/review.sh`). See [docs/git.md](docs/git.md).
 
 **Safety:** destructive actions (reset, clean, delete, push) require `--yes` or an interactive confirmation. Default `cli git start` aligns main then branches; pass `--no-prep` to branch from the current state.
 
@@ -167,7 +167,7 @@ cli drive upload
 
 `git zip` is the quick path for the current repo; `drive ingest` iterates configured repositories (or one `PATH`). See [docs/drive.md](docs/drive.md) · [issue #4](https://github.com/gardusig/cli/issues/4).
 
-Shell wrappers: `scripts/drive/` (`status.sh`, `ingest.sh`, `upload.sh`, `sync.sh`).
+Shell wrappers: `src/scripts/drive/` (`status.sh`, `ingest.sh`, `upload.sh`, `sync.sh`).
 
 ## Chrome (`cli chrome`)
 
@@ -183,7 +183,7 @@ cli chrome bookmarks ingest   # Chrome → local HTML file
 cli chrome bookmarks deploy   # local file → Chrome
 ```
 
-Shell wrappers: `./scripts/chrome/ingest.sh` · `./scripts/chrome/deploy.sh` (deprecated: `import.sh` / `export.sh`).
+Shell wrappers: `./src/scripts/chrome/ingest.sh` · `./src/scripts/chrome/deploy.sh` (deprecated: `import.sh` / `export.sh`).
 
 See [docs/bookmarks.md](docs/bookmarks.md) · epic [#24](https://github.com/gardusig/cli/issues/24) (shell scripts: [#1](https://github.com/gardusig/cli/issues/1)).
 
@@ -216,7 +216,7 @@ Local Docker monitor and cleanup (requires `docker` on PATH; no container start)
 | **Full reset** | `cli docker reset --yes` |
 | Targeted cleanup | `cli docker clean containers --yes` · `clean images` · `clean all` |
 
-Shell wrappers live in `scripts/docker/` (e.g. `./scripts/docker/reset.sh --yes`).
+Docker cleanup is exposed through `cli docker ...`; CI Docker stages live in `github-pipelines`.
 
 Destructive commands use the write gate; pass `--yes` in scripts.
 

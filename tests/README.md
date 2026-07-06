@@ -3,8 +3,8 @@
 Pytest suite for `gardusig-cli`. Run via Docker only (see [docs/setup.md](../docs/setup.md)):
 
 ```bash
-./scripts/test/unit.sh         # pytest -m "not integration" + ≥80% coverage
-./scripts/test/integration.sh  # full pytest + smoke + live docker
+cli test python unit .
+cli test python integration .
 ```
 
 ## Layout

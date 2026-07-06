@@ -796,7 +796,7 @@ def _tag_create(name: str | None, *, yes: bool, force: bool = False) -> None:
 def tag_cmd(
     action: str | None = typer.Argument(
         None,
-        help="list, push, delete, or tag name (default: next tag per .cli/tag.yaml or detection).",
+        help="list, push, delete, or tag name (default: next tag per config/tag.yaml or detection).",
     ),
     name: str | None = typer.Argument(None, help="Tag name for push/delete, or explicit create name."),
     yes: bool = typer.Option(False, "--yes", "-y"),

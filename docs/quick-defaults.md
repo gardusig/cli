@@ -10,7 +10,7 @@ Cli favors **suggested values** over prompts so common flows are one command.
 | `cli git reset` | Return to synced main; optional `--delete-merged` or interactive branch cleanup | `cli git reset --yes` |
 | `cli git reset --main-only` | Sync main only (skip branch prompt) | `cli git reset --yes --main-only` |
 | `cli git stash push` | Message `.` | `cli git stash push` |
-| `cli git tag` | Next tag per `.cli/tag.yaml` or detection (e.g. `v0.1.1`) | `cli git tag` |
+| `cli git tag` | Next tag per `config/tag.yaml` or detection (e.g. `v0.1.1`) | `cli git tag` |
 | `cli git zip` | Latest **local** tag for repo pattern | `cli git zip` |
 
 ## Branch names
@@ -23,12 +23,12 @@ cli git start my-feature --no-prep
 
 ## Shell wrappers
 
-Scripts under `scripts/git/` forward flags to the CLI and inherit the same defaults:
+Scripts under `src/scripts/git/` forward flags to the CLI and inherit the same defaults:
 
 ```bash
-./scripts/git/start.sh          # auto branch name
-./scripts/git/commit.sh         # message '.'
-./scripts/git/large-files.sh    # see docs/large-files.md
+./src/scripts/git/start.sh          # auto branch name
+./src/scripts/git/commit.sh         # message '.'
+./src/scripts/git/large-files.sh    # see docs/large-files.md
 ```
 
 Full index: `cli links` · [Git commands](git.md)

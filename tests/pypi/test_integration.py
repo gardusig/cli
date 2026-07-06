@@ -97,7 +97,7 @@ def test_release_publish_verifies_testpypi_project_page(pypi_workspace: Path) ->
                     TEST_VERSION,
                 ],
                 env={
-                    "PYPI_API_TOKEN": token,
+                    "TESTPYPI_API_TOKEN": token,
                     "CLI_RELEASE_VERSION": TEST_VERSION,
                     "CLI_CONFIG_DIR": str(CI_CONFIG),
                 },

@@ -23,7 +23,7 @@ QUICK_DEFAULTS = (
     ("git push", "add + commit + push; on main starts random branch — use --yes -y to skip prompt"),
     ("git reset", "return to synced main; optional --delete-merged or interactive branch cleanup — --yes"),
     ("git stash push", "message defaults to '.'"),
-    ("git tag", "sync main, tag with per-repo pattern (.cli/tag.yaml)"),
+    ("git tag", "sync main, tag with per-repo pattern (config/tag.yaml)"),
     ("git deploy", "tag main when ahead of latest tag and no open PRs block release"),
     ("git zip", "zip a vX.Y.Z tag into iCloud git-tags/REPO/"),
     ("drive status", "git tags vs zips in backup.tags_dir (iCloud)"),
@@ -51,12 +51,12 @@ WORKFLOW_CHAIN = (
 )
 
 QUICK_DEFAULT_SCRIPTS: dict[str, str] = {
-    "git start": "scripts/git/start.sh",
-    "git commit": "scripts/git/commit.sh",
-    "git push": "scripts/git/push.sh",
-    "git reset": "scripts/git/reset.sh",
-    "git stash push": "scripts/git/stash.sh",
-    "git tag": "scripts/git/tag.sh",
+    "git start": "src/scripts/git/start.sh",
+    "git commit": "src/scripts/git/commit.sh",
+    "git push": "src/scripts/git/push.sh",
+    "git reset": "src/scripts/git/reset.sh",
+    "git stash push": "src/scripts/git/stash.sh",
+    "git tag": "src/scripts/git/tag.sh",
 }
 
 
@@ -152,21 +152,9 @@ DOCKER_QUICK_DEFAULTS: tuple[tuple[str, str], ...] = (
     ("docker image-delete", "prune unused images — --yes"),
 )
 
-DOCKER_SCRIPT_COMMANDS: tuple[tuple[str, str], ...] = (
-    ("stats.sh", "docker stats"),
-    ("reset.sh", "docker reset"),
-    ("stop.sh", "docker stop"),
-    ("container-delete.sh", "docker container-delete"),
-    ("image-delete.sh", "docker image-delete"),
-)
+DOCKER_SCRIPT_COMMANDS: tuple[tuple[str, str], ...] = ()
 
-DOCKER_QUICK_DEFAULT_SCRIPTS: dict[str, str] = {
-    "docker reset": "scripts/docker/reset.sh",
-    "docker stop": "scripts/docker/stop.sh",
-    "docker container-delete": "scripts/docker/container-delete.sh",
-    "docker image-delete": "scripts/docker/image-delete.sh",
-    "docker stats": "scripts/docker/stats.sh",
-}
+DOCKER_QUICK_DEFAULT_SCRIPTS: dict[str, str] = {}
 
 
 def doc_entries(root: Path | None = None) -> list[CatalogEntry]:
@@ -185,7 +173,7 @@ def doc_entries(root: Path | None = None) -> list[CatalogEntry]:
 
 def git_script_entries(root: Path | None = None) -> list[CatalogEntry]:
     base = root or project_root()
-    git_dir = base / "scripts" / "git"
+    git_dir = base / "src" / "scripts" / "git"
     entries: list[CatalogEntry] = []
     for script_name, cli_cmd in GIT_SCRIPT_COMMANDS:
         script_path = git_dir / script_name
@@ -203,7 +191,7 @@ def git_script_entries(root: Path | None = None) -> list[CatalogEntry]:
 
 def gh_script_entries(root: Path | None = None) -> list[CatalogEntry]:
     base = root or project_root()
-    gh_dir = base / "scripts" / "gh"
+    gh_dir = base / "src" / "scripts" / "gh"
     entries: list[CatalogEntry] = []
     for script_name, cli_cmd in GH_SCRIPT_COMMANDS:
         script_path = gh_dir / script_name
@@ -221,7 +209,7 @@ def gh_script_entries(root: Path | None = None) -> list[CatalogEntry]:
 
 def chrome_script_entries(root: Path | None = None) -> list[CatalogEntry]:
     base = root or project_root()
-    chrome_dir = base / "scripts" / "chrome"
+    chrome_dir = base / "src" / "scripts" / "chrome"
     entries: list[CatalogEntry] = []
     for script_name, note in CHROME_SCRIPTS:
         script_path = chrome_dir / script_name

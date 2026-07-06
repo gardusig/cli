@@ -16,7 +16,7 @@ CLI → Command → Workflow / Service → Provider → External API
 - **`src/internal/write/`** — write gate with delimiter + Q&A before mutations
 - **`src/utils/confirm.py`** — thin re-export of write gate helpers
 - **`src/commands/{backup,restore,...}`** — placeholders for future workflows
-- **`scripts/chrome/`** — bookmark export/import (issue #1)
+- **`src/scripts/chrome/`** — bookmark export/import (issue #1)
 
 Providers stay unimplemented until backup/sync issues land. Git operations use local `git` only.
 
@@ -24,9 +24,9 @@ Providers stay unimplemented until backup/sync issues land. Git operations use l
 
 | Layer | Where it runs | Entry |
 | --- | --- | --- |
-| Unit (≥80% coverage, full pytest) | `cli:integration` container | `./scripts/test/unit.sh` |
-| Integration (full pytest, smoke, live docker) | `cli:integration` container | `./scripts/test/integration.sh` |
-| Integration (full pytest, smoke, public APIs, live docker) | same image + host socket | `./scripts/test/integration.sh` |
-| Local CLI usage | PyPI venv on host | `./scripts/pypi/install.sh` |
+| Unit (≥80% coverage, full pytest) | `cli:integration` container | `cli test python unit .` |
+| Integration (full pytest, smoke, live docker) | `cli:integration` container | `cli test python integration .` |
+| Integration (full pytest, smoke, public APIs, live docker) | same image + host socket | `cli test python integration .` |
+| Local CLI usage | PyPI venv on host | `pip install gardusig-cli` |
 
-Harness: `scripts/docker/common.sh` copies the repo to `/tmp/cli` inside an ephemeral container so git resets and fixtures never touch the host checkout. See [docker.md](docker.md).
+Harness: `github-pipelines Docker stages` copies the repo to `/tmp/cli` inside an ephemeral container so git resets and fixtures never touch the host checkout. See [docker.md](docker.md).

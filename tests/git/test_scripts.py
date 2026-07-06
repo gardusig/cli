@@ -1,11 +1,11 @@
 from tests.constants import ROOT
 
-"""Verify scripts/git wrappers exist and have valid syntax."""
+"""Verify src/scripts/git wrappers exist and have valid syntax."""
 
 from pathlib import Path
 
 
-GIT_SCRIPTS = ROOT / "scripts" / "git"
+GIT_SCRIPTS = ROOT / "src" / "scripts" / "git"
 
 
 def test_all_git_wrapper_scripts_exist() -> None:

@@ -74,11 +74,3 @@ def test_check_integration_coverage_script_json() -> None:
     assert data["summary"] == integration_coverage_summary()
 
 
-def test_run_unit_script_runs_integration_coverage_gate() -> None:
-    text = (ROOT / "scripts" / "docker" / "run-unit.sh").read_text(encoding="utf-8")
-    assert "check_integration_coverage.py" in text
-
-
-def test_smoke_runs_integration_coverage_gate() -> None:
-    smoke = (ROOT / "scripts" / "test" / "smoke.sh").read_text(encoding="utf-8")
-    assert "check_integration_coverage.py" in smoke

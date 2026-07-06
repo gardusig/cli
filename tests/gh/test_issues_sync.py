@@ -27,7 +27,7 @@ def _task_root(tmp_path: Path) -> Path:
     return root
 
 
-def _config(tmp_path: Path, root: Path, repo: str = "gardusig/private") -> Path:
+def _config(tmp_path: Path, root: Path, repo: str = "gardusig/database") -> Path:
     cfg = tmp_path / "cfg"
     cfg.mkdir()
     (cfg / "config.yaml").write_text(
@@ -66,7 +66,7 @@ def test_issue_sync_rejects_non_private_repo(monkeypatch, tmp_path: Path) -> Non
     monkeypatch.setenv("CLI_CONFIG_DIR", str(cfg))
     monkeypatch.delenv("CLI_GH_ISSUES_DEPLOY_ALLOW", raising=False)
 
-    with pytest.raises(RuntimeError, match="restricted to repositories named 'private'"):
+    with pytest.raises(RuntimeError, match="restricted to repositories named 'database'"):
         deploy_issues(svc=MagicMock(), dry_run=True)
 
 

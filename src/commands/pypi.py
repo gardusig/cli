@@ -18,6 +18,7 @@ from src.services.pypi_publish import (
     read_project_version,
     resolve_pypi_token,
     resolve_release_version,
+    resolve_testpypi_token,
     verify_package_version_on_index,
 )
 from src.services.tag_policy import resolve_tag_policy, suggest_next_tag
@@ -63,7 +64,7 @@ def pypi_version_suggest_cmd() -> None:
 
 @version_app.command("tag-suggest")
 def pypi_tag_suggest_cmd() -> None:
-    """Print suggested next git tag for the current repo (uses .cli/tag.yaml)."""
+    """Print suggested next git tag for the current repo (uses config/tag.yaml)."""
     root = project_root()
     try:
         svc = GitShortcuts(top=str(root))
@@ -126,7 +127,7 @@ def pypi_upload_cmd(
             typer.echo(f"Built: {', '.join(path.name for path in artifacts)}")
             return
 
-        token = resolve_pypi_token()
+        token = resolve_testpypi_token() if testpypi else resolve_pypi_token()
         repo_url = TEST_REPOSITORY_URL if testpypi else DEFAULT_REPOSITORY_URL
         target = "TestPyPI" if testpypi else "PyPI"
         version_line = release_version or "pyproject.toml"

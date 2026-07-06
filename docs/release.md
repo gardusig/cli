@@ -4,39 +4,40 @@ Production releases publish **`gardusig-cli`** to [PyPI](https://pypi.org/projec
 
 ## Version source
 
-Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync). PR CI requires the PR version to be **greater** than `origin/main` (Docker `version` target + `scripts/ci/version-check.sh`).
+Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync). PR CI requires the PR version to be **greater** than `origin/main` (Docker `version` target + `src/scripts/ci/version-check.sh`).
 
 Example: `main` ships `1.0.0`; a release candidate PR bumps to **`1.0.1`**.
 
 ## Pull request pipeline (main only)
 
-1. **`./scripts/test/pr-step1-build-testpypi.sh`** ? version gate, unit tests, `./scripts/pypi/publish-testpypi.sh` (needs `TESTPYPI_API_TOKEN`).
-2. **`./scripts/test/pr-step2-testpypi-usability.sh`** ? `./scripts/pypi/install-testpypi.sh` then `./scripts/test/testpypi/run-all.sh`.
+1. `cli lint repo /workspace`
+2. `cli test python unit /workspace`
+3. `cli pypi upload --testpypi` with `TESTPYPI_API_TOKEN`
+4. TestPyPI consumer install from a clean image
 
 Local equivalents:
 
 ```bash
 export TESTPYPI_API_TOKEN='pypi-...'
-./scripts/test/pr-step1-build-testpypi.sh
-./scripts/test/pr-step2-testpypi-usability.sh
+cli test python unit .
+cli pypi upload --yes --testpypi --skip-existing
 ```
 
 ## Production deploy (official PyPI)
 
-**Not TestPyPI.** Uses `PYPI_API_TOKEN` and `./scripts/pypi/deploy.sh` (wraps `./scripts/pypi/release.sh`).
+**Not TestPyPI.** Uses `PYPI_API_TOKEN` and the guarded release command.
 
 ```bash
 export PYPI_API_TOKEN='pypi-...'
-./scripts/pypi/deploy.sh
+cli release main --yes
 ```
 
-Tag push `vX.Y.Z` should match `pyproject.toml` (see `.cli/tag.yaml`).
+Tag push `vX.Y.Z` should match `pyproject.toml` (see `config/tag.yaml`).
 
-## Scripts
+## Commands
 
-| Script | Index |
+| Command | Index |
 | --- | --- |
-| `scripts/pypi/publish-testpypi.sh` | TestPyPI |
-| `scripts/pypi/install-testpypi.sh` | TestPyPI (pip) |
-| `scripts/pypi/deploy.sh` / `release.sh` | Production PyPI |
-| `scripts/pypi/test.sh` | Wrapper ? `publish-testpypi.sh` |
+| `cli pypi upload --testpypi` | TestPyPI |
+| `cli pypi upload` | Production PyPI |
+| `cli release main` | Tag, publish, verify, GitHub release |

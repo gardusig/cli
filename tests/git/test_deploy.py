@@ -80,8 +80,8 @@ def test_assess_deploy_readiness_needs_tag_when_main_ahead(tmp_path: Path) -> No
     svc.tag_remote_sha.return_value = "oldsha"
     svc.tag_local_sha.return_value = "oldsha"
     svc.top = str(tmp_path)
-    (tmp_path / ".cli").mkdir()
-    (tmp_path / ".cli" / "tag.yaml").write_text(
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "tag.yaml").write_text(
         "pattern: semver-v\nbump: patch\nrequire_increase: true\n",
         encoding="utf-8",
     )
@@ -102,8 +102,8 @@ def test_assess_deploy_readiness_skip_when_main_matches_tag(tmp_path: Path) -> N
     svc.tag_remote_sha.return_value = "same"
     svc.tag_local_sha.return_value = "same"
     svc.top = str(tmp_path)
-    (tmp_path / ".cli").mkdir()
-    (tmp_path / ".cli" / "tag.yaml").write_text("pattern: semver-v\n", encoding="utf-8")
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "tag.yaml").write_text("pattern: semver-v\n", encoding="utf-8")
 
     assessment = assess_deploy_readiness(svc, repo_root=tmp_path, gh_svc=None, fetch=False)
     assert assessment.needs_tag is False
@@ -114,8 +114,8 @@ def test_assess_deploy_readiness_plain_pattern_first_tag(tmp_path: Path) -> None
     svc.main_tip_sha.return_value = "mainsha"
     svc.all_tag_names.return_value = []
     svc.top = str(tmp_path)
-    (tmp_path / ".cli").mkdir()
-    (tmp_path / ".cli" / "tag.yaml").write_text("pattern: date\n", encoding="utf-8")
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "tag.yaml").write_text("pattern: date\n", encoding="utf-8")
 
     assessment = assess_deploy_readiness(svc, repo_root=tmp_path, gh_svc=None, fetch=False)
     assert assessment.needs_tag is True
