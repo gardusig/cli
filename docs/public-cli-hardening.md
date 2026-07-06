@@ -6,7 +6,7 @@ Epic [#57](https://github.com/gardusig/python-cli/issues/57) reviewed the public
 
 **Merge readiness (PR #88, 2026-07-06):** `gardusig-cli` **1.0.3** (main already **1.0.2** via #87); integration gate **154/154**; verification **511+** tests green; `cli pypi version check` passes; selective resolve E2E against `github-pipelines` python-cli.yaml.
 
-**Epic 06 status:** Pre-merge complete on branch. [github-pipelines PR #2](https://github.com/gardusig/github-pipelines/pull/2) merged; PR #88 CI dispatched. Post-merge: `docs/release.md` § Post-merge release.
+**Epic 06 status:** Pre-merge on branch; [github-pipelines PR #20](https://github.com/gardusig/github-pipelines/pull/20) and [PR #24](https://github.com/gardusig/github-pipelines/pull/24) (`BASE_VERSION` **1.0.2**) merged on `main`. Awaiting green PR #88 CI → merge → `docs/release.md` § Post-merge release.
 
 ## Current Matrix
 
@@ -79,14 +79,14 @@ python tests/integration/check_api_integration.py
 
 ## Next epic: merge & release (Epic 06c)
 
-**Current gate:** merge [PR #88](https://github.com/gardusig/python-cli/pull/88), then [pipelines PR #20](https://github.com/gardusig/github-pipelines/pull/20), ship **1.0.3**, close epics per closure tables below.
+**Current gate:** green CI on [PR #88](https://github.com/gardusig/python-cli/pull/88) → merge → ship **1.0.3** → close epics per closure tables below. Pipelines adoption ([PR #20](https://github.com/gardusig/github-pipelines/pull/20)) is on `main`.
 
 | Step | Action |
 | --- | --- |
 | 1 | Green CI on PR #88 (selective matrix + TestPyPI) |
 | 2 | Merge PR #88 → `main` |
-| 3 | Merge pipelines PR #20 (`ci:full`, nightly suite, `BASE_VERSION` **1.0.3**) |
-| 4 | `cli release main --yes` → PyPI **1.0.3** |
+| 3 | `cli release main --yes` → PyPI **1.0.3** |
+| 4 | Bump `github-pipelines` `BASE_VERSION` to **1.0.3** and `main` to **1.0.4** for next gate |
 | 5 | Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.3` |
 | 6 | Close #57–#85, #2, #4, #24, #54, #66–#70 per § Closure recommendations |
 
