@@ -281,7 +281,8 @@ def _project_rows(checks: list[ProjectCheck]) -> list[IntegrationCoverageRow]:
 def _args_include_project_path(check: ProjectCheck, path: tuple[str, ...]) -> bool:
     from src.integration.cli_api_checks import command_tokens
 
-    return command_tokens(check.args) == path
+    tokens = command_tokens(check.args)
+    return len(tokens) >= len(path) and tokens[: len(path)] == path
 
 
 def _top_level_rows(checks: list[EndpointCheck]) -> list[IntegrationCoverageRow]:

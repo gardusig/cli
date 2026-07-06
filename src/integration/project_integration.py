@@ -23,10 +23,14 @@ PROJECT_COMMAND_PATHS: tuple[tuple[str, ...], ...] = (
     ("project", "spawn"),
     ("project", "pairs", "status"),
     ("project", "link"),
+    ("project", "lane"),
+    ("project", "unlink"),
     ("project", "item", "add"),
+    ("project", "item", "status"),
     ("project", "deploy"),
     ("project", "ingest"),
     ("project", "sync"),
+    ("project", "recurrence", "check"),
 )
 
 CheckKind = Literal["ok", "refuse"]
@@ -61,6 +65,28 @@ class _FakeProjectService:
 
     def item_add_issue(self, issue: int, ref: ProjectRef) -> dict[str, object]:
         return {"id": "ITEM_1", "issue": issue, "project": ref.number}
+
+    def find_item(
+        self,
+        ref: ProjectRef,
+        *,
+        item_id: str | None = None,
+        issue: int | None = None,
+        pr: int | None = None,
+    ) -> dict[str, object]:
+        return {"id": item_id or "ITEM_1", "issue": issue, "pr": pr}
+
+    def item_status(self, ref: ProjectRef, *, item_id: str, status: str) -> dict[str, object]:
+        return {"id": item_id, "status": status, "project": ref.number}
+
+    def item_archive(self, ref: ProjectRef, *, item_id: str) -> dict[str, object]:
+        return {"id": item_id, "archived": True, "project": ref.number}
+
+    def item_delete(self, ref: ProjectRef, *, item_id: str) -> dict[str, object]:
+        return {"id": item_id, "deleted": True, "project": ref.number}
+
+    def recurrence_advance(self, **kwargs: object) -> dict[str, object]:
+        return {"advanced": [], "project": self.default_ref().__dict__}
 
     def deploy_pairs(self, **kwargs: object) -> dict[str, object]:
         return {"results": [], "failed": []}
@@ -109,6 +135,26 @@ def project_checks() -> list[ProjectCheck]:
             needle="ITEM_1",
         ),
         ProjectCheck(
+            "project item status",
+            ("project", "--format", "json", "item", "status", "doing", "--issue", "42", "--yes"),
+            needle="doing",
+        ),
+        ProjectCheck(
+            "project lane",
+            ("project", "--format", "json", "lane", "doing", "--issue", "42", "--yes"),
+            needle="doing",
+        ),
+        ProjectCheck(
+            "project unlink",
+            ("project", "--format", "json", "unlink", "--issue", "42", "--yes"),
+            needle="archived",
+        ),
+        ProjectCheck(
+            "project recurrence check",
+            ("project", "--format", "json", "recurrence", "check", "--yes"),
+            needle="advanced",
+        ),
+        ProjectCheck(
             "project deploy",
             ("project", "--format", "json", "deploy", "--yes"),
             needle="results",
@@ -130,6 +176,34 @@ def project_checks() -> list[ProjectCheck]:
         ProjectCheck(
             "project item add refuse",
             ("project", "item", "add", "--issue", "42"),
+            kind="refuse",
+            needle="Refusing write",
+            failure="refuse_gate",
+        ),
+        ProjectCheck(
+            "project item status refuse",
+            ("project", "item", "status", "doing", "--issue", "42"),
+            kind="refuse",
+            needle="Refusing write",
+            failure="refuse_gate",
+        ),
+        ProjectCheck(
+            "project lane refuse",
+            ("project", "lane", "doing", "--issue", "42"),
+            kind="refuse",
+            needle="Refusing write",
+            failure="refuse_gate",
+        ),
+        ProjectCheck(
+            "project unlink refuse",
+            ("project", "unlink", "--issue", "42"),
+            kind="refuse",
+            needle="Refusing write",
+            failure="refuse_gate",
+        ),
+        ProjectCheck(
+            "project recurrence check refuse",
+            ("project", "recurrence", "check"),
             kind="refuse",
             needle="Refusing write",
             failure="refuse_gate",
@@ -165,6 +239,10 @@ def _path_for_check(check: ProjectCheck) -> tuple[str, ...]:
     return command_tokens(check.args)
 
 
+def _path_covers_registry(check_path: tuple[str, ...], registry_path: tuple[str, ...]) -> bool:
+    return len(check_path) >= len(registry_path) and check_path[: len(registry_path)] == registry_path
+
+
 def project_paths_with_ok_check() -> set[tuple[str, ...]]:
     out: set[tuple[str, ...]] = set()
     for check in project_checks():
@@ -184,8 +262,9 @@ def project_paths_with_failure_check() -> set[tuple[str, ...]]:
 
 
 def assert_project_registry_complete() -> None:
+    check_paths = [_path_for_check(c) for c in project_checks()]
     for path in PROJECT_COMMAND_PATHS:
-        if not any(_path_for_check(c) == path for c in project_checks()):
+        if not any(_path_covers_registry(cp, path) for cp in check_paths):
             raise AssertionError(f"missing project integration check for path: {path}")
 
 
@@ -198,9 +277,11 @@ PROJECT_FAIL_EXEMPT_PATHS: frozenset[tuple[str, ...]] = frozenset({
 
 def assert_every_project_path_has_ok_and_failure_check() -> None:
     assert_project_registry_complete()
+    ok_paths = project_paths_with_ok_check()
+    fail_paths = project_paths_with_failure_check()
     for path in PROJECT_COMMAND_PATHS:
-        has_ok = path in project_paths_with_ok_check()
-        has_fail = path in project_paths_with_failure_check()
+        has_ok = any(_path_covers_registry(cp, path) for cp in ok_paths)
+        has_fail = any(_path_covers_registry(cp, path) for cp in fail_paths)
         if not has_ok:
             raise AssertionError(f"project {' '.join(path)} missing ok check")
         if path in PROJECT_FAIL_EXEMPT_PATHS:

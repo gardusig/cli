@@ -269,6 +269,51 @@ def test_recurrence_advance_respawns_closed_maintenance_issue(tmp_path: Path) ->
     assert header["issue_number"] == 11
 
 
+def test_recurrence_advance_skips_open_maintenance_issue(tmp_path: Path) -> None:
+    root = tmp_path / "project"
+    (root / "header").mkdir(parents=True)
+    (root / "body").mkdir()
+    (root / "header" / "docs.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "name": "docs: weekly review",
+                "tag": "maintenance",
+                "interval": 7,
+                "issue_number": 10,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (root / "body" / "docs.yaml").write_text(
+        yaml.safe_dump({"body": "Review docs"}),
+        encoding="utf-8",
+    )
+    manifest = root / "tasks.pairs.json"
+    manifest.write_text(
+        json.dumps(
+            [
+                {
+                    "header_filepath": "header/docs.yaml",
+                    "body_filepath": "body/docs.yaml",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    gh = MagicMock()
+    gh.issue_view.return_value = {"number": 10, "state": "OPEN"}
+    svc = _service(gh=gh)
+
+    payload = svc.recurrence_advance(
+        root=root,
+        manifest=manifest,
+        ref=ProjectRef(owner="owner", number=1, project_id="PVT_1"),
+    )
+
+    assert payload["advanced"] == []
+    gh.issue_create.assert_not_called()
+
+
 def test_ingest_pairs_updates_runtime_fields(tmp_path: Path) -> None:
     root = tmp_path / "project"
     (root / "header").mkdir(parents=True)

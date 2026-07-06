@@ -2,9 +2,9 @@
 
 Epic [#57](https://github.com/gardusig/python-cli/issues/57) reviewed the public `cli` command surface after product epics landed. The console command is `cli`; the package is `gardusig-cli`.
 
-**Status (PR #88):** integration coverage gate **150/150**; child matrix #58–#65 verified; meta coverage tests aligned with `ok_exempt` deferred rows (`chrome photos` / #50).
+**Status (PR #88):** integration coverage gate **154/154**; child matrix #58–#65 verified; meta coverage tests aligned with `ok_exempt` deferred rows (`chrome photos` / #50).
 
-**Merge readiness (PR #88, 2026-07-06):** `gardusig-cli` **1.0.2**; integration gate **150/150**; verification **511** tests green (40 meta/pipeline + 471 package); `cli pypi version check` passes; selective resolve E2E against `github-pipelines` python-cli.yaml.
+**Merge readiness (PR #88, 2026-07-06):** `gardusig-cli` **1.0.2**; integration gate **154/154**; verification **511+** tests green; `cli pypi version check` passes; selective resolve E2E against `github-pipelines` python-cli.yaml.
 
 **Epic 06 status:** Pre-merge complete on branch. [github-pipelines PR #2](https://github.com/gardusig/github-pipelines/pull/2) merged; PR #88 CI dispatched. Post-merge: `docs/release.md` § Post-merge release.
 
@@ -76,10 +76,13 @@ python tests/integration/check_api_integration.py
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
 - **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.2` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
 
-## Next epic: hub operator
+## Next epic: GitHub Projects recurrent board
 
-After PR #88 merges and ships **1.0.2**, track **`epic:hub-operator`** ([`docs/hub-operator.md`](hub-operator.md)):
+After PR #88 merges and ships **1.0.2**, track **`epic:08-projects`** ([#66](https://github.com/gardusig/python-cli/issues/66)–[#75](https://github.com/gardusig/python-cli/issues/75); [`docs/project.md`](project.md)):
 
-- Phase A (docs + pack tests) lands on PR #88.
-- Phase B (`ghcr.io/gardusig/operator-runner`) lands in `github-pipelines`.
-- Phases C–E: reusable `workflow_call` lanes (`operator-test` shipped) + `workflow_dispatch` orchestrator.
+- Phase A: audit shipped `cli project` surface vs open child issues.
+- Phase B: integration hardening for `lane`, `unlink`, `item status`, `recurrence check`.
+- Phase C: hub `project-recurrence.yml` scheduled workflow.
+- Close **#72–#75** with test and doc evidence when green.
+
+**Hub operator** (`epic:hub-operator`) is complete — see [`docs/hub-operator.md`](hub-operator.md).

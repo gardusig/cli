@@ -141,3 +141,6 @@ cli project recurrence check --yes   # alias for advance (polling workflows)
 The command creates a fresh issue from the local pair, sets the next deadline
 from `interval` (default 7 days), and records the previous issue number in the
 header. Re-copying the issue is preferred over reopening a closed card.
+
+Hub polling: `gardusig/github-pipelines` → `.github/workflows/project-recurrence.yml`
+(Mondays 09:00 UTC or manual `workflow_dispatch`).

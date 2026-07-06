@@ -16,8 +16,11 @@ from src.integration.cli_api_checks import command_tokens
 
 def test_project_paths_have_checks() -> None:
     assert_integration_coverage_gate()
-    covered = {command_tokens(c.args) for c in project_checks()}
-    assert set(PROJECT_COMMAND_PATHS) <= covered
+    covered = [command_tokens(c.args) for c in project_checks()]
+    for path in PROJECT_COMMAND_PATHS:
+        assert any(
+            len(tokens) >= len(path) and tokens[: len(path)] == path for tokens in covered
+        ), f"missing check for {' '.join(path)}"
     assert_every_project_path_has_ok_and_failure_check()
 
 
