@@ -38,17 +38,24 @@ def repo_languages(workspace: Path) -> tuple[str, ...]:
     return detected or ("markdown",)
 
 
-def _repo_profile(root: Path) -> tuple[str, ...] | None:
+def repo_slug(workspace: Path) -> str:
+    """Resolve the logical repository slug for policy and layout checks."""
+    root = workspace.expanduser().resolve()
     remote = _origin_repo_name(root)
-    if remote and remote in REPO_LANGUAGE_PROFILES:
-        return REPO_LANGUAGE_PROFILES[remote]
+    if remote:
+        return remote
     if root.name in REPO_LANGUAGE_PROFILES:
-        return REPO_LANGUAGE_PROFILES[root.name]
+        return root.name
     package_name = _pyproject_name(root)
     if package_name:
-        profile_key = PACKAGE_REPO_PROFILES.get(package_name, package_name)
-        if profile_key in REPO_LANGUAGE_PROFILES:
-            return REPO_LANGUAGE_PROFILES[profile_key]
+        return PACKAGE_REPO_PROFILES.get(package_name, package_name)
+    return root.name
+
+
+def _repo_profile(root: Path) -> tuple[str, ...] | None:
+    slug = repo_slug(root)
+    if slug in REPO_LANGUAGE_PROFILES:
+        return REPO_LANGUAGE_PROFILES[slug]
     return None
 
 

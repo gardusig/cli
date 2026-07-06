@@ -10,6 +10,8 @@ from typing import Any
 
 import yaml
 
+from src.services.toolkit.detect import repo_slug
+
 ALLOWED_WORKFLOWS = {".github/workflows/pull-request.yml"}
 EXEMPT_LAYOUT_REPOS = {"github-pipelines", "computer-science"}
 STANDARD_ROOT_DIRS = frozenset({"src", "docs", "tests", "test", ".github"})
@@ -200,6 +202,7 @@ def _path_depth(rel: str) -> int:
 def _check_structure(
     root: Path,
     *,
+    slug: str,
     require_layout: bool,
     policy: HygienePolicy | None,
 ) -> list[str]:
@@ -209,7 +212,7 @@ def _check_structure(
     root_files = policy.allowed_root_files if policy and policy.allowed_root_files else STANDARD_ROOT_FILES
 
     enforce_root_allowlist = bool(policy and (policy.allowed_root_dirs or policy.allowed_root_files))
-    if require_layout and (root.name not in EXEMPT_LAYOUT_REPOS or enforce_root_allowlist):
+    if require_layout and (slug not in EXEMPT_LAYOUT_REPOS or enforce_root_allowlist):
         for entry in sorted(root.iterdir(), key=lambda path: path.name):
             if entry.name in {".git", ".venv", "node_modules", "__pycache__"}:
                 continue
@@ -253,8 +256,9 @@ def check_repo_hygiene(
     policy: HygienePolicy | None = None,
 ) -> list[str]:
     root = root.expanduser().resolve()
+    slug = repo_slug(root)
     errors: list[str] = []
-    forbidden_prefixes = _forbidden_prefixes(root.name)
+    forbidden_prefixes = _forbidden_prefixes(slug)
 
     for path in root.rglob("*"):
         if any(part in {".git", "__pycache__"} for part in path.parts) or not path.is_file():
@@ -266,11 +270,11 @@ def check_repo_hygiene(
             forbidden = policy.forbidden_message(path, rel)
             if forbidden:
                 errors.append(f"{forbidden}: {rel}" if rel not in forbidden else forbidden)
-        if root.name != "github-pipelines" and rel.startswith(".github/workflows/") and rel not in ALLOWED_WORKFLOWS:
+        if slug != "github-pipelines" and rel.startswith(".github/workflows/") and rel not in ALLOWED_WORKFLOWS:
             errors.append(f"workflow belongs in github-pipelines: {rel}")
         elif rel == "Dockerfile" or any(rel.startswith(prefix) for prefix in forbidden_prefixes):
             errors.append(f"orchestration/script artifact belongs in python-cli or github-pipelines: {rel}")
-        if path.suffix == ".sh" and not _allows_shell_scripts(root.name) and not (policy and ".sh" in policy.forbidden_extensions):
+        if path.suffix == ".sh" and not _allows_shell_scripts(slug) and not (policy and ".sh" in policy.forbidden_extensions):
             errors.append(
                 "shell script belongs in gardusig/python-cli: "
                 f"{rel} (move this script to the CLI repo and expose it through a cli command)"
@@ -285,7 +289,7 @@ def check_repo_hygiene(
         if policy and not policy.allows(path, rel):
             errors.append(f"file type is not allowed by hygiene policy: {rel}")
 
-    if require_layout and root.name not in EXEMPT_LAYOUT_REPOS:
+    if require_layout and slug not in EXEMPT_LAYOUT_REPOS:
         if not (root / "README.md").is_file():
             errors.append("missing required file: README.md")
         for dirname in ("src", "docs"):
@@ -295,5 +299,5 @@ def check_repo_hygiene(
             errors.append("missing required test directory: test/ or tests/")
 
     if require_structure or (policy and policy.max_depth is not None):
-        errors.extend(_check_structure(root, require_layout=require_layout or require_structure, policy=policy))
+        errors.extend(_check_structure(root, slug=slug, require_layout=require_layout or require_structure, policy=policy))
     return errors
