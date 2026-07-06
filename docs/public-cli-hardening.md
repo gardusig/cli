@@ -82,11 +82,13 @@ python tests/integration/check_api_integration.py
 After PR #88 merges, ships **1.0.2**, and product epics **#66–#75**, **#69** close, adopt
 **`epic:00-infra`** ([#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85)) in `gardusig/github-pipelines`:
 
-- **#83** — PR CI matrix from `cli test packages resolve`
-- **#84** — per-package Docker integration legs via `cli test packages run PKG --no-unit`
-- **#85** — nightly `cli test packages suite` workflow on `main`
+- **#81** — registry shipped on PR #88 (`test_packages.py`); close on merge + PyPI **1.0.2**
+- **#82** — nine-script policy in [`scripts/test/README.md`](scripts/test/README.md); close on merge
+- **#83** — PR CI matrix from `cli test packages resolve` (pipelines `main` shipped; prove E2E post-merge)
+- **#84** — per-package Docker legs via `cli test packages run PKG --no-unit` (pipelines `main` shipped)
+- **#85** — nightly `cli test packages suite` — rewrite `python-cli-test-nightly.yml` in pipelines
 
-Contracts live in [`docs/ci-workflows.md`](ci-workflows.md). Pack smoke: `tests/pack/test_infra_epic.py`.
+Contracts and closure table: [`docs/ci-workflows.md`](ci-workflows.md) § Epic 00 closure. Pack smoke: `tests/pack/test_infra_epic.py`.
 
 **Epic 11** (`epic:11-gh-hub`) lands on PR #88 — see [`docs/gh.md`](gh.md) § Epic 11 closure.
 

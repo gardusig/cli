@@ -74,3 +74,9 @@ graphs. This repo owns the stable package registry and command contract:
 - `cli test packages resolve --base BASE --head HEAD` maps a PR diff to packages.
 - `cli test packages run PACKAGE` runs one package locally or prints the command contract with `--dry-run`; use `--no-unit` for integration-only pipeline legs.
 - `cli test packages suite` describes the full-suite safety net for nightly/manual pipeline runs.
+
+### Per-package scripts (#82)
+
+Nine shell wrappers under `scripts/test/` cover packages with Docker integration legs.
+All other registry packages use `cli test packages run PKG` directly. See
+[`scripts/test/README.md`](../scripts/test/README.md).

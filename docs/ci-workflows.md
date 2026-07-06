@@ -41,6 +41,10 @@ scripts/test/pypi.sh --dry-run
 scripts/test/all.sh
 ```
 
+**Nine-script policy (#82):** only packages with Docker integration legs get
+`scripts/test/*.sh` wrappers. Other packages use `cli test packages run PKG`
+directly. See [`scripts/test/README.md`](../scripts/test/README.md).
+
 ### Package matrix
 
 | Package | Unit tests | Integration leg |
@@ -69,8 +73,8 @@ for API and workflow packages instead of the monolithic `check_api_integration.p
 unit/integration command, plus optional `check_docker_commands.py --live`.
 
 ```bash
-cli test packages suite --format json   # plan legs
-cli test packages suite --dry-run       # print commands only
+cli test packages suite --format json   # full-suite leg plan
+scripts/test/all.sh --format json
 ```
 
 `github-pipelines` should schedule `python-cli-test-nightly.yml` on `main` (cron +
@@ -97,3 +101,22 @@ trusted publishing/OIDC or token wiring, schedules, and branch protection.
 | Regression | 15 min |
 
 See [setup.md](setup.md) and [docker.md](docker.md) for install and harness details.
+
+## Epic 00 closure (PR #88)
+
+Parent issues [#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85). Close when PR #88 merges, **1.0.2** ships, and `github-pipelines` adoption is green.
+
+| Child | Issue | python-cli evidence | github-pipelines adoption |
+| --- | --- | --- | --- |
+| Registry | [#81](https://github.com/gardusig/python-cli/issues/81) | `src/services/test_packages.py`; `cli test packages {list,resolve,run,suite}` | `cli test packages resolve` in `pull-request.yml` |
+| Scripts | [#82](https://github.com/gardusig/python-cli/issues/82) | `scripts/test/*.sh` + [`scripts/test/README.md`](../scripts/test/README.md) nine-script policy | N/A |
+| Selective PR CI | [#83](https://github.com/gardusig/python-cli/issues/83) | `src/services/pipeline_selective.py`; `tests/services/test_pipeline_selective.py` | `pull-request/python-cli.yaml` `selective: true`; `operator-test.yml` |
+| Docker split | [#84](https://github.com/gardusig/python-cli/issues/84) | `tests/integration/check_package_integration.py`; `package_integration.py` | `docker/python-cli.dockerfile` `package-unit` / `package-integration` |
+| Nightly suite | [#85](https://github.com/gardusig/python-cli/issues/85) | `cli test packages suite`; § Nightly full suite above | `python-cli-test-nightly.yml` → migrate to `suite` contract |
+
+**Remaining after merge:** wire `ci:full` label in `pull-request.yml`; rewrite nightly workflow to execute `cli test packages suite`; bump `CLI_VERSION` / workflow pins to **1.0.2**.
+
+```bash
+uv run pytest tests/integration/test_test_packages.py tests/services/test_pipeline_selective.py tests/pack/test_infra_epic.py -q
+cli test packages suite --format json
+```
