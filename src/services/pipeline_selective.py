@@ -31,6 +31,9 @@ def apply_selective_jobs(
     if not cfg.get("selective") or app_src is None or not selective_base or not selective_head:
         return jobs
 
+    if not isinstance(app_src, Path):
+        app_src = Path(app_src)
+
     resolution = selective_resolution(
         app_src=app_src,
         base=selective_base,

@@ -212,6 +212,14 @@ def _validate_repo(cfg: dict[str, Any], requested_slug: str, requested_repositor
     return config_slug, config_repository
 
 
+def _as_path(value: Any) -> Path | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, Path):
+        return value
+    return Path(str(value))
+
+
 def _apply_selective_jobs_if_configured(
     jobs: dict[str, dict[str, Any]],
     cfg: dict[str, Any],
@@ -348,7 +356,7 @@ def _resolve_job_family(args: argparse.Namespace, client: dict[str, Any]) -> dic
     stages = _stage_jobs(
         cfg,
         requested_job=requested_job,
-        app_src=getattr(args, "app_src", None),
+        app_src=_as_path(getattr(args, "app_src", None)),
         selective_base=str(getattr(args, "selective_base", "") or ""),
         selective_head=str(getattr(args, "selective_head", "") or ""),
     )

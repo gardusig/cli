@@ -157,4 +157,6 @@ def _run_pipeline_runtime(func, args: Namespace) -> None:
 def _namespace_from_args(args: list[str]) -> Namespace:
     values = {args[index].removeprefix("--").replace("-", "_"): args[index + 1] for index in range(0, len(args), 2)}
     values["pipeline_src"] = Path(values["pipeline_src"])
+    if values.get("app_src"):
+        values["app_src"] = Path(values["app_src"])
     return Namespace(**values)
