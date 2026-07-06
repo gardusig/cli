@@ -18,6 +18,8 @@ def test_hub_operator_docs_exist() -> None:
     assert (ROOT / "docs" / "opencode.md").is_file()
     hub = (ROOT / "docs" / "hub-operator.md").read_text(encoding="utf-8")
     assert "operator-test.yml" in hub
+    assert "operator-craft-plan.yml" in hub
+    assert "operator-review.yml" in hub
 
 
 def test_hub_operator_batch_manifest_exists() -> None:

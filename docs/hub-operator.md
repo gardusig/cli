@@ -92,17 +92,29 @@ Pin `CLI_VERSION` at build time after PyPI releases; local dev may use editable 
 | Workflow | Status |
 |----------|--------|
 | `operator-test.yml` | **Shipped** — selective resolve + package matrix; full-suite → `pull-request.yml` |
-| `operator-craft-plan.yml` | Planned |
-| `operator-craft-execute.yml` | Planned |
-| `operator-review.yml` | Planned |
+| `operator-craft-plan.yml` | **Shipped** — issue context + `cli opencode gh issue --plan-only` |
+| `operator-craft-execute.yml` | **Shipped** — `cli opencode gh execute` (`yes` gate + `DEEPSEEK_API_KEY`) |
+| `operator-review.yml` | **Shipped** — `cli opencode gh review` (no merge) |
 
 Docs: `github-pipelines/docs/workflows/operator.md`.
 
-Dispatch example:
+Dispatch examples:
 
 ```bash
 gh workflow run operator-test.yml -R gardusig/github-pipelines \
   -f repository=gardusig/python-cli \
+  -f ref=feat/language-first-cli-and-structure \
+  -f sha="$(git rev-parse HEAD)"
+
+gh workflow run operator-craft-plan.yml -R gardusig/github-pipelines \
+  -f repository=gardusig/python-cli \
+  -f issue=81 \
+  -f ref=main
+
+gh workflow run operator-review.yml -R gardusig/github-pipelines \
+  -f repository=gardusig/python-cli \
+  -f pr=88 \
+  -f issue=81 \
   -f ref=feat/language-first-cli-and-structure \
   -f sha="$(git rev-parse HEAD)"
 ```
@@ -126,7 +138,7 @@ Break-glass: `CLI_ALLOW_GH_MERGE=1` allows raw `gh pr merge` inside providers (e
 | 1 — tag policy + hub CI | Shipped (Epic 06, `github-pipelines` PR #2) |
 | 2 — forbid `cli gh pr merge` | Shipped (`gh_policy.py`) |
 | 3 — runner image + ghcr | **Done** ([github-pipelines #11](https://github.com/gardusig/github-pipelines/pull/11)) |
-| 4 — reusable `workflow_call` | **In progress** (`operator-test.yml` shipped) |
+| 4 — reusable `workflow_call` | **Done** — test + craft plan/execute + review |
 | 5–8 — OpenCode + `gh_topo` | Shipped on PR #88 |
 | 9 — `test` / `deploy` / `release` | `test` + `release` shipped; `deploy` stub |
 | 10 — dispatch orchestrator | Planned |
