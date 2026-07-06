@@ -10,8 +10,10 @@ repos:
     description: Browser extensions maintenance
   - name: interviewing
     description: Private interview prep — behavioral, system-design, problem-solving, resume
-  - name: code
-    description: Private runnable teaching code examples
+  - name: go
+    description: Public Go library and teaching examples
+  - name: cpp
+    description: Public C++ reference snippets
   - name: gardusig
     description: Profile / meta repo
   - name: database
