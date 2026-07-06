@@ -47,12 +47,66 @@ _STATS_FIXTURES = [
 ]
 
 
+def _parse_docker_filters(args: list[str]) -> list[str]:
+    filters: list[str] = []
+    index = 0
+    while index < len(args):
+        if args[index] == "--filter" and index + 1 < len(args):
+            filters.append(args[index + 1])
+            index += 2
+            continue
+        index += 1
+    return filters
+
+
+def _container_matches_filters(row: dict[str, Any], filters: list[str]) -> bool:
+    for raw in filters:
+        if "=" not in raw:
+            continue
+        key, value = raw.split("=", 1)
+        if key == "name" and value not in str(row.get("Name") or ""):
+            return False
+        if key == "status" and (row.get("State") or {}).get("Status") != value:
+            return False
+    return True
+
+
+def _image_matches_filters(row: dict[str, Any], filters: list[str]) -> bool:
+    for raw in filters:
+        if "=" not in raw:
+            continue
+        key, value = raw.split("=", 1)
+        if key != "reference":
+            continue
+        tags = row.get("RepoTags") or []
+        if not any(value in str(tag) for tag in tags):
+            return False
+    return True
+
+
+def _filtered_containers(args: list[str], *, all_containers: bool) -> list[dict[str, Any]]:
+    filters = _parse_docker_filters(args)
+    rows = list(_CONTAINER_FIXTURES)
+    if not all_containers:
+        rows = [row for row in rows if row["State"]["Status"] == "running"]
+    if filters:
+        rows = [row for row in rows if _container_matches_filters(row, filters)]
+    return rows
+
+
+def _filtered_images(args: list[str]) -> list[dict[str, Any]]:
+    filters = _parse_docker_filters(args)
+    rows = list(_IMAGE_FIXTURES)
+    if filters:
+        rows = [row for row in rows if _image_matches_filters(row, filters)]
+    return rows
+
+
 def _mock_docker_result(args: list[str]) -> subprocess.CompletedProcess[str]:
     cmd = args[0] if args else ""
     if cmd == "ps" and "-q" in args:
-        ids = [row["Id"] for row in _CONTAINER_FIXTURES]
-        if "-a" not in args:
-            ids = [row["Id"] for row in _CONTAINER_FIXTURES if row["State"]["Status"] == "running"]
+        all_containers = "-a" in args
+        ids = [row["Id"] for row in _filtered_containers(args, all_containers=all_containers)]
         stdout = "\n".join(ids) + ("\n" if ids else "")
         return subprocess.CompletedProcess(args=["docker", *args], returncode=0, stdout=stdout, stderr="")
     if cmd == "stats":
@@ -78,7 +132,7 @@ def _mock_docker_result(args: list[str]) -> subprocess.CompletedProcess[str]:
         stdout = "\n".join(stdout_lines) + ("\n" if stdout_lines else "")
         return subprocess.CompletedProcess(args=["docker", *args], returncode=0, stdout=stdout, stderr="")
     if cmd == "images" and "-q" in args:
-        stdout = "\n".join(row["Id"] for row in _IMAGE_FIXTURES) + "\n"
+        stdout = "\n".join(row["Id"] for row in _filtered_images(args)) + "\n"
         return subprocess.CompletedProcess(args=["docker", *args], returncode=0, stdout=stdout, stderr="")
     if cmd == "system" and len(args) > 1 and args[1] == "df":
         stdout = "TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          1         1         64MB      0B\n"

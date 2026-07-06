@@ -244,7 +244,7 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
         "docker",
         source=("src/commands/docker.py", "src/services/docker_runtime.py", "src/integration/docker_*.py"),
         tests=("tests/docker/",),
-        checks=("tests/integration/check_public_commands.py",),
+        checks=("tests/integration/check_public_commands.py", "tests/integration/check_docker_commands.py"),
     ),
     _pkg(
         "contest",

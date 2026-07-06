@@ -32,6 +32,24 @@ Language-focused checks still use repo Dockerfiles based on Node, Java, Ubuntu, 
 
 `cli docker` is monitor/cleanup only. It does not start containers, run services, or invoke compose.
 
+### Command matrix
+
+Epic 12 ([#70](https://github.com/gardusig/python-cli/issues/70)) acceptance checklist. Integration gate exercises JSON and filter rows in `docker_integration.py`.
+
+| Command | Read/Write | `--format json` | Filters | Write gate |
+| --- | --- | --- | --- | --- |
+| `ps` | read | yes | `--name`, `--filter` | — |
+| `containers` | read | yes | `--name`, `--status`, `--filter`, `--running` | — |
+| `images` | read | yes | `--repository`, `--filter` | — |
+| `stats` | read | yes | `--name`, `--filter` | — |
+| `top` | read | yes | `--name`, `--repository`, `--filter` | — |
+| `df` | read | yes (`{"text":…}`) | — | — |
+| `stop` | write | yes (`stopped`, `count`) | — | `--yes` |
+| `container-delete` | write | yes (`deleted`, `count`) | — | `--yes` |
+| `image-delete` | write | yes (`image_prune`, `all_images`) | — | `--yes` |
+| `clean` | write | yes (per-target payload) | — | `--yes` |
+| `reset` | write | yes (full summary object) | — | `--yes` |
+
 Read-only commands:
 
 | Command | Purpose |
@@ -70,6 +88,25 @@ cli docker df --format json
 ```
 
 `df --format json` wraps the raw Docker text as `{"text": "..."}` because `docker system df` is not a stable structured API across installed Docker versions.
+
+Write commands also accept `--format json` after a successful `--yes` run:
+
+```bash
+cli docker stop --yes --format json
+cli docker container-delete web --yes --format json
+cli docker reset --yes --format json
+```
+
+Example `stop` payload: `{"stopped": ["abc123"], "count": 1}`.
+
+## Install vs verify
+
+| Requirement | Read commands | Live integration |
+| --- | --- | --- |
+| `docker` on PATH | required | required |
+| Docker daemon socket | required for real data | required (`check_docker_commands.py --live`) |
+
+Mocked integration (`python tests/integration/check_docker_commands.py`) patches `run_docker` and does not need a daemon.
 
 ## Filters
 

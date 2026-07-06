@@ -154,6 +154,25 @@ def test_docker_stop_with_yes(
 
 
 @patch("src.commands.docker.docker_available", return_value=True)
+@patch("src.commands.docker.stop_containers", return_value=["abc111integration"])
+@patch(
+    "src.commands.docker.list_containers",
+    return_value=[ContainerRow("a", "/web", "running", 100, 200)],
+)
+def test_docker_stop_json(
+    _list: MagicMock,
+    mock_stop: MagicMock,
+    _avail: MagicMock,
+) -> None:
+    result = runner.invoke(app, ["docker", "stop", "--yes", "--format", "json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout[result.stdout.index("{") :])
+    assert payload["count"] == 1
+    assert payload["stopped"] == ["abc111integration"]
+    mock_stop.assert_called_once_with(names=None)
+
+
+@patch("src.commands.docker.docker_available", return_value=True)
 @patch("src.commands.docker.stop_containers", return_value=["web"])
 @patch(
     "src.commands.docker.list_containers",

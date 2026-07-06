@@ -336,13 +336,17 @@ def df_cmd(
 def stop_cmd(
     names: list[str] = typer.Argument(None, help="Container names/ids (default: all running)."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirm stop."),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Stop running containers."""
     _require_docker()
     running = list_containers(running_only=True)
     targets = list(names) if names else [row.display_name for row in running]
     if not targets:
-        rprint("[yellow]no running containers[/yellow]")
+        if format == "json":
+            _emit_json({"stopped": [], "count": 0})
+        else:
+            rprint("[yellow]no running containers[/yellow]")
         return
     extra = [f"containers_to_stop: {len(targets)}", *[f"  - {name}" for name in targets[:10]]]
     if len(targets) > 10:
@@ -355,6 +359,9 @@ def stop_cmd(
         extra_lines=extra,
     )
     stopped = stop_containers(names=names)
+    if format == "json":
+        _emit_json({"stopped": stopped, "count": len(stopped)})
+        return
     rprint(f"[green]stopped[/green] {len(stopped)} container(s)")
 
 
@@ -362,6 +369,7 @@ def stop_cmd(
 def container_delete_cmd(
     names: list[str] = typer.Argument(None, help="Container names/ids (default: all)."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirm delete."),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Remove containers (stopped and running)."""
     _require_docker()
@@ -387,6 +395,9 @@ def container_delete_cmd(
         extra_lines=extra,
     )
     removed = remove_containers(names=names)
+    if format == "json":
+        _emit_json({"deleted": removed, "count": len(removed)})
+        return
     rprint(f"[green]deleted[/green] {len(removed)} container(s)")
 
 
@@ -398,6 +409,7 @@ def image_delete_cmd(
         "--all-images",
         help="Prune all unused images (not only dangling).",
     ),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Prune unused images."""
     _require_docker()
@@ -415,6 +427,9 @@ def image_delete_cmd(
         extra_lines=extra,
     )
     out = prune_images(all_unused=all_images)
+    if format == "json":
+        _emit_json({"image_prune": out, "all_images": all_images})
+        return
     if out:
         rprint(out)
     rprint("[green]image prune[/green] complete")
@@ -428,6 +443,7 @@ def reset_cmd(
         "--all-images/--dangling-only",
         help="Prune all unused images (default) or dangling only.",
     ),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Stop all containers, remove them, and prune images + build cache."""
     _require_docker()
@@ -452,6 +468,16 @@ def reset_cmd(
         extra_lines=extra,
     )
     summary = reset_docker(all_images=all_images)
+    if format == "json":
+        _emit_json(
+            {
+                "stopped": summary.stopped,
+                "removed_containers": summary.removed_containers,
+                "image_prune_output": summary.image_prune_output,
+                "cache_prune_output": summary.cache_prune_output,
+            }
+        )
+        return
     rprint(f"[green]stopped[/green] {len(summary.stopped)} container(s)")
     rprint(f"[green]deleted[/green] {len(summary.removed_containers)} container(s)")
     if summary.image_prune_output:
@@ -474,6 +500,7 @@ def clean_cmd(
         "--all-images",
         help="With images: prune all unused images (not only dangling).",
     ),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Targeted cleanup (containers, images, cache). Prefer `reset` for full wipe."""
     _require_docker()
@@ -504,16 +531,29 @@ def clean_cmd(
         extra_lines=extra,
     )
 
+    result: dict[str, object] = {"target": target}
+
     if target in {"containers", "all"}:
         removed = remove_containers()
-        rprint(f"[green]removed[/green] {len(removed)} container(s)")
+        result["removed"] = removed
+        result["removed_count"] = len(removed)
+        if format != "json":
+            rprint(f"[green]removed[/green] {len(removed)} container(s)")
     if target in {"images", "all"}:
         out = prune_images(all_unused=all_images)
-        if out:
-            rprint(out)
-        rprint("[green]image prune[/green] complete")
+        result["image_prune"] = out
+        result["all_images"] = all_images
+        if format != "json":
+            if out:
+                rprint(out)
+            rprint("[green]image prune[/green] complete")
     if target in {"cache", "all"}:
         out = prune_build_cache()
-        if out:
-            rprint(out)
-        rprint("[green]build cache prune[/green] complete")
+        result["cache_prune"] = out
+        if format != "json":
+            if out:
+                rprint(out)
+            rprint("[green]build cache prune[/green] complete")
+
+    if format == "json":
+        _emit_json(result)
