@@ -9,6 +9,8 @@ from typer.testing import CliRunner
 from src.cli import app
 from src.services import test_packages
 
+from tests.pack.conftest import requires_docs
+
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = CliRunner()
 
@@ -25,6 +27,7 @@ INTEGRATION_SCRIPT_PACKAGES = (
 )
 
 
+@requires_docs
 def test_infra_epic_ci_docs_exist() -> None:
     text = (ROOT / "docs" / "ci-workflows.md").read_text(encoding="utf-8")
     assert "packages resolve" in text

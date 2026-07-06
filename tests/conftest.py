@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -14,8 +16,31 @@ DEFAULT_TEST_TIMEOUT_SECONDS = 30
 INTEGRATION_TEST_TIMEOUT_SECONDS = 300
 
 
-
 _DESELECTED: list[pytest.Item] = []
+
+
+@pytest.fixture(scope="session", autouse=True)
+def docker_unit_git_root() -> None:
+    """Docker unit images omit .git; bootstrap a synthetic repo at the workspace root."""
+    if (ROOT / ".git").is_dir():
+        return
+    if in_docker_integration():
+        return
+    # Only bootstrap in CI Docker unit images (/workspace, no .git in COPY context).
+    if os.environ.get("GITHUB_ACTIONS") != "true" and str(ROOT) != "/workspace":
+        return
+
+    subprocess.run(["git", "init", "-b", "main"], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.email", "unit@test"], cwd=ROOT, check=True)
+    subprocess.run(["git", "config", "user.name", "unit"], cwd=ROOT, check=True)
+    subprocess.run(["git", "add", "-A"], cwd=ROOT, check=True)
+    subprocess.run(
+        ["git", "commit", "-m", "ci-init", "--allow-empty"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    )
+    os.environ["CLI_UNIT_GIT_BOOTSTRAP"] = "1"
 
 
 @pytest.fixture
@@ -32,19 +57,27 @@ def ci_config_dir(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("CLI_CONFIG_DIR", str(ROOT / "config" / "ci"))
 
 
+def _docs_available() -> bool:
+    return (ROOT / "docs" / "release.md").is_file()
+
+
 def pytest_deselected(items: list[pytest.Item]) -> None:
     _DESELECTED.extend(items)
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     """Integration tests need Docker; drop them on host pytest runs."""
-    if not in_docker_integration():
-        kept: list[pytest.Item] = []
-        for item in items:
-            if item.get_closest_marker("integration"):
-                continue
-            kept.append(item)
-        items[:] = kept
+    docs_available = _docs_available()
+    kept: list[pytest.Item] = []
+    for item in items:
+        if item.get_closest_marker("requires_docs") and not docs_available:
+            if not item.get_closest_marker("integration"):
+                item.add_marker(pytest.mark.integration)
+            continue
+        if not in_docker_integration() and item.get_closest_marker("integration"):
+            continue
+        kept.append(item)
+    items[:] = kept
     for item in items:
         if item.get_closest_marker("integration"):
             item.add_marker(pytest.mark.timeout(INTEGRATION_TEST_TIMEOUT_SECONDS))

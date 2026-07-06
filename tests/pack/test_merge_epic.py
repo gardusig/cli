@@ -6,6 +6,8 @@ from pathlib import Path
 
 import tomllib
 
+from tests.pack.conftest import requires_docs
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -22,6 +24,7 @@ def test_merge_epic_wheel_has_no_removed_script_data_files() -> None:
     assert "src/scripts/_common.sh" not in text
 
 
+@requires_docs
 def test_merge_epic_release_docs() -> None:
     text = (ROOT / "docs" / "release.md").read_text(encoding="utf-8")
     assert "Pre-merge checklist" in text
@@ -29,6 +32,7 @@ def test_merge_epic_release_docs() -> None:
     assert "PR #20" in text or "pipelines PR #20" in text
 
 
+@requires_docs
 def test_merge_epic_hardening_pointer() -> None:
     text = (ROOT / "docs" / "public-cli-hardening.md").read_text(encoding="utf-8")
     assert "Merge readiness" in text
@@ -36,6 +40,7 @@ def test_merge_epic_hardening_pointer() -> None:
     assert "PR #88" in text
 
 
+@requires_docs
 def test_merge_epic_closure_docs_exist() -> None:
     for path in (
         "docs/project.md",

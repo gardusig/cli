@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from tests.constants import ROOT
-
+import os
 import re
 import subprocess
 import tomllib
 from pathlib import Path
+
+from tests.constants import ROOT
 
 import pytest
 
@@ -74,8 +75,8 @@ def test_requirements_match_pyproject() -> None:
 def test_build_artifacts_are_not_tracked() -> None:
     from src.integration.docker_guard import in_docker_integration
 
-    # Docker COPY excludes .git; bootstrap creates a synthetic snapshot unrelated to source tracking.
-    if in_docker_integration():
+    # Synthetic git bootstrap in Docker unit is not the real tracked tree.
+    if in_docker_integration() or os.environ.get("CLI_UNIT_GIT_BOOTSTRAP") == "1":
         return
     result = subprocess.run(
         ["git", "ls-files"],

@@ -73,6 +73,7 @@ pythonpath = ["."]
 python_files = ["test_*.py", "*_test.py"]
 markers = [
   "integration: tests that may require Docker or external runtime isolation",
+  "requires_docs: pack/doc contract tests needing docs/ (excluded from Docker unit context)",
 ]
 filterwarnings = [
   "error",
