@@ -45,7 +45,7 @@ def _mock_snapshot(snapshot: MagicMock):
 @pytest.mark.parametrize(
     ("args", "needle"),
     [
-        (["drive", "status"], "Repository:"),
+        (["drive", "status"], "repositories"),
         (["drive", "--help"], "ingest"),
         (["restore"], "restore: not implemented yet"),
         (["chrome", "--help"], "bookmarks"),
@@ -66,14 +66,16 @@ def test_chrome_bookmarks_deploy_without_backup() -> None:
         env={"CLI_BOOKMARKS_FILE": "/nonexistent/cli/missing-bookmarks.html"},
     )
     assert result.exit_code != 0
-    assert "Backup not found" in result.stdout
+    assert "Backup not found" in (result.stdout + result.stderr)
 
 
 def test_root_lists_all_top_level_groups() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
-    for name in ("links", "git", "restore", "drive", "notion", "chrome"):
+    for name in ("links", "git", "restore", "drive", "notion", "chrome", "project", "tasks", "contest"):
         assert name in result.stdout
+    for hidden in ("│ backup", "│ bookmarks", "│ publish", "│ g "):
+        assert hidden not in result.stdout
 
 
 @patch.object(GitShortcuts, "commit", return_value=True)

@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 from typer.testing import CliRunner
 
 from src.cli import app
-from src.services.pypi_publish import resolve_testpypi_token
+from src.services.pypi_publish import TEST_REPOSITORY_URL, resolve_testpypi_token
 
 runner = CliRunner()
 
@@ -43,6 +43,65 @@ def test_pypi_upload(
     assert result.exit_code == 0
     assert "Published to PyPI" in result.stdout
     assert "Verified on PyPI" in result.stdout
+
+
+@patch("src.commands.pypi.verify_package_version_on_index")
+@patch("src.commands.pypi.publish_distributions")
+@patch("src.commands.pypi.build_distributions")
+@patch("src.commands.pypi.resolve_testpypi_token", return_value="test-token")
+@patch("src.commands.pypi.require_write_gate")
+def test_pypi_upload_testpypi_uses_test_index(
+    _gate: MagicMock,
+    _token: MagicMock,
+    mock_build: MagicMock,
+    mock_upload: MagicMock,
+    mock_verify: MagicMock,
+) -> None:
+    mock_build.return_value = [Path("dist/pkg.whl")]
+    mock_upload.return_value = ["pkg.whl"]
+    result = runner.invoke(
+        app,
+        ["pypi", "upload", "--yes", "--testpypi", "--version", "1.0.0"],
+    )
+
+    assert result.exit_code == 0
+    assert "Published to TestPyPI" in result.stdout
+    _, kwargs = mock_upload.call_args
+    assert kwargs["token"] == "test-token"
+    assert kwargs["repository_url"] == TEST_REPOSITORY_URL
+    mock_verify.assert_called_once_with("gardusig-cli", "1.0.0", testpypi=True)
+
+
+@patch("src.commands.pypi.resolve_pypi_token", return_value="tok")
+@patch("src.commands.pypi.require_write_gate")
+def test_pypi_upload_skip_build_requires_existing_artifacts(
+    _gate: MagicMock,
+    _token: MagicMock,
+    tmp_path: Path,
+) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "pypi",
+            "upload",
+            "--yes",
+            "--skip-build",
+            "--version",
+            "1.0.0",
+            "--dist-dir",
+            str(tmp_path),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "no artifacts" in result.stdout + (result.stderr or "")
+
+
+def test_pypi_upload_invalid_version_reports_error() -> None:
+    result = runner.invoke(app, ["pypi", "upload", "--yes", "--version", "bad"])
+
+    assert result.exit_code != 0
+    assert "release version must look like semver" in result.stdout + (result.stderr or "")
 
 
 def test_resolve_testpypi_token_prefers_testpypi_env(monkeypatch) -> None:

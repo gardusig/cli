@@ -47,6 +47,12 @@ class RetryingDriveProvider:
             lambda: self._provider.upload(local, remote),
         )
 
+    def download(self, remote: str, local: Path) -> None:
+        self._client.call(
+            f"download {remote}",
+            lambda: self._provider.download(remote, str(local)),
+        )
+
 
 def wrap_drive_provider(
     provider: DriveProvider,

@@ -5,14 +5,12 @@ from __future__ import annotations
 import pytest
 
 from src.providers.gh import GhProvider
-from src.services.gh_policy import ProjectsForbiddenError, RulesetForbiddenError
+from src.services.gh_policy import RulesetForbiddenError, check_gh_args
 from src.services.gh_topo import build_parent_child_tree, load_priority_levels
 
 
-def test_gh_provider_blocks_project_commands() -> None:
-    provider = GhProvider()
-    with pytest.raises(ProjectsForbiddenError):
-        provider.run(["project", "list"])
+def test_gh_provider_allows_project_commands() -> None:
+    check_gh_args(["project", "list"])
 
 
 def test_gh_provider_blocks_ruleset_commands() -> None:

@@ -13,14 +13,16 @@ from src.services.craft_ai import CraftAI
 from src.services.gh_service import GhService
 from src.services.git_shortcuts import GitShortcuts
 from src.services.issue_craft import (
+    IssueCraftError,
     dedupe_candidate,
     pick_issues,
+    review_epic,
     plan_issue,
     review_issue,
     ship_issue,
     write_draft,
 )
-from src.services.pr_craft import craft_pr, execute_issue, review_pr
+from src.services.pr_craft import craft_pr, execute_issue, pr_execution_plan, review_pr
 from src.utils.runtime_profile import detect_profile, is_headless
 
 gh_domain_app = typer.Typer(
@@ -32,6 +34,14 @@ gh_domain_app = typer.Typer(
 craft_app = gh_domain_app
 
 _ROOT = Path(__file__).resolve().parents[2]
+
+
+def _truthy(value: str | bool | None, *, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _svc(repo: str | None) -> GhService:
@@ -67,7 +77,7 @@ def craft_issue_cmd(
     if number is None and not title and not body and not body_file:
         nxt = svc.backlog_next()
         if not nxt:
-            typer.echo("No ready backlog child. Use --number or --title.", err=True)
+            typer.echo("No ready backlog subissue. Use --number or --title.", err=True)
             raise typer.Exit(1)
         number = int(nxt["number"])
 
@@ -139,6 +149,38 @@ def craft_pick_cmd(
     typer.echo(json.dumps({"repo": svc.repo_display(), "issues": issues}, indent=2))
 
 
+@gh_domain_app.command("epic")
+def craft_epic_cmd(
+    ctx: typer.Context,
+    number: int = typer.Option(..., "--number", "-n", help="Epic issue to refine."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Render refinement without GitHub writes."),
+    dry_run_value: str | None = typer.Option(None, "--dry-run-value", help="Pipeline boolean value for dry-run."),
+    yes: bool = typer.Option(False, "--yes", "-y"),
+) -> None:
+    """Refine an epic issue and its subissues into executable issue plans."""
+    repo = _repo(ctx)
+    svc = _svc(repo)
+    if dry_run_value is not None:
+        dry_run = _truthy(dry_run_value, default=True)
+    if not dry_run:
+        require_write_gate(
+            "craft-epic-refine",
+            [*svc.snapshot_summary(), f"epic: #{number}", "writes: epic body + issue comments"],
+            yes=yes,
+        )
+    try:
+        result = review_epic(
+            svc,
+            number,
+            runtime=detect_profile().value,
+            yes=not dry_run,
+        )
+    except IssueCraftError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+    typer.echo(json.dumps(result, indent=2))
+
+
 @gh_domain_app.command("next")
 def craft_next_cmd(ctx: typer.Context) -> None:
     """Topo backlog next + issue context."""
@@ -152,18 +194,95 @@ def craft_next_cmd(ctx: typer.Context) -> None:
     typer.echo(json.dumps({"next": nxt, "context": ctx_data}, indent=2))
 
 
+@gh_domain_app.command("pr-plan")
+def craft_pr_plan_cmd(
+    ctx: typer.Context,
+    number: int | None = typer.Option(None, "--number", "-n", help="Subissue to implement."),
+    branch: str | None = typer.Option(None, "--branch"),
+) -> None:
+    """Render a non-mutating PR execution plan for a subissue."""
+    repo = _repo(ctx)
+    svc = _svc(repo)
+    if number is None:
+        nxt = svc.backlog_next()
+        if not nxt:
+            typer.echo("No ready backlog subissue.", err=True)
+            raise typer.Exit(1)
+        number = int(nxt["number"])
+    try:
+        result = pr_execution_plan(svc, number, branch=branch)
+    except IssueCraftError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+    typer.echo(json.dumps(result, indent=2))
+
+
+@gh_domain_app.command("issue-to-pr")
+def craft_issue_to_pr_cmd(
+    ctx: typer.Context,
+    number: str | None = typer.Option(None, "--number", "-n", help="Subissue to implement."),
+    branch: str | None = typer.Option(None, "--branch"),
+    dry_run: str = typer.Option("true", "--dry-run", help="true renders a PR plan; false creates the PR."),
+    repo_root: Path = typer.Option(Path("."), "--repo-root", help="Repository root for PR work."),
+    yes: bool = typer.Option(False, "--yes", "-y"),
+) -> None:
+    """Pipeline entry point: pick a subissue, then plan or create its PR."""
+    repo = _repo(ctx)
+    svc = _svc(repo)
+    issue_number = int(number) if number and number.strip() else None
+    selected_branch = branch if branch and branch.strip() else None
+    if issue_number is None:
+        nxt = svc.backlog_next()
+        if not nxt:
+            typer.echo("No ready backlog subissue.", err=True)
+            raise typer.Exit(1)
+        issue_number = int(nxt["number"])
+    if _truthy(dry_run, default=True):
+        try:
+            result = pr_execution_plan(svc, issue_number, branch=selected_branch)
+        except IssueCraftError as exc:
+            typer.echo(str(exc), err=True)
+            raise typer.Exit(1) from exc
+        typer.echo(json.dumps(result, indent=2))
+        return
+
+    root = repo_root.resolve()
+    ctx_data = svc.issue_context(issue_number)
+    title = str(ctx_data.get("issue", {}).get("title", f"issue-{issue_number}"))
+    br = selected_branch or f"craft/{issue_number}-" + title.split("—")[-1].strip().lower().replace(" ", "-")[:40]
+    require_write_gate(
+        "craft-issue-to-pr",
+        [*svc.snapshot_summary(), f"subissue: #{issue_number}", f"branch: {br}"],
+        yes=yes,
+    )
+    try:
+        result = craft_pr(
+            svc,
+            GitShortcuts(top=str(root)),
+            issue_number,
+            branch=br,
+            repo_root=root,
+        )
+    except IssueCraftError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+    typer.echo(json.dumps(result, indent=2))
+
+
 @gh_domain_app.command("execute")
 def craft_execute_cmd(
     ctx: typer.Context,
     number: int = typer.Argument(..., help="Issue to execute."),
     pr: bool = typer.Option(False, "--pr", help="Hand off to craft pr after checkpoints."),
     skip_test: bool = typer.Option(False, "--skip-test"),
+    repo_root: Path = typer.Option(Path("."), "--repo-root", help="Repository root for PR work."),
     comment: bool = typer.Option(True, "--comment/--no-comment"),
     yes: bool = typer.Option(False, "--yes", "-y"),
 ) -> None:
     """Execute issue checkpoints; optional --pr handoff."""
     repo = _repo(ctx)
     svc = _svc(repo)
+    root = repo_root.resolve()
     if pr:
         require_write_gate(
             "craft-execute-pr",
@@ -174,9 +293,9 @@ def craft_execute_cmd(
         svc,
         number,
         handoff_pr=pr,
-        git=GitShortcuts() if pr else None,
+        git=GitShortcuts(top=str(root)) if pr else None,
         skip_test=skip_test,
-        repo_root=_ROOT,
+        repo_root=root,
     )
     if comment and not pr:
         require_write_gate("craft-execute", svc.snapshot_summary(), yes=yes)
@@ -190,16 +309,18 @@ def craft_pr_cmd(
     number: int | None = typer.Option(None, "--number", "-n", help="Issue to implement."),
     branch: str | None = typer.Option(None, "--branch"),
     skip_test: bool = typer.Option(False, "--skip-test"),
+    repo_root: Path = typer.Option(Path("."), "--repo-root", help="Repository root for PR work."),
     yes: bool = typer.Option(False, "--yes", "-y"),
 ) -> None:
     """Branch, codegen guidance, test, push, open PR."""
     repo = _repo(ctx)
     svc = _svc(repo)
-    git = GitShortcuts()
+    root = repo_root.resolve()
+    git = GitShortcuts(top=str(root))
     if number is None:
         nxt = svc.backlog_next()
         if not nxt:
-            typer.echo("No ready backlog child.", err=True)
+            typer.echo("No ready backlog subissue.", err=True)
             raise typer.Exit(1)
         number = int(nxt["number"])
     ctx_data = svc.issue_context(number)
@@ -214,14 +335,18 @@ def craft_pr_cmd(
         ],
         yes=yes,
     )
-    pr_result = craft_pr(
-        svc,
-        git,
-        number,
-        branch=br,
-        skip_test=skip_test,
-        repo_root=_ROOT,
-    )
+    try:
+        pr_result = craft_pr(
+            svc,
+            git,
+            number,
+            branch=br,
+            skip_test=skip_test,
+            repo_root=root,
+        )
+    except IssueCraftError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
     typer.echo(json.dumps(pr_result, indent=2))
 
 

@@ -75,6 +75,13 @@ def test_list_containers_sorted(mock_run: MagicMock) -> None:
 
 
 @patch("src.services.docker_runtime.run_docker")
+def test_list_containers_passes_filters(mock_run: MagicMock) -> None:
+    mock_run.return_value = MagicMock(stdout="", returncode=0)
+    assert list_containers(all_containers=True, filters=["name=cli"]) == []
+    mock_run.assert_called_once_with(["ps", "-q", "-a", "--filter", "name=cli"])
+
+
+@patch("src.services.docker_runtime.run_docker")
 def test_list_images_sorted(mock_run: MagicMock) -> None:
     mock_run.side_effect = [
         MagicMock(stdout="img1\n", returncode=0),
@@ -93,6 +100,13 @@ def test_list_images_sorted(mock_run: MagicMock) -> None:
     rows = list_images()
     assert rows[0].name == "my/app:latest"
     assert rows[0].size == 42_000_000
+
+
+@patch("src.services.docker_runtime.run_docker")
+def test_list_images_passes_filters(mock_run: MagicMock) -> None:
+    mock_run.return_value = MagicMock(stdout="", returncode=0)
+    assert list_images(filters=["reference=cli-contest:runner"]) == []
+    mock_run.assert_called_once_with(["images", "-q", "--filter", "reference=cli-contest:runner"])
 
 
 @patch("src.services.docker_runtime.run_docker")
@@ -117,6 +131,13 @@ def test_list_container_stats(mock_run: MagicMock) -> None:
     assert rows[0].display_name == "web"
     assert rows[0].cpu_percent == 5.0
     assert rows[0].mem_used_bytes == 10 * 1024**2
+
+
+@patch("src.services.docker_runtime.run_docker")
+def test_list_container_stats_passes_filters(mock_run: MagicMock) -> None:
+    mock_run.return_value = MagicMock(stdout="", returncode=0)
+    assert list_container_stats(filters=["label=cli"]) == []
+    mock_run.assert_called_once_with(["ps", "-q", "--filter", "label=cli"])
 
 
 @patch("src.services.docker_runtime.run_docker")

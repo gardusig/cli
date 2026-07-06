@@ -58,17 +58,27 @@ profile repos, `max_depth: 5` for game repos).
 Special repositories:
 
 - `python-cli`: product CLI code with only `config/`, `docs/`, `src/`, and
-  `tests/` at the repository root; shell wrappers live under `src/scripts/`.
+  `tests/` at the repository root; command behavior lives in Python services and
+  shell scripts are not allowed.
 - `github-pipelines`: `.github/`, `docker/`, `docs/`.
 - `computer-science`: toolchain-specific study areas and multi-pipeline CI.
 - `database`: private vault, task files, documents, and validation metadata.
+  Markdown documentation and task-body copies live in `wiki/database/`; database
+  stores structured YAML/JSON metadata and document assets.
 - `wiki`: markdown-oriented generated wiki and runbooks.
 
 ## Language Policy
 
 CI enforces allowed file extensions and exact extensionless filenames through
-`hygiene_policy` in each pull-request workflow config. Policies may also declare
-`max_depth`, `allowed_root_dirs`, and `allowed_root_files`.
+`hygiene_policy` in each pull-request workflow config. Policies also declare
+`allowed_root_dirs`, `allowed_root_files`, optional `allowed_paths`, ignored
+prefixes, `max_depth`, and hard-deny fields such as `forbidden_extensions`,
+`forbidden_paths`, and `forbidden_globs`.
+
+Every PR workflow hard-denies `.sh`. Application/data repositories may also set
+`forbid_direct_cli_references: true` so local docs/code do not mention the CLI
+directly; workflow callers remain the only repo-local place that references
+centralized pipeline behavior.
 
 ## Enforcement Path
 

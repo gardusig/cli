@@ -8,6 +8,7 @@ from typing import Any, Literal
 from src.providers.deepseek import DeepSeekClient, Role
 
 CraftPhase = Literal[
+    "epic_review",
     "issue_review",
     "issue_dedupe",
     "issue_ship",
@@ -19,6 +20,7 @@ CraftPhase = Literal[
 ]
 
 _ROLE: dict[CraftPhase, Role] = {
+    "epic_review": "reason",
     "issue_review": "reason",
     "issue_dedupe": "categorize",
     "issue_ship": "categorize",
@@ -44,6 +46,15 @@ Deliver markdown with sections:
 {_ISSUE_BODY_SECTIONS})
 ## Verdict (ready_to_execute | needs_reshape | likely_duplicate)
 Do not mutate GitHub — user applies via `cli opencode gh issue`."""
+
+_EPIC_REVIEW_SYSTEM = """You refine an epic issue and its subissues into executable work.
+Deliver markdown with sections:
+## Epic summary
+## Subissue checklist review
+For each subissue: #n, ready|blocked|needs_split|needs_human_input, implementation details to add.
+## Dependency notes
+## Closure readiness
+Keep PR work scoped to subissues; never recommend closing the epic issue directly."""
 
 _ISSUE_DEDUPE_SYSTEM = """Compare a candidate issue (title + summary) to open issues inventory.
 Output JSON only:
@@ -121,6 +132,7 @@ class CraftAI:
     @staticmethod
     def _default_system(phase: CraftPhase) -> str:
         return {
+            "epic_review": _EPIC_REVIEW_SYSTEM,
             "issue_review": _ISSUE_REVIEW_SYSTEM,
             "issue_dedupe": _ISSUE_DEDUPE_SYSTEM,
             "issue_ship": _ISSUE_SHIP_SYSTEM,
@@ -134,6 +146,24 @@ class CraftAI:
                 "Prefer minimal diffs matching repo conventions."
             ),
         }[phase]
+
+    def review_epic(
+        self,
+        *,
+        epic_context: dict[str, Any],
+        children: list[dict[str, Any]],
+        backlog: dict[str, Any],
+    ) -> str:
+        payload = json.dumps(
+            {
+                "epic": epic_context,
+                "children": children,
+                "backlog": backlog,
+            },
+            indent=2,
+            default=str,
+        )[:24000]
+        return self.complete("epic_review", payload)
 
     def review_issue(self, *, context: dict[str, Any], open_issues: list[dict[str, Any]]) -> str:
         payload = json.dumps(

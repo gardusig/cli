@@ -13,6 +13,7 @@ FeatureBranchMode = Literal["none", "exists", "checked_out", "merged"]
 
 from typer.testing import CliRunner
 
+from src import __version__
 from src.cli import app
 from src.integration.docker_guard import (
     cleanup_integration_temp_dir,
@@ -65,6 +66,7 @@ TOP_LEVEL_COMMANDS = (
     "restore",
     "drive",
     "notion",
+    "project",
     "chrome",
     "docker",
     "contest",
@@ -134,11 +136,37 @@ def endpoint_checks() -> list[EndpointCheck]:
     refuse = REFUSE_NEEDLE
     checks: list[EndpointCheck] = [
         EndpointCheck("root --help", ("--help",), needle="git"),
-        EndpointCheck("root --version", ("--version",), needle="0.1.1"),
+        EndpointCheck("root --version", ("--version",), needle=__version__),
+        *[
+            EndpointCheck(
+                f"{name} missing command",
+                (name, "__missing__"),
+                kind="fail",
+                needle="No such command",
+                accept_exit_codes=(2,),
+                failure="missing_command",
+            )
+            for name in (
+                "config",
+                "configure",
+                "languages",
+                "lint",
+                "pipeline",
+                "project",
+                "puzzles",
+                "repo",
+                "structure",
+                "tasks",
+                "validate",
+                "wiki",
+            )
+        ],
         EndpointCheck("drive status", ("drive", "status"), needle="Repository:"),
         EndpointCheck("restore", ("restore",), needle="not implemented yet"),
-        EndpointCheck("drive help", ("drive", "--help"), needle="sync"),
+        EndpointCheck("drive help", ("drive", "--help"), needle="download"),
         EndpointCheck("notion help", ("notion", "--help"), needle="ingest"),
+        EndpointCheck("project help", ("project", "--help"), needle="GitHub Projects"),
+        EndpointCheck("project pairs help", ("project", "pairs", "--help"), needle="status"),
         EndpointCheck(
             "notion ingest missing token",
             ("notion", "ingest"),
@@ -146,7 +174,7 @@ def endpoint_checks() -> list[EndpointCheck]:
             accept_exit_codes=(1,),
             failure="missing_notion_token",
         ),
-        EndpointCheck("chrome help", ("chrome", "--help"), needle="bookmarks"),
+        EndpointCheck("chrome help", ("chrome", "--help"), needle="merge"),
         EndpointCheck(
             "chrome bookmarks deploy missing",
             ("chrome", "bookmarks", "deploy"),
@@ -155,6 +183,9 @@ def endpoint_checks() -> list[EndpointCheck]:
             extra_env={"CLI_BOOKMARKS_FILE": "/nonexistent/cli/missing-bookmarks.html"},
         ),
         EndpointCheck("gh help", ("gh", "--help"), needle="issue"),
+        EndpointCheck("gh issue help", ("gh", "issue", "--help"), needle="reopen"),
+        EndpointCheck("gh pr help", ("gh", "pr", "--help"), needle="checks"),
+        EndpointCheck("gh project help", ("gh", "project", "--help"), needle="GitHub Projects"),
         EndpointCheck("opencode help", ("opencode", "--help"), needle="chat"),
         EndpointCheck(
             "opencode plan missing arg",
@@ -166,6 +197,26 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck("lint help", ("lint", "--help"), needle="repo"),
         EndpointCheck("test help", ("test", "--help"), needle="python"),
+        EndpointCheck(
+            "test packages resolve",
+            ("test", "packages", "resolve", "--changed-path", "src/commands/gh.py"),
+            needle='"package_names"',
+        ),
+        EndpointCheck(
+            "test packages list",
+            ("test", "packages", "list", "--format", "table"),
+            needle="gh:",
+        ),
+        EndpointCheck(
+            "test packages run dry-run",
+            ("test", "packages", "run", "gh", "--dry-run", "--format", "table"),
+            needle="python3 -m pytest",
+        ),
+        EndpointCheck(
+            "test packages suite",
+            ("test", "packages", "suite", "--format", "table"),
+            needle="packages:",
+        ),
         EndpointCheck("structure help", ("structure", "--help"), needle="check"),
         EndpointCheck("validate help", ("validate", "--help"), needle="vault"),
         EndpointCheck("languages help", ("languages", "--help"), needle="show"),
@@ -209,6 +260,8 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck("links", ("links",), needle="Quick defaults"),
         EndpointCheck("docker --help", ("docker", "--help"), needle="reset"),
+        EndpointCheck("docker ps help", ("docker", "ps", "--help"), needle="format"),
+        EndpointCheck("docker images help", ("docker", "images", "--help"), needle="repository"),
         EndpointCheck("contest help", ("contest", "--help"), needle="validate"),
         EndpointCheck("configure help", ("configure", "--help"), needle="check"),
         EndpointCheck("config help", ("config", "--help"), needle="check"),

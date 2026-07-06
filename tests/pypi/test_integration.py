@@ -9,6 +9,7 @@ CI_CONFIG = ROOT / "config" / "ci"
 import os
 from pathlib import Path
 from unittest.mock import patch
+import zipfile
 
 import pytest
 from typer.testing import CliRunner
@@ -49,6 +50,27 @@ def test_build_distributions_writes_artifacts(pypi_workspace: Path) -> None:
     assert all(TEST_VERSION in path.name for path in artifacts)
     assert read_project_version(pypi_workspace) == TEST_VERSION
     assert read_repo_version() == repo_version_before
+
+
+@pytest.mark.integration
+def test_built_wheel_exposes_cli_install_contract(pypi_workspace: Path) -> None:
+    artifacts = build_distributions(
+        pypi_workspace,
+        output_dir=pypi_workspace / "dist",
+        version=TEST_VERSION,
+    )
+    wheels = [path for path in artifacts if path.suffix == ".whl"]
+    assert wheels
+
+    with zipfile.ZipFile(wheels[0]) as wheel:
+        entry_points = wheel.read(
+            f"gardusig_cli-{TEST_VERSION}.dist-info/entry_points.txt"
+        ).decode()
+        metadata = wheel.read(f"gardusig_cli-{TEST_VERSION}.dist-info/METADATA").decode()
+
+    assert "cli = src.cli:run" in entry_points
+    assert "Name: gardusig-cli" in metadata
+    assert "Project-URL: Repository, https://github.com/gardusig/python-cli" in metadata
 
 
 @pytest.mark.integration

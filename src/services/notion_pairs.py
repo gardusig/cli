@@ -115,13 +115,35 @@ def _header_relative(path: Path, task_root: Path) -> str:
 
 
 def _body_path_for_header(header_rel: str) -> str:
-    """header/foo/bar.yaml → body/foo/bar.md"""
+    """header/foo/bar.yaml -> body/foo/bar.yaml.
+
+    Database-style task bodies are structured YAML, while existing fixtures and
+    older repos may still carry Markdown body files.
+    """
     p = Path(header_rel)
     if p.suffix not in {".yaml", ".yml"}:
         raise ValueError(f"Not a yaml header path: {header_rel}")
     if not p.parts or p.parts[0] != "header":
         raise ValueError(f"Header path must start with header/: {header_rel}")
-    return str(Path("body", *p.parts[1:]).with_suffix(".md"))
+    return str(Path("body", *p.parts[1:]).with_suffix(".yaml"))
+
+
+def _body_path_candidates(header_rel: str) -> tuple[str, ...]:
+    preferred = _body_path_for_header(header_rel)
+    legacy = str(Path(preferred).with_suffix(".md"))
+    return (preferred, legacy)
+
+
+def _read_task_body(path: Path) -> str:
+    if path.suffix.lower() not in {".yaml", ".yml"}:
+        return path.read_text(encoding="utf-8")
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    if not isinstance(data, dict):
+        raise ValueError(f"Expected mapping in task body: {path}")
+    body = data.get("body")
+    if not isinstance(body, str):
+        raise ValueError(f"Task body yaml missing string body: {path}")
+    return body
 
 
 def pair_file_warning(pair: TaskPair, task_root: Path) -> str | None:
@@ -148,7 +170,7 @@ def combine_task(pair: TaskPair, task_root: Path) -> ResolvedTaskPair:
     if warning:
         raise FileNotFoundError(warning)
     meta = load_header(pair.header_path(task_root))
-    body = normalize_task_body(pair.body_path(task_root).read_text(encoding="utf-8"))
+    body = normalize_task_body(_read_task_body(pair.body_path(task_root)))
     return ResolvedTaskPair(pair=pair, metadata=meta, body=body)
 
 
@@ -165,7 +187,10 @@ def scan_task_root(task_root: Path) -> PairScanResult:
     if header_dir.is_dir():
         for header_path in sorted(header_dir.rglob("*.yaml")):
             rel = _header_relative(header_path, task_root)
-            body_rel = _body_path_for_header(rel)
+            body_rel = next(
+                (candidate for candidate in _body_path_candidates(rel) if (task_root / candidate).is_file()),
+                _body_path_for_header(rel),
+            )
             body_path = task_root / body_rel
             if not body_path.is_file():
                 warnings.append(f"header without body: {rel}")
@@ -184,7 +209,7 @@ def scan_task_root(task_root: Path) -> PairScanResult:
             matched_bodies.add(body_path)
 
     if body_dir.is_dir():
-        for body_path in sorted(body_dir.rglob("*.md")):
+        for body_path in sorted(path for path in body_dir.rglob("*") if path.suffix in {".md", ".yaml", ".yml"}):
             if body_path in matched_bodies:
                 continue
             rel = _header_relative(body_path, task_root)

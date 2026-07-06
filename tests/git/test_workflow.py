@@ -10,7 +10,7 @@ import pytest
 from typer.testing import CliRunner
 
 from src.cli import app
-from src.services.git_shortcuts import GitShortcuts
+from src.services.git_shortcuts import GitPushPlan, GitPushResult, GitShortcuts
 
 runner = CliRunner()
 SNAPSHOT = "src.commands.git.git_worktree_snapshot"
@@ -127,10 +127,14 @@ def snapshot() -> MagicMock:
 
 def test_push_plan_on_main_starts_branch_first() -> None:
     svc = MagicMock()
-    svc.current_branch.return_value = "main"
-    svc.local_branch_names.return_value = []
-    svc.is_dirty.return_value = True
-    svc.remote_exists.return_value = True
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="main",
+        target_branch="wip-260611-001",
+        remote="origin",
+        dirty=True,
+        message="wip",
+        create_branch_first=True,
+    )
     question, lines = _push_plan(svc, "wip", allow_main=False)
     assert question.startswith("Start 'wip-")
     assert "commit, and push to origin?" in question
@@ -140,12 +144,31 @@ def test_push_plan_on_main_starts_branch_first() -> None:
 
 def test_push_plan_on_feature_branch() -> None:
     svc = MagicMock()
-    svc.current_branch.return_value = "feat-x"
-    svc.is_dirty.return_value = False
-    svc.remote_exists.return_value = True
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="feat-x",
+        target_branch="feat-x",
+        remote="origin",
+        dirty=False,
+        message=".",
+    )
     question, lines = _push_plan(svc, ".", allow_main=False)
     assert question == "Commit and push 'feat-x' to origin?"
     assert "branch: feat-x" in lines
+
+
+def test_push_plan_without_origin_commits_locally() -> None:
+    svc = MagicMock()
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="feat-x",
+        target_branch="feat-x",
+        remote=None,
+        dirty=True,
+        message="wip",
+    )
+    question, lines = _push_plan(svc, "wip", allow_main=False)
+    assert question == "Commit local work on 'feat-x' without pushing?"
+    assert "intent: git add -A → commit (no remote push)" in lines
+    assert "remote: (none)" in lines
 
 
 @patch.object(GitShortcuts, "push")
@@ -172,6 +195,29 @@ def test_git_push_with_yes(
     assert "pushed" in result.stdout
     assert "intent: git add -A" in result.stdout
     assert "branch: feat-x" in result.stdout
+    mock_push.assert_called_once_with(allow_main=False, message="wip", yes=True)
+
+
+@patch.object(GitShortcuts, "is_dirty", return_value=True)
+@patch.object(GitShortcuts, "remote_exists", return_value=False)
+@patch.object(GitShortcuts, "current_branch", return_value="feat-x")
+@patch.object(
+    GitShortcuts,
+    "push",
+    return_value=GitPushResult(branch="feat-x", pushed=False, remote=None, committed=True),
+)
+def test_git_push_without_origin_reports_local_commit(
+    mock_push: MagicMock,
+    _branch: MagicMock,
+    _remote: MagicMock,
+    _dirty: MagicMock,
+    snapshot: MagicMock,
+) -> None:
+    with patch(GIT_SNAPSHOT_PATCH, return_value=snapshot):
+        result = runner.invoke(app, ["git", "push", "--yes", "-m", "wip"])
+    assert result.exit_code == 0
+    assert "no origin remote" in result.stdout
+    assert "nothing pushed" in result.stdout
     mock_push.assert_called_once_with(allow_main=False, message="wip", yes=True)
 
 

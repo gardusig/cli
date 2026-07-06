@@ -87,9 +87,9 @@ def test_pypi_distribution_name_is_src() -> None:
 
 def test_pypi_urls_point_at_cli_repo() -> None:
     urls = _project()["urls"]
-    assert urls["Repository"] == "https://github.com/gardusig/cli"
-    assert urls["Homepage"] == "https://github.com/gardusig/cli"
-    assert urls["Issues"] == "https://github.com/gardusig/cli/issues"
+    assert urls["Repository"] == "https://github.com/gardusig/python-cli"
+    assert urls["Homepage"] == "https://github.com/gardusig/python-cli"
+    assert urls["Issues"] == "https://github.com/gardusig/python-cli/issues"
 
 
 def test_console_entrypoint_stays_cli() -> None:
@@ -118,7 +118,6 @@ def test_resolve_pypi_token_ok(monkeypatch: pytest.MonkeyPatch) -> None:
 """PyPI / TestPyPI project page verification (unit)."""
 
 
-import io
 import json
 from unittest.mock import MagicMock, patch
 
@@ -192,7 +191,7 @@ def test_verify_package_version_on_index_retries() -> None:
         patch(
             "src.services.pypi_publish.urllib.request.urlopen",
             side_effect=[
-                urllib.error.HTTPError("url", 404, "missing", {}, io.BytesIO(b"")),
+                urllib.error.URLError("missing"),
                 ok_response,
             ],
         ),

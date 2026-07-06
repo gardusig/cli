@@ -3,10 +3,10 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-# PyPI distribution name (repo remains github.com/gardusig/cli).
+# PyPI distribution name (repo remains github.com/gardusig/python-cli).
 name = "gardusig-cli"
 version = "1.0.1"
-description = "macOS CLI for git shortcuts, backups, and sync workflows"
+description = "Linux-first CLI for workflow automation, repository checks, and release orchestration"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -16,11 +16,11 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Environment :: Console",
   "Intended Audience :: Developers",
-  "Operating System :: MacOS",
   "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Software Development :: Version Control :: Git",
   "Topic :: Utilities",
 ]
@@ -53,11 +53,11 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/gardusig/cli"
-Documentation = "https://github.com/gardusig/cli#readme"
-Repository = "https://github.com/gardusig/cli"
-Issues = "https://github.com/gardusig/cli/issues"
-Changelog = "https://github.com/gardusig/cli/releases"
+Homepage = "https://github.com/gardusig/python-cli"
+Documentation = "https://github.com/gardusig/python-cli#readme"
+Repository = "https://github.com/gardusig/python-cli"
+Issues = "https://github.com/gardusig/python-cli/issues"
+Changelog = "https://github.com/gardusig/python-cli/releases"
 
 [project.scripts]
 cli = "src.cli:run"
@@ -66,26 +66,6 @@ cli = "src.cli:run"
 where = ["."]
 include = ["src*"]
 exclude = ["src.integration*"]
-
-[tool.setuptools.data-files]
-"share/gardusig-cli/scripts" = ["src/scripts/_common.sh"]
-"share/gardusig-cli/scripts/toolkit" = ["src/scripts/toolkit/*.sh"]
-"share/gardusig-cli/scripts/markdown" = ["src/scripts/markdown/*.sh"]
-"share/gardusig-cli/scripts/python" = ["src/scripts/python/*.sh"]
-"share/gardusig-cli/scripts/typescript" = ["src/scripts/typescript/*.sh"]
-"share/gardusig-cli/scripts/cpp" = ["src/scripts/cpp/*.sh"]
-"share/gardusig-cli/scripts/java" = ["src/scripts/java/*.sh"]
-"share/gardusig-cli/scripts/shell" = ["src/scripts/shell/*.sh"]
-"share/gardusig-cli/scripts/structure" = ["src/scripts/structure/*.sh"]
-"share/gardusig-cli/scripts/validate" = ["src/scripts/validate/*.sh"]
-"share/gardusig-cli/scripts/pipeline" = ["src/scripts/pipeline/*.sh"]
-"share/gardusig-cli/scripts/gh" = ["src/scripts/gh/*.sh"]
-"share/gardusig-cli/scripts/git" = ["src/scripts/git/*.sh"]
-"share/gardusig-cli/scripts/chrome" = ["src/scripts/chrome/*.sh"]
-"share/gardusig-cli/scripts/drive" = ["src/scripts/drive/*.sh"]
-"share/gardusig-cli/scripts/notion" = ["src/scripts/notion/*.sh"]
-"share/gardusig-cli/scripts/ci" = ["src/scripts/ci/*.sh"]
-"share/gardusig-cli/scripts/craft" = ["src/scripts/craft/*.sh"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

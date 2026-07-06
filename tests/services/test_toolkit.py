@@ -10,9 +10,9 @@ from src.services.toolkit.detect import ToolkitDetectionError, confirm_markers, 
 from src.services.toolkit.runner import run_cli_command
 
 
-def test_catalog_maps_command_to_shell_script() -> None:
+def test_catalog_maps_command_to_python_handler() -> None:
     spec = command_spec("lint", "java")
-    assert spec.script == "scripts/java/lint.sh"
+    assert spec.handler == "lint_java"
     assert spec.requires_bins == ("java", "javac")
 
 
@@ -33,21 +33,18 @@ def test_repo_languages_uses_known_profile_when_markers_present(tmp_path: Path, 
     assert repo_languages(root) == ("markdown", "python", "shell")
 
 
-def test_runner_invokes_related_shell_script(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_runner_invokes_related_python_handler(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     (tmp_path / "pom.xml").write_text("<project />\n", encoding="utf-8")
     seen: dict[str, object] = {}
     monkeypatch.setattr("src.services.toolkit.prereqs.shutil.which", lambda name: f"/usr/bin/{name}")
 
     def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         seen["cmd"] = cmd
-        seen["env"] = kwargs["env"]
+        seen["cwd"] = kwargs["cwd"]
         return subprocess.CompletedProcess(cmd, 0, "", "")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
     assert run_cli_command("test", "java", tmp_path, suite="unit") == 0
-    assert seen["cmd"][0] == "bash"
-    assert str(seen["cmd"][1]).endswith("scripts/java/test-unit.sh")
-    env = seen["env"]
-    assert isinstance(env, dict)
-    assert env["WORKSPACE"] == str(tmp_path.resolve())
+    assert seen["cmd"] == ["mvn", "-q", "test"]
+    assert seen["cwd"] == tmp_path.resolve()
 

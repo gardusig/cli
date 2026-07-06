@@ -88,6 +88,15 @@ def test_issue_delete_and_comment(svc: GhService, provider: MagicMock) -> None:
     assert provider.run.call_count == 2
 
 
+def test_issue_reopen_and_status(svc: GhService, provider: MagicMock) -> None:
+    provider.run_json.return_value = {"number": 4, "state": "open"}
+    assert svc.issue_reopen(4)["state"] == "open"
+    provider.run_json.return_value = [{"number": 1}, {"number": 2}]
+    status = svc.issue_status()
+    assert status["open_issues"] == 2
+    assert provider.run_json.call_args[0][0][:2] == ["issue", "list"]
+
+
 def test_issue_batch_rejects_close(tmp_path: Path, svc: GhService, provider: MagicMock) -> None:
     batch = tmp_path / "batch.yaml"
     batch.write_text(
@@ -156,6 +165,29 @@ def test_pr_list_view_diff_create(svc: GhService, provider: MagicMock) -> None:
     svc.pr_close(5)
     with pytest.raises(MergeForbiddenError):
         svc.pr_merge(5, delete_branch=True)
+
+
+def test_pr_workflow_methods(svc: GhService, provider: MagicMock) -> None:
+    provider.run_json.return_value = {"number": 5, "state": "open"}
+    assert svc.pr_reopen(5)["state"] == "open"
+
+    provider.run_json.return_value = [{"name": "ci", "state": "SUCCESS"}]
+    assert svc.pr_checks(5)[0]["name"] == "ci"
+
+    provider.run_json.return_value = {"id": 10}
+    svc.pr_review(5, approve=True, body="ok")
+    assert "--approve" in provider.run_json.call_args[0][0]
+
+    provider.run_json.return_value = {"number": 5, "isDraft": False}
+    assert svc.pr_ready(5)["isDraft"] is False
+
+    svc.pr_comment(5, body="note")
+    provider.run.assert_called_with(["pr", "comment", "5", "--body", "note"])
+
+
+def test_pr_status(svc: GhService, provider: MagicMock) -> None:
+    provider.run_json.return_value = [{"number": 1}, {"number": 2}]
+    assert svc.pr_status()["open_prs"] == 2
 
 
 def test_repo_view(svc: GhService, provider: MagicMock) -> None:

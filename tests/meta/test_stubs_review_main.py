@@ -15,23 +15,16 @@ import httpx
 import pytest
 
 from src.internal.write.git import gated_git_write, read_git_snapshot
-from src.providers import chrome, github, google_drive, icloud_drive, notion, onedrive, proton_drive
-from src.services import bookmark_sync, drive_sync, git_archive, notion_sync
+from src.providers import github, google_drive, icloud_drive, notion, onedrive, proton_drive
+from src.services import drive_sync, git_archive, notion_sync
 from src.services.notion_sync import cleanup_board
 from src.services.git_review import run_review
 from src.utils.http import default_http_timeout
 
 STUB_CALLS: list[tuple[Callable[..., Any], tuple[Any, ...]]] = [
-    (chrome.export_bookmarks, ("Default", "/tmp")),
-    (chrome.import_bookmarks, ("Default", "/tmp")),
     (github.archive_repository, ("/repo",)),
     (github.clone_repository, ("https://x", "/dest")),
     (github.checkout_tag, ("/repo", "v1")),
-    (google_drive.upload, (Path("/a"), "remote/b")),
-    (google_drive.download, ("/b", "/a")),
-    (google_drive.list_files, ("",)),
-    (google_drive.exists, ("remote/b",)),
-    (google_drive.create_directory, ("remote",)),
     (google_drive.delete, ("/b",)),
     (icloud_drive.upload, ("/a", "/b")),
     (icloud_drive.download, ("/b", "/a")),
@@ -39,20 +32,8 @@ STUB_CALLS: list[tuple[Callable[..., Any], tuple[Any, ...]]] = [
     (icloud_drive.delete, ("/b",)),
     (notion.export_tasks, ("db", "/dest")),
     (notion.import_tasks, ("db", "/src")),
-    (onedrive.upload, (Path("/a"), "remote/b")),
-    (onedrive.download, ("/b", "/a")),
-    (onedrive.list_files, ("",)),
-    (onedrive.exists, ("remote/b",)),
-    (onedrive.create_directory, ("remote",)),
     (onedrive.delete, ("/b",)),
-    (proton_drive.upload, (Path("/a"), "remote/b")),
-    (proton_drive.download, ("/b", "/a")),
-    (proton_drive.list_files, ("prefix",)),
-    (proton_drive.exists, ("remote/b",)),
-    (proton_drive.create_directory, ("remote",)),
     (proton_drive.delete, ("/b",)),
-    (bookmark_sync.export_bookmarks, ("Default", "/tmp")),
-    (bookmark_sync.import_bookmarks, ("Default", "/tmp")),
     (drive_sync.upload_backup, ("/local", "google")),
     (drive_sync.download_latest, ("google", "/dest")),
     (git_archive.archive_repository, ("/repo",)),
@@ -102,24 +83,33 @@ def test_main_module_help() -> None:
     assert "git" in result.stdout
 
 
-def test_run_review_quick_skips_pytest() -> None:
-    assert run_review(install=False, quick=True) == 0
+@patch("src.services.git_review.subprocess.run")
+def test_run_review_quick_skips_pytest(mock_run: MagicMock, tmp_path) -> None:
+    root = tmp_path
+    mock_run.return_value = MagicMock(returncode=0)
+    with patch("src.services.git_review.project_root", return_value=root):
+        assert run_review(install=False, quick=True) == 0
+    calls = [c.args[0] for c in mock_run.call_args_list if c.args]
+    assert calls == [["cli", "test", "python", "command-surface", str(root)]]
 
 
 @patch("src.services.git_review.subprocess.run")
 def test_run_review_runs_docker_unit_tests(mock_run: MagicMock, tmp_path) -> None:
     root = tmp_path
-    scripts = root / "src" / "scripts"
-    scripts.mkdir(parents=True)
-    (scripts / "noop.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
     mock_run.return_value = MagicMock(returncode=0)
     with patch("src.services.git_review.project_root", return_value=root):
         assert run_review(install=False, quick=False) == 0
+    command_surface = [
+        c
+        for c in mock_run.call_args_list
+        if c.args and c.args[0] == ["cli", "test", "python", "command-surface", str(root)]
+    ]
     unit_gate = [
         c
         for c in mock_run.call_args_list
         if c.args and c.args[0] == ["cli", "test", "python", "unit", str(root)]
     ]
+    assert command_surface, "expected cli test python command-surface"
     assert unit_gate, "expected cli test python unit"
 
 

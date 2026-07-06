@@ -47,10 +47,97 @@ def test_resolve_options_from_paths() -> None:
         timeout=5.0,
         memory_mb=128,
         image="cli-contest:runner",
+        cxx_std="c++20",
     )
     assert opts.timeout == 5.0
     assert opts.memory_mb == 128
+    assert opts.cxx_std == "c++20"
     assert opts.paths.fast.name == "solution.cpp"
+
+
+def test_resolve_options_config_and_cli_precedence(tmp_path: Path) -> None:
+    cfg = tmp_path / "contest.yaml"
+    cfg.write_text(
+        "\n".join(
+            [
+                f"fast: {TOY / 'solution.cpp'}",
+                f"brute: {TOY / 'brute.py'}",
+                f"generator: {TOY / 'gen.py'}",
+                "timeout: 3",
+                "memory_mb: 64",
+                "image: custom:runner",
+                "cxx_std: c++14",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    opts = resolve_options(
+        fast=None,
+        brute=None,
+        generator=None,
+        config=cfg,
+        timeout=7.0,
+        memory_mb=None,
+        image=None,
+        cxx_std="c++20",
+    )
+
+    assert opts.timeout == 7.0
+    assert opts.memory_mb == 64
+    assert opts.image == "custom:runner"
+    assert opts.cxx_std == "c++20"
+
+
+def test_resolve_options_config_paths_are_relative_to_config() -> None:
+    opts = resolve_options(
+        fast=None,
+        brute=None,
+        generator=None,
+        config=TOY / "contest.yaml",
+        timeout=None,
+        memory_mb=None,
+        image=None,
+        cxx_std=None,
+    )
+
+    assert opts.paths.fast == (TOY / "solution.cpp").resolve()
+    assert opts.paths.brute == (TOY / "brute.py").resolve()
+    assert opts.paths.generator == (TOY / "gen.py").resolve()
+    assert opts.timeout == 10.0
+    assert opts.memory_mb == 256
+    assert opts.image == "cli-contest:runner"
+    assert opts.cxx_std == "c++17"
+
+
+def test_resolve_options_cli_paths_override_config_paths(tmp_path: Path) -> None:
+    cfg = tmp_path / "contest.yaml"
+    cfg.write_text(
+        "\n".join(
+            [
+                "fast: missing.cpp",
+                "brute: missing.py",
+                "generator: missing-gen.py",
+                "timeout: 10",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    opts = resolve_options(
+        fast=TOY / "solution.cpp",
+        brute=TOY / "brute.py",
+        generator=TOY / "gen.py",
+        config=cfg,
+        timeout=None,
+        memory_mb=None,
+        image=None,
+        cxx_std=None,
+    )
+
+    assert opts.paths.fast == (TOY / "solution.cpp").resolve()
+    assert opts.paths.brute == (TOY / "brute.py").resolve()
+    assert opts.paths.generator == (TOY / "gen.py").resolve()
 
 
 def test_resolve_options_missing_path() -> None:
@@ -63,6 +150,7 @@ def test_resolve_options_missing_path() -> None:
             timeout=None,
             memory_mb=None,
             image=None,
+            cxx_std=None,
         )
 
 
@@ -83,6 +171,7 @@ def _make_options() -> ContestValidateOptions:
         ),
         timeout=10.0,
         memory_mb=256,
+        cxx_std="c++20",
     )
 
 
@@ -112,6 +201,8 @@ def test_validate_pass_small_match_large_tle(
     assert result.warnings == []
     assert mock_brute.call_count == 2
     assert mock_fast.call_count == 2
+    compile_config = mock_compile.call_args.kwargs["config"]
+    assert compile_config.cxx_std == "c++20"
 
 
 @patch("src.services.contest_runner.ensure_contest_image")

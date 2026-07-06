@@ -26,6 +26,7 @@ notion:
   database_id: 2f499343-9249-80d1-aae9-ce5343255b8e
   task_root: ~/github/private/database/tasks
   pairs_file: tasks.pairs.json
+  link_branch: main
   cleanup_before_deploy: true
   properties:
     title: Name
@@ -35,6 +36,7 @@ notion:
     interval: interval
     last_done: last done
     forced_status: forced status
+    link: link
 
 chrome:
   profile: Default

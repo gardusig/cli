@@ -115,9 +115,9 @@ def pypi_upload_cmd(
 ) -> None:
     """Build and upload gardusig-cli using PYPI_API_TOKEN."""
     root = project_root()
-    release_version = resolve_release_version(version, root=root)
 
     try:
+        release_version = resolve_release_version(version, root=root)
         if build_only:
             artifacts = build_distributions(
                 root,

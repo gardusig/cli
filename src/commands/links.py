@@ -5,40 +5,34 @@ from rich import print as rprint
 
 from src.utils.catalog import (
     QUICK_DEFAULTS,
-    QUICK_DEFAULT_SCRIPTS,
     TOP_LEVEL_COMMANDS,
     WORKFLOW_CHAIN,
     WORKFLOW_SHORTCUTS,
-    chrome_script_entries,
+    chrome_command_entries,
     doc_entries,
-    gh_script_entries,
-    git_script_entries,
+    gh_command_entries,
+    git_command_entries,
 )
 from src.utils.config import project_root
 
-links_app = typer.Typer(help="Index of docs, scripts, and quick defaults.", invoke_without_command=True)
+links_app = typer.Typer(help="Index of docs, commands, and quick defaults.", invoke_without_command=True)
 
 
 @links_app.callback(invoke_without_command=True)
 def links_root() -> None:
-    """Print full cli index (docs, scripts, defaults)."""
+    """Print full cli index (docs, commands, defaults)."""
     root = project_root()
     rprint("[bold]cli index[/bold]")
     rprint(f"repo: {root}\n")
 
     rprint("[bold]Workflow lifecycle[/bold]")
     rprint(f"  {WORKFLOW_CHAIN}")
-    for cli_cmd, script, doc, note in WORKFLOW_SHORTCUTS:
-        rprint(
-            f"  [cyan]cli {cli_cmd}[/cyan] — {note}"
-            f"\n    [dim]src/scripts/git/{script} · {doc}[/dim]"
-        )
+    for cli_cmd, doc, note in WORKFLOW_SHORTCUTS:
+        rprint(f"  [cyan]cli {cli_cmd}[/cyan] — {note}\n    [dim]{doc}[/dim]")
 
     rprint("\n[bold]Quick defaults[/bold] (pass [cyan]--yes[/cyan] / [cyan]-y[/cyan] to skip write gates)")
     for cmd, note in QUICK_DEFAULTS:
-        script = QUICK_DEFAULT_SCRIPTS.get(cmd)
-        suffix = f" · [dim]{script}[/dim]" if script else ""
-        rprint(f"  [cyan]cli {cmd}[/cyan] — {note}{suffix}")
+        rprint(f"  [cyan]cli {cmd}[/cyan] — {note}")
     rprint("  [dim]docs/workflows.md · docs/quick-defaults.md · docs/large-files.md[/dim]")
 
     rprint("\n[bold]Top-level commands[/bold]")
@@ -49,21 +43,20 @@ def links_root() -> None:
     for entry in doc_entries(root):
         rprint(f"  {entry.doc}")
 
-    rprint("\n[bold]Git scripts[/bold] → [dim]src/scripts/git/[/dim] (see docs/git.md)")
-    for entry in git_script_entries(root):
-        line = f"  {entry.script} → {entry.cli}"
+    rprint("\n[bold]Git commands[/bold] (see docs/git.md)")
+    for entry in git_command_entries(root):
+        line = f"  {entry.cli}"
         if entry.label == "large files":
             line += " — [dim]docs/large-files.md[/dim]"
         rprint(line)
 
-    rprint("\n[bold]GitHub scripts[/bold] → [dim]src/scripts/gh/[/dim] (see docs/gh.md)")
-    for entry in gh_script_entries(root):
-        if entry.script:
-            rprint(f"  {entry.script} → {entry.cli}")
+    rprint("\n[bold]GitHub commands[/bold] (see docs/gh.md)")
+    for entry in gh_command_entries(root):
+        rprint(f"  {entry.cli}")
 
-    rprint("\n[bold]Chrome scripts[/bold] → [dim]src/scripts/chrome/[/dim] (see docs/bookmarks.md)")
-    for entry in chrome_script_entries(root):
-        rprint(f"  {entry.script} — {entry.note}")
+    rprint("\n[bold]Chrome commands[/bold] (see docs/bookmarks.md)")
+    for entry in chrome_command_entries(root):
+        rprint(f"  {entry.cli} — {entry.note}")
 
     rprint("\n[bold]Install and release[/bold]")
     rprint("  pip install gardusig-cli — install the published CLI")

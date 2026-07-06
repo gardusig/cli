@@ -15,6 +15,8 @@ The central workflow catalog lives in `gardusig/github-pipelines/docs/workflows/
 | `chat-to-issues` | Pipeline-triggered | chat summary -> AI categorize -> GitHub issues/backlog |
 | `issue-ship-manual` | Hybrid | GitHub issue -> git branch -> PR -> UI merge |
 | `ai-issue-ship` | Hybrid | AI issue execution -> PR -> AI review -> UI merge |
+| `issue-refinement` | Pipeline-backed | epic issue -> subissue checklist -> subissue implementation plans |
+| `issue-to-pr` | Pipeline-backed | next ready subissue -> PR plan -> branch/PR handoff |
 | `plan-to-issues` | Hybrid | plan YAML -> GitHub labels/issues/backlog |
 | `repo-health-verify` | Hybrid | git review -> tests -> Docker/command checks |
 | `tag-backup-cloud` | Local-only | git tag -> zip -> cloud upload |
@@ -91,31 +93,49 @@ cli git reset --yes --delete-merged
 
 ## GitHub phase (after PR is open)
 
-One CLI command and one script per step. See [gh.md](gh.md) and [src/scripts/gh/README.md](../src/scripts/gh/README.md).
+Use CLI commands directly. See [gh.md](gh.md).
 
-| Step | CLI | Script |
+| Step | CLI |
+| --- | --- |
+| Pick next issue | `cli gh backlog next` |
+| View issue | `cli gh issue view N` |
+| Open PR | `cli gh pr --yes` |
+| Check PR | `cli gh pr view N` |
+| **Merge PR** | **GitHub UI / auto-merge** |
+| Close issue | GitHub auto-close from merged PR body |
+
+**Full chain:** `backlog next -> reset -> start -> review -> gh pr -> [UI merge + auto-close] -> reset`
+
+## Issue Resolution
+
+Epic issue work is refined before it is executed. Run `cli craft epic --number N --dry-run` to review an epic issue and its subissues, or `cli craft epic --number N --yes` to refresh the epic issue `## Subissues / Closure checklist` and comment implementation plans on each subissue.
+
+Subissue work is the PR unit. Run `cli craft pr-plan --number N` to render the branch name, implementation guidance, and PR body without mutating anything. Run `cli craft pr --number N --repo-root . --yes` only after an implementation step has produced a real diff; epic issues are rejected.
+
+Pipeline-backed equivalents live in `github-pipelines`:
+
+| Workflow | Dispatch type | CLI command |
 | --- | --- | --- |
-| Pick next issue | `gh backlog next` | `./src/scripts/gh/backlog-next.sh` |
-| View issue | `gh issue view N` | `./src/scripts/gh/issue-view.sh N` |
-| Open PR | `gh pr create … --yes` | `./src/scripts/gh/pr-create.sh … --yes` |
-| Check PR | `gh pr view N` | `./src/scripts/gh/pr-view.sh N` |
-| **Merge PR** | **GitHub UI / auto-merge** | *(not `cli gh pr merge` — blocked)* |
-| Close issue | GitHub auto-close from merged PR body | *(not `cli gh issue close` — blocked)* |
+| Issue refinement | `issue-refinement` | `cli craft --repo OWNER/REPO epic --number N --dry-run|--yes` |
+| Issue to PR | `issue-to-pr` | `cli craft --repo OWNER/REPO issue-to-pr --number N --dry-run true|false` |
 
-**Full chain:** `backlog next -> reset -> start -> push -> review -> pr create -> [UI merge + auto-close] -> reset`
+Epic issues are not closed directly by CLI. Every epic issue should keep a generated subissue checklist, and PR bodies should close subissues with `Fixes #subissue` rather than closing the epic issue.
 
 ### Example (GitHub steps)
 
 ```bash
-./src/scripts/gh/backlog-next.sh --format json
+cli gh backlog next --format json
 # … git work on branch …
-./src/scripts/git/review.sh
-./src/scripts/gh/pr-create.sh --title "." --body "" --yes
+cli git review
+cli gh pr --yes
 # merge in GitHub UI with "Fixes #42" in the PR body, or enable auto-merge
-./src/scripts/git/reset.sh --yes --delete-merged
+cli git reset --yes --delete-merged
 ```
 
-Ad hoc GitHub Projects and Rulesets are **not** used from `cli`. Project membership/order updates are reserved for named task-board workflows in `github-pipelines`; otherwise use `cli gh backlog organize` and `priority:N` labels.
+Ad hoc `cli gh project ...` and Rulesets remain blocked. Supported board writes go through
+`cli project ...` (pairs deploy/ingest/sync) or named task-board workflows in
+`github-pipelines`; otherwise use `cli gh backlog organize` and `priority:N` labels.
+See [project.md](project.md).
 
 ## Feature work (start → publish)
 
@@ -179,14 +199,14 @@ flowchart TD
 flowchart LR
     subgraph review [Workspace health]
         R1["cli git review"]
-        R2["shell syntax · test/unit.sh in Docker"]
+        R2["command surface · unit gate"]
         R1 --> R2
     end
 
     subgraph bookmarks [Chrome bookmarks]
-        B1["./src/scripts/chrome/export.sh"]
+        B1["cli chrome bookmarks ingest"]
         B2["configured bookmarks.html"]
-        B3["./src/scripts/chrome/import.sh"]
+        B3["cli chrome bookmarks deploy"]
         B1 --> B2 --> B3
     end
 
@@ -219,7 +239,7 @@ Config isolation: default `CLI_CONFIG_DIR=config/ci`; per-workflow overrides und
 flowchart TD
     A["cli --help"] --> B["cli links<br/>full index"]
     B --> C["docs/README.md"]
-    B --> D["scripts/git/*.sh · src/scripts/gh/*.sh"]
+    B --> D["command catalog"]
     A --> F["cli git --help"]
 ```
 
@@ -230,7 +250,6 @@ See also: [Architecture](architecture.md) · [Docker integration](docker.md) · 
 **Never merge from `cli`.** Use the GitHub UI or enable **auto-merge** on the PR after green checks.
 
 - `cli gh pr merge` exits non-zero with a policy message
-- `src/scripts/gh/pr-merge.sh` is a warning stub (exit 1)
 - Raw `gh pr merge` is blocked in `GhProvider` unless `CLI_ALLOW_GH_MERGE=1` (break-glass only)
 
 Workflow chain ends at `[UI merge]` — not `cli gh pr merge`.

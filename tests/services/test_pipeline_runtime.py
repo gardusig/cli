@@ -4,6 +4,9 @@ import argparse
 import json
 from pathlib import Path
 
+import pytest
+import yaml
+
 from src.services.pipeline_runtime import resolve_config
 
 
@@ -81,3 +84,24 @@ def test_pipeline_config_resolve_prefers_flattened_pipeline_config(tmp_path: Pat
     )
 
     assert "config=" + str(cfg_dir / "computer-science-cpp.yaml") in output.read_text(encoding="utf-8")
+
+
+def test_pull_request_configs_declare_inline_hygiene_policies() -> None:
+    pipelines_root = Path(__file__).resolve().parents[3] / "github-pipelines"
+    cfg_dir = pipelines_root / ".github" / "workflows" / "pull-request"
+    if not cfg_dir.is_dir():
+        pytest.skip("github-pipelines sibling checkout is not available")
+
+    configs = sorted(cfg_dir.glob("*.yaml"))
+    assert configs
+    for config in configs:
+        data = yaml.safe_load(config.read_text(encoding="utf-8")) or {}
+        jobs = data.get("jobs") or []
+        policy_jobs = [job for job in jobs if isinstance(job, dict) and job.get("id") == "repo-hygiene"]
+        assert policy_jobs, f"{config.name} missing repo-hygiene"
+        policy = policy_jobs[0].get("hygiene_policy") or {}
+        for key in ("allowed_root_dirs", "allowed_root_files", "allowed_extensions"):
+            assert policy.get(key) is not None, f"{config.name} missing {key}"
+        assert ".sh" in (policy.get("forbidden_extensions") or []), config.name
+        if data.get("repo") == "gardusig/database":
+            assert ".md" not in (policy.get("allowed_extensions") or []), config.name

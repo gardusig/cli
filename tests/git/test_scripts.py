@@ -1,44 +1,10 @@
-from tests.constants import ROOT
+"""Verify git workflow commands remain cataloged after removing shell wrappers."""
 
-"""Verify src/scripts/git wrappers exist and have valid syntax."""
-
-from pathlib import Path
+from src.utils.catalog import GIT_COMMANDS
 
 
-GIT_SCRIPTS = ROOT / "src" / "scripts" / "git"
-
-
-def test_all_git_wrapper_scripts_exist() -> None:
-    expected = {
-        "branch.sh",
-        "branch-list.sh",
-        "branch-current.sh",
-        "branch-prune.sh",
-        "branch-rename.sh",
-        "branch-delete.sh",
-        "branch-delete-merged.sh",
-        "branch-delete-all.sh",
-        "branch-clear.sh",
-        "cherry-pick.sh",
-        "clean.sh",
-        "commit.sh",
-        "docs.sh",
-        "large-files.sh",
-        "main.sh",
-        "post-merge-cleanup.sh",
-        "pull.sh",
-        "push.sh",
-        "rebase.sh",
-        "reset.sh",
-        "revert.sh",
-        "review.sh",
-        "start.sh",
-        "stash.sh",
-        "tag.sh",
-        "deploy.sh",
-        "tag-list.sh",
-        "tag-push.sh",
-        "zip.sh",
-    }
-    found = {p.name for p in GIT_SCRIPTS.glob("*.sh") if p.name != "_common.sh"}
-    assert found == expected
+def test_git_workflow_commands_are_cataloged() -> None:
+    commands = {command for _, command in GIT_COMMANDS}
+    assert "git start" in commands
+    assert "git push" in commands
+    assert "git branch delete --merged" in commands

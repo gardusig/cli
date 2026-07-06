@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 def chrome_bookmarks_env(workspace: Path, repo_root: Path) -> dict[str, str]:
-    """Env for scripts/chrome/* against an isolated workspace."""
+    """Env for bookmark commands against an isolated workspace."""
     bookmarks_file = workspace / "data" / "bookmarks" / "bookmarks.html"
     bookmarks_file.parent.mkdir(parents=True, exist_ok=True)
     return {

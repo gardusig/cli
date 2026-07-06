@@ -30,6 +30,21 @@ _OPTION_TAKES_VALUE = frozenset(
         "--description",
         "--comment",
         "--merge-method",
+        "--body-file",
+        "--id",
+        "--project",
+        "--owner",
+        "--url",
+        "--issue",
+        "--pr",
+        "--lane",
+        "--field",
+        "--value",
+        "--kind",
+        "--readme",
+        "--visibility",
+        "--transport",
+        "--readme",
     }
 )
 
@@ -131,6 +146,13 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
             "edit",
         ),
         CliApiCheck(
+            "gh issue reopen",
+            "gh",
+            ("gh", *fmt, "issue", "reopen", "42", "--yes"),
+            "open",
+        ),
+        CliApiCheck("gh issue status", "gh", ("gh", *fmt, "issue", "status"), "open_issues"),
+        CliApiCheck(
             "gh issue close",
             "gh",
             ("gh", *fmt, "issue", "close", "42", "--yes"),
@@ -153,6 +175,19 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
             "gh",
             ("gh", *fmt, "issue", "batch", "--file", str(batch), "--yes"),
             "Batch create",
+        ),
+        CliApiCheck(
+            "gh issues deploy",
+            "gh",
+            ("gh", *fmt, "issues", "deploy", "--yes"),
+            "deploy",
+        ),
+        CliApiCheck("gh issues ingest", "gh", ("gh", *fmt, "issues", "ingest"), "ingest"),
+        CliApiCheck(
+            "gh issues prune",
+            "gh",
+            ("gh", *fmt, "issues", "prune", "--yes"),
+            "prune",
         ),
         CliApiCheck("gh label list", "gh", ("gh", *fmt, "label", "list"), "test"),
         CliApiCheck(
@@ -189,6 +224,32 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
             "edit",
         ),
         CliApiCheck(
+            "gh pr comment",
+            "gh",
+            ("gh", *fmt, "pr", "comment", "7", "--body", "hi", "--yes"),
+            "comment",
+        ),
+        CliApiCheck(
+            "gh pr reopen",
+            "gh",
+            ("gh", *fmt, "pr", "reopen", "7", "--yes"),
+            "open",
+        ),
+        CliApiCheck("gh pr checks", "gh", ("gh", *fmt, "pr", "checks", "7"), "ci"),
+        CliApiCheck(
+            "gh pr review",
+            "gh",
+            ("gh", *fmt, "pr", "review", "7", "--approve", "--body", "ok", "--yes"),
+            "review",
+        ),
+        CliApiCheck(
+            "gh pr ready",
+            "gh",
+            ("gh", *fmt, "pr", "ready", "7", "--yes"),
+            "ready",
+        ),
+        CliApiCheck("gh pr status", "gh", ("gh", *fmt, "pr", "status"), "open_prs"),
+        CliApiCheck(
             "gh pr close",
             "gh",
             ("gh", *fmt, "pr", "close", "7", "--yes"),
@@ -212,25 +273,73 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
             "Resequenced",
         ),
         CliApiCheck("gh policy list", "gh", ("gh", *fmt, "policy", "list"), "pr-merge"),
-        *[
-            CliApiCheck(
-                f"gh project {sub}",
+        CliApiCheck("gh project list", "gh", ("gh", *fmt, "project", "list"), "Roadmap"),
+        CliApiCheck("gh project view", "gh", ("gh", *fmt, "project", "view", "1"), "Roadmap"),
+        CliApiCheck(
+            "gh project create",
+            "gh",
+            ("gh", *fmt, "project", "create", "--title", "Roadmap", "--yes"),
+            "Roadmap",
+        ),
+        CliApiCheck(
+            "gh project edit",
+            "gh",
+            ("gh", *fmt, "project", "edit", "1", "--title", "Roadmap v2", "--yes"),
+            "Roadmap",
+        ),
+        CliApiCheck(
+            "gh project delete",
+            "gh",
+            ("gh", *fmt, "project", "delete", "1", "--yes"),
+            "deleted",
+        ),
+        CliApiCheck(
+            "gh project item list",
+            "gh",
+            ("gh", *fmt, "project", "item", "list", "1"),
+            "ITEM",
+        ),
+        CliApiCheck(
+            "gh project item view",
+            "gh",
+            ("gh", *fmt, "project", "item", "view", "--id", "ITEM_1", "--project", "1"),
+            "ITEM",
+        ),
+        CliApiCheck(
+            "gh project item add",
+            "gh",
+            ("gh", *fmt, "project", "item", "add", "--project", "1", "--issue", "42", "--yes"),
+            "ITEM",
+        ),
+        CliApiCheck(
+            "gh project item edit",
+            "gh",
+            (
                 "gh",
-                ("gh", *fmt, "project", sub),
-                "Projects blocked",
-                accept_exit_codes=(1,),
-            )
-            for sub in (
-                "list",
-                "view",
-                "create",
+                *fmt,
+                "project",
+                "item",
                 "edit",
-                "delete",
-                "item-add",
-                "item-edit",
-                "field-create",
-            )
-        ],
+                "--project",
+                "1",
+                "--id",
+                "ITEM_1",
+                "--field",
+                "Status",
+                "--value",
+                "Done",
+                "--kind",
+                "single-select",
+                "--yes",
+            ),
+            "Done",
+        ),
+        CliApiCheck(
+            "gh project item delete",
+            "gh",
+            ("gh", *fmt, "project", "item", "delete", "--project", "1", "--id", "ITEM_1", "--yes"),
+            "deleted",
+        ),
         *[
             CliApiCheck(
                 f"gh ruleset {sub}",
@@ -246,6 +355,13 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
             "gh",
             ("gh", *fmt, "repo", "view"),
             "example/repo",
+        ),
+        CliApiCheck("gh repo list", "gh", ("gh", *fmt, "repo", "list"), "example"),
+        CliApiCheck(
+            "gh repo readme-sync",
+            "gh",
+            ("gh", "repo", "readme-sync", "--readme", str(workspace / "README.md"), "--dry-run"),
+            "README",
         ),
     ]
 
@@ -385,6 +501,7 @@ def _drive_success_checks(repo_path: str) -> list[CliApiCheck]:
             "deleted",
         ),
         CliApiCheck("drive upload", "drive", ("drive", "upload", "google"), "Uploading"),
+        CliApiCheck("drive download", "drive", ("drive", "download", "google"), "Downloading"),
         CliApiCheck("drive deploy", "drive", ("drive", "deploy"), "Done."),
         CliApiCheck("drive sync", "drive", ("drive", "sync"), "Phase 2"),
     ]
@@ -429,6 +546,15 @@ def _drive_failure_checks(repo_path: str) -> list[CliApiCheck]:
             failure="missing_tags_dir",
         ),
         CliApiCheck(
+            "drive download missing tags dir",
+            "drive",
+            ("drive", "download", "google"),
+            kind="fail",
+            needle="git-tags",
+            accept_exit_codes=(1,),
+            failure="missing_tags_dir",
+        ),
+        CliApiCheck(
             "drive ingest fail",
             "drive",
             ("drive", "ingest"),
@@ -465,7 +591,19 @@ def _chrome_success_checks() -> list[CliApiCheck]:
             "chrome bookmarks deploy",
             "chrome",
             ("chrome", "bookmarks", "deploy"),
-            "deployed",
+            "ready",
+        ),
+        CliApiCheck(
+            "chrome bookmarks merge",
+            "chrome",
+            ("chrome", "bookmarks", "merge"),
+            "Added",
+        ),
+        CliApiCheck(
+            "chrome bookmarks snapshot",
+            "chrome",
+            ("chrome", "bookmarks", "snapshot"),
+            "snapshot",
         ),
     ]
 
@@ -489,6 +627,33 @@ def _chrome_failure_checks() -> list[CliApiCheck]:
             needle="Backup not found",
             accept_exit_codes=(1,),
             failure="missing_bookmarks",
+        ),
+        CliApiCheck(
+            "chrome photos deferred",
+            "chrome",
+            ("chrome", "photos"),
+            kind="fail",
+            needle="deferred",
+            accept_exit_codes=(2,),
+            failure="chrome_photos_deferred",
+        ),
+        CliApiCheck(
+            "chrome bookmarks merge no source",
+            "chrome",
+            ("chrome", "bookmarks", "merge"),
+            kind="fail",
+            needle="No HTML export",
+            accept_exit_codes=(1,),
+            failure="chrome_merge_no_source",
+        ),
+        CliApiCheck(
+            "chrome bookmarks snapshot missing dir",
+            "chrome",
+            ("chrome", "bookmarks", "snapshot"),
+            kind="fail",
+            needle="snapshots_dir",
+            accept_exit_codes=(1,),
+            failure="chrome_no_snapshots_dir",
         ),
     ]
 
@@ -563,11 +728,23 @@ def assert_every_api_command_has_ok_and_fail_check(
             ("gh", "policy", "list"),
         },
     }
+    local_fail_only: dict[ApiName, set[tuple[str, ...]]] = {
+        "chrome": {
+            ("chrome", "photos"),
+        },
+    }
     assert_cli_api_registry_covers_commands(checks, apis=apis)
     for api in apis:
         for path in sorted(registered_api_command_paths(api)):
             rows = checks_for_path(checks, api=api, path=path)
             kinds = {check.kind for check in rows}
+            if path in local_fail_only.get(api, set()):
+                if "fail" not in kinds:
+                    raise AssertionError(
+                        f"{api} {' '.join(path)} missing fail check "
+                        f"(have kinds={sorted(kinds)}, labels={[c.label for c in rows]})"
+                    )
+                continue
             if path in local_ok_only.get(api, set()):
                 if "ok" not in kinds:
                     raise AssertionError(

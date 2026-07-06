@@ -159,10 +159,16 @@ class ResetSummary:
     cache_prune_output: str
 
 
-def _container_ids(*, all_containers: bool) -> list[str]:
+def _container_ids(
+    *,
+    all_containers: bool,
+    filters: Sequence[str] | None = None,
+) -> list[str]:
     args = ["ps", "-q"]
     if all_containers:
         args.append("-a")
+    for value in filters or []:
+        args.extend(["--filter", value])
     out = run_docker(args).stdout
     return [line.strip() for line in out.splitlines() if line.strip()]
 
@@ -171,8 +177,12 @@ def list_containers(
     *,
     all_containers: bool = False,
     running_only: bool = False,
+    filters: Sequence[str] | None = None,
 ) -> list[ContainerRow]:
-    ids = _container_ids(all_containers=all_containers or not running_only)
+    ids = _container_ids(
+        all_containers=all_containers or not running_only,
+        filters=filters,
+    )
     if not ids:
         return []
     result = run_docker(
@@ -206,9 +216,9 @@ def list_containers(
     return rows
 
 
-def list_container_stats() -> list[ContainerStatsRow]:
+def list_container_stats(*, filters: Sequence[str] | None = None) -> list[ContainerStatsRow]:
     """Live CPU/memory for running containers (docker stats --no-stream)."""
-    ids = _container_ids(all_containers=False)
+    ids = _container_ids(all_containers=False, filters=filters)
     if not ids:
         return []
     result = run_docker(
@@ -239,8 +249,11 @@ def list_container_stats() -> list[ContainerStatsRow]:
     return rows
 
 
-def list_images() -> list[ImageRow]:
-    result = run_docker(["images", "-q"])
+def list_images(*, filters: Sequence[str] | None = None) -> list[ImageRow]:
+    args = ["images", "-q"]
+    for value in filters or []:
+        args.extend(["--filter", value])
+    result = run_docker(args)
     ids = [line.strip() for line in result.stdout.splitlines() if line.strip()]
     if not ids:
         return []

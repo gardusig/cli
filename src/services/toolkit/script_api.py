@@ -120,7 +120,7 @@ def _languages_show(language: str, workspace: Path) -> None:
     print(f"workspace: {workspace}")
     for spec in specs:
         suite = f" {spec.suite}" if spec.suite else ""
-        print(f"{spec.group} {spec.subject}{suite}: {spec.script}")
+        print(f"{spec.group} {spec.subject}{suite}: {spec.handler}")
 
 
 def _env_bool(name: str) -> bool:

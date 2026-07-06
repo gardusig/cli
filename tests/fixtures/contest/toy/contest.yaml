@@ -1,0 +1,7 @@
+fast: solution.cpp
+brute: brute.py
+generator: gen.py
+timeout: 10
+memory_mb: 256
+image: cli-contest:runner
+cxx_std: c++17

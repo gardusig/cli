@@ -252,6 +252,36 @@ def test_git_branch_delete_with_yes(mock_delete: MagicMock, snapshot: MagicMock)
     mock_delete.assert_called_once_with("old-branch", force=False, remote=False, yes=True)
 
 
+@patch.object(GitShortcuts, "remote_branch_names", return_value=["remote-wip"])
+@patch.object(GitShortcuts, "local_branch_names", return_value=["local-wip"])
+@patch.object(GitShortcuts, "branch_delete_all")
+def test_git_branch_delete_all_refuses_without_yes(
+    mock_delete: MagicMock,
+    _local: MagicMock,
+    _remote: MagicMock,
+) -> None:
+    result = runner.invoke(app, ["git", "branch", "delete", "--all"])
+    assert result.exit_code != 0
+    assert "delete_mode: all branches except main" in result.output
+    mock_delete.assert_not_called()
+
+
+@patch.object(GitShortcuts, "remote_branch_names", return_value=["remote-wip"])
+@patch.object(GitShortcuts, "local_branch_names", return_value=["local-wip"])
+@patch.object(GitShortcuts, "branch_delete_all", return_value=["local-wip", "origin/remote-wip"])
+def test_git_branch_delete_all_with_yes(
+    mock_delete: MagicMock,
+    _local: MagicMock,
+    _remote: MagicMock,
+    snapshot: MagicMock,
+) -> None:
+    with patch(SNAPSHOT, return_value=snapshot):
+        result = runner.invoke(app, ["git", "branch", "delete", "--all", "--yes"])
+    assert result.exit_code == 0
+    assert "deleted" in result.stdout
+    mock_delete.assert_called_once_with(yes=True)
+
+
 @patch.object(GitShortcuts, "stash_push")
 def test_git_stash_push(mock_push: MagicMock) -> None:
     result = runner.invoke(app, ["git", "stash", "push", "-m", "wip"])

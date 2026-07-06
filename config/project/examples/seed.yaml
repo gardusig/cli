@@ -1,0 +1,18 @@
+owner: gardusig
+project: 1
+status: Backlog
+items:
+  - title: "docs: weekly review"
+    body_file: docs-weekly.md
+    labels:
+      - maintenance
+      - recurrence:docs-weekly
+    status: Todo
+  - title: "src/cli: tech debt sweep"
+    body: "Review CLI command debt and open follow-up PRs."
+    labels:
+      - tech-debt
+  - title: "Add OAuth provider"
+    body: ""
+    labels:
+      - feature

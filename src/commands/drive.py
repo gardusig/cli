@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import json
+from enum import Enum
+from pathlib import Path
+from typing import Any
+
 import typer
 from rich import print as rprint
 
@@ -16,16 +21,63 @@ from src.services.backup_repository import (
     list_downloaded_tags,
     resolve_repo_path,
 )
-from src.services.replica_deploy import deploy_replicas
-from src.services.drive_sync import UploadResult
+from src.services.drive_sync import DownloadResult, UploadResult
 from src.services.git_shortcuts import GitShortcuts
+from src.services.replica_deploy import (
+    deploy_replicas,
+    download_replicas,
+    preflight_replicas,
+)
 from src.utils.config import tags_dir_path
-from src.utils.external_client import ExternalCallError
 
 drive_app = typer.Typer(
     help="Local git-tags (iCloud), replicas (cloud + USB), and deploy.",
     no_args_is_help=True,
 )
+
+
+class DriveOutputFormat(str, Enum):
+    table = "table"
+    json = "json"
+
+
+def _emit_json(payload: dict[str, Any]) -> None:
+    typer.echo(json.dumps(payload, indent=2))
+
+
+def _upload_payload(rows: list[tuple[str, UploadResult]], *, dry_run: bool) -> dict[str, Any]:
+    return {
+        "dry_run": dry_run,
+        "replicas": [
+            {
+                "name": name,
+                "uploaded": upload.uploaded,
+                "skipped": upload.skipped,
+                "failed": [{"path": path, "error": err} for path, err in upload.failed],
+            }
+            for name, upload in rows
+        ],
+    }
+
+
+def _download_payload(rows: list[tuple[str, DownloadResult]], *, dry_run: bool) -> dict[str, Any]:
+    return {
+        "dry_run": dry_run,
+        "replicas": [
+            {
+                "name": name,
+                "downloaded": row.downloaded,
+                "skipped": row.skipped,
+                "failed": [{"path": path, "error": err} for path, err in row.failed],
+            }
+            for name, row in rows
+        ],
+    }
+
+
+def _exit_if_failures(*counts: int) -> None:
+    if any(count > 0 for count in counts):
+        raise typer.Exit(1)
 
 
 def _print_ingest_rows(rows: list[tuple[Path, SyncResult]]) -> tuple[int, int, int]:
@@ -45,27 +97,105 @@ def _print_ingest_rows(rows: list[tuple[Path, SyncResult]]) -> tuple[int, int, i
     return total_created, total_replaced, total_failed
 
 
-def _print_upload_rows(uploads: list[tuple[str, UploadResult]]) -> tuple[int, int, int]:
+def _upload_action_label(dry_run: bool) -> str:
+    return "Would upload" if dry_run else "Uploading"
+
+
+def _print_upload_rows(
+    uploads: list[tuple[str, UploadResult]],
+    *,
+    dry_run: bool = False,
+) -> tuple[int, int, int]:
     total_up = total_skip = total_fail = 0
+    action = "would upload" if dry_run else "uploaded"
     for name, upload in uploads:
-        rprint(f"[bold]Uploading to {name}[/bold]")
+        rprint(f"[bold]{_upload_action_label(dry_run)} to {name}[/bold]")
         for rel in upload.uploaded:
             rprint(f"  [green]✓[/green] {rel}")
         for rel in upload.skipped:
             rprint(f"  [dim]skip[/dim] {rel}")
         for rel, err in upload.failed:
-            rprint(f"  [red]✗[/red] {rel}: {err}")
+            label = rel or "(replica)"
+            rprint(f"  [red]✗[/red] {label}: {err}")
         total_up += len(upload.uploaded)
         total_skip += len(upload.skipped)
         total_fail += len(upload.failed)
+    if dry_run and total_up:
+        rprint(f"[dim]dry-run: {total_up} file(s) {action}[/dim]")
     return total_up, total_skip, total_fail
 
 
+def _print_download_rows(
+    rows: list[tuple[str, DownloadResult]],
+    *,
+    dry_run: bool = False,
+) -> tuple[int, int, int]:
+    total_down = total_skip = total_fail = 0
+    for name, row in rows:
+        label = "Would download from" if dry_run else "Downloading from"
+        rprint(f"[bold]{label} {name}[/bold]")
+        for rel in row.downloaded:
+            rprint(f"  [green]✓[/green] {rel}")
+        for rel in row.skipped:
+            rprint(f"  [dim]skip[/dim] {rel}")
+        for rel, err in row.failed:
+            label_path = rel or "(replica)"
+            rprint(f"  [red]✗[/red] {label_path}: {err}")
+        total_down += len(row.downloaded)
+        total_skip += len(row.skipped)
+        total_fail += len(row.failed)
+    return total_down, total_skip, total_fail
+
+
 @drive_app.command("status")
-def status_cmd() -> None:
+def status_cmd(
+    replicas: bool = typer.Option(
+        False,
+        "--replicas",
+        help="Include read-only cloud/USB replica gap summary.",
+    ),
+    format: DriveOutputFormat = typer.Option("table", "--format", help="table or json"),
+) -> None:
     """Show git tags vs local zips for configured repositories."""
-    for line in format_status_lines(backup_status()):
-        rprint(line.rstrip())
+    lines = [line.rstrip() for line in format_status_lines(backup_status())]
+    replica_rows = []
+    if replicas:
+        local_root = tags_dir_path()
+        try:
+            replica_rows = preflight_replicas(local_root)
+        except RuntimeError as exc:
+            raise typer.Exit(str(exc)) from exc
+
+    if format == DriveOutputFormat.json:
+        payload: dict[str, Any] = {"repositories": lines}
+        if replicas:
+            payload["replicas"] = [
+                {
+                    "name": row.name,
+                    "local_count": row.local_count,
+                    "remote_count": row.remote_count,
+                    "missing_remote": row.missing_remote,
+                    "failed": [{"path": p, "error": e} for p, e in row.failed],
+                }
+                for row in replica_rows
+            ]
+        _emit_json(payload)
+        return
+
+    for line in lines:
+        rprint(line)
+    if replicas:
+        rprint()
+        rprint("[bold]Replica preflight[/bold]")
+        for row in replica_rows:
+            if row.failed:
+                for _, err in row.failed:
+                    rprint(f"  [red]✗[/red] {row.name}: {err}")
+                continue
+            rprint(
+                f"  {row.name}: local={row.local_count} remote={row.remote_count} "
+                f"missing_remote={len(row.missing_remote)}"
+            )
 
 
 @drive_app.command("ingest")
@@ -85,6 +215,7 @@ def ingest_cmd(
         f"Done. Created: {total_created}  "
         f"Replaced: {total_replaced}  Failed: {total_failed}"
     )
+    _exit_if_failures(total_failed)
 
 
 @drive_app.command("list")
@@ -130,41 +261,101 @@ def delete_cmd(
     rprint(f"[green]deleted[/green] {deleted.name}")
 
 
-@drive_app.command("sync")
-def sync_cmd(
-    replica: str | None = typer.Argument(
-        None,
-        help="Replica name, provider, or USB path label (default: all replicas).",
-    ),
-) -> None:
-    """Ingest all configured repositories, then deploy to replicas (cloud + USB)."""
+def _require_tags_dir() -> Path:
     local_root = tags_dir_path()
     if not local_root.is_dir():
         raise typer.Exit(
             f"Local git-tags folder not found: {local_root}\n"
             "Set backup.tags_dir in config/config.yaml (default: iCloud git-tags)."
         )
+    return local_root
+
+
+@drive_app.command("sync")
+def sync_cmd(
+    replica: str | None = typer.Argument(
+        None,
+        help="Replica name, provider, or USB path label (default: all replicas).",
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Compute actions without writing."),
+    format: DriveOutputFormat = typer.Option("table", "--format", help="table or json"),
+) -> None:
+    """Ingest all configured repositories, then deploy to replicas (cloud + USB)."""
+    local_root = _require_tags_dir()
+    if dry_run:
+        ingest_rows: list[tuple[Path, SyncResult]] = []
+    else:
+        try:
+            ingest_rows = ingest_repositories()
+        except RuntimeError as exc:
+            raise typer.Exit(str(exc)) from exc
+
+    if format == DriveOutputFormat.json and dry_run:
+        deploy_rows = deploy_replicas(local_root, selected=replica, dry_run=True)
+        _emit_json(
+            {
+                "dry_run": True,
+                "ingest": [
+                    {
+                        "repo": str(repo),
+                        "created": result.created,
+                        "replaced": result.replaced,
+                        "failed": [
+                            {"tag": tag, "error": err} for tag, err in result.failed
+                        ],
+                    }
+                    for repo, result in ingest_rows
+                ],
+                **_upload_payload(deploy_rows, dry_run=True),
+            }
+        )
+        ingest_fail = sum(len(r.failed) for _, r in ingest_rows)
+        deploy_fail = sum(len(r.failed) for _, r in deploy_rows)
+        _exit_if_failures(ingest_fail, deploy_fail)
+        return
+
     rprint("[bold]Phase 1 — ingest[/bold] (all backup.repositories)")
-    try:
-        ingest_rows = ingest_repositories()
-    except RuntimeError as exc:
-        raise typer.Exit(str(exc)) from exc
-    created, replaced, failed = _print_ingest_rows(ingest_rows)
-    rprint(
-        f"Ingest done. Created: {created}  Replaced: {replaced}  Failed: {failed}"
-    )
+    if dry_run:
+        rprint("  [dim]dry-run: ingest skipped[/dim]")
+        created = replaced = failed = 0
+    else:
+        created, replaced, failed = _print_ingest_rows(ingest_rows)
+        rprint(
+            f"Ingest done. Created: {created}  Replaced: {replaced}  Failed: {failed}"
+        )
     rprint()
     rprint("[bold]Phase 2 — deploy[/bold] (replicas: cloud + USB)")
     try:
-        deploy_rows = deploy_replicas(local_root, selected=replica)
-        up, skip, fail = _print_upload_rows(deploy_rows)
+        deploy_rows = deploy_replicas(local_root, selected=replica, dry_run=dry_run)
     except RuntimeError as exc:
         raise typer.Exit(str(exc)) from exc
-    except NotImplementedError as exc:
-        raise typer.Exit(str(exc)) from exc
-    except ExternalCallError as exc:
-        raise typer.Exit(exc.user_message) from exc
-    rprint(f"Sync done. Deployed: {up}  Skipped: {skip}  Failed: {fail}")
+
+    if format == DriveOutputFormat.json:
+        _emit_json(
+            {
+                "dry_run": dry_run,
+                "ingest": [
+                    {
+                        "repo": str(repo),
+                        "created": result.created,
+                        "replaced": result.replaced,
+                        "failed": [
+                            {"tag": tag, "error": err} for tag, err in result.failed
+                        ],
+                    }
+                    for repo, result in ingest_rows
+                ],
+                **_upload_payload(deploy_rows, dry_run=dry_run),
+            }
+        )
+    else:
+        up, skip, fail = _print_upload_rows(deploy_rows, dry_run=dry_run)
+        label = "Would deploy" if dry_run else "Deployed"
+        rprint(f"Sync done. {label}: {up}  Skipped: {skip}  Failed: {fail}")
+
+    ingest_fail = sum(len(r.failed) for _, r in ingest_rows)
+    deploy_fail = sum(len(r.failed) for _, r in deploy_rows)
+    _exit_if_failures(ingest_fail, deploy_fail)
 
 
 @drive_app.command("deploy")
@@ -173,26 +364,26 @@ def deploy_cmd(
         None,
         help="Replica name or provider (default: all configured replicas).",
     ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Compute actions without writing."),
+    format: DriveOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Deploy local tag zips to replicas (cloud drives and/or USB paths)."""
-    local_root = tags_dir_path()
-    if not local_root.is_dir():
-        raise typer.Exit(
-            f"Local git-tags folder not found: {local_root}\n"
-            "Set backup.tags_dir in config/config.yaml (default: iCloud git-tags)."
-        )
+    local_root = _require_tags_dir()
     try:
-        rows = deploy_replicas(local_root, selected=replica)
+        rows = deploy_replicas(local_root, selected=replica, dry_run=dry_run)
     except RuntimeError as exc:
         raise typer.Exit(str(exc)) from exc
-    except NotImplementedError as exc:
-        raise typer.Exit(str(exc)) from exc
-    except ExternalCallError as exc:
-        raise typer.Exit(exc.user_message) from exc
-    total_up, total_skip, total_fail = _print_upload_rows(rows)
-    rprint(
-        f"Done. Deployed: {total_up}  Skipped: {total_skip}  Failed: {total_fail}"
-    )
+
+    if format == DriveOutputFormat.json:
+        _emit_json(_upload_payload(rows, dry_run=dry_run))
+    else:
+        total_up, total_skip, total_fail = _print_upload_rows(rows, dry_run=dry_run)
+        label = "Would deploy" if dry_run else "Deployed"
+        rprint(
+            f"Done. {label}: {total_up}  Skipped: {total_skip}  Failed: {total_fail}"
+        )
+    total_fail = sum(len(r.failed) for _, r in rows)
+    _exit_if_failures(total_fail)
 
 
 @drive_app.command("upload")
@@ -201,23 +392,66 @@ def upload_cmd(
         None,
         help="google, onedrive, or proton (default: all enabled cloud replicas).",
     ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Compute actions without writing."),
+    format: DriveOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Deploy missing local zips to cloud replica(s) (append-only)."""
-    local_root = tags_dir_path()
-    if not local_root.is_dir():
-        raise typer.Exit(
-            f"Local git-tags folder not found: {local_root}\n"
-            "Set backup.tags_dir in config/config.yaml (default: iCloud git-tags)."
-        )
+    local_root = _require_tags_dir()
     try:
-        rows = deploy_replicas(local_root, selected=provider, kinds=("cloud",))
+        rows = deploy_replicas(
+            local_root,
+            selected=provider,
+            kinds=("cloud",),
+            dry_run=dry_run,
+        )
     except RuntimeError as exc:
         raise typer.Exit(str(exc)) from exc
-    except NotImplementedError as exc:
+
+    if format == DriveOutputFormat.json:
+        _emit_json(_upload_payload(rows, dry_run=dry_run))
+    else:
+        total_up, total_skip, total_fail = _print_upload_rows(rows, dry_run=dry_run)
+        label = "Would upload" if dry_run else "Uploaded"
+        rprint(
+            f"Done. {label}: {total_up}  Skipped: {total_skip}  Failed: {total_fail}"
+        )
+    total_fail = sum(len(r.failed) for _, r in rows)
+    _exit_if_failures(total_fail)
+
+
+@drive_app.command("download")
+def download_cmd(
+    provider: str | None = typer.Argument(
+        None,
+        help="google or onedrive (default: all enabled cloud replicas).",
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Compute actions without writing."),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Overwrite local files that already exist.",
+    ),
+    format: DriveOutputFormat = typer.Option("table", "--format", help="table or json"),
+) -> None:
+    """Download missing remote zips into the local git-tags hub (one-way restore)."""
+    local_root = _require_tags_dir()
+    try:
+        rows = download_replicas(
+            local_root,
+            selected=provider,
+            dry_run=dry_run,
+            force=force,
+        )
+    except RuntimeError as exc:
         raise typer.Exit(str(exc)) from exc
-    except ExternalCallError as exc:
-        raise typer.Exit(exc.user_message) from exc
-    total_up, total_skip, total_fail = _print_upload_rows(rows)
-    rprint(
-        f"Done. Uploaded: {total_up}  Skipped: {total_skip}  Failed: {total_fail}"
-    )
+
+    if format == DriveOutputFormat.json:
+        _emit_json(_download_payload(rows, dry_run=dry_run))
+    else:
+        total_down, total_skip, total_fail = _print_download_rows(rows, dry_run=dry_run)
+        label = "Would download" if dry_run else "Downloaded"
+        rprint(
+            f"Done. {label}: {total_down}  Skipped: {total_skip}  Failed: {total_fail}"
+        )
+    total_fail = sum(len(r.failed) for _, r in rows)
+    _exit_if_failures(total_fail)

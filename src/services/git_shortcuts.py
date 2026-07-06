@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 from src.utils.process import GitCommandError, run_git
@@ -8,6 +9,34 @@ from src.utils.quick_defaults import suggest_branch_name
 
 # Remotes consulted for canonical main (fork workflow: upstream → fork → origin).
 MAIN_REMOTES = ("upstream", "fork", "origin")
+
+
+@dataclass(frozen=True)
+class GitPushPlan:
+    """Resolved push intent before the write gate."""
+
+    source_branch: str
+    target_branch: str
+    remote: str | None
+    dirty: bool
+    message: str
+    allow_main: bool = False
+    create_branch_first: bool = False
+
+    @property
+    def will_push(self) -> bool:
+        return self.remote is not None
+
+
+@dataclass(frozen=True)
+class GitPushResult:
+    """Outcome of `cli git push` after local commit/push work."""
+
+    branch: str
+    pushed: bool
+    remote: str | None
+    created_branch: bool = False
+    committed: bool = False
 
 
 class GitShortcuts:
@@ -176,18 +205,61 @@ class GitShortcuts:
         run_git(["commit", "-m", message], cwd=self.top)
         return True
 
-    def push(self, *, allow_main: bool = False, message: str = ".", yes: bool = False) -> str:
-        """Stage if dirty, commit, and push. On main, start a random branch first."""
+    def push_plan(self, *, allow_main: bool = False, message: str = ".") -> GitPushPlan:
+        """Resolve push intent once so prompts and writes agree."""
+        current = self.current_branch()
+        dirty = self.is_dirty()
+        remote = "origin" if self.remote_exists("origin") else None
+        create_branch = current == "main" and not allow_main and remote is not None
+        target = (
+            suggest_branch_name(self.local_branch_names(exclude_main=False))
+            if create_branch
+            else current
+        )
+        return GitPushPlan(
+            source_branch=current,
+            target_branch=target,
+            remote=remote,
+            dirty=dirty,
+            message=message,
+            allow_main=allow_main,
+            create_branch_first=create_branch,
+        )
+
+    def push(
+        self,
+        *,
+        allow_main: bool = False,
+        message: str = ".",
+        yes: bool = False,
+    ) -> GitPushResult:
+        """Stage if dirty, commit, and push when a remote is available."""
         if not yes:
             raise RuntimeError("Push requires confirmation. Pass --yes to proceed.")
-        if self.current_branch() == "main" and not allow_main:
-            self.start(None, yes=True, prep=False)
-        if self.is_dirty():
-            self.commit(message)
-        if not self.remote_exists("origin"):
-            raise RuntimeError("No origin remote configured.")
-        run_git(["push", "-u", "origin", "HEAD"], cwd=self.top)
-        return self.current_branch()
+        plan = self.push_plan(allow_main=allow_main, message=message)
+        created_branch = False
+        if plan.create_branch_first:
+            self.start(plan.target_branch, yes=True, prep=False)
+            created_branch = True
+        committed = False
+        if plan.dirty:
+            committed = self.commit(message)
+        if plan.remote is None:
+            return GitPushResult(
+                branch=self.current_branch(),
+                pushed=False,
+                remote=None,
+                created_branch=created_branch,
+                committed=committed,
+            )
+        run_git(["push", "-u", plan.remote, "HEAD"], cwd=self.top)
+        return GitPushResult(
+            branch=self.current_branch(),
+            pushed=True,
+            remote=plan.remote,
+            created_branch=created_branch,
+            committed=committed,
+        )
 
     def pull(self, *, merge_branch: str | None = None) -> None:
         self.fetch_all()

@@ -44,16 +44,25 @@ notion:
 
 ## Chrome bookmarks
 
+See [chrome.md](chrome.md) for workflows and pipeline boundary.
+
 ```yaml
 chrome:
   profile: Default
   bookmarks_file: ~/git-local/private/bookmarks/bookmarks.html
   downloads_dir: ~/Downloads
+  snapshots_dir: ~/git-local/private/bookmarks/snapshots
+  snapshot_retention: 30
+  profiles:
+    Work:
+      bookmarks_file: ~/git-local/private/bookmarks/bookmarks-work.html
 ```
 
-- `bookmarks_file` — HTML backup for `cli chrome bookmarks ingest` / `deploy`
-- `downloads_dir` — where ingest waits for Chrome’s downloaded HTML
-- `profile` — reserved for future Chrome profile selection
+- `bookmarks_file` — HTML backup for ingest / merge / deploy
+- `downloads_dir` — folder polled for newest HTML export
+- `snapshots_dir` — timestamped copies from `cli chrome bookmarks snapshot`
+- `snapshot_retention` — max snapshots per profile (0 = unlimited)
+- `profile` / `profiles` — multi-profile backup paths (`--profile` on bookmark commands)
 
 ## Backup (local git-tags)
 
@@ -89,11 +98,20 @@ drives:
     enabled: true
     root: git-tags
   proton:
-    enabled: true
+    enabled: false
     root: git-tags
 ```
 
-`cli drive ingest` zips tags into `backup.tags_dir`; `cli drive upload` pushes missing files to each enabled provider.
+Cloud providers require OAuth access tokens in the environment (never in YAML):
+
+| Provider | Env var | Optional `auth.yaml` key |
+| --- | --- | --- |
+| Google Drive | `GOOGLE_DRIVE_TOKEN` | `auth.google_drive.token_file` |
+| OneDrive | `ONEDRIVE_TOKEN` | `auth.onedrive.token_file` |
+
+Proton Drive is disabled by default — no stable public upload API (see `docs/drive.md#proton-drive`).
+
+`cli drive ingest` zips tags into `backup.tags_dir`; `cli drive upload` / `deploy` / `sync` push missing files to replicas (append-only). `cli drive download` restores missing remote zips locally.
 
 ## Environment overrides
 
@@ -103,6 +121,8 @@ drives:
 | `CLI_GIT_ROOT` | Test override for git repo root |
 | `NOTION_TOKEN` | Notion integration token (required for `cli notion`) |
 | `BACKUP_ZIP_PASSWORD` | Zip password for `encrypted: true` backup repositories |
+| `GOOGLE_DRIVE_TOKEN` | Google Drive OAuth access token for `cli drive upload` / `download` |
+| `ONEDRIVE_TOKEN` | OneDrive OAuth access token for `cli drive upload` / `download` |
 | `CLI_BOOKMARKS_FILE` | Chrome bookmarks backup path |
 | `CLI_DOWNLOADS_DIR` | Chrome ingest downloads folder |
 

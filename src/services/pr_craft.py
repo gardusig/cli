@@ -11,7 +11,7 @@ from typing import Any
 from src.services.craft_ai import CraftAI
 from src.services.gh_service import GhService
 from src.services.git_shortcuts import GitShortcuts
-from src.services.issue_craft import find_plan_text
+from src.services.issue_craft import find_plan_text, require_child_context
 
 _ROOT = Path(__file__).resolve().parents[2]
 _ISSUE_REF = re.compile(r"#(\d+)")
@@ -62,6 +62,36 @@ def branch_name_for_issue(number: int, title: str) -> str:
     return f"craft/{number}-{slug}"
 
 
+def pr_execution_plan(
+    svc: GhService,
+    number: int,
+    *,
+    branch: str | None = None,
+    ai: CraftAI | None = None,
+) -> dict[str, Any]:
+    """Render a non-mutating implementation plan for a subissue."""
+    ai = ai or CraftAI()
+    ctx = svc.issue_context(number)
+    require_child_context(ctx)
+    title = str(ctx.get("issue", {}).get("title", f"issue-{number}"))
+    br = branch or branch_name_for_issue(number, title)
+    plan_text = find_plan_text(ctx)
+    guidance = ai.code_guidance(context=ctx, title=title)
+    body = ai.pr_body(issue_context=ctx, diff_stat="")
+    if plan_text:
+        body = f"{body}\n\n## Plan reference\n\n{plan_text[:4000]}"
+    return {
+        "issue": number,
+        "title": title,
+        "branch": br,
+        "plan_found": bool(plan_text),
+        "plan": plan_text,
+        "guidance": guidance,
+        "pr_body": body,
+        "context": ctx,
+    }
+
+
 def craft_pr(
     svc: GhService,
     git: GitShortcuts,
@@ -75,23 +105,13 @@ def craft_pr(
     """@gh-pr + @gh-issue-execute handoff: branch → guidance → test → push → PR."""
     ai = ai or CraftAI()
     root = repo_root or _ROOT
-    ctx = svc.issue_context(number)
-    title = str(ctx.get("issue", {}).get("title", f"issue-{number}"))
-    br = branch or branch_name_for_issue(number, title)
-    plan_text = find_plan_text(ctx)
+    plan = pr_execution_plan(svc, number, branch=branch, ai=ai)
+    ctx = plan["context"]
+    title = str(plan["title"])
+    br = str(plan["branch"])
+    plan_text = str(plan["plan"])
 
     git.start(br, yes=True)
-    guidance = ai.code_guidance(context=ctx, title=title)
-    guidance_path = root / ".cursor" / "gh" / "craft" / f"issue-{number}-guidance.md"
-    guidance_path.parent.mkdir(parents=True, exist_ok=True)
-    guidance_path.write_text(guidance, encoding="utf-8")
-
-    if not skip_test and (root / "scripts" / "test" / "all.sh").is_file():
-        subprocess.run(["bash", str(root / "scripts" / "test" / "all.sh")], cwd=root, check=True)
-
-    git.commit(message=f"Craft PR for #{number}")
-    git.push(yes=True)
-
     diff_stat = ""
     try:
         diff_stat = subprocess.check_output(
@@ -101,6 +121,21 @@ def craft_pr(
         )
     except (subprocess.CalledProcessError, FileNotFoundError):
         pass
+    if not diff_stat.strip():
+        raise RuntimeError(
+            "craft pr produced no implementation diff; run an implementation step first "
+            "or use `cli craft pr-plan` for a non-mutating plan"
+        )
+    guidance = str(plan["guidance"])
+    guidance_path = root / ".cursor" / "gh" / "craft" / f"issue-{number}-guidance.md"
+    guidance_path.parent.mkdir(parents=True, exist_ok=True)
+    guidance_path.write_text(guidance, encoding="utf-8")
+
+    if not skip_test:
+        subprocess.run(["cli", "test", "python", "unit", str(root)], cwd=root, check=True)
+
+    git.commit(message=f"Craft PR for #{number}")
+    git.push(yes=True)
 
     body = ai.pr_body(issue_context=ctx, diff_stat=diff_stat)
     if plan_text:

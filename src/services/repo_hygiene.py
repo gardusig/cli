@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import fnmatch
 from pathlib import Path
+import re
 from typing import Any
 
 import yaml
@@ -22,6 +24,7 @@ PYTHON_CLI_ORCHESTRATION_PREFIXES = (
     "docker/",
 )
 APP_SCRIPT_PREFIXES = ("scripts/",)
+CLI_REFERENCE_RE = re.compile(r"(^|[\s`\"'])cli(\s|$)|gardusig-cli")
 PYTHON_CLI_FORBIDDEN_SCRIPT_PREFIXES = (
     "scripts/docker/",
     "scripts/test/",
@@ -48,6 +51,11 @@ class HygienePolicy:
     allowed_paths: frozenset[str] = frozenset()
     allowed_root_dirs: frozenset[str] = frozenset()
     allowed_root_files: frozenset[str] = frozenset()
+    forbidden_extensions: frozenset[str] = frozenset()
+    forbidden_paths: frozenset[str] = frozenset()
+    forbidden_globs: tuple[str, ...] = ()
+    forbidden_messages: dict[str, str] | None = None
+    forbid_direct_cli_references: bool = False
     max_depth: int | None = None
     ignored_prefixes: tuple[str, ...] = DEFAULT_IGNORED_PREFIXES
     ignored_paths: frozenset[str] = frozenset()
@@ -59,6 +67,17 @@ class HygienePolicy:
         allowed_paths = frozenset(_normalize_path(path) for path in _as_strings(data, "allowed_paths"))
         allowed_root_dirs = frozenset(_as_strings(data, "allowed_root_dirs"))
         allowed_root_files = frozenset(_as_strings(data, "allowed_root_files"))
+        forbidden_extensions = frozenset(_normalize_extension(ext) for ext in _as_strings(data, "forbidden_extensions"))
+        forbidden_paths = frozenset(_normalize_path(path) for path in _as_strings(data, "forbidden_paths"))
+        forbidden_globs = tuple(_normalize_path(path) for path in _as_strings(data, "forbidden_globs"))
+        forbidden_messages_raw = data.get("forbidden_messages") or {}
+        if not isinstance(forbidden_messages_raw, dict) or not all(
+            isinstance(key, str) and isinstance(value, str)
+            for key, value in forbidden_messages_raw.items()
+        ):
+            raise ValueError("forbidden_messages must be a mapping of strings")
+        forbidden_messages = {str(key): str(value) for key, value in forbidden_messages_raw.items()}
+        forbid_direct_cli_references = bool(data.get("forbid_direct_cli_references", False))
         max_depth_raw = data.get("max_depth")
         max_depth = None if max_depth_raw is None else int(max_depth_raw)
         if max_depth is not None and max_depth < 1:
@@ -74,6 +93,11 @@ class HygienePolicy:
             allowed_paths=allowed_paths,
             allowed_root_dirs=allowed_root_dirs,
             allowed_root_files=allowed_root_files,
+            forbidden_extensions=forbidden_extensions,
+            forbidden_paths=forbidden_paths,
+            forbidden_globs=forbidden_globs,
+            forbidden_messages=forbidden_messages,
+            forbid_direct_cli_references=forbid_direct_cli_references,
             max_depth=max_depth,
             ignored_prefixes=ignored_prefixes,
             ignored_paths=ignored_paths,
@@ -86,6 +110,22 @@ class HygienePolicy:
         if rel in self.allowed_paths or path.name in self.allowed_filenames:
             return True
         return path.suffix.lower() in self.allowed_extensions
+
+    def forbidden_message(self, path: Path, rel: str) -> str | None:
+        if rel in self.forbidden_paths:
+            return self._message_for(rel, f"forbidden path: {rel}")
+        for pattern in self.forbidden_globs:
+            if fnmatch.fnmatch(rel, pattern):
+                return self._message_for(pattern, f"forbidden path pattern {pattern}: {rel}")
+        suffix = path.suffix.lower()
+        if suffix in self.forbidden_extensions:
+            default = f"forbidden file extension {suffix}: {rel}"
+            return self._message_for(suffix, default)
+        return None
+
+    def _message_for(self, key: str, default: str) -> str:
+        messages = self.forbidden_messages or {}
+        return messages.get(key, default)
 
 
 def _as_strings(data: dict[str, Any], key: str) -> list[str]:
@@ -129,6 +169,28 @@ def _forbidden_prefixes(root_name: str) -> tuple[str, ...]:
     if root_name == "database":
         return ORCHESTRATION_PREFIXES
     return (*ORCHESTRATION_PREFIXES, *APP_SCRIPT_PREFIXES)
+
+
+def _is_app_repo(root_name: str) -> bool:
+    return root_name not in {"github-pipelines", "python-cli"}
+
+
+def _allows_shell_scripts(root_name: str) -> bool:
+    return root_name == "python-cli"
+
+
+def _is_allowed_workflow_reference(rel: str) -> bool:
+    return rel.startswith(".github/workflows/")
+
+
+def _has_direct_cli_reference(path: Path) -> bool:
+    if path.suffix in {".lock", ".json"} or path.name in {"package-lock.json", "pnpm-lock.yaml"}:
+        return False
+    try:
+        text = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return False
+    return bool(CLI_REFERENCE_RE.search(text))
 
 
 def _path_depth(rel: str) -> int:
@@ -192,10 +254,26 @@ def check_repo_hygiene(
         rel = path.relative_to(root).as_posix()
         if policy and policy.ignores(rel):
             continue
+        if policy:
+            forbidden = policy.forbidden_message(path, rel)
+            if forbidden:
+                errors.append(f"{forbidden}: {rel}" if rel not in forbidden else forbidden)
         if root.name != "github-pipelines" and rel.startswith(".github/workflows/") and rel not in ALLOWED_WORKFLOWS:
             errors.append(f"workflow belongs in github-pipelines: {rel}")
         elif rel == "Dockerfile" or any(rel.startswith(prefix) for prefix in forbidden_prefixes):
             errors.append(f"orchestration/script artifact belongs in python-cli or github-pipelines: {rel}")
+        if path.suffix == ".sh" and not _allows_shell_scripts(root.name) and not (policy and ".sh" in policy.forbidden_extensions):
+            errors.append(
+                "shell script belongs in gardusig/python-cli: "
+                f"{rel} (move this script to the CLI repo and expose it through a cli command)"
+            )
+        if (
+            policy
+            and policy.forbid_direct_cli_references
+            and not _is_allowed_workflow_reference(rel)
+            and _has_direct_cli_reference(path)
+        ):
+            errors.append(f"direct cli reference belongs in github-pipelines: {rel}")
         if policy and not policy.allows(path, rel):
             errors.append(f"file type is not allowed by hygiene policy: {rel}")
 

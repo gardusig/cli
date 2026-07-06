@@ -29,6 +29,13 @@ The dispatch target is always `gardusig/github-pipelines`; app repos do not cont
 
 ## Named CLI workflows
 
+```bash
+cli tasks list
+cli tasks run notion ingest
+cli tasks run notion deploy --yes
+cli tasks run github ingest --yes
+```
+
 The merged workflow catalog treats task operations as named workflows, not arbitrary `cli` argv passed through CI.
 
 | Workflow | Sequence |
@@ -38,5 +45,8 @@ The merged workflow catalog treats task operations as named workflows, not arbit
 | `private-gh-issues-deploy` | delete all repo issues -> insert all task issues -> update board/project order |
 | `private-gh-issues-ingest-pr` | `cli tasks ingest-pr --source github --yes` |
 | `private-gh-issues-prune-closed` | `cli gh issues prune --closed-older-than 7d --yes` |
+| `private-project-deploy` | `cli project pairs build` -> `cli validate tasks` -> `cli project deploy --yes` |
+| `private-project-ingest` | `cli project ingest` (board -> header yaml) |
+| `private-project-sync` | `cli project sync --yes` (ingest then deploy; non-zero on deploy failures) |
 
-GitHub Project updates are part of the named task-board workflows only. Direct ad hoc `cli gh project ...` remains blocked.
+GitHub Project updates go through reviewed task-board workflows, including top-level `cli project ...`. Direct ad hoc `cli gh project ...` remains blocked.

@@ -6,5 +6,5 @@ drives:
     enabled: true
     root: git-tags
   proton:
-    enabled: true
+    enabled: false
     root: git-tags

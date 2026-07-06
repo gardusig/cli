@@ -2,39 +2,17 @@
 
 `cli git` wraps common local git workflows. Commit message defaults to `.`.
 
-Each command has a shell wrapper under `src/scripts/git/`:
+Core commands:
 
-| Script | Command |
+| Command | Purpose |
 | --- | --- |
-| `src/scripts/git/branch.sh` | `cli git branch list` |
-| `src/scripts/git/branch-list.sh` | `cli git branch list` |
-| `src/scripts/git/branch-current.sh` | `cli git branch current` |
-| `src/scripts/git/branch-prune.sh` | `cli git branch prune` |
-| `src/scripts/git/branch-rename.sh` | `cli git branch rename` |
-| `src/scripts/git/branch-delete.sh` | `cli git branch delete` |
-| `src/scripts/git/branch-delete-merged.sh` | `cli git branch delete --merged` |
-| `src/scripts/git/branch-delete-all.sh` | `cli git branch delete --all` |
-| `src/scripts/git/branch-clear.sh` | `cli git branch clear` |
-| `src/scripts/git/cherry-pick.sh` | `cli git cherry pick` |
-| `src/scripts/git/clean.sh` | `cli git clean` |
-| `src/scripts/git/commit.sh` | `cli git commit` |
-| `src/scripts/git/docs.sh` | `cli git docs` |
-| `src/scripts/git/large-files.sh` | `cli git large files` |
-| `src/scripts/git/main.sh` | `cli git main` |
-| `src/scripts/git/post-merge-cleanup.sh` | `cli git post merge cleanup` |
-| `src/scripts/git/pull.sh` | `cli git pull` |
-| `src/scripts/git/push.sh` | `cli git push` |
-| `src/scripts/git/rebase.sh` | `cli git rebase` |
-| `src/scripts/git/reset.sh` | `cli git reset` |
-| `src/scripts/git/revert.sh` | `cli git revert` |
-| `src/scripts/git/review.sh` | `cli git review` |
-| `src/scripts/git/start.sh` | `cli git start` |
-| `src/scripts/git/stash.sh` | `cli git stash` |
-| `src/scripts/git/tag.sh` | `cli git tag` |
-| `src/scripts/git/deploy.sh` | `cli git deploy` |
-| `src/scripts/git/tag-list.sh` | `cli git tag list` |
-| `src/scripts/git/tag-push.sh` | `cli git tag push` |
-| `src/scripts/git/zip.sh` | `cli git zip` |
+| `cli git start` | align main and create a branch |
+| `cli git push` | add, commit, and push current work |
+| `cli git reset` | return to synced main and optionally clean branches |
+| `cli git branch ...` | branch listing, pruning, deletion, and cleanup |
+| `cli git tag ...` | tag, list, push, and suggest release tags |
+| `cli git zip` | archive the latest or requested tag |
+| `cli git review` | run command-surface and unit gates |
 
 ## Internal read/write
 
@@ -102,7 +80,16 @@ cli git push --yes        # non-interactive
 cli git commit -m "wip"   # commit only (no push)
 ```
 
-`push` shows a write gate with branch, dirty state, commit message, and intent (`add → commit → push`) before running. On `main`, it starts a random branch first unless you pass `--allow-main`.
+`push` shows a write gate with branch, dirty state, commit message, and intent before running:
+
+| Current state | Behavior |
+| --- | --- |
+| Feature branch with `origin` | `git add -A`, commit if dirty, push `origin HEAD` |
+| `main` without `--allow-main` and with `origin` | create a generated `wip-YYMMDD-NNN` branch, commit if dirty, push that branch |
+| `main` with `--allow-main` and with `origin` | commit if dirty and push `main`; the write gate calls this out explicitly |
+| No `origin` remote | commit local work only and report that nothing was pushed |
+
+The no-remote case avoids failing late after staging/committing. Add a remote and rerun `cli git push --yes` when you are ready to publish.
 
 ## Branch delete
 
@@ -157,7 +144,7 @@ Optional keys: `bump` (`patch` \| `minor` \| `major`), `require_increase: true` 
 **This repo** (`config/tag.yaml`): `semver-v`, patch bump, `require_increase: true`.  
 `cli git tag` with no name **auto-suggests the next tag** (e.g. `v0.1.0` → `v0.1.1`).
 
-PR CI runs [`src/scripts/ci/version-check.sh`](../src/scripts/ci/version-check.sh) — `pyproject.toml` version must be **greater than** `main`.
+PR CI runs `cli pypi version check` — `pyproject.toml` version must be **greater than** `main`.
 
 ```bash
 cli pypi version suggest      # next package version (patch)
@@ -192,11 +179,9 @@ cli git deploy              # interactive write gate
 cli git deploy --yes        # CI / automation
 ```
 
-Push to `main` can trigger deploy via external CI, which calls `./src/scripts/git/deploy.sh --yes`. Open PRs block deploy unless you pass `--skip-pr-check`.
+Push to `main` can trigger deploy via external CI, which calls `cli git deploy --yes`. Open PRs block deploy unless you pass `--skip-pr-check`.
 
 For multi-repo zip inventory and bulk ingest, use [`cli drive ingest`](drive.md).
-
-Shell wrappers: `src/scripts/git/tag-list.sh`, `src/scripts/git/tag-push.sh`, `src/scripts/git/zip.sh`.
 
 **Debug tests:** `cli test python unit .` (fast host pytest) · `cli test python integration .` (tags + Docker unit + integration).
 
@@ -204,11 +189,9 @@ Shell wrappers: `src/scripts/git/tag-list.sh`, `src/scripts/git/tag-push.sh`, `s
 
 ```bash
 cli git review
-# or
-./src/scripts/git/review.sh
 ```
 
-Runs shell syntax checks; without `--quick`, also `cli test python unit .` (Docker — requires Docker Desktop). No commit or push. Use `cli git review --quick` when Docker is unavailable.
+Runs command-surface checks; without `--quick`, also `cli test python unit .`. No commit or push. Use `cli git review --quick` when full unit checks are unavailable.
 
 ## Read-only introspection
 

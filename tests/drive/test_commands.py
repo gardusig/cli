@@ -102,6 +102,63 @@ def test_drive_upload_success(
     mock_deploy.assert_called_once()
 
 
+@patch("src.commands.drive.download_replicas")
+@patch("src.commands.drive.tags_dir_path")
+def test_drive_download_json(
+    mock_tags: MagicMock,
+    mock_download: MagicMock,
+    tmp_path: Path,
+) -> None:
+    from src.services.drive_sync import DownloadResult
+
+    tags_root = tmp_path / "git-tags"
+    tags_root.mkdir()
+    mock_tags.return_value = tags_root
+    mock_download.return_value = [("google", DownloadResult(downloaded=["demo/v1.zip"]))]
+    result = runner.invoke(app, ["drive", "download", "google", "--format", "json"])
+    assert result.exit_code == 0
+    assert "demo/v1.zip" in result.stdout
+    assert '"dry_run": false' in result.stdout
+
+
+@patch("src.commands.drive.deploy_replicas")
+@patch("src.commands.drive.tags_dir_path")
+def test_drive_upload_dry_run(
+    mock_tags: MagicMock,
+    mock_deploy: MagicMock,
+    tmp_path: Path,
+) -> None:
+    from src.services.drive_sync import UploadResult
+
+    tags_root = tmp_path / "git-tags"
+    tags_root.mkdir()
+    mock_tags.return_value = tags_root
+    mock_deploy.return_value = [("google", UploadResult(uploaded=["demo/v1.zip"], dry_run=True))]
+    result = runner.invoke(app, ["drive", "upload", "--dry-run"])
+    assert result.exit_code == 0
+    mock_deploy.assert_called_once()
+    assert mock_deploy.call_args.kwargs.get("dry_run") is True
+
+
+@patch("src.commands.drive.deploy_replicas")
+@patch("src.commands.drive.tags_dir_path")
+def test_drive_upload_failure_exit_code(
+    mock_tags: MagicMock,
+    mock_deploy: MagicMock,
+    tmp_path: Path,
+) -> None:
+    from src.services.drive_sync import UploadResult
+
+    tags_root = tmp_path / "git-tags"
+    tags_root.mkdir()
+    mock_tags.return_value = tags_root
+    mock_deploy.return_value = [
+        ("google", UploadResult(failed=[("demo/v1.zip", "network")]))
+    ]
+    result = runner.invoke(app, ["drive", "upload"])
+    assert result.exit_code == 1
+
+
 @patch("src.commands.drive.list_downloaded_tags", return_value=["v1", "v2"])
 @patch("src.commands.drive.resolve_repo_path")
 def test_drive_list_tags(mock_resolve: MagicMock, _tags: MagicMock, tmp_path: Path) -> None:

@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 from src.integration.cli_api_checks import CliApiCheck, validate_cli_api_check
 from src.integration.workspaces import API_WORKSPACES, fixture_dir
 from src.services.backup_repository import RepoBackupStatus, SyncResult
-from src.services.drive_sync import UploadResult
+from src.services.drive_sync import DownloadResult, UploadResult
 from tests.harness.gh_harness import gh_auth_error, patch_run_gh
 from tests.harness.integration_harness import copy_fixture_workspace
 from tests.harness.notion_harness import notion_cli_handler, notion_page, patch_notion_http
@@ -82,7 +82,13 @@ def notion_cli_context(monkeypatch: Any, tmp_path: Path) -> Iterator[Path]:
     cfg_dir = tmp_path / "notion-config"
     cfg_dir.mkdir(exist_ok=True)
     (cfg_dir / "config.yaml").write_text(
-        "notion:\n  database_id: db-integration\n  cleanup_before_deploy: false\n",
+        "notion:\n"
+        "  database_id: db-integration\n"
+        "  cleanup_before_deploy: false\n"
+        "  link_branch: main\n"
+        "gh:\n"
+        "  issues:\n"
+        "    repo: gardusig/database\n",
         encoding="utf-8",
     )
     monkeypatch.setenv("NOTION_TOKEN", "integration-token")
@@ -175,6 +181,10 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
             "src.commands.drive.deploy_replicas",
             return_value=[("google", UploadResult(uploaded=["demo-repo/demo-repo-v1.0.0.zip"]))],
         ),
+        patch(
+            "src.commands.drive.download_replicas",
+            return_value=[("google", DownloadResult(downloaded=["demo-repo/demo-repo-v1.0.0.zip"]))],
+        ),
         patch("src.commands.drive.resolve_repo_path", _resolve_repo_path),
         patch("src.commands.drive.list_downloaded_tags", return_value=["v0.0.0", "v1.0.0"]),
         patch("src.commands.drive.delete_repo_tag", return_value=zip_path),
@@ -194,6 +204,8 @@ def chrome_cli_context(
     workspace = copy_fixture_workspace(CHROME_WS, tmp_path)
     bookmarks = workspace / "data" / "bookmarks" / "bookmarks.html"
     bookmarks.parent.mkdir(parents=True, exist_ok=True)
+    snapshots = workspace / "data" / "bookmarks" / "snapshots"
+    snapshots.mkdir(parents=True, exist_ok=True)
     fixture_html = workspace / "Downloads" / "bookmarks.html"
     env = {
         **os.environ,
@@ -215,14 +227,16 @@ def chrome_cli_context(
 
     with (
         patch("src.commands.chrome._bookmarks_env", _bookmarks_env),
-        patch("src.commands.chrome.bookmarks_file_path", lambda config_dir=None: bookmarks),
+        patch("src.commands.chrome.bookmarks_file_path", lambda config_dir=None, profile=None: bookmarks),
         patch("src.commands.chrome.chrome_downloads_dir", lambda config_dir=None: workspace / "Downloads"),
+        patch("src.commands.chrome.chrome_snapshots_dir", lambda config_dir=None: snapshots),
+        patch("src.commands.chrome.chrome_snapshot_retention", lambda config_dir=None: 30),
     ):
         if skip_export and bookmarks.is_file():
             bookmarks.unlink()
         if use_fixture and not skip_export:
             subprocess.run(
-                ["bash", str(ROOT / "src/scripts/chrome/export.sh")],
+                ["python", "-m", "src", "chrome", "bookmarks", "ingest"],
                 env=env,
                 check=True,
                 cwd=ROOT,
@@ -310,6 +324,16 @@ def api_check_context(
             use_fixture=use_fixture,
             skip_export=skip_export,
         ) as chrome_env:
+            if check.failure == "chrome_no_snapshots_dir":
+                with patch("src.commands.chrome.chrome_snapshots_dir", lambda config_dir=None: None):
+                    yield chrome_env
+                return
+            if check.failure == "chrome_merge_no_source":
+                empty = tmp_path / "empty-downloads"
+                empty.mkdir(exist_ok=True)
+                with patch("src.commands.chrome.chrome_downloads_dir", lambda config_dir=None: empty):
+                    yield chrome_env
+                return
             yield chrome_env
         return
 

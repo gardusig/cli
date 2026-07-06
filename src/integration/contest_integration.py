@@ -22,6 +22,7 @@ CheckKind = Literal["ok", "refuse"]
 TOY_FAST = "tests/fixtures/contest/toy/solution.cpp"
 TOY_BRUTE = "tests/fixtures/contest/toy/brute.py"
 TOY_GEN = "tests/fixtures/contest/toy/gen.py"
+TOY_CONFIG = "tests/fixtures/contest/toy/contest.yaml"
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,11 @@ def contest_checks() -> list[ContestCheck]:
     )
     return [
         ContestCheck("contest validate pass", validate_args, needle="PASS"),
+        ContestCheck(
+            "contest validate config pass",
+            ("contest", "validate", "--config", TOY_CONFIG),
+            needle="PASS",
+        ),
         ContestCheck(
             "contest validate fail",
             validate_args,

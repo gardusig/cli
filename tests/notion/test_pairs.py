@@ -116,6 +116,24 @@ def test_build_from_disk_requires_name(tmp_path: Path) -> None:
     assert task_name(pairs[0], tmp_path) == "Hello world"
 
 
+def test_build_from_disk_and_combine_task_support_yaml_body(tmp_path: Path) -> None:
+    meta = tmp_path / "header" / "foo.yaml"
+    body = tmp_path / "body" / "foo.yaml"
+    meta.parent.mkdir(parents=True)
+    body.parent.mkdir(parents=True)
+    meta.write_text("name: Hello world\n", encoding="utf-8")
+    body.write_text(
+        "format: markdown\nwiki_filepath: database/tasks/body/foo.md\nbody: |\n  ## Steps\n\n  1. Run\n",
+        encoding="utf-8",
+    )
+
+    pairs = build_from_disk(tmp_path)
+    combined = combine_task(pairs[0], tmp_path)
+
+    assert pairs[0].body_filepath == "body/foo.yaml"
+    assert combined.body.startswith("## Steps")
+
+
 def test_slugify_strips_emoji() -> None:
     assert slugify("🍳 kitchen") == "kitchen"
 

@@ -27,6 +27,7 @@ from src.utils.config import (
     notion_database_id,
     notion_pairs_file,
     notion_task_root,
+    task_runbook_url,
 )
 
 
@@ -34,7 +35,7 @@ from src.utils.config import (
 class NotionSyncResult:
     processed: int = 0
     skipped: int = 0
-    failed: int = 0
+    failed: list[tuple[str, str]] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
 
@@ -70,7 +71,7 @@ def export_tasks(
                 continue
             title = client.page_title(page)
             if not title:
-                result.failed += 1
+                result.failed.append(("?", "missing title"))
                 continue
             if title in titles:
                 raise ValueError(f"Duplicate Notion task title: {title!r}")
@@ -83,6 +84,7 @@ def export_tasks(
             if title in pair_by_name:
                 pair = pair_by_name[title]
                 existing = load_header(pair.header_path(root))
+                runbook = task_runbook_url(pair.body_filepath)
                 updated = TaskMetadata(
                     name=title,
                     priority=meta_fields.get("priority") or existing.priority,
@@ -93,6 +95,7 @@ def export_tasks(
                     else existing.interval,
                     last_done=meta_fields.get("last_done") or existing.last_done,
                     forced_status=meta_fields.get("forced_status") or existing.forced_status,
+                    link=runbook,
                     enabled=existing.enabled,
                 )
                 dump_header(pair.header_path(root), updated)
@@ -123,6 +126,7 @@ def export_tasks(
                     interval=meta_fields.get("interval"),
                     last_done=meta_fields.get("last_done"),
                     forced_status=meta_fields.get("forced_status"),
+                    link=task_runbook_url(body_rel),
                     enabled=True,
                 )
                 dump_header(meta_path, new_meta)
@@ -180,9 +184,10 @@ def import_tasks(
                 result.skipped += 1
                 continue
             payload = task.metadata.model_dump(
-                exclude={"name", "enabled"},
+                exclude={"name", "enabled", "labels"},
                 exclude_none=True,
             )
+            payload["link"] = task.metadata.link or task_runbook_url(pair.body_filepath)
             try:
                 client.create_database_page(
                     notion_database_id(config),
@@ -191,9 +196,8 @@ def import_tasks(
                     body_markdown=task.body,
                 )
                 result.processed += 1
-            except Exception:
-                result.failed += 1
-                raise
+            except Exception as exc:
+                result.failed.append((task.metadata.name, str(exc)))
 
     return result
 

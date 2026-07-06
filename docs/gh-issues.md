@@ -43,4 +43,4 @@ Blocked:
 - `cli gh issue batch` entries with `action: close`
 - Ad hoc `cli gh project ...` and Rulesets through CLI
 
-GitHub Project updates are allowed only through named reviewed workflows for the task board, such as `private-gh-issues-board-order` and `private-gh-issues-deploy`.
+GitHub Project updates are allowed only through reviewed task-board workflows. Use top-level `cli project ...` for local command workflows; keep pipeline orchestration in `github-pipelines`.

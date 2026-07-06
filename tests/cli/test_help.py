@@ -2,6 +2,7 @@ from tests.constants import ROOT
 
 from typer.testing import CliRunner
 
+from src import __version__
 from src.cli import app
 
 runner = CliRunner()
@@ -52,7 +53,16 @@ def test_git_help() -> None:
         assert cmd in result.stdout
 
 
+def test_contest_validate_help() -> None:
+    result = runner.invoke(app, ["contest", "validate", "--help"])
+    assert result.exit_code == 0
+    assert "--timeout" in result.stdout
+    assert "--memory-mb" in result.stdout
+    assert "--image" in result.stdout
+    assert "--cxx-std" in result.stdout
+
+
 def test_version() -> None:
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert "0.1.1" in result.stdout
+    assert __version__ in result.stdout

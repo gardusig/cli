@@ -1,0 +1,3 @@
+name: "Add OAuth provider"
+tag: feature
+enabled: true
