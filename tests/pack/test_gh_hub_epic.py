@@ -8,15 +8,19 @@ from typer.testing import CliRunner
 
 from src.cli import app
 
+from tests.pack.conftest import requires_docs
+
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = CliRunner()
 
 
+@requires_docs
 def test_gh_hub_epic_docs_exist() -> None:
     text = (ROOT / "docs" / "gh.md").read_text(encoding="utf-8")
     assert "Transport parity" in text
     assert "issue context" in text
     assert "composed REST" in text
+    assert "Epic 11 closure" in text
 
 
 def test_gh_hub_epic_batch_manifest() -> None:

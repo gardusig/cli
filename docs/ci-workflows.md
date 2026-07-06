@@ -41,6 +41,10 @@ scripts/test/pypi.sh --dry-run
 scripts/test/all.sh
 ```
 
+**Nine-script policy (#82):** only packages with Docker integration legs get
+`scripts/test/*.sh` wrappers. Other packages use `cli test packages run PKG`
+directly. See [`scripts/test/README.md`](../scripts/test/README.md).
+
 ### Package matrix
 
 | Package | Unit tests | Integration leg |
@@ -63,9 +67,18 @@ selected package legs.
 for Docker jobs. Integration legs use `tests/integration/check_package_integration.py`
 for API and workflow packages instead of the monolithic `check_api_integration.py`.
 
+### Nightly full suite (#85)
+
 `suite` is the nightly/manual full-suite safety net: core gates, every package
 unit/integration command, plus optional `check_docker_commands.py --live`.
-`github-pipelines` decides scheduling and job fan-out.
+
+```bash
+cli test packages suite --format json   # full-suite leg plan
+scripts/test/all.sh --format json
+```
+
+`github-pipelines` should schedule `python-cli-test-nightly.yml` on `main` (cron +
+`workflow_dispatch`) and honor label `ci:full` on PRs for the same contract.
 
 ### PR CI flow (github-pipelines)
 
@@ -73,7 +86,7 @@ unit/integration command, plus optional `check_docker_commands.py --live`.
 2. If `full_suite` → run `cli test packages suite` (+ execute live docker leg)
 3. Else matrix `package_names` → `cli test packages run "$pkg" --no-unit` per cell
 4. Always run core gates: `check_integration_coverage.py`, `check_public_commands.py`
-5. Label `ci:full` or merge queue → full suite
+5. Label `ci:full` → `cli pipeline config resolve --force-full-suite` (full `unit-test` + `integration-test` legs)
 
 PyPI publishing uses the same split: this repo owns `cli pypi ...` and
 `cli release ...`; `github-pipelines` owns workflow YAML, Docker images,
@@ -88,3 +101,22 @@ trusted publishing/OIDC or token wiring, schedules, and branch protection.
 | Regression | 15 min |
 
 See [setup.md](setup.md) and [docker.md](docker.md) for install and harness details.
+
+## Epic 00 closure (PR #88)
+
+Parent issues [#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85). Close when PR #88 merges, **1.0.3** ships, and `github-pipelines` adoption is green.
+
+| Child | Issue | python-cli evidence | github-pipelines adoption |
+| --- | --- | --- | --- |
+| Registry | [#81](https://github.com/gardusig/python-cli/issues/81) | `src/services/test_packages.py`; `cli test packages {list,resolve,run,suite}` | `cli test packages resolve` in `pull-request.yml` |
+| Scripts | [#82](https://github.com/gardusig/python-cli/issues/82) | `scripts/test/*.sh` + [`scripts/test/README.md`](../scripts/test/README.md) nine-script policy | N/A |
+| Selective PR CI | [#83](https://github.com/gardusig/python-cli/issues/83) | `src/services/pipeline_selective.py`; `tests/services/test_pipeline_selective.py` | `pull-request/python-cli.yaml` `selective: true`; `operator-test.yml` |
+| Docker split | [#84](https://github.com/gardusig/python-cli/issues/84) | `tests/integration/check_package_integration.py`; `package_integration.py` | `docker/python-cli.dockerfile` `package-unit` / `package-integration` |
+| Nightly suite | [#85](https://github.com/gardusig/python-cli/issues/85) | `cli test packages suite`; § Nightly full suite above | `python-cli-test-nightly.yml` — suite plan + core-gates + full legs |
+
+**Pipelines:** [PR #20](https://github.com/gardusig/github-pipelines/pull/20) — `ci:full` label, nightly suite contract, `BASE_VERSION` **1.0.3**. Close #81–#82 on PR #88 merge; #83–#85 after pipelines merge + green nightly.
+
+```bash
+uv run pytest tests/integration/test_test_packages.py tests/services/test_pipeline_selective.py tests/pack/test_infra_epic.py -q
+cli test packages suite --format json
+```

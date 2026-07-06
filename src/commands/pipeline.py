@@ -70,6 +70,11 @@ def config_resolve_cmd(
     app_src: Path | None = typer.Option(None, "--app-src"),
     selective_base: str = typer.Option("", "--selective-base"),
     selective_head: str = typer.Option("", "--selective-head"),
+    force_full_suite: bool = typer.Option(
+        False,
+        "--force-full-suite",
+        help="Run full-suite PR jobs (ci:full label).",
+    ),
 ) -> None:
     args = [
         "--family",
@@ -99,6 +104,8 @@ def config_resolve_cmd(
         args.extend(["--selective-base", selective_base])
     if selective_head:
         args.extend(["--selective-head", selective_head])
+    if force_full_suite:
+        args.append("--force-full-suite")
     _run_pipeline_runtime(resolve_config, _namespace_from_args(args))
 
 

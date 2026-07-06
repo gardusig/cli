@@ -6,7 +6,7 @@ Production releases publish **`gardusig-cli`** to [PyPI](https://pypi.org/projec
 
 Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync). PR CI requires the PR version to be **greater** than `origin/main` via `cli pypi version check`.
 
-Example: `main` ships `1.0.1`; a release candidate PR bumps to **`1.0.2`** (strictly greater than base).
+Example: `main` ships `1.0.2`; a release candidate PR bumps to **`1.0.3`** (strictly greater than base).
 
 ## Repository boundary
 
@@ -75,7 +75,9 @@ uv run pytest tests/git/ tests/gh/ tests/docker/ tests/chrome/ \
   tests/notion/ tests/drive/ tests/contest/ tests/project/ tests/pypi/ -q
 ```
 
-Confirm central CI is green after [github-pipelines](https://github.com/gardusig/github-pipelines) selective yaml merges. Until PyPI ships `>= 1.0.2`, workflows install `gardusig-cli` from git `main` or editable `app-src`.
+Confirm central CI is green on pipelines `main` ([PR #20](https://github.com/gardusig/github-pipelines/pull/20) merged; `BASE_VERSION` **1.0.2** via [PR #24](https://github.com/gardusig/github-pipelines/pull/24)). Until PyPI ships **1.0.3**, workflows install `gardusig-cli` from editable `app-src`.
+
+**Merge order:** merge PR #88 → `cli release main --yes` → bump pipelines `BASE_VERSION` to **1.0.3**.
 
 ## Post-merge release (maintainer)
 
@@ -89,4 +91,4 @@ pip install --upgrade gardusig-cli
 cli --version
 ```
 
-Then bump `main` to the next patch (e.g. `1.0.3`) for the next PR version gate, and close issues documented in `docs/public-cli-hardening.md`.
+Then bump `main` to the next patch (e.g. `1.0.4`) for the next PR version gate, and close issues documented in `docs/public-cli-hardening.md`.

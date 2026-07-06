@@ -9,10 +9,13 @@ from typer.testing import CliRunner
 from src.cli import app
 from src.services.gh_policy import MERGE_FORBIDDEN_MESSAGE
 
+from tests.pack.conftest import requires_docs
+
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = CliRunner()
 
 
+@requires_docs
 def test_hub_operator_docs_exist() -> None:
     assert (ROOT / "docs" / "hub-operator.md").is_file()
     assert (ROOT / "docs" / "opencode.md").is_file()

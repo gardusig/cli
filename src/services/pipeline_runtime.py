@@ -32,6 +32,11 @@ def main() -> None:
     resolve.add_argument("--app-src", type=Path, default=None)
     resolve.add_argument("--selective-base", default="")
     resolve.add_argument("--selective-head", default="")
+    resolve.add_argument(
+        "--force-full-suite",
+        action="store_true",
+        help="Ignore selective package matrix; run full-suite PR jobs (ci:full).",
+    )
 
     docker = sub.add_parser("docker-run")
     docker.add_argument("--job-json", required=True)
@@ -244,6 +249,7 @@ def _apply_selective_jobs_if_configured(
     app_src: Path | None,
     selective_base: str,
     selective_head: str,
+    force_full_suite: bool = False,
 ) -> dict[str, dict[str, Any]]:
     from src.services.pipeline_selective import apply_selective_jobs
 
@@ -253,6 +259,7 @@ def _apply_selective_jobs_if_configured(
         app_src=app_src,
         selective_base=selective_base,
         selective_head=selective_head,
+        force_full_suite=force_full_suite,
     )
 
 
@@ -263,6 +270,7 @@ def _stage_jobs(
     app_src: Path | None = None,
     selective_base: str = "",
     selective_head: str = "",
+    force_full_suite: bool = False,
 ) -> list[list[dict[str, Any]]]:
     raw_jobs = cfg.get("jobs") or []
     if not isinstance(raw_jobs, list):
@@ -281,6 +289,7 @@ def _stage_jobs(
         app_src=app_src,
         selective_base=selective_base,
         selective_head=selective_head,
+        force_full_suite=force_full_suite,
     )
     if requested_job:
         if requested_job not in jobs:
@@ -376,6 +385,7 @@ def _resolve_job_family(args: argparse.Namespace, client: dict[str, Any]) -> dic
         app_src=_as_path(getattr(args, "app_src", None)),
         selective_base=str(getattr(args, "selective_base", "") or ""),
         selective_head=str(getattr(args, "selective_head", "") or ""),
+        force_full_suite=bool(getattr(args, "force_full_suite", False)),
     )
     outputs: dict[str, Any] = {
         "repo_slug": config_slug,

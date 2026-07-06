@@ -16,6 +16,8 @@ from src.integration.docker_guard import (
 from src.integration.public_endpoints import prepare_git_repo
 from src.integration.workflows import WORKFLOW_REGISTRY
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.mark.parametrize("label,check_fn", WORKFLOW_REGISTRY)
 def test_workflow_e2e(label: str, check_fn) -> None:
