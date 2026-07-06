@@ -300,6 +300,8 @@ def check_repo_hygiene(
             errors.append("missing required file: README.md")
         for dirname in ("src", "docs"):
             if not (root / dirname).is_dir():
+                if dirname == "docs" and policy and "docs" in policy.allowed_root_dirs:
+                    continue
                 errors.append(f"missing required directory: {dirname}/")
         if not (root / "test").is_dir() and not (root / "tests").is_dir():
             errors.append("missing required test directory: test/ or tests/")
