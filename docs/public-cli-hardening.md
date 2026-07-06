@@ -4,6 +4,8 @@ Epic [#57](https://github.com/gardusig/python-cli/issues/57) reviewed the public
 
 **Status (PR #88):** integration coverage gate **150/150**; child matrix #58–#65 verified; meta coverage tests aligned with `ok_exempt` deferred rows (`chrome photos` / #50).
 
+**Merge readiness:** `gardusig-cli` **1.0.2**; `origin/main` reconciled; `cli pypi version check` passes; verification suite **594** tests green (Epic 06 pre-merge, 2026-07-06).
+
 ## Current Matrix
 
 | Issue | Surface | Status | Notes |
