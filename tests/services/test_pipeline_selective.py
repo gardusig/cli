@@ -126,3 +126,56 @@ def test_apply_selective_jobs_skips_without_selective_flag(tmp_path: Path) -> No
         selective_head="feature",
     )
     assert jobs == _base_jobs()
+
+
+def test_python_cli_pipeline_config_resolve_against_pipelines(monkeypatch) -> None:
+    """E2E: selective resolve consumes github-pipelines python-cli.yaml."""
+    import argparse
+    import json
+
+    from src.services.pipeline_runtime import resolve_config
+
+    repo_root = Path(__file__).resolve().parents[2]
+    pipelines = repo_root.parent / "github-pipelines"
+    config = pipelines / ".github" / "workflows" / "pull-request" / "python-cli.yaml"
+    if not config.is_file():
+        import pytest
+
+        pytest.skip("github-pipelines sibling checkout is not available")
+
+    output = repo_root / ".pipeline-resolve-test.json"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output.with_suffix(".out")))
+    resolve_config(
+        argparse.Namespace(
+            family="pull-request",
+            pipeline_src=pipelines,
+            repo_slug="python-cli",
+            pipeline="",
+            repository="gardusig/python-cli",
+            ref="feature",
+            sha="HEAD",
+            job="",
+            action="",
+            dry_run="",
+            app_src=repo_root,
+            selective_base="origin/main",
+            selective_head="HEAD",
+        )
+    )
+    values = dict(
+        line.split("=", 1) for line in output.with_suffix(".out").read_text(encoding="utf-8").splitlines()
+    )
+    assert values["repo_slug"] == "python-cli"
+    stage_count = int(values["stage_count"])
+    assert stage_count >= 5
+    all_jobs: list[str] = []
+    for idx in range(stage_count):
+        stage = json.loads(values[f"stage_{idx}"])
+        all_jobs.extend(job["job"]["id"] for job in stage["include"])
+    assert "version-check" in all_jobs
+    assert "core-gates" in all_jobs
+    if "unit-gh" in all_jobs:
+        assert "unit" not in all_jobs
+    else:
+        assert "unit" in all_jobs
+        assert "integration" in all_jobs

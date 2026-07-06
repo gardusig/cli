@@ -61,3 +61,32 @@ The package name is **`gardusig-cli`** and the installed console command is **`c
 pip install gardusig-cli
 cli --version
 ```
+
+## Pre-merge checklist (release candidate PR)
+
+Run on the PR branch before merge:
+
+```bash
+uv run python -m src pypi version check --base origin/main
+uv run python tests/integration/check_integration_coverage.py
+uv run pytest tests/meta/ tests/services/test_pipeline_selective.py \
+  tests/services/test_pipeline_runtime.py -q
+uv run pytest tests/git/ tests/gh/ tests/docker/ tests/chrome/ \
+  tests/notion/ tests/drive/ tests/contest/ tests/project/ tests/pypi/ -q
+```
+
+Confirm central CI is green after [github-pipelines](https://github.com/gardusig/github-pipelines) selective yaml merges. Until PyPI ships `>= 1.0.2`, workflows install `gardusig-cli` from git `main` or editable `app-src` (see `scripts/install-gardusig-cli.sh` in github-pipelines).
+
+## Post-merge release (maintainer)
+
+After the release candidate PR merges to `main`:
+
+```bash
+git checkout main && git pull
+export PYPI_API_TOKEN='pypi-...'
+cli release main --yes
+pip install --upgrade gardusig-cli
+cli --version
+```
+
+Then bump `main` to the next patch (e.g. `1.0.3`) for the next PR version gate, and close issues documented in `docs/public-cli-hardening.md`.
