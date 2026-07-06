@@ -6,7 +6,7 @@ Epic [#57](https://github.com/gardusig/python-cli/issues/57) reviewed the public
 
 **Merge readiness (PR #88, 2026-07-06):** `gardusig-cli` **1.0.2**; integration gate **150/150**; verification **511** tests green (40 meta/pipeline + 471 package); `cli pypi version check` passes; selective resolve E2E against `github-pipelines` python-cli.yaml.
 
-**Epic 06 status:** Pre-merge complete on branch. Post-merge maintainer steps in `docs/release.md` § Post-merge release.
+**Epic 06 status:** Pre-merge complete on branch. [github-pipelines PR #2](https://github.com/gardusig/github-pipelines/pull/2) merged; PR #88 CI dispatched. Post-merge: `docs/release.md` § Post-merge release.
 
 ## Current Matrix
 
