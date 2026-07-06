@@ -106,7 +106,10 @@ class HygienePolicy:
         )
 
     def ignores(self, rel: str) -> bool:
-        return rel in self.ignored_paths or any(rel.startswith(prefix) for prefix in self.ignored_prefixes)
+        normalized = rel if rel.endswith("/") or "." in Path(rel).name else rel
+        if normalized in self.ignored_paths:
+            return True
+        return any(normalized.startswith(prefix) for prefix in (*self.ignored_prefixes, *self.ignored_paths))
 
     def allows(self, path: Path, rel: str) -> bool:
         if rel in self.allowed_paths or path.name in self.allowed_filenames:
@@ -215,6 +218,9 @@ def _check_structure(
     if require_layout and (slug not in EXEMPT_LAYOUT_REPOS or enforce_root_allowlist):
         for entry in sorted(root.iterdir(), key=lambda path: path.name):
             if entry.name in {".git", ".venv", "node_modules", "__pycache__"}:
+                continue
+            rel = f"{entry.name}/" if entry.is_dir() else entry.name
+            if policy and policy.ignores(rel):
                 continue
             if entry.is_dir():
                 if entry.name not in root_dirs:
