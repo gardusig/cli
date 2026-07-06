@@ -57,6 +57,35 @@ def test_pipeline_config_resolve_stages_jobs(tmp_path: Path, monkeypatch) -> Non
     assert stage_0["include"][0]["job"]["id"] == "lint"
 
 
+def test_pipeline_config_resolve_treats_null_client_as_empty(tmp_path: Path, monkeypatch) -> None:
+    cfg_dir = tmp_path / ".github" / "workflows" / "pull-request"
+    cfg_dir.mkdir(parents=True)
+    (cfg_dir / "demo.yaml").write_text(
+        "repo: gardusig/demo\ndockerfile: docker/demo.dockerfile\njobs:\n  - id: lint\n    target: lint\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "out.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("CLIENT", "null")
+
+    resolve_config(
+        argparse.Namespace(
+            family="pull-request",
+            pipeline_src=tmp_path,
+            repo_slug="demo",
+            pipeline="",
+            repository="gardusig/demo",
+            ref="feature",
+            sha="abc123",
+            job="",
+            action="",
+            dry_run="",
+        )
+    )
+
+    assert "repo_slug=demo" in output.read_text(encoding="utf-8")
+
+
 def test_pipeline_config_resolve_prefers_flattened_pipeline_config(tmp_path: Path, monkeypatch) -> None:
     cfg_dir = tmp_path / ".github" / "workflows" / "pull-request"
     cfg_dir.mkdir(parents=True)

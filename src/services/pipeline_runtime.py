@@ -130,11 +130,15 @@ def run_task_action(args: argparse.Namespace) -> None:
 
 
 def _client_payload() -> dict[str, Any]:
-    raw = os.environ.get("CLIENT") or "{}"
+    raw = (os.environ.get("CLIENT") or "{}").strip()
+    if raw in {"", "null", "None"}:
+        return {}
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise SystemExit(f"invalid client payload: {exc}") from exc
+    if data is None:
+        return {}
     if not isinstance(data, dict):
         raise SystemExit("client payload must be an object")
     return data
