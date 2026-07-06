@@ -16,6 +16,8 @@ RUNNER = CliRunner()
 def test_hub_operator_docs_exist() -> None:
     assert (ROOT / "docs" / "hub-operator.md").is_file()
     assert (ROOT / "docs" / "opencode.md").is_file()
+    hub = (ROOT / "docs" / "hub-operator.md").read_text(encoding="utf-8")
+    assert "operator-test.yml" in hub
 
 
 def test_hub_operator_batch_manifest_exists() -> None:

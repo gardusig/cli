@@ -82,4 +82,4 @@ After PR #88 merges and ships **1.0.2**, track **`epic:hub-operator`** ([`docs/h
 
 - Phase A (docs + pack tests) lands on PR #88.
 - Phase B (`ghcr.io/gardusig/operator-runner`) lands in `github-pipelines`.
-- Phases C–E: reusable `workflow_call` lanes + `workflow_dispatch` orchestrator.
+- Phases C–E: reusable `workflow_call` lanes (`operator-test` shipped) + `workflow_dispatch` orchestrator.

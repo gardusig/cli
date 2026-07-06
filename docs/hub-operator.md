@@ -85,14 +85,27 @@ Slim image for workflow jobs that only need `cli`, `git`, `gh`, and optional Doc
 
 Pin `CLI_VERSION` at build time after PyPI releases; local dev may use editable install.
 
-### Reusable workflows (planned)
+### Reusable workflows
 
-`workflow_call` entrypoints in `github-pipelines` (not yet shipped):
+`workflow_call` entrypoints in `github-pipelines`:
 
-- `operator-test.yml` — selective resolve + package matrix
-- `operator-craft-plan.yml` — context + `opencode gh issue --plan-only`
-- `operator-craft-execute.yml` — `opencode gh execute` (guarded)
-- `operator-review.yml` — `opencode gh review`
+| Workflow | Status |
+|----------|--------|
+| `operator-test.yml` | **Shipped** — selective resolve + package matrix; full-suite → `pull-request.yml` |
+| `operator-craft-plan.yml` | Planned |
+| `operator-craft-execute.yml` | Planned |
+| `operator-review.yml` | Planned |
+
+Docs: `github-pipelines/docs/workflows/operator.md`.
+
+Dispatch example:
+
+```bash
+gh workflow run operator-test.yml -R gardusig/github-pipelines \
+  -f repository=gardusig/python-cli \
+  -f ref=feat/language-first-cli-and-structure \
+  -f sha="$(git rev-parse HEAD)"
+```
 
 ## Secrets
 
@@ -112,8 +125,8 @@ Break-glass: `CLI_ALLOW_GH_MERGE=1` allows raw `gh pr merge` inside providers (e
 | 0 — docs / snapshot | **This doc** + [opencode.md](opencode.md) |
 | 1 — tag policy + hub CI | Shipped (Epic 06, `github-pipelines` PR #2) |
 | 2 — forbid `cli gh pr merge` | Shipped (`gh_policy.py`) |
-| 3 — runner image + ghcr | **In progress** (`operator.dockerfile`) |
-| 4 — reusable `workflow_call` | Planned |
+| 3 — runner image + ghcr | **Done** ([github-pipelines #11](https://github.com/gardusig/github-pipelines/pull/11)) |
+| 4 — reusable `workflow_call` | **In progress** (`operator-test.yml` shipped) |
 | 5–8 — OpenCode + `gh_topo` | Shipped on PR #88 |
 | 9 — `test` / `deploy` / `release` | `test` + `release` shipped; `deploy` stub |
 | 10 — dispatch orchestrator | Planned |
