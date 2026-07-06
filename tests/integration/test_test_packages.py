@@ -72,6 +72,11 @@ def test_package_command_payload_uses_registry_paths() -> None:
     assert payload["package"]["name"] == "gh"
     assert any(command["kind"] == "unit" for command in payload["commands"])
     assert any("tests/gh/" in command["command"] for command in payload["commands"])
+    assert any(
+        "check_package_integration.py" in " ".join(command["command"])
+        for command in payload["commands"]
+        if command["kind"] == "integration"
+    )
     assert payload["pipeline_contract"]["owner"] == "gardusig/github-pipelines"
 
 
@@ -81,6 +86,7 @@ def test_full_suite_payload_includes_core_and_package_commands() -> None:
     assert "gh" in payload["packages"]
     assert any(command["kind"] == "core" for command in payload["core_commands"])
     assert any(command["package"] == "gh" for command in payload["commands"])
+    assert any(command["kind"] == "live" for command in payload["live_commands"])
     assert payload["pipeline_contract"]["owner"] == "gardusig/github-pipelines"
 
 

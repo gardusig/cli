@@ -41,7 +41,8 @@ Integration gates ensure every public command has refuse + success checks:
 - `tests/integration/check_integration_coverage.py` — registry completeness
 - `tests/integration/check_public_endpoints.py` — git endpoints
 - `tests/integration/check_public_commands.py` — all public commands
-- `tests/integration/check_api_integration.py` — API workspaces (drive, gh, notion, chrome, pypi)
+- `tests/integration/check_package_integration.py` — per-package selective CI legs
+- `tests/integration/check_api_integration.py` — full API workspaces (or `--package gh`)
 
 ## Selective CLI Packages
 
@@ -54,6 +55,8 @@ cli test packages resolve --changed-path src/cli.py --format table
 cli test packages run gh --dry-run --format table
 cli test packages run gh --no-unit --dry-run --format json
 cli test packages suite --format json
+scripts/test/gh.sh --dry-run
+scripts/test/all.sh
 ```
 
 Examples:

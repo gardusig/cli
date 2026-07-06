@@ -32,15 +32,47 @@ cli pypi upload --testpypi --skip-existing --yes
 cli release main --yes
 ```
 
+Per-package local scripts (delegate to `cli test packages run`):
+
+```bash
+scripts/test/gh.sh --dry-run
+scripts/test/git.sh --no-unit --dry-run
+scripts/test/all.sh
+```
+
+### Package matrix
+
+| Package | Unit tests | Integration leg |
+| --- | --- | --- |
+| `git` | `tests/git/` | `check_package_integration.py --package git` (workflows + git endpoints) |
+| `gh` | `tests/gh/` | package integration + filtered `cli_api_checks` |
+| `notion` / `drive` / `chrome` | `tests/{pkg}/` | package integration + API workspace |
+| `docker` | `tests/docker/` | package integration + `check_docker_commands.py` |
+| `contest` | `tests/contest/` | package integration |
+| `project` | `tests/project/` | package integration |
+| `pypi` | `tests/pypi/` | package integration + `pypi --help` |
+| `cli` (broad) | `tests/cli/` | full `check_public_commands.py` via core gates |
+
 `resolve` returns package names, focused unit paths, integration checks, broad
 fallback flags, token-cost flags, and recommended stable check names. If
 `full_suite=true`, pipelines should run the full-suite contract instead of only
 selected package legs.
 
 `run PACKAGE --no-unit --dry-run` is the package-filtered integration contract
-for Docker jobs. `suite` is the nightly/manual full-suite safety net: it expands
-the core gates plus every package unit/integration command, while
+for Docker jobs. Integration legs use `tests/integration/check_package_integration.py`
+for API and workflow packages instead of the monolithic `check_api_integration.py`.
+
+`suite` is the nightly/manual full-suite safety net: core gates, every package
+unit/integration command, plus optional `check_docker_commands.py --live`.
 `github-pipelines` decides scheduling and job fan-out.
+
+### PR CI flow (github-pipelines)
+
+1. `cli test packages resolve --base "$BASE" --head "$HEAD" --format json`
+2. If `full_suite` → run `cli test packages suite` (+ execute live docker leg)
+3. Else matrix `package_names` → `cli test packages run "$pkg" --no-unit` per cell
+4. Always run core gates: `check_integration_coverage.py`, `check_public_commands.py`
+5. Label `ci:full` or merge queue → full suite
 
 PyPI publishing uses the same split: this repo owns `cli pypi ...` and
 `cli release ...`; `github-pipelines` owns workflow YAML, Docker images,

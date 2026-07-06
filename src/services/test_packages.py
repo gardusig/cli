@@ -21,6 +21,7 @@ _CORE_INTEGRATION_CHECKS = (
     "tests/integration/check_integration_coverage.py",
     "tests/integration/check_public_commands.py",
 )
+_PACKAGE_INTEGRATION = "package-integration"
 
 
 @dataclass(frozen=True)
@@ -114,7 +115,7 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
         "git",
         source=("src/commands/git.py", "src/services/git_*.py", "src/services/tag_policy.py"),
         tests=("tests/git/",),
-        checks=("tests/integration/check_public_endpoints.py",),
+        checks=(_PACKAGE_INTEGRATION,),
     ),
     _pkg(
         "gh",
@@ -126,7 +127,7 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
             "config/gh/**",
         ),
         tests=("tests/gh/", "tests/harness/gh_harness.py"),
-        checks=("tests/integration/check_api_integration.py",),
+        checks=(_PACKAGE_INTEGRATION,),
     ),
     _pkg(
         "opencode",
@@ -226,31 +227,31 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
             "src/providers/drive_http.py",
         ),
         tests=("tests/drive/", "tests/backup/", "tests/providers/test_google_drive.py", "tests/providers/test_onedrive.py"),
-        checks=("tests/integration/check_api_integration.py",),
+        checks=(_PACKAGE_INTEGRATION,),
     ),
     _pkg(
         "notion",
         source=("src/commands/notion.py", "src/services/notion_*.py", "src/models/task.py"),
         tests=("tests/notion/",),
-        checks=("tests/integration/check_api_integration.py",),
+        checks=(_PACKAGE_INTEGRATION,),
     ),
     _pkg(
         "chrome",
         source=("src/commands/chrome.py", "src/services/bookmark_sync.py", "src/models/bookmark.py"),
         tests=("tests/chrome/", "tests/harness/chrome_harness.py"),
-        checks=("tests/integration/check_api_integration.py",),
+        checks=(_PACKAGE_INTEGRATION,),
     ),
     _pkg(
         "docker",
         source=("src/commands/docker.py", "src/services/docker_runtime.py", "src/integration/docker_*.py"),
         tests=("tests/docker/",),
-        checks=("tests/integration/check_public_commands.py", "tests/integration/check_docker_commands.py"),
+        checks=(_PACKAGE_INTEGRATION, "tests/integration/check_docker_commands.py"),
     ),
     _pkg(
         "contest",
         source=("src/commands/contest.py", "src/services/contest_*.py", "src/integration/contest_*.py"),
         tests=("tests/contest/",),
-        checks=("tests/integration/check_public_commands.py",),
+        checks=(_PACKAGE_INTEGRATION,),
     ),
     _pkg(
         "configure",
@@ -276,7 +277,7 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
             "docs/ci-workflows.md",
         ),
         tests=("tests/pypi/", "tests/cli/test_release_commands.py"),
-        checks=("pypi --help",),
+        checks=(_PACKAGE_INTEGRATION, "pypi --help"),
     ),
     _pkg(
         "pipeline",
@@ -320,7 +321,7 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
             "tests/project/",
             "tests/cli/test_project_command.py",
         ),
-        checks=("project --help",),
+        checks=(_PACKAGE_INTEGRATION,),
     ),
     _pkg(
         "wiki",
@@ -332,7 +333,7 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
         "cli",
         source=("src/cli.py", "src/__init__.py"),
         tests=("tests/cli/", "tests/meta/test_public_commands_integration.py"),
-        checks=("tests/integration/check_public_commands.py",),
+        checks=(_PACKAGE_INTEGRATION,),
         notes=("Root CLI registration change: run broad command-surface checks.",),
         broad=True,
     ),
@@ -581,6 +582,18 @@ def core_gate_commands() -> list[TestCommand]:
     ]
 
 
+def live_suite_commands() -> list[TestCommand]:
+    """Optional live-daemon legs for nightly full-suite runs."""
+    return [
+        TestCommand(
+            kind="live",
+            package="docker",
+            label="docker live",
+            command=("python3", "tests/integration/check_docker_commands.py", "--live"),
+        ),
+    ]
+
+
 def full_suite_payload() -> dict[str, Any]:
     """Describe the repo-local full-suite composition for github-pipelines."""
     package_payloads = [
@@ -589,20 +602,26 @@ def full_suite_payload() -> dict[str, Any]:
     commands = [command.as_dict() for command in core_gate_commands()]
     for payload in package_payloads:
         commands.extend(payload["commands"])
+    live_commands = [command.as_dict() for command in live_suite_commands()]
+    commands.extend(live_commands)
     return {
         "packages": [package.name for package in TEST_PACKAGES],
         "core_commands": [command.as_dict() for command in core_gate_commands()],
+        "live_commands": live_commands,
         "commands": commands,
         "pipeline_contract": pipeline_contract(),
         "notes": [
             "github-pipelines owns schedules, workflow YAML, Dockerfiles, and job graphs.",
             "This repo owns the command contract and package mappings.",
+            "Order: core gates → package unit/integration → optional live docker.",
         ],
     }
 
 
 def _integration_command(package_name: str, check: str) -> TestCommand:
-    if check.startswith("tests/") and check.endswith(".py"):
+    if check == _PACKAGE_INTEGRATION:
+        command = ("python3", "tests/integration/check_package_integration.py", "--package", package_name)
+    elif check.startswith("tests/") and check.endswith(".py"):
         command = ("python3", check)
     else:
         command = ("python3", "-m", "src", *shlex.split(check))

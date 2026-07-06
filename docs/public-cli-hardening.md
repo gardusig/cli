@@ -59,6 +59,7 @@ python tests/integration/check_api_integration.py
 ## Closure recommendations
 
 - Close **#57** when verification passes and child issues #58–#65 + #51 are closed.
-- Close product epics **#2**, **#4**, **#24**, **#54** with this hardening PR as evidence.
-- Leave **#50** (Chrome Photos) and **#67–#70** feature epics open for future work.
+- Close product epics **#2**, **#4**, **#24**, **#54**, **#66–#70** when [PR #88](https://github.com/gardusig/python-cli/pull/88) merges with evidence.
+- Epic **00-infra** ([#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85)): selective CI contract in this repo; `github-pipelines` consumes `cli test packages`.
+- Leave **#50** (Chrome Photos) and **#52** (git push edge cases) open for future work.
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
