@@ -144,3 +144,28 @@ header. Re-copying the issue is preferred over reopening a closed card.
 
 Hub polling: `gardusig/github-pipelines` → `.github/workflows/project-recurrence.yml`
 (Mondays 09:00 UTC or manual `workflow_dispatch`).
+
+```bash
+gh workflow run project-recurrence.yml -R gardusig/github-pipelines \
+  -f repository=gardusig/python-cli \
+  -f ref=main
+```
+
+## Epic 08 closure (PR #88)
+
+Parent [#66](https://github.com/gardusig/python-cli/issues/66). Close children when PR #88 merges and
+verification below is green.
+
+| Child | Issue | Shipped evidence |
+| --- | --- | --- |
+| 08.1 — foundation + read | [#72](https://github.com/gardusig/python-cli/issues/72) | `cli project list/view`, `field list`, `item list/view` — `docs/project.md` § Read Commands; `tests/project/test_project_service.py` |
+| 08.2 — board write | [#73](https://github.com/gardusig/python-cli/issues/73) | `item add/status/set`, `link`, `lane`, `unlink` — § Board Writes; `project_integration.py` ok/refuse rows |
+| 08.3 — batch spawn YAML | [#74](https://github.com/gardusig/python-cli/issues/74) | `cli project spawn` — § Batch Spawn; `config/project/examples/seed.yaml`; integration `project spawn dry-run` |
+| 08.4 — auto-link + lane | [#75](https://github.com/gardusig/python-cli/issues/75) | `project.auto_link` in config; `gh issue create` links board — `tests/cli/test_project_command.py::test_gh_issue_create_auto_links_when_configured` |
+
+Hub workflow: [github-pipelines `project-recurrence.yml`](https://github.com/gardusig/github-pipelines/blob/main/.github/workflows/project-recurrence.yml) ([PR #16](https://github.com/gardusig/github-pipelines/pull/16)).
+
+```bash
+uv run pytest tests/project/ tests/pack/test_project_epic.py tests/cli/test_project_command.py -q
+uv run python tests/integration/check_integration_coverage.py
+```

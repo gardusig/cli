@@ -72,17 +72,20 @@ python tests/integration/check_api_integration.py
 - Close **#52** and Epic **09** (#67) — push warnings, detached-HEAD refusal, and `git push --format json` shipped on PR #88.
 - Close **#48** — superseded by `cli chrome bookmarks merge` and `snapshot` (see `docs/chrome.md`).
 - Epic **00-infra** ([#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85)): selective CI contract shipped (`pipeline_selective`, `cli pipeline config resolve --app-src`); **#83–#85** close when `github-pipelines` PR adopts selective yaml + nightly (`python-cli-test-nightly.yml`).
+- Epic **08-projects** ([#66](https://github.com/gardusig/python-cli/issues/66)–[#75](https://github.com/gardusig/python-cli/issues/75)): close when PR #88 merges — evidence in `docs/project.md` § Epic 08 closure; hub `project-recurrence.yml` ([pipelines #16](https://github.com/gardusig/github-pipelines/pull/16)).
 - Leave **#50** (Chrome Photos) open for future work.
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
 - **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.2` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
 
-## Next epic: GitHub Projects recurrent board
+## Next epic: GitHub hub transport (`epic:11-gh-hub`)
 
-After PR #88 merges and ships **1.0.2**, track **`epic:08-projects`** ([#66](https://github.com/gardusig/python-cli/issues/66)–[#75](https://github.com/gardusig/python-cli/issues/75); [`docs/project.md`](project.md)):
+After PR #88 merges, ships **1.0.2**, and **Epic 08** issues **#66–#75** close, track
+**`epic:11-gh-hub`** ([#69](https://github.com/gardusig/python-cli/issues/69); [`docs/gh.md`](gh.md) § Transport parity):
 
-- Phase A: audit shipped `cli project` surface vs open child issues.
-- Phase B: integration hardening for `lane`, `unlink`, `item status`, `recurrence check`.
-- Phase C: hub `project-recurrence.yml` scheduled workflow.
-- Close **#72–#75** with test and doc evidence when green.
+- Audit CLI-only vs API-transported `cli gh` commands.
+- Extend `tests/gh/test_transport.py` and `check_api_integration.py` for gaps.
+- Document `cli gh --transport api` in the operator ship lane.
+
+**Epic 08** (`epic:08-projects`) lands on PR #88 — see [`docs/project.md`](project.md) § Epic 08 closure.
 
 **Hub operator** (`epic:hub-operator`) is complete — see [`docs/hub-operator.md`](hub-operator.md).
