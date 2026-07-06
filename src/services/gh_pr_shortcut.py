@@ -104,11 +104,61 @@ class GhPrShortcut:
             push_result = self.git.push(allow_main=plan.allow_main, message=".", yes=True)
             if not push_result.pushed:
                 raise RuntimeError("No origin remote configured; cannot create a GitHub PR.")
+        branch = push_result.branch if push_result else plan.branch
+        existing = self.find_open_pr_for_branch(branch)
+        if existing is not None:
+            return {
+                "url": existing.get("url"),
+                "number": existing.get("number"),
+                "title": existing.get("title"),
+                "pushed": bool(push_result and push_result.pushed),
+                "branch": branch,
+                "body_source": plan.body_source,
+                "existing": True,
+            }
         data = self.gh.pr_create(title=plan.title, body=plan.body)
         data["pushed"] = bool(push_result and push_result.pushed)
-        data["branch"] = push_result.branch if push_result else plan.branch
+        data["branch"] = branch
         data["body_source"] = plan.body_source
+        data["existing"] = False
         return data
+
+    def find_open_pr_for_branch(self, branch: str) -> dict[str, Any] | None:
+        """Return an open PR whose head ref matches branch, if any."""
+        candidates: list[str] = [branch]
+        try:
+            payload = self.gh.repo_view(fields="nameWithOwner,owner")
+            owner = ""
+            if isinstance(payload.get("owner"), dict):
+                owner = str(payload["owner"].get("login") or "")
+            name_with_owner = str(payload.get("nameWithOwner") or "")
+            if not owner and "/" in name_with_owner:
+                owner = name_with_owner.split("/", 1)[0]
+            if owner:
+                candidates.append(f"{owner}:{branch}")
+        except Exception:
+            pass
+        seen: set[int] = set()
+        for head in candidates:
+            try:
+                rows = self.gh.pr_list(state="open", head=head, limit=10)
+            except Exception:
+                continue
+            if not isinstance(rows, list):
+                continue
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                number = row.get("number")
+                if number is None:
+                    continue
+                number = int(number)
+                if number in seen:
+                    continue
+                if str(row.get("headRefName") or "") == branch:
+                    seen.add(number)
+                    return row
+        return None
 
     def resolve_body(self, *, body: str, template: str | None) -> tuple[str, str]:
         if not template:
@@ -179,7 +229,9 @@ class GhPrShortcut:
         return templates
 
     def _needs_push(self, plan: GitPushPlan) -> bool:
-        if plan.create_branch_first or plan.dirty or plan.remote is None:
+        if plan.create_branch_first or plan.dirty:
+            return True
+        if plan.remote is None:
             return True
         try:
             head = self.git.rev_parse("HEAD")

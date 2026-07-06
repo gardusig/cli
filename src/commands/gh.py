@@ -7,6 +7,7 @@ from pathlib import Path
 
 import typer
 
+from src.commands.git import _interactive_allow_main
 from src.internal.write.gate import require_write_gate
 from src.providers.gh_transport import GhTransportMode
 from src.services.gh_issues_sync import deploy_issues, ingest_issues, prune_issues
@@ -452,6 +453,7 @@ def pr_root(
     if ctx.invoked_subcommand is not None:
         return
     shortcut = _pr_shortcut(_ctx_repo(ctx), _ctx_transport(ctx))
+    allow_main = _interactive_allow_main(shortcut.git, allow_main=allow_main, yes=yes)
     try:
         plan = shortcut.plan(
             title=title,

@@ -185,6 +185,13 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck("gh help", ("gh", "--help"), needle="issue"),
         EndpointCheck("gh issue help", ("gh", "issue", "--help"), needle="reopen"),
         EndpointCheck("gh pr help", ("gh", "pr", "--help"), needle="checks"),
+        EndpointCheck(
+            "gh pr shortcut refuse",
+            ("gh", "pr"),
+            kind="refuse",
+            needle="Refusing write",
+            failure="refuse_gate",
+        ),
         EndpointCheck("gh project help", ("gh", "project", "--help"), needle="GitHub Projects"),
         EndpointCheck("opencode help", ("opencode", "--help"), needle="chat"),
         EndpointCheck(

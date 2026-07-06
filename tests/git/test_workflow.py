@@ -111,7 +111,7 @@ import pytest
 from typer.testing import CliRunner
 
 from src.cli import app
-from src.commands.git import _push_plan
+from src.commands.git import _interactive_allow_main, _push_plan
 from src.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
@@ -169,6 +169,50 @@ def test_push_plan_without_origin_commits_locally() -> None:
     assert question == "Commit local work on 'feat-x' without pushing?"
     assert "intent: git add -A → commit (no remote push)" in lines
     assert "remote: (none)" in lines
+
+
+def test_push_plan_on_main_without_origin() -> None:
+    svc = MagicMock()
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="main",
+        target_branch="main",
+        remote=None,
+        dirty=True,
+        message=".",
+    )
+    question, lines = _push_plan(svc, ".", allow_main=False)
+    assert "main" in question
+    assert "local-only commit on main" in "\n".join(lines)
+
+
+def test_push_plan_warns_when_main_tracks_feature_upstream() -> None:
+    svc = MagicMock()
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="main",
+        target_branch="main",
+        remote="origin",
+        dirty=False,
+        message=".",
+        allow_main=True,
+    )
+    svc.tracking_branch.return_value = "feat-x"
+    _, lines = _push_plan(svc, ".", allow_main=True)
+    assert "warning: on main but upstream tracks 'feat-x'" in lines
+
+
+def test_interactive_allow_main_opt_in(monkeypatch) -> None:
+    svc = MagicMock()
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="main",
+        target_branch="wip-001",
+        remote="origin",
+        dirty=False,
+        message=".",
+        create_branch_first=True,
+    )
+    monkeypatch.setattr("src.commands.git.sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("src.commands.git.typer.confirm", lambda *args, **kwargs: True)
+    assert _interactive_allow_main(svc, allow_main=False, yes=False) is True
 
 
 @patch.object(GitShortcuts, "push")

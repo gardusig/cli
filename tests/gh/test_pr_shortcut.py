@@ -31,6 +31,32 @@ def _push_plan(
     )
 
 
+def test_pr_shortcut_returns_existing_open_pr() -> None:
+    gh = MagicMock()
+    gh.pr_list.return_value = [
+        {
+            "number": 3,
+            "title": "Existing",
+            "url": "https://github.com/o/r/pull/3",
+            "headRefName": "feat-x",
+        }
+    ]
+    gh.repo_view.return_value = {"nameWithOwner": "o/r", "owner": {"login": "o"}}
+    git = MagicMock()
+    git.top = "/repo"
+    git.push_plan.return_value = _push_plan(dirty=False)
+    git.rev_parse.return_value = "abc123"
+    git.commit_on_remote_branch.return_value = True
+    shortcut = GhPrShortcut(gh=gh, git=git, repo_root=Path("/repo"))
+
+    plan = shortcut.plan()
+    payload = shortcut.create(plan, yes=True)
+
+    assert payload["existing"] is True
+    assert payload["number"] == 3
+    gh.pr_create.assert_not_called()
+
+
 def test_pr_shortcut_pushes_dirty_branch_before_create() -> None:
     gh = MagicMock()
     gh.pr_create.return_value = {"url": "https://github.com/o/r/pull/7", "number": 7, "title": "."}
@@ -125,6 +151,7 @@ class FakeShortcut:
     def __init__(self) -> None:
         self.gh = MagicMock()
         self.gh.snapshot_summary.return_value = ["repo: owner/repo"]
+        self.git = MagicMock()
         self.plan_value = PrShortcutPlan(
             title=".",
             body="",
@@ -157,7 +184,7 @@ def test_cli_gh_pr_shortcut_default(monkeypatch) -> None:
     from src.commands import gh
 
     fake = FakeShortcut()
-    monkeypatch.setattr(gh, "_pr_shortcut", lambda repo=None: fake)
+    monkeypatch.setattr(gh, "_pr_shortcut", lambda repo=None, transport="cli": fake)
 
     result = runner.invoke(app, ["gh", "pr", "--yes"])
 
@@ -173,7 +200,7 @@ def test_cli_gh_pr_subcommands_still_work(monkeypatch) -> None:
 
     svc = MagicMock()
     svc.pr_list.return_value = [{"number": 1, "title": "PR"}]
-    monkeypatch.setattr(gh, "_svc", lambda repo=None: svc)
+    monkeypatch.setattr(gh, "_svc", lambda repo=None, transport="cli": svc)
 
     result = runner.invoke(app, ["gh", "--format", "json", "pr", "list"])
 

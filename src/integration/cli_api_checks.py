@@ -209,6 +209,12 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
             "created",
         ),
         CliApiCheck("gh pr list", "gh", ("gh", *fmt, "pr", "list"), "7"),
+        CliApiCheck(
+            "gh pr shortcut",
+            "gh",
+            ("gh", *fmt, "pr", "--yes"),
+            '"existing"',
+        ),
         CliApiCheck("gh pr view", "gh", ("gh", *fmt, "pr", "view", "7"), "Integration PR"),
         CliApiCheck("gh pr diff", "gh", ("gh", *fmt, "pr", "diff", "7"), "file changed"),
         CliApiCheck(

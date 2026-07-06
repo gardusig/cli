@@ -269,6 +269,45 @@ def api_check_context(
         if check.failure == "gh_auth":
             with patch_run_gh(side_effect=gh_auth_error()):
                 yield env
+        elif check.label == "gh pr shortcut":
+            from unittest.mock import MagicMock
+
+            from src.services.gh_pr_shortcut import PrShortcutPlan
+            from src.services.git_shortcuts import GitPushPlan
+
+            fake = MagicMock()
+            fake.gh.snapshot_summary.return_value = ["repo: example/repo"]
+            fake.plan.return_value = PrShortcutPlan(
+                title=".",
+                body="",
+                body_source="empty",
+                template=None,
+                no_push=False,
+                allow_main=False,
+                push_plan=GitPushPlan(
+                    source_branch="feat-x",
+                    target_branch="feat-x",
+                    remote="origin",
+                    dirty=False,
+                    message=".",
+                ),
+                needs_push=False,
+                branch="feat-x",
+            )
+            fake.create.return_value = {
+                "url": "https://github.com/example/repo/pull/9",
+                "number": 9,
+                "title": ".",
+                "pushed": False,
+                "branch": "feat-x",
+                "body_source": "empty",
+                "existing": False,
+            }
+            with (
+                patch("src.commands.gh._pr_shortcut", return_value=fake),
+                patch("src.commands.git._interactive_allow_main", return_value=False),
+            ):
+                yield env
         else:
             from tests.harness.gh_harness import patch_gh_all
 

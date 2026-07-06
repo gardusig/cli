@@ -66,6 +66,20 @@ class GitShortcuts:
         )
         return result.returncode == 0
 
+    def tracking_branch(self) -> str | None:
+        """Local branch name tracked by @{u}, if any."""
+        result = run_git(
+            ["rev-parse", "--abbrev-ref", "@{u}"],
+            cwd=self.top,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+        ref = result.stdout.strip()
+        if "/" in ref:
+            return ref.split("/", 1)[1]
+        return ref or None
+
     def remote_exists(self, name: str = "origin") -> bool:
         result = run_git(["remote", "get-url", name], cwd=self.top, check=False)
         return result.returncode == 0

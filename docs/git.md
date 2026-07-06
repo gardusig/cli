@@ -88,6 +88,9 @@ cli git commit -m "wip"   # commit only (no push)
 | `main` without `--allow-main` and with `origin` | create a generated `wip-YYMMDD-NNN` branch, commit if dirty, push that branch |
 | `main` with `--allow-main` and with `origin` | commit if dirty and push `main`; the write gate calls this out explicitly |
 | No `origin` remote | commit local work only and report that nothing was pushed |
+| `main` without `origin` | commit on `main` locally after confirmation (no push target) |
+
+On `main` with `origin`, an interactive `cli git push` asks whether to push directly to `main` before starting a generated `wip-*` branch. Non-interactive runs keep the wip-branch default unless you pass `--allow-main`.
 
 The no-remote case avoids failing late after staging/committing. Add a remote and rerun `cli git push --yes` when you are ready to publish.
 

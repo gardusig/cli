@@ -118,6 +118,22 @@ def commit_cmd(
         rprint("[yellow]nothing to commit[/yellow]")
 
 
+def _interactive_allow_main(
+    svc: GitShortcuts,
+    *,
+    allow_main: bool,
+    yes: bool,
+    message: str = ".",
+) -> bool:
+    """On main with origin, interactive sessions may opt into --allow-main."""
+    if allow_main or yes:
+        return allow_main
+    plan = svc.push_plan(allow_main=False, message=message)
+    if plan.create_branch_first and sys.stdin.isatty():
+        return typer.confirm("Push directly to main?", default=False)
+    return False
+
+
 def _push_plan(
     svc: GitShortcuts,
     message: str,
@@ -140,7 +156,11 @@ def _push_plan(
         return question, lines
 
     if plan.remote is None:
-        question = f"Commit local work on {plan.target_branch!r} without pushing?"
+        question = (
+            f"Commit local work on {plan.target_branch!r} without pushing?"
+            if plan.target_branch != "main"
+            else f"Commit local work on main without pushing?"
+        )
         lines = [
             "intent: git add -A → commit (no remote push)",
             f"branch: {plan.target_branch}",
@@ -149,6 +169,8 @@ def _push_plan(
             "remote: (none)",
             "note: no origin remote is configured; setup remote before publishing",
         ]
+        if plan.target_branch == "main":
+            lines.append("note: local-only commit on main (no remote to push)")
         return question, lines
 
     question = f"Commit and push {plan.target_branch!r} to {remote}?"
@@ -159,6 +181,9 @@ def _push_plan(
         f"dirty: {plan.dirty}",
         f"remote: {remote}",
     ]
+    tracking = svc.tracking_branch()
+    if plan.source_branch == "main" and tracking and tracking != "main":
+        lines.append(f"warning: on main but upstream tracks {tracking!r}")
     if plan.source_branch == "main" and allow_main:
         lines.append("note: pushing directly on main (--allow-main)")
     return question, lines
@@ -193,6 +218,7 @@ def push_cmd(
 ) -> None:
     """Stage if dirty, commit, and push (start first when on main)."""
     svc = _svc()
+    allow_main = _interactive_allow_main(svc, allow_main=allow_main, yes=yes, message=message)
     question, intent_lines = _push_plan(svc, message, allow_main=allow_main)
     _write_gate("push", yes=yes, question=question, extra_lines=intent_lines)
     result = svc.push(allow_main=allow_main, message=message, yes=True)

@@ -147,7 +147,8 @@ cli gh pr close 10 --yes
 an empty body by default, runs the same write-gated push path as `cli git push`
 when the branch is dirty or unpublished, and then creates the PR. Use
 `--template NAME` to opt into a repository PR template; templates are not applied
-implicitly.
+implicitly. When an open PR already exists for the branch, the shortcut returns
+that PR (`existing: true` in JSON) instead of creating a duplicate.
 
 ## Project commands {#projects}
 
