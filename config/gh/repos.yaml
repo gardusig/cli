@@ -39,6 +39,54 @@ repositories:
     pipelines:
       - compile
     description: Public C++17 reference snippets for competitive programming.
+  - slug: python
+    repository: gardusig/python
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: Public Python library and teaching examples.
+  - slug: javascript
+    repository: gardusig/javascript
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: Public JavaScript library and teaching examples.
+  - slug: typescript
+    repository: gardusig/typescript
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: Public TypeScript library and teaching examples.
+  - slug: java
+    repository: gardusig/java
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: Public Java library and teaching examples.
+  - slug: csharp
+    repository: gardusig/csharp
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: Public C# library and teaching examples.
+  - slug: c
+    repository: gardusig/c
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: Public C library and teaching examples.
+  - slug: rust
+    repository: gardusig/rust
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: Public Rust library and teaching examples.
+  - slug: assembly
+    repository: gardusig/assembly
+    visibility: public
+    profile: true
+    pr_pipeline: true
+    description: Public assembly reference and teaching examples.
   - slug: gardusig
     repository: gardusig/gardusig
     visibility: public
