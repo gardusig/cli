@@ -63,7 +63,7 @@ Every **shipped** command below works on both transports unless noted. This tabl
 | `issue delete` | yes | yes | REST |
 | `issue comment` | yes | yes | REST |
 | `issue status` | yes | CLI | uses `gh` status aggregate |
-| `issue context` | yes | CLI | multi-read rollup; not API-transported |
+| `issue context` | yes | yes | composed REST (`issue view` + `list` + body `#N` refs) |
 | `issue batch` | yes | CLI-only | YAML batch orchestration |
 | `issue close` | blocked | blocked | policy — merge PR with Fixes/Closes |
 

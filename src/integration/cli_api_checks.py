@@ -138,6 +138,22 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
             "ci",
         ),
         CliApiCheck(
+            "gh issue context api",
+            "gh",
+            (
+                "gh",
+                "--transport",
+                "api",
+                "--repo",
+                "example/repo",
+                *fmt,
+                "issue",
+                "context",
+                "2",
+            ),
+            "epic:wf-test",
+        ),
+        CliApiCheck(
             "gh project view api",
             "gh",
             ("gh", "--transport", "api", "project", "view", "1", "--owner", "owner"),

@@ -29,7 +29,7 @@ See [opencode.md](opencode.md).
 | Command | Role in operator lane |
 | --- | --- |
 | `cli gh backlog next` | Pick next ready subissue (`gh_topo`, `priority:N`) |
-| `cli gh issue context N` | Issue + epic + comment context (JSON) |
+| `cli gh issue context N` | Issue + epic + comment context (JSON); use `--transport api` in CI |
 | `cli git reset/start/push` | Branch lifecycle ([workflows.md](workflows.md)) |
 | `cli test packages resolve` | Changed paths → package matrix for CI |
 | `cli test packages run PKG` | Focused unit/integration leg |
@@ -49,7 +49,7 @@ GitHub UI. See [gh.md](gh.md#blocked-commands).
 
 ```bash
 cli gh --repo gardusig/python-cli backlog next --format json
-cli gh --repo gardusig/python-cli issue context 81 --format json
+cli gh --transport api --repo gardusig/python-cli issue context 81 --format json
 cli git reset --yes --main-only
 cli git start issue-81-slug --yes
 cli opencode gh issue --number 81 --plan --plan-only

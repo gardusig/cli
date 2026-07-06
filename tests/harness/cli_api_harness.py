@@ -308,12 +308,15 @@ def api_check_context(
                 patch("src.commands.git._interactive_allow_main", return_value=False),
             ):
                 yield env
-        elif check.label in {"gh issue list api", "gh pr checks api"}:
+        elif check.label in {"gh issue list api", "gh pr checks api", "gh issue context api"}:
+            from tests.gh.test_issue_context import api_issue_context_responses
             from tests.gh.test_transport import FakeClient
 
             monkeypatch.setenv("GITHUB_TOKEN", "token")
             if check.label == "gh issue list api":
                 FakeClient.responses = [[{"number": 1, "title": "issue"}]]
+            elif check.label == "gh issue context api":
+                FakeClient.responses = api_issue_context_responses()
             else:
                 FakeClient.responses = [
                     {"number": 7, "head": {"sha": "abc"}},
