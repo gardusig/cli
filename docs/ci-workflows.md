@@ -86,7 +86,7 @@ scripts/test/all.sh --format json
 2. If `full_suite` → run `cli test packages suite` (+ execute live docker leg)
 3. Else matrix `package_names` → `cli test packages run "$pkg" --no-unit` per cell
 4. Always run core gates: `check_integration_coverage.py`, `check_public_commands.py`
-5. Label `ci:full` or merge queue → full suite
+5. Label `ci:full` → `cli pipeline config resolve --force-full-suite` (full `unit-test` + `integration-test` legs)
 
 PyPI publishing uses the same split: this repo owns `cli pypi ...` and
 `cli release ...`; `github-pipelines` owns workflow YAML, Docker images,
@@ -112,9 +112,9 @@ Parent issues [#81](https://github.com/gardusig/python-cli/issues/81)–[#85](ht
 | Scripts | [#82](https://github.com/gardusig/python-cli/issues/82) | `scripts/test/*.sh` + [`scripts/test/README.md`](../scripts/test/README.md) nine-script policy | N/A |
 | Selective PR CI | [#83](https://github.com/gardusig/python-cli/issues/83) | `src/services/pipeline_selective.py`; `tests/services/test_pipeline_selective.py` | `pull-request/python-cli.yaml` `selective: true`; `operator-test.yml` |
 | Docker split | [#84](https://github.com/gardusig/python-cli/issues/84) | `tests/integration/check_package_integration.py`; `package_integration.py` | `docker/python-cli.dockerfile` `package-unit` / `package-integration` |
-| Nightly suite | [#85](https://github.com/gardusig/python-cli/issues/85) | `cli test packages suite`; § Nightly full suite above | `python-cli-test-nightly.yml` → migrate to `suite` contract |
+| Nightly suite | [#85](https://github.com/gardusig/python-cli/issues/85) | `cli test packages suite`; § Nightly full suite above | `python-cli-test-nightly.yml` — suite plan + core-gates + full legs |
 
-**Remaining after merge:** wire `ci:full` label in `pull-request.yml`; rewrite nightly workflow to execute `cli test packages suite`; bump `CLI_VERSION` / workflow pins to **1.0.2**.
+**Pipelines PR (Phases C–D):** `ci:full` label, nightly suite contract, `BASE_VERSION` **1.0.2**. Close #81–#82 on PR #88 merge; #83–#85 after pipelines merge + green nightly.
 
 ```bash
 uv run pytest tests/integration/test_test_packages.py tests/services/test_pipeline_selective.py tests/pack/test_infra_epic.py -q

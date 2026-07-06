@@ -26,6 +26,7 @@ def apply_selective_jobs(
     app_src: Path | None,
     selective_base: str,
     selective_head: str,
+    force_full_suite: bool = False,
 ) -> dict[str, dict[str, Any]]:
     """Rewrite job map for selective CI when config declares `selective: true`."""
     if not cfg.get("selective") or app_src is None or not selective_base or not selective_head:
@@ -34,13 +35,17 @@ def apply_selective_jobs(
     if not isinstance(app_src, Path):
         app_src = Path(app_src)
 
-    resolution = selective_resolution(
-        app_src=app_src,
-        base=selective_base,
-        head=selective_head,
-    )
-    full_suite = bool(resolution.get("full_suite"))
-    package_names = list(resolution.get("package_names") or [])
+    if force_full_suite:
+        full_suite = True
+        package_names: list[str] = []
+    else:
+        resolution = selective_resolution(
+            app_src=app_src,
+            base=selective_base,
+            head=selective_head,
+        )
+        full_suite = bool(resolution.get("full_suite"))
+        package_names = list(resolution.get("package_names") or [])
 
     result: dict[str, dict[str, Any]] = {}
     matrix_unit_ids: list[str] = []

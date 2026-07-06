@@ -65,3 +65,9 @@ def test_infra_epic_suite_contract() -> None:
     result = RUNNER.invoke(app, ["test", "packages", "suite", "--format", "json"])
     assert result.exit_code == 0
     assert "check_integration_coverage" in result.stdout
+
+
+def test_infra_epic_force_full_suite_flag() -> None:
+    result = RUNNER.invoke(app, ["pipeline", "config", "resolve", "--help"])
+    assert result.exit_code == 0
+    assert "force-full-suite" in result.stdout

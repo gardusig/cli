@@ -118,6 +118,21 @@ def test_apply_selective_jobs_falls_back_to_full_suite(tmp_path: Path) -> None:
     assert jobs["pypi"]["needs"] == ["unit"]
 
 
+def test_apply_selective_jobs_force_full_suite(tmp_path: Path) -> None:
+    _init_repo(tmp_path)
+    jobs = apply_selective_jobs(
+        _base_jobs(),
+        cfg={"selective": True},
+        app_src=tmp_path,
+        selective_base="main",
+        selective_head="feature",
+        force_full_suite=True,
+    )
+    assert "unit-gh" not in jobs
+    assert "unit" in jobs
+    assert "integration" in jobs
+
+
 def test_apply_selective_jobs_skips_without_selective_flag(tmp_path: Path) -> None:
     _init_repo(tmp_path)
     jobs = apply_selective_jobs(
