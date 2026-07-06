@@ -115,6 +115,7 @@ def test_pipeline_config_resolve_prefers_flattened_pipeline_config(tmp_path: Pat
     assert "config=" + str(cfg_dir / "computer-science-cpp.yaml") in output.read_text(encoding="utf-8")
 
 
+@pytest.mark.integration
 def test_pull_request_configs_declare_inline_hygiene_policies() -> None:
     pipelines_root = Path(__file__).resolve().parents[3] / "github-pipelines"
     cfg_dir = pipelines_root / ".github" / "workflows" / "pull-request"

@@ -5,6 +5,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from src.services.pipeline_selective import apply_selective_jobs
 
 
@@ -128,6 +130,7 @@ def test_apply_selective_jobs_skips_without_selective_flag(tmp_path: Path) -> No
     assert jobs == _base_jobs()
 
 
+@pytest.mark.integration
 def test_python_cli_pipeline_config_resolve_against_pipelines(monkeypatch) -> None:
     """E2E: selective resolve consumes github-pipelines python-cli.yaml."""
     import argparse
