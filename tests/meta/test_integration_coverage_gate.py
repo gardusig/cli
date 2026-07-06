@@ -26,7 +26,8 @@ def test_integration_coverage_gate_passes() -> None:
 
 def test_every_inventory_row_has_ok_and_fail_checks() -> None:
     for row in integration_coverage_inventory():
-        assert row.ok_checks, f"{row.path_display}: missing ok checks"
+        if not row.ok_exempt:
+            assert row.ok_checks, f"{row.path_display}: missing ok checks"
         if row.fail_exempt:
             continue
         assert row.fail_checks, f"{row.path_display}: missing fail checks"
@@ -44,7 +45,8 @@ def test_manifest_lists_all_categories() -> None:
 def test_manifest_command_rows_are_complete() -> None:
     for row in integration_coverage_manifest()["commands"]:
         assert row["complete"] is True
-        assert row["ok_checks"]
+        if not row["ok_exempt"]:
+            assert row["ok_checks"]
         if not row["fail_exempt"]:
             assert row["fail_checks"]
 

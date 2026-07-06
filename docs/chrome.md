@@ -2,7 +2,7 @@
 
 **`cli chrome`** owns bookmark file ingest/deploy for Chrome HTML exports. Browser export/import steps stay manual; this repo does not add shell scripts, launchd plists, or workflow YAML.
 
-Parent epic: [issue #24](https://github.com/gardusig/python-cli/issues/24). Legacy bookmarks scripts: [issue #1](https://github.com/gardusig/python-cli/issues/1) (superseded by `cli chrome bookmarks`).
+Parent epic: [issue #24](https://github.com/gardusig/python-cli/issues/24). Legacy bookmarks scripts: [issue #1](https://github.com/gardusig/python-cli/issues/1) (superseded by `cli chrome bookmarks`). [Issue #48](https://github.com/gardusig/python-cli/issues/48) (bookmarks update script) is superseded by `merge` + `snapshot` — no separate update script ships in this repo.
 
 | Phase | Command | What it does |
 | --- | --- | --- |

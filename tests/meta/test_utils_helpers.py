@@ -53,7 +53,7 @@ def test_bookmarks_file_path_from_config(tmp_path: Path) -> None:
     )
     from src.utils.config import bookmarks_file_path
 
-    assert bookmarks_file_path(cfg_dir) == target.resolve()
+    assert bookmarks_file_path(config_dir=cfg_dir) == target.resolve()
 
 
 def test_bookmarks_file_path_env_override(tmp_path: Path, monkeypatch) -> None:
