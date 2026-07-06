@@ -4,7 +4,7 @@ Epic [#57](https://github.com/gardusig/python-cli/issues/57) reviewed the public
 
 **Status (PR #88):** integration coverage gate **154/154**; child matrix #58–#65 verified; meta coverage tests aligned with `ok_exempt` deferred rows (`chrome photos` / #50).
 
-**Merge readiness (PR #88, 2026-07-06):** `gardusig-cli` **1.0.2**; integration gate **154/154**; verification **511+** tests green; `cli pypi version check` passes; selective resolve E2E against `github-pipelines` python-cli.yaml.
+**Merge readiness (PR #88, 2026-07-06):** `gardusig-cli` **1.0.3** (main already **1.0.2** via #87); integration gate **154/154**; verification **511+** tests green; `cli pypi version check` passes; selective resolve E2E against `github-pipelines` python-cli.yaml.
 
 **Epic 06 status:** Pre-merge complete on branch. [github-pipelines PR #2](https://github.com/gardusig/github-pipelines/pull/2) merged; PR #88 CI dispatched. Post-merge: `docs/release.md` § Post-merge release.
 
@@ -75,19 +75,19 @@ python tests/integration/check_api_integration.py
 - Epic **08-projects** ([#66](https://github.com/gardusig/python-cli/issues/66)–[#75](https://github.com/gardusig/python-cli/issues/75)): close when PR #88 merges — evidence in `docs/project.md` § Epic 08 closure; hub `project-recurrence.yml` ([pipelines #16](https://github.com/gardusig/github-pipelines/pull/16)).
 - Leave **#50** (Chrome Photos) open for future work.
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
-- **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.2` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
+- **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.3` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
 
 ## Next epic: merge & release (Epic 06c)
 
-**Current gate:** merge [PR #88](https://github.com/gardusig/python-cli/pull/88), then [pipelines PR #20](https://github.com/gardusig/github-pipelines/pull/20), ship **1.0.2**, close epics per closure tables below.
+**Current gate:** merge [PR #88](https://github.com/gardusig/python-cli/pull/88), then [pipelines PR #20](https://github.com/gardusig/github-pipelines/pull/20), ship **1.0.3**, close epics per closure tables below.
 
 | Step | Action |
 | --- | --- |
 | 1 | Green CI on PR #88 (selective matrix + TestPyPI) |
 | 2 | Merge PR #88 → `main` |
-| 3 | Merge pipelines PR #20 (`ci:full`, nightly suite, `BASE_VERSION` **1.0.2**) |
-| 4 | `cli release main --yes` → PyPI **1.0.2** |
-| 5 | Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.2` |
+| 3 | Merge pipelines PR #20 (`ci:full`, nightly suite, `BASE_VERSION` **1.0.3**) |
+| 4 | `cli release main --yes` → PyPI **1.0.3** |
+| 5 | Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.3` |
 | 6 | Close #57–#85, #2, #4, #24, #54, #66–#70 per § Closure recommendations |
 
 Evidence: [`docs/release.md`](release.md) § Pre-merge / Post-merge; pack smoke `tests/pack/test_merge_epic.py`.

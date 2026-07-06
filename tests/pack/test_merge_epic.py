@@ -9,9 +9,17 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_merge_epic_version_is_1_0_2() -> None:
+def test_merge_epic_version_is_1_0_3() -> None:
     data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    assert data["project"]["version"] == "1.0.2"
+    assert data["project"]["version"] == "1.0.3"
+    init = (ROOT / "src" / "__init__.py").read_text(encoding="utf-8")
+    assert '__version__ = "1.0.3"' in init
+
+
+def test_merge_epic_wheel_has_no_removed_script_data_files() -> None:
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert "tool.setuptools.data-files" not in text
+    assert "src/scripts/_common.sh" not in text
 
 
 def test_merge_epic_release_docs() -> None:

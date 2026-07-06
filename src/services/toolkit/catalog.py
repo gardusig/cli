@@ -44,7 +44,9 @@ _COMMAND_INDEX = {(spec.group, spec.subject, spec.suite): spec for spec in COMMA
 REPO_LANGUAGE_PROFILES: dict[str, tuple[str, ...]] = {
     "animated-games": ("markdown", "typescript"),
     "chrome-extensions": ("markdown", "typescript"),
-    "computer-science": ("markdown", "cpp"),
+    "interviewing": ("markdown", "cpp"),
+    "go": ("go",),
+    "cpp": ("markdown", "cpp"),
     "database": ("markdown",),
     "gardusig": ("markdown",),
     "github-pipelines": ("markdown", "python", "shell"),

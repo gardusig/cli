@@ -104,7 +104,7 @@ See [setup.md](setup.md) and [docker.md](docker.md) for install and harness deta
 
 ## Epic 00 closure (PR #88)
 
-Parent issues [#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85). Close when PR #88 merges, **1.0.2** ships, and `github-pipelines` adoption is green.
+Parent issues [#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85). Close when PR #88 merges, **1.0.3** ships, and `github-pipelines` adoption is green.
 
 | Child | Issue | python-cli evidence | github-pipelines adoption |
 | --- | --- | --- | --- |
@@ -114,7 +114,7 @@ Parent issues [#81](https://github.com/gardusig/python-cli/issues/81)–[#85](ht
 | Docker split | [#84](https://github.com/gardusig/python-cli/issues/84) | `tests/integration/check_package_integration.py`; `package_integration.py` | `docker/python-cli.dockerfile` `package-unit` / `package-integration` |
 | Nightly suite | [#85](https://github.com/gardusig/python-cli/issues/85) | `cli test packages suite`; § Nightly full suite above | `python-cli-test-nightly.yml` — suite plan + core-gates + full legs |
 
-**Pipelines:** [PR #20](https://github.com/gardusig/github-pipelines/pull/20) — `ci:full` label, nightly suite contract, `BASE_VERSION` **1.0.2**. Close #81–#82 on PR #88 merge; #83–#85 after pipelines merge + green nightly.
+**Pipelines:** [PR #20](https://github.com/gardusig/github-pipelines/pull/20) — `ci:full` label, nightly suite contract, `BASE_VERSION` **1.0.3**. Close #81–#82 on PR #88 merge; #83–#85 after pipelines merge + green nightly.
 
 ```bash
 uv run pytest tests/integration/test_test_packages.py tests/services/test_pipeline_selective.py tests/pack/test_infra_epic.py -q
