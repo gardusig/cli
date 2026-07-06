@@ -17,6 +17,7 @@ def test_gh_hub_epic_docs_exist() -> None:
     assert "Transport parity" in text
     assert "issue context" in text
     assert "composed REST" in text
+    assert "Epic 11 closure" in text
 
 
 def test_gh_hub_epic_batch_manifest() -> None:

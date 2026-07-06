@@ -269,7 +269,7 @@ def api_check_context(
         if check.failure == "gh_auth":
             with patch_run_gh(side_effect=gh_auth_error()):
                 yield env
-        elif check.label == "gh pr shortcut":
+        elif check.label in {"gh pr shortcut", "gh pr shortcut api"}:
             from unittest.mock import MagicMock
 
             from src.services.gh_pr_shortcut import PrShortcutPlan

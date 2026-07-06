@@ -17,7 +17,7 @@ Epic [#57](https://github.com/gardusig/python-cli/issues/57) reviewed the public
 | [#60](https://github.com/gardusig/python-cli/issues/60) | `cli notion` | **Pass** | Epic 03: pairs, repo-derived `link`, partial failure, `cli tasks` shortcuts, `tests/notion/`. Close #2 epic. |
 | [#61](https://github.com/gardusig/python-cli/issues/61) | `cli chrome` | **Pass** | Epic 02: merge/snapshot/`--profile`, `docs/chrome.md`, Photos deferral (#50). #48 (bookmarks update script) superseded by `cli chrome bookmarks merge|snapshot`. Close #24 epic. |
 | [#62](https://github.com/gardusig/python-cli/issues/62) | `cli docker` | **Pass** | JSON + filter integration smoke; write `--format json`; `check_docker_commands.py` mocked + `--live` contract in `docs/docker.md`. |
-| [#63](https://github.com/gardusig/python-cli/issues/63) | `cli gh` / `cli project` | **Pass** | GH CRUD + policy in `cli_api_checks`; API-transport smoke (`gh issue list api`, `gh issue context api`, `gh pr checks api`, `gh project view api`, `gh project item add api`, `gh transport refuse`); top-level `project_integration` checks for list/spawn/pairs/deploy/link. |
+| [#63](https://github.com/gardusig/python-cli/issues/63) | `cli gh` / `cli project` | **Pass** | GH CRUD + policy in `cli_api_checks`; API-transport smoke (`gh issue list api`, `gh issue context api`, `gh pr checks api`, `gh pr shortcut api`, `gh project view api`, `gh project item add api`, `gh transport refuse`); top-level `project_integration` checks for list/spawn/pairs/deploy/link. |
 | [#64](https://github.com/gardusig/python-cli/issues/64) | `cli contest` | **Pass** | `contest_integration` + Codeforces walkthrough in `docs/contest.md`. Close #54 epic. |
 | [#65](https://github.com/gardusig/python-cli/issues/65) | `cli links`, `restore`, aliases | **Pass** | `catalog.py` indexes visible groups; `restore` placeholder stable; hidden aliases intentional. |
 | [#51](https://github.com/gardusig/python-cli/issues/51) | Output organization | **Closed policy** | JSON-first for agents; Rich tables where already useful; no broad theme rewrite. |
@@ -77,15 +77,19 @@ python tests/integration/check_api_integration.py
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
 - **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.2` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
 
-## Next epic: GitHub hub transport (`epic:11-gh-hub`)
+## Next epic: selective CI adoption (`epic:00-infra`)
 
-After PR #88 merges, ships **1.0.2**, and **Epic 08** issues **#66–#75** close, track
-**`epic:11-gh-hub`** ([#69](https://github.com/gardusig/python-cli/issues/69); [`docs/gh.md`](gh.md) § Transport parity):
+After PR #88 merges, ships **1.0.2**, and product epics **#66–#75**, **#69** close, adopt
+**`epic:00-infra`** ([#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85)) in `gardusig/github-pipelines`:
 
-- Audit CLI-only vs API-transported `cli gh` commands.
-- Extend `tests/gh/test_transport.py` and `check_api_integration.py` for gaps.
-- Document `cli gh --transport api` in the operator ship lane.
+- **#83** — PR CI matrix from `cli test packages resolve`
+- **#84** — per-package Docker integration legs via `cli test packages run PKG --no-unit`
+- **#85** — nightly `cli test packages suite` workflow on `main`
 
-**Epic 08** (`epic:08-projects`) lands on PR #88 — see [`docs/project.md`](project.md) § Epic 08 closure.
+Contracts live in [`docs/ci-workflows.md`](ci-workflows.md). Pack smoke: `tests/pack/test_infra_epic.py`.
+
+**Epic 11** (`epic:11-gh-hub`) lands on PR #88 — see [`docs/gh.md`](gh.md) § Epic 11 closure.
+
+**Epic 12** (`epic:12-docker`) — monitor/cleanup hardening complete; close [#70](https://github.com/gardusig/python-cli/issues/70) with [`docs/docker.md`](docker.md) evidence.
 
 **Hub operator** (`epic:hub-operator`) is complete — see [`docs/hub-operator.md`](hub-operator.md).

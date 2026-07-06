@@ -63,9 +63,18 @@ selected package legs.
 for Docker jobs. Integration legs use `tests/integration/check_package_integration.py`
 for API and workflow packages instead of the monolithic `check_api_integration.py`.
 
+### Nightly full suite (#85)
+
 `suite` is the nightly/manual full-suite safety net: core gates, every package
 unit/integration command, plus optional `check_docker_commands.py --live`.
-`github-pipelines` decides scheduling and job fan-out.
+
+```bash
+cli test packages suite --format json   # plan legs
+cli test packages suite --dry-run       # print commands only
+```
+
+`github-pipelines` should schedule `python-cli-test-nightly.yml` on `main` (cron +
+`workflow_dispatch`) and honor label `ci:full` on PRs for the same contract.
 
 ### PR CI flow (github-pipelines)
 

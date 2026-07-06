@@ -147,3 +147,20 @@ Use cleanup commands only after reviewing the write-gate preview:
 cli docker container-delete cli-contest-runner --yes
 cli docker image-delete --yes
 ```
+
+## Epic 12 closure (PR #88)
+
+Parent [#70](https://github.com/gardusig/python-cli/issues/70). Close when PR #88 merges and
+verification below is green.
+
+| Theme | Shipped evidence |
+| --- | --- |
+| Command matrix | § Command matrix above; read/write JSON + filters |
+| Contest linkage | § Contest Runner Lifecycle |
+| Integration gate | `docker_integration.py`; `tests/docker/` |
+| Hardening review | [#62](https://github.com/gardusig/python-cli/issues/62) Pass in `docs/public-cli-hardening.md` |
+
+```bash
+uv run pytest tests/docker/ tests/pack/test_docker_epic.py -q
+uv run python tests/integration/check_integration_coverage.py
+```

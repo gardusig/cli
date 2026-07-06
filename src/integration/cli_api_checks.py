@@ -278,6 +278,12 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
             ("gh", *fmt, "pr", "--yes"),
             '"existing"',
         ),
+        CliApiCheck(
+            "gh pr shortcut api",
+            "gh",
+            ("gh", "--transport", "api", "--repo", "example/repo", *fmt, "pr", "--yes"),
+            '"existing"',
+        ),
         CliApiCheck("gh pr view", "gh", ("gh", *fmt, "pr", "view", "7"), "Integration PR"),
         CliApiCheck("gh pr diff", "gh", ("gh", *fmt, "pr", "diff", "7"), "file changed"),
         CliApiCheck(
