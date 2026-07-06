@@ -46,7 +46,7 @@ REPO_LANGUAGE_PROFILES: dict[str, tuple[str, ...]] = {
     "chrome-extensions": ("markdown", "typescript"),
     "interviewing": ("markdown", "cpp"),
     "go": ("go",),
-    "cplusplus": ("markdown", "cpp"),
+    "cpp": ("markdown", "cpp"),
     "database": ("markdown",),
     "gardusig": ("markdown",),
     "github-pipelines": ("markdown", "python", "shell"),

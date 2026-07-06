@@ -31,8 +31,8 @@ repositories:
     pipelines:
       - test
     description: Public Go library and teaching examples.
-  - slug: cplusplus
-    repository: gardusig/cplusplus
+  - slug: cpp
+    repository: gardusig/cpp
     visibility: public
     profile: true
     pr_pipeline: true
