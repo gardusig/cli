@@ -75,3 +75,11 @@ python tests/integration/check_api_integration.py
 - Leave **#50** (Chrome Photos) open for future work.
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
 - **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.2` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
+
+## Next epic: hub operator
+
+After PR #88 merges and ships **1.0.2**, track **`epic:hub-operator`** ([`docs/hub-operator.md`](hub-operator.md)):
+
+- Phase A (docs + pack tests) lands on PR #88.
+- Phase B (`ghcr.io/gardusig/operator-runner`) lands in `github-pipelines`.
+- Phases C–E: reusable `workflow_call` lanes + `workflow_dispatch` orchestrator.

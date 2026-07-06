@@ -91,5 +91,6 @@ run after code changes.
 
 ## See also
 
+- [hub-operator.md](hub-operator.md) — headless ship lane, CI runner, epic progress
 - [workflows.md](workflows.md) — git/gh lifecycle
 - [gh.md](gh.md) — deterministic GitHub commands
