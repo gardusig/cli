@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from tests.constants import ROOT
 
+import json
 from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
@@ -37,7 +38,23 @@ def test_docker_ps_lists_running(mock_list: MagicMock, _avail: MagicMock) -> Non
     result = runner.invoke(app, ["docker", "ps"])
     assert result.exit_code == 0
     assert "web" in result.stdout
-    mock_list.assert_called_once_with(running_only=True)
+    mock_list.assert_called_once_with(running_only=True, filters=None)
+
+
+@patch("src.commands.docker.docker_available", return_value=True)
+@patch(
+    "src.commands.docker.list_containers",
+    return_value=[
+        ContainerRow("abc", "/web", "running", 2048, 4096),
+    ],
+)
+def test_docker_ps_json(mock_list: MagicMock, _avail: MagicMock) -> None:
+    result = runner.invoke(app, ["docker", "ps", "--format", "json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload[0]["display_name"] == "web"
+    assert payload[0]["size_bytes"] == 2048
+    mock_list.assert_called_once_with(running_only=True, filters=None)
 
 
 @patch("src.commands.docker.docker_available", return_value=True)
@@ -64,7 +81,23 @@ def test_docker_images(mock_list: MagicMock, _avail: MagicMock) -> None:
     result = runner.invoke(app, ["docker", "images", "--top", "5"])
     assert result.exit_code == 0
     assert "app:latest" in result.stdout
-    mock_list.assert_called_once()
+    mock_list.assert_called_once_with(filters=None)
+
+
+@patch("src.commands.docker.docker_available", return_value=True)
+@patch(
+    "src.commands.docker.list_images",
+    return_value=[ImageRow("sha", "cli-contest", "runner", 1_000_000)],
+)
+def test_docker_images_json_and_repository_filter(mock_list: MagicMock, _avail: MagicMock) -> None:
+    result = runner.invoke(
+        app,
+        ["docker", "images", "--repository", "cli-contest:runner", "--format", "json"],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload[0]["name"] == "cli-contest:runner"
+    mock_list.assert_called_once_with(filters=["reference=cli-contest:runner"])
 
 
 @patch("src.commands.docker.docker_available", return_value=True)
@@ -84,7 +117,7 @@ def test_docker_top(mock_list: MagicMock, _stats: MagicMock, _images: MagicMock,
     assert result.exit_code == 0
     assert "CPU" in result.stdout
     assert "run" in result.stdout
-    mock_list.assert_called_once_with(all_containers=True)
+    mock_list.assert_called_once_with(all_containers=True, filters=None)
 
 
 @patch("src.commands.docker.docker_available", return_value=True)
@@ -121,6 +154,25 @@ def test_docker_stop_with_yes(
 
 
 @patch("src.commands.docker.docker_available", return_value=True)
+@patch("src.commands.docker.stop_containers", return_value=["abc111integration"])
+@patch(
+    "src.commands.docker.list_containers",
+    return_value=[ContainerRow("a", "/web", "running", 100, 200)],
+)
+def test_docker_stop_json(
+    _list: MagicMock,
+    mock_stop: MagicMock,
+    _avail: MagicMock,
+) -> None:
+    result = runner.invoke(app, ["docker", "stop", "--yes", "--format", "json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout[result.stdout.index("{") :])
+    assert payload["count"] == 1
+    assert payload["stopped"] == ["abc111integration"]
+    mock_stop.assert_called_once_with(names=None)
+
+
+@patch("src.commands.docker.docker_available", return_value=True)
 @patch("src.commands.docker.stop_containers", return_value=["web"])
 @patch(
     "src.commands.docker.list_containers",
@@ -149,7 +201,38 @@ def test_docker_containers_lists_all(_list: MagicMock, _avail: MagicMock) -> Non
     assert result.exit_code == 0
     assert "web" in result.stdout
     assert "api" in result.stdout
-    _list.assert_called_once_with(all_containers=True, running_only=False)
+    _list.assert_called_once_with(all_containers=True, running_only=False, filters=None)
+
+
+@patch("src.commands.docker.docker_available", return_value=True)
+@patch(
+    "src.commands.docker.list_containers",
+    return_value=[ContainerRow("b", "/cli-worker", "exited", 50, 80)],
+)
+def test_docker_containers_json_and_filters(mock_list: MagicMock, _avail: MagicMock) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "docker",
+            "containers",
+            "--name",
+            "cli",
+            "--status",
+            "exited",
+            "--filter",
+            "label=tool",
+            "--format",
+            "json",
+        ],
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload[0]["display_name"] == "cli-worker"
+    mock_list.assert_called_once_with(
+        all_containers=True,
+        running_only=False,
+        filters=["label=tool", "name=cli", "status=exited"],
+    )
 
 
 @patch("src.commands.docker.docker_available", return_value=True)
@@ -181,9 +264,11 @@ def test_docker_container_delete_with_yes(
 
 @patch("src.commands.docker.docker_available", return_value=True)
 @patch("src.commands.docker.reset_docker")
+@patch("src.commands.docker.list_images", return_value=[])
 @patch("src.commands.docker.list_containers", return_value=[])
 def test_docker_reset_requires_yes(
     _list: MagicMock,
+    _images: MagicMock,
     mock_reset: MagicMock,
     _avail: MagicMock,
 ) -> None:
@@ -197,9 +282,11 @@ def test_docker_reset_requires_yes(
     "src.commands.docker.reset_docker",
     return_value=ResetSummary(["a"], ["a", "b"], "reclaimed", "cache"),
 )
+@patch("src.commands.docker.list_images", return_value=[])
 @patch("src.commands.docker.list_containers", return_value=[])
 def test_docker_reset_with_yes(
     _list: MagicMock,
+    _images: MagicMock,
     mock_reset: MagicMock,
     _avail: MagicMock,
 ) -> None:
@@ -214,9 +301,11 @@ def test_docker_reset_with_yes(
     "src.commands.docker.reset_docker",
     return_value=ResetSummary([], [], "dangling reclaimed", ""),
 )
+@patch("src.commands.docker.list_images", return_value=[])
 @patch("src.commands.docker.list_containers", return_value=[])
 def test_docker_reset_dangling_only(
     _list: MagicMock,
+    _images: MagicMock,
     mock_reset: MagicMock,
     _avail: MagicMock,
 ) -> None:
@@ -240,9 +329,11 @@ def test_docker_clean_containers_requires_yes(
 
 @patch("src.commands.docker.docker_available", return_value=True)
 @patch("src.commands.docker.prune_images")
+@patch("src.commands.docker.list_images", return_value=[])
 @patch("src.commands.docker.list_containers", return_value=[])
 def test_docker_clean_images_refuses(
     _list: MagicMock,
+    _images: MagicMock,
     mock_prune: MagicMock,
     _avail: MagicMock,
 ) -> None:
@@ -255,9 +346,11 @@ def test_docker_clean_images_refuses(
 @patch("src.commands.docker.prune_build_cache")
 @patch("src.commands.docker.prune_images")
 @patch("src.commands.docker.remove_containers")
+@patch("src.commands.docker.list_images", return_value=[])
 @patch("src.commands.docker.list_containers", return_value=[])
 def test_docker_clean_all_refuses(
     _list: MagicMock,
+    _images: MagicMock,
     mock_remove: MagicMock,
     mock_prune: MagicMock,
     mock_cache: MagicMock,
@@ -359,6 +452,27 @@ def test_docker_stats_all_domains(
 
 
 @patch("src.commands.docker.docker_available", return_value=True)
+@patch(
+    "src.commands.docker.list_container_stats",
+    return_value=[ContainerStatsRow("a", "web", 1.0, 100, 1000, 10.0)],
+)
+@patch(
+    "src.commands.docker.list_containers",
+    return_value=[ContainerRow("a", "/web", "running", 100, 200)],
+)
+def test_docker_stats_json(
+    _list: MagicMock,
+    _stats: MagicMock,
+    _avail: MagicMock,
+) -> None:
+    result = runner.invoke(app, ["docker", "stats", "--by", "all", "--format", "json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["cpu"][0]["display_name"] == "web"
+    assert payload["storage"][0]["size_bytes"] == 100
+
+
+@patch("src.commands.docker.docker_available", return_value=True)
 @patch("src.commands.docker.list_containers", return_value=[])
 def test_docker_containers_empty(_list: MagicMock, _avail: MagicMock) -> None:
     result = runner.invoke(app, ["docker", "containers"])
@@ -395,6 +509,15 @@ def test_docker_df(mock_df: MagicMock, _avail: MagicMock) -> None:
     result = runner.invoke(app, ["docker", "df"])
     assert result.exit_code == 0
     assert "Images" in result.stdout
+    mock_df.assert_called_once()
+
+
+@patch("src.commands.docker.docker_available", return_value=True)
+@patch("src.commands.docker.system_df", return_value="TYPE  TOTAL\nImages  1GB\n")
+def test_docker_df_json(mock_df: MagicMock, _avail: MagicMock) -> None:
+    result = runner.invoke(app, ["docker", "df", "--format", "json"])
+    assert result.exit_code == 0
+    assert "Images" in json.loads(result.stdout)["text"]
     mock_df.assert_called_once()
 
 
@@ -463,9 +586,11 @@ def test_docker_clean_cache_with_yes(
 @patch("src.commands.docker.prune_build_cache", return_value="")
 @patch("src.commands.docker.prune_images", return_value="")
 @patch("src.commands.docker.remove_containers", return_value=["a"])
+@patch("src.commands.docker.list_images", return_value=[])
 @patch("src.commands.docker.list_containers", return_value=[])
 def test_docker_clean_all_with_yes(
     _list: MagicMock,
+    _images: MagicMock,
     mock_remove: MagicMock,
     mock_prune: MagicMock,
     mock_cache: MagicMock,
@@ -520,4 +645,4 @@ def test_docker_containers_running_only(_list: MagicMock, _avail: MagicMock) -> 
     result = runner.invoke(app, ["docker", "containers", "--running"])
     assert result.exit_code == 0
     assert "web" in result.stdout
-    _list.assert_called_once_with(all_containers=False, running_only=True)
+    _list.assert_called_once_with(all_containers=False, running_only=True, filters=None)

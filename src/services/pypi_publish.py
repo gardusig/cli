@@ -122,6 +122,27 @@ def assert_version_increased_vs_ref(
     return head_v
 
 
+def assert_version_increased_vs_version(
+    base_version: str,
+    *,
+    root: Path | None = None,
+) -> str:
+    """Ensure working-tree version is strictly greater than *base_version*."""
+    from src.services.tag_policy import bump_semver, compare_versions
+
+    root = (root or project_root()).resolve()
+    assert_versions_in_sync(root)
+    base_v = normalize_release_version(base_version)
+    head_v = read_project_version(root)
+    if compare_versions(head_v, base_v) <= 0:
+        suggested = bump_semver(base_v, level="patch")
+        raise PyPiPublishError(
+            f"version {head_v!r} on this branch is not greater than {base_v!r}. "
+            f"Bump pyproject.toml and src/__init__.py to at least {suggested!r}."
+        )
+    return head_v
+
+
 def read_project_version(root: Path | None = None) -> str:
     root = (root or project_root()).resolve()
     text = (root / "pyproject.toml").read_text(encoding="utf-8")

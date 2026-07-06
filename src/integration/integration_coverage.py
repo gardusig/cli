@@ -20,6 +20,7 @@ from src.integration.cli_api_checks import (
     registered_api_command_paths,
 )
 from src.integration.contest_integration import CONTEST_SUBCOMMANDS, ContestCheck, contest_checks
+from src.integration.project_integration import PROJECT_COMMAND_PATHS, PROJECT_FAIL_EXEMPT_PATHS, ProjectCheck, project_checks
 from src.integration.docker_integration import (
     DOCKER_SUBCOMMANDS,
     DockerCheck,
@@ -34,7 +35,7 @@ from src.integration.public_endpoints import (
 )
 from src.integration.workspaces import API_WORKSPACES, fixture_dir
 
-Category = Literal["api", "git", "pypi", "docker", "contest", "top"]
+Category = Literal["api", "git", "pypi", "docker", "contest", "project", "top"]
 
 _API_NAMES: tuple[ApiName, ...] = ("gh", "notion", "drive", "chrome")
 
@@ -43,6 +44,11 @@ _FAIL_EXEMPT_PATHS: dict[Category, frozenset[tuple[str, ...]]] = {
     "git": frozenset({("git", "docs")}),
     "top": frozenset({("links",), ("restore",)}),
 }
+
+# Deferred/blocked commands with no success path (inventory still lists fail checks).
+_OK_EXEMPT_API_PATHS: frozenset[tuple[str, ...]] = frozenset({
+    ("chrome", "photos"),
+})
 
 
 @dataclass(frozen=True)
@@ -54,6 +60,7 @@ class IntegrationCoverageRow:
     ok_checks: tuple[str, ...]
     fail_checks: tuple[str, ...]
     fail_exempt: bool = False
+    ok_exempt: bool = False
 
     @property
     def path_display(self) -> str:
@@ -63,6 +70,8 @@ class IntegrationCoverageRow:
     def complete(self) -> bool:
         if self.fail_exempt:
             return bool(self.ok_checks)
+        if self.ok_exempt:
+            return bool(self.fail_checks)
         return bool(self.ok_checks) and bool(self.fail_checks)
 
     def as_dict(self) -> dict[str, Any]:
@@ -73,6 +82,7 @@ class IntegrationCoverageRow:
             "ok_checks": list(self.ok_checks),
             "fail_checks": list(self.fail_checks),
             "fail_exempt": self.fail_exempt,
+            "ok_exempt": self.ok_exempt,
             "complete": self.complete,
         }
 
@@ -184,7 +194,15 @@ def _api_rows(checks: list[CliApiCheck]) -> list[IntegrationCoverageRow]:
             matched = checks_for_path(checks, api=api, path=path)
             ok = tuple(c.label for c in matched if c.kind == "ok")
             fail = tuple(c.label for c in matched if c.kind == "fail")
-            rows.append(IntegrationCoverageRow("api", path, ok, fail))
+            rows.append(
+                IntegrationCoverageRow(
+                    "api",
+                    path,
+                    ok,
+                    fail,
+                    ok_exempt=path in _OK_EXEMPT_API_PATHS,
+                )
+            )
     return rows
 
 
@@ -232,10 +250,45 @@ def _contest_rows(checks: list[ContestCheck]) -> list[IntegrationCoverageRow]:
     return rows
 
 
+def _project_rows(checks: list[ProjectCheck]) -> list[IntegrationCoverageRow]:
+    rows: list[IntegrationCoverageRow] = []
+    for path in PROJECT_COMMAND_PATHS:
+        ok_labels = [
+            check.label
+            for check in checks
+            if check.kind == "ok"
+            and not check.failure
+            and _args_include_project_path(check, path)
+        ]
+        fail_labels = [
+            check.label
+            for check in checks
+            if (check.kind == "refuse" or check.failure)
+            and _args_include_project_path(check, path)
+        ]
+        rows.append(
+            IntegrationCoverageRow(
+                "project",
+                path,
+                ok_labels,
+                fail_labels,
+                fail_exempt=path in PROJECT_FAIL_EXEMPT_PATHS,
+            )
+        )
+    return rows
+
+
+def _args_include_project_path(check: ProjectCheck, path: tuple[str, ...]) -> bool:
+    from src.integration.cli_api_checks import command_tokens
+
+    tokens = command_tokens(check.args)
+    return len(tokens) >= len(path) and tokens[: len(path)] == path
+
+
 def _top_level_rows(checks: list[EndpointCheck]) -> list[IntegrationCoverageRow]:
     rows: list[IntegrationCoverageRow] = []
     for name in TOP_LEVEL_COMMANDS:
-        if name in _API_NAMES or name in {"git", "docker", "contest", "pypi"}:
+        if name in _API_NAMES or name in {"git", "docker", "contest", "pypi", "project"}:
             continue
         path = (name,)
         ok, fail = _labels_for_path(checks, path, category="top")
@@ -257,12 +310,14 @@ def integration_coverage_inventory() -> tuple[IntegrationCoverageRow, ...]:
     endpoints = endpoint_checks()
     docker = docker_checks()
     contest = contest_checks()
+    project = project_checks()
     rows = [
         *_api_rows(api_checks),
         *_git_rows(endpoints),
         *_pypi_rows(endpoints),
         *_docker_rows(docker),
         *_contest_rows(contest),
+        *_project_rows(project),
         *_top_level_rows(endpoints),
     ]
     return tuple(sorted(rows, key=lambda row: (row.category, row.path)))
@@ -282,7 +337,7 @@ def integration_coverage_summary() -> dict[str, Any]:
                     1 for row in rows if row.category == category and row.complete
                 ),
             }
-            for category in ("api", "git", "pypi", "docker", "contest", "top")
+            for category in ("api", "git", "pypi", "docker", "contest", "project", "top")
         },
     }
 
@@ -336,7 +391,7 @@ def assert_integration_coverage_gate() -> None:
     ]
     for row in incomplete:
         missing: list[str] = []
-        if not row.ok_checks:
+        if not row.ok_checks and not row.ok_exempt:
             missing.append("ok")
         if not row.fail_checks and not row.fail_exempt:
             missing.append("fail")

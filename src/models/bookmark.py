@@ -1,4 +1,4 @@
-"""Bookmark models (placeholder per issue #3)."""
+"""Bookmark models used by bookmark_sync merge/parse."""
 
 from pydantic import BaseModel, Field
 

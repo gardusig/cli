@@ -13,7 +13,7 @@ from src.internal.write.gate import WRITE_GATE_DELIMITER, require_write_gate
 from src.services.backup_zip import archive_tag_zip
 from src.services.git_deploy import DeployAssessment, GitDeployError, assess_deploy_readiness
 from src.services.git_review import run_review
-from src.services.git_shortcuts import GitShortcuts
+from src.services.git_shortcuts import GitPushResult, GitShortcuts
 from src.services.gh_service import GhService
 from src.services.pypi_publish import PyPiPublishError
 from src.services.tag_policy import (
@@ -118,6 +118,22 @@ def commit_cmd(
         rprint("[yellow]nothing to commit[/yellow]")
 
 
+def _interactive_allow_main(
+    svc: GitShortcuts,
+    *,
+    allow_main: bool,
+    yes: bool,
+    message: str = ".",
+) -> bool:
+    """On main with origin, interactive sessions may opt into --allow-main."""
+    if allow_main or yes:
+        return allow_main
+    plan = svc.push_plan(allow_main=False, message=message)
+    if plan.create_branch_first and sys.stdin.isatty():
+        return typer.confirm("Push directly to main?", default=False)
+    return False
+
+
 def _push_plan(
     svc: GitShortcuts,
     message: str,
@@ -125,33 +141,63 @@ def _push_plan(
     allow_main: bool,
 ) -> tuple[str, list[str]]:
     """Write-gate question + intent lines for push (start first when on main)."""
-    current = svc.current_branch()
-    remote = "origin" if svc.remote_exists("origin") else "(none)"
-    dirty = svc.is_dirty()
-    if current == "main" and not allow_main:
-        new_branch = suggest_branch_name(svc.local_branch_names(exclude_main=False))
-        question = f"Start {new_branch!r}, commit, and push to {remote}?"
+    plan = svc.push_plan(allow_main=allow_main, message=message)
+    remote = plan.remote or "(none)"
+    if plan.create_branch_first:
+        question = f"Start {plan.target_branch!r}, commit, and push to {remote}?"
         lines = [
-            f"intent: start {new_branch!r} (no prep) → add → commit → push",
-            "from_branch: main",
-            f"target_branch: {new_branch}",
-            f"commit_message: {message!r}",
-            f"dirty: {dirty}",
+            f"intent: start {plan.target_branch!r} (no prep) → add → commit → push",
+            f"from_branch: {plan.source_branch}",
+            f"target_branch: {plan.target_branch}",
+            f"commit_message: {plan.message!r}",
+            f"dirty: {plan.dirty}",
             f"remote: {remote}",
         ]
-        return question, lines
-
-    question = f"Commit and push {current!r} to {remote}?"
-    lines = [
-        "intent: git add -A → commit → push origin HEAD",
-        f"branch: {current}",
-        f"commit_message: {message!r}",
-        f"dirty: {dirty}",
-        f"remote: {remote}",
-    ]
-    if current == "main" and allow_main:
+    elif plan.remote is None:
+        question = (
+            f"Commit local work on {plan.target_branch!r} without pushing?"
+            if plan.target_branch != "main"
+            else "Commit local work on main without pushing?"
+        )
+        lines = [
+            "intent: git add -A → commit (no remote push)",
+            f"branch: {plan.target_branch}",
+            f"commit_message: {plan.message!r}",
+            f"dirty: {plan.dirty}",
+            "remote: (none)",
+            "note: no origin remote is configured; setup remote before publishing",
+        ]
+        if plan.target_branch == "main":
+            lines.append("note: local-only commit on main (no remote to push)")
+    else:
+        question = f"Commit and push {plan.target_branch!r} to {remote}?"
+        lines = [
+            "intent: git add -A → commit → push origin HEAD",
+            f"branch: {plan.target_branch}",
+            f"commit_message: {plan.message!r}",
+            f"dirty: {plan.dirty}",
+            f"remote: {remote}",
+        ]
+    if plan.source_branch == "main" and allow_main:
         lines.append("note: pushing directly on main (--allow-main)")
+    lines.extend(f"warning: {warning}" for warning in plan.warnings)
     return question, lines
+
+
+def _push_result_message(result: GitPushResult | str) -> str:
+    """Human output for new structured results and old test doubles."""
+    if isinstance(result, str):
+        return f"[green]pushed[/green] on {result}"
+    if not result.pushed:
+        return (
+            f"[yellow]committed locally[/yellow] on {result.branch} "
+            "(no origin remote configured; nothing pushed)"
+        )
+    if result.created_branch:
+        return f"[green]pushed[/green] new branch {result.branch}"
+    if result.branch == "main":
+        return "[green]pushed[/green] main (--allow-main)"
+    return f"[green]pushed[/green] on {result.branch}"
 
 
 @git_app.command("push")
@@ -164,13 +210,34 @@ def push_cmd(
         "-y",
         help="Skip confirmation prompt; stage, commit, and push.",
     ),
+    format: str = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Stage if dirty, commit, and push (start first when on main)."""
+    if format not in {"table", "json"}:
+        raise typer.Exit("Error: --format expected one of: table, json")
     svc = _svc()
+    if svc.is_detached_head():
+        raise typer.Exit("Cannot push from detached HEAD; checkout a branch first.")
+    allow_main = _interactive_allow_main(svc, allow_main=allow_main, yes=yes, message=message)
     question, intent_lines = _push_plan(svc, message, allow_main=allow_main)
     _write_gate("push", yes=yes, question=question, extra_lines=intent_lines)
-    branch = svc.push(allow_main=allow_main, message=message, yes=True)
-    rprint(f"[green]pushed[/green] on {branch}")
+    result = svc.push(allow_main=allow_main, message=message, yes=True)
+    if format == "json":
+        typer.echo(
+            json.dumps(
+                {
+                    "branch": result.branch,
+                    "pushed": result.pushed,
+                    "remote": result.remote,
+                    "created_branch": result.created_branch,
+                    "committed": result.committed,
+                    "warnings": list(result.warnings),
+                },
+                indent=2,
+            )
+        )
+        return
+    rprint(_push_result_message(result))
 
 
 def _align_main_intent_lines(svc: GitShortcuts, *, keep_ignored: bool) -> list[str]:

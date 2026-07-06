@@ -1,32 +1,48 @@
 # Architecture
 
-From [issue #3](https://github.com/gardusig/cli/issues/3):
+From [issue #3](https://github.com/gardusig/python-cli/issues/3):
 
+```text
+CLI -> Command -> Workflow / Service -> Provider / Transport -> External API
 ```
-CLI → Command → Workflow / Service → Provider → External API
-```
 
-## Current implementation
+## Current Implementation
 
-- **`src/cli.py`** — Typer app, command registration
-- **`src/commands/git.py`** — git subcommands (thin)
-- **`src/services/git_shortcuts.py`** — git business logic + subprocess calls
-- **`src/utils/process.py`** — `run_git` wrapper
-- **`src/internal/read/`** — read-only inventory (worktree snapshot, operation classification)
-- **`src/internal/write/`** — write gate with delimiter + Q&A before mutations
-- **`src/utils/confirm.py`** — thin re-export of write gate helpers
-- **`src/commands/{backup,restore,...}`** — placeholders for future workflows
-- **`src/scripts/chrome/`** — bookmark export/import (issue #1)
+- **`src/cli.py`** registers the Typer root app, visible public command groups, and hidden compatibility aliases such as `g`.
+- **`src/commands/`** contains thin command adapters. Commands parse options, enforce write gates, and delegate behavior to services.
+- **`src/services/`** owns business logic and stable JSON contracts, for example `git_shortcuts`, `gh_service`, `project_service`, `docker_runtime`, `notion_pairs`, and `test_packages`.
+- **`src/providers/`** owns external process/API adapters, including GitHub CLI/API transports and GitHub Projects subprocess access.
+- **`src/internal/write/`** owns write-gate confirmation for destructive or remote-mutating actions.
+- **`src/internal/read/`** owns read-only repository inventory and operation classification helpers.
+- **`src/services/toolkit/`** provides Python-native lint/test/structure/pipeline handlers that replaced the old repo-local shell script surface.
 
-Providers stay unimplemented until backup/sync issues land. Git operations use local `git` only.
+## Public Command Surface
+
+The public CLI is intentionally registry-driven:
+
+- `src/integration/public_endpoints.py` lists top-level command and endpoint checks.
+- `src/integration/public_commands.py` verifies public command registry completeness.
+- `src/services/test_packages.py` maps changed paths to package-specific test commands for local use and for `github-pipelines` consumers.
+- `src/utils/catalog.py` drives `cli links` discoverability.
+
+Hidden aliases and placeholders are allowed, but they should be intentional and documented when user-facing:
+
+- `cli g ...` is a hidden alias for `cli git ...`.
+- `cli backup ...`, `cli bookmarks ...`, and `cli publish ...` are compatibility/legacy surfaces.
+- `cli restore` is a stable placeholder until restore workflow work lands.
+
+## External Ownership
+
+This repository owns Python application code, docs, fixtures, command registries, and deterministic test contracts. It does not own workflow YAML, Dockerfiles, compose files, schedules, or CI job graphs. Those remain in `gardusig/github-pipelines`.
 
 ## Verification
 
-| Layer | Where it runs | Entry |
+| Layer | Owner | Entry |
 | --- | --- | --- |
-| Unit (≥80% coverage, full pytest) | `cli:integration` container | `cli test python unit .` |
-| Integration (full pytest, smoke, live docker) | `cli:integration` container | `cli test python integration .` |
-| Integration (full pytest, smoke, public APIs, live docker) | same image + host socket | `cli test python integration .` |
-| Local CLI usage | PyPI venv on host | `pip install gardusig-cli` |
+| Focused package tests | this repo contract, pipeline execution | `cli test packages run PACKAGE` |
+| Changed-path selection | this repo contract | `cli test packages resolve --base BASE --head HEAD` |
+| Full-suite safety net contract | this repo contract | `cli test packages suite` |
+| Unit / integration wrappers | Python handlers | `cli test python unit .`, `cli test python integration .` |
+| Docker images and workflow jobs | `github-pipelines` | pipeline-owned Docker stages |
 
-Harness: `github-pipelines Docker stages` copies the repo to `/tmp/cli` inside an ephemeral container so git resets and fixtures never touch the host checkout. See [docker.md](docker.md).
+The Docker harness copies the repo into an ephemeral workspace so git resets and fixtures never touch the host checkout. See [docker.md](docker.md).

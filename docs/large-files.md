@@ -14,8 +14,6 @@ cli git large files -n 50
 # Include untracked / build artifacts in working tree
 cli git large files --worktree
 
-# Shell wrapper
-./src/scripts/git/large-files.sh --worktree -n 30
 ```
 
 Output is size in bytes (right-aligned) and path relative to the repo root.

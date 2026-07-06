@@ -44,7 +44,7 @@ Maintainers publish the package with:
 
 ```bash
 cli configure import-env
-cli pypi upload --yes
+cli release main --yes
 ```
 
-Pipelines consume the latest published package via `pip install gardusig-cli`.
+`cli pypi upload --yes` remains the lower-level upload command. Pipelines consume the latest published package via `pip install gardusig-cli`; workflow YAML, Dockerfiles, trusted publishing/OIDC, schedules, and secrets live in `gardusig/github-pipelines`.

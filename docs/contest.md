@@ -21,13 +21,19 @@ Templates: [`config/contest/templates/`](../config/contest/templates/)
 
 ## Setup
 
-Build the contest runner image once (see [docker.md](docker.md#dev--test-image)):
+Build or pull the contest runner image through the central pipeline assets in `gardusig/github-pipelines`.
+
+Requires Docker on the host. The runner image is `cli-contest:runner`; its Dockerfile and build workflow live in `gardusig/github-pipelines`, not in this repo.
+
+Monitor the image and any leftover containers with `cli docker`:
 
 ```bash
-central github-pipelines contest Dockerfile
+cli docker images --repository cli-contest:runner --format json
+cli docker containers --name cli-contest --format json
+cli docker stats --name cli-contest --format json
 ```
 
-Requires Docker on the host.
+`cli docker` is monitor/cleanup only. It can remove containers or prune images after a write gate, but it does not start contest containers; `cli contest validate` owns execution.
 
 ## Usage
 
@@ -48,13 +54,15 @@ brute: ./brute.py
 generator: ./gen.py
 timeout: 10
 memory_mb: 256
+image: cli-contest:runner
+cxx_std: c++17
 ```
 
 ```bash
 cli contest validate --config contest.yaml
 ```
 
-Defaults: [`config/contest/defaults.yaml`](../config/contest/defaults.yaml) (`timeout: 10`, `memory_mb: 256`).
+Defaults: [`config/contest/defaults.yaml`](../config/contest/defaults.yaml) (`timeout: 10`, `memory_mb: 256`, `image: cli-contest:runner`, `cxx_std: c++17`).
 
 ## Generator contract
 
@@ -87,16 +95,123 @@ Reads multi-test stdin (`T` on first line), writes one answer line per case. See
 | **PASS + warning** | Small match; fast OK on large; brute also finished on large |
 | **FAIL** | Small mismatch, compile error, or fast failed on large |
 
-## Example (external competitions repo)
+## Codeforces-Style Walkthrough
+
+Keep real solutions in an external competitions repo. Copy the templates once:
+
+```bash
+mkdir -p ../competitions/codeforces/2237-a
+cp config/contest/templates/{generator.py,brute.py,lib.py} ../competitions/codeforces/2237-a/
+```
+
+Create a generator that emits a multi-test input for each tier. The small tier should include samples and corner cases; the large tier should be heavy enough that the brute is expected to TLE.
+
+```python
+from lib import Case, format_multi_test
+
+def format_one(payload: dict) -> list[str]:
+    values = payload["values"]
+    return [str(len(values)), " ".join(map(str, values))]
+
+def small_cases() -> list[Case]:
+    return [
+        Case("single", {"values": [7]}),
+        Case("zeros", {"values": [0, 0, 0]}),
+        Case("negative", {"values": [-3, 5, -2]}),
+    ]
+
+def large_cases() -> list[Case]:
+    return [Case("stress", {"values": list(range(1, 45001))})]
+
+if __name__ == "__main__":
+    import sys
+    tier = sys.argv[1]
+    cases = small_cases() if tier == "small" else large_cases()
+    sys.stdout.write(format_multi_test(cases, format_one))
+```
+
+Implement the brute as the slow, trusted reference. It must read `T` on the first line and print one answer per case:
+
+```python
+import sys
+
+def solve_case() -> str:
+    n = int(sys.stdin.readline())
+    arr = list(map(int, sys.stdin.readline().split()))
+    total = 0
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                total += arr[i]
+    return str(total)
+
+t = int(sys.stdin.readline())
+print("\n".join(solve_case() for _ in range(t)))
+```
+
+Write the fast C++ solution in the external repo:
+
+```cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    int t;
+    cin >> t;
+    while (t--) {
+        int n;
+        cin >> n;
+        long long sum = 0;
+        for (int i = 0; i < n; ++i) {
+            int x;
+            cin >> x;
+            sum += x;
+        }
+        cout << sum << "\n";
+    }
+}
+```
+
+Run validation:
 
 ```bash
 cli contest validate \
-  --fast ../solutions/codeforces/2237-a.cpp \
-  --brute ../competitions/test/brutes/codeforces/2237-a.brute.py \
-  --generator ../competitions/test/generators/codeforces/2237-a.gen.py
+  --fast ../competitions/codeforces/2237-a/solution.cpp \
+  --brute ../competitions/codeforces/2237-a/brute.py \
+  --generator ../competitions/codeforces/2237-a/generator.py \
+  --timeout 10 \
+  --memory-mb 256 \
+  --cxx-std c++17
 ```
 
-Existing generators need `small_cases()` / `large_cases()` split (replace single `cases()`).
+Or keep paths and limits in `contest.yaml`:
+
+```yaml
+fast: ../competitions/codeforces/2237-a/solution.cpp
+brute: ../competitions/codeforces/2237-a/brute.py
+generator: ../competitions/codeforces/2237-a/generator.py
+timeout: 10
+memory_mb: 256
+image: cli-contest:runner
+cxx_std: c++17
+```
+
+```bash
+cli contest validate --config ../competitions/codeforces/2237-a/contest.yaml
+```
+
+Existing generators need the `small_cases()` / `large_cases()` split (replace a single `cases()` function).
+
+## Result Interpretation
+
+- **PASS:** small outputs match; fast solution succeeds on large.
+- **PASS + warning:** small outputs match and fast succeeds, but the brute also finished on the large tier, so the stress case may be too weak.
+- **FAIL with small diff:** brute and fast disagree on the small tier. Fix the fast solution or the brute before trusting stress tests.
+- **FAIL compile error:** the C++ solution failed to compile inside `cli-contest:runner`.
+- **FAIL runtime error:** brute or fast exited nonzero.
+- **FAIL TLE on fast:** the optimized solution timed out on large input.
 
 ## Execution model
 

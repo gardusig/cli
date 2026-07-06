@@ -1,6 +1,6 @@
 # cli
 
-macOS CLI: **`cli git`** · **`cli drive`** · **`cli chrome`** · **`cli notion`**.
+Linux-first CLI helper: **`cli git`** · **`cli lint`** · **`cli pipeline`** · **`cli release`**.
 
 ## Status
 
@@ -34,17 +34,16 @@ The repo stays **`cli`**; only the published distribution name on PyPI is **`gar
 
 | Tool | Needed for |
 | --- | --- |
-| **macOS** | Primary target for local use |
-| **Python 3.12+** | `pip install gardusig-cli` or Homebrew |
-| **[Homebrew](https://brew.sh/)** | Recommended way to install Python and git on macOS |
+| **Linux terminal** | Primary runtime target |
+| **Python 3.12+** | `pip install gardusig-cli` |
 | **git** | `cli git` (run from inside a repository) |
 | **zip** | Encrypted tag archives (`cli drive ingest` on `encrypted: true` repos) |
-| **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** | Verification — `cli test python unit .` and `cli test python integration .` in Docker |
+| **Docker Engine** | Verification — `cli test python unit .` and `cli test python integration .` in Docker |
 
-Install Python and git with Homebrew:
+Install Python and git with your Linux package manager:
 
 ```bash
-brew install python@3.12 git
+sudo apt-get install python3 git
 ```
 
 Optional: `gh` (GitHub CLI) for `cli gh` and `cli opencode gh` workflows.
@@ -93,13 +92,12 @@ Cloud providers: `config/drives.yaml`. Notion token: **`export NOTION_TOKEN=...`
 
 Environment overrides (optional): `CLI_BOOKMARKS_FILE`, `CLI_DOWNLOADS_DIR`, `CLI_CONFIG_DIR`, `NOTION_TOKEN`.
 
-## Install (macOS)
+## Install
 
 Install the latest **`gardusig-cli`** release from PyPI (no repo clone required):
 
 ```bash
 pip install gardusig-cli
-# open a new terminal OR: source ~/.zprofile
 cli --version
 cli git --help
 ```
@@ -131,22 +129,22 @@ Run from inside a repository (`cd` into the repo first).
 
 Short alias: `cli g push --yes` == `cli git push --yes`.
 
-Shell wrappers: `src/scripts/git/` (e.g. `./src/scripts/git/review.sh`). See [docs/git.md](docs/git.md).
-
 **Safety:** destructive actions (reset, clean, delete, push) require `--yes` or an interactive confirmation. Default `cli git start` aligns main then branches; pass `--no-prep` to branch from the current state.
 
 ## Drive (`cli drive`)
 
-Local hub: **iCloud** `git-tags/{repo}/{repo}-{tag}.zip` (via `backup.tags_dir`). Cloud: append-only upload to Google Drive, OneDrive, Proton.
+Local hub: **iCloud** `git-tags/{repo}/{repo}-{tag}.zip` (via `backup.tags_dir`). Cloud: append-only upload to Google Drive and OneDrive (`GOOGLE_DRIVE_TOKEN`, `ONEDRIVE_TOKEN`). Proton is deferred.
 
 | Task | Command |
 | --- | --- |
-| **Status** (git tags vs local zips) | `cli drive status` |
+| **Status** (git tags vs local zips) | `cli drive status` · `cli drive status --replicas` |
 | **Ingest** (zip all tags → local store) | `cli drive ingest` (all repos in config) or `cli drive ingest PATH` |
 | List local zips | `cli drive list` · `cli drive list PATH` |
 | Delete local zip | `cli drive delete PATH TAG --yes` |
-| **Upload** to cloud | `cli drive upload` · `cli drive upload google` · `onedrive` · `proton` |
-| **Sync** (ingest all + upload all) | `cli drive sync` |
+| **Upload** to cloud | `cli drive upload` · `cli drive upload google` · `onedrive` |
+| **Download** from cloud | `cli drive download` · `cli drive download google` |
+| **Deploy** (cloud + USB) | `cli drive deploy` · `--dry-run` · `--format json` |
+| **Sync** (ingest all + deploy all) | `cli drive sync` |
 
 Typical end-of-day:
 
@@ -165,27 +163,29 @@ cli drive status
 cli drive upload
 ```
 
-`git zip` is the quick path for the current repo; `drive ingest` iterates configured repositories (or one `PATH`). See [docs/drive.md](docs/drive.md) · [issue #4](https://github.com/gardusig/cli/issues/4).
-
-Shell wrappers: `src/scripts/drive/` (`status.sh`, `ingest.sh`, `upload.sh`, `sync.sh`).
+`git zip` is the quick path for the current repo; `drive ingest` iterates configured repositories (or one `PATH`). See [docs/drive.md](docs/drive.md) · [issue #4](https://github.com/gardusig/python-cli/issues/4).
 
 ## Chrome (`cli chrome`)
 
-Browser integrations; **bookmarks** is the first subcommand. Path: **`chrome.bookmarks_file`** in config.
+Bookmark file ingest/deploy (manual browser export/import). See [docs/chrome.md](docs/chrome.md) · epic [#24](https://github.com/gardusig/python-cli/issues/24).
 
-| Direction | Command |
+| Task | Command |
 | --- | --- |
-| **Chrome → local** | `cli chrome bookmarks ingest` |
-| **Local → Chrome** | `cli chrome bookmarks deploy` |
+| **Ingest** export → backup | `cli chrome bookmarks ingest` |
+| **Merge** new URLs | `cli chrome bookmarks merge` · `--dry-run` |
+| **Snapshot** safety copy | `cli chrome bookmarks snapshot` |
+| **Deploy** validate for import | `cli chrome bookmarks deploy` |
 
 ```bash
-cli chrome bookmarks ingest   # Chrome → local HTML file
-cli chrome bookmarks deploy   # local file → Chrome
+cli chrome bookmarks ingest
+cli chrome bookmarks snapshot
+cli chrome bookmarks merge --dry-run
+cli chrome bookmarks deploy
 ```
 
-Shell wrappers: `./src/scripts/chrome/ingest.sh` · `./src/scripts/chrome/deploy.sh` (deprecated: `import.sh` / `export.sh`).
+Google Photos ([#50](https://github.com/gardusig/python-cli/issues/50)) is deferred — `cli chrome photos` prints a clear message.
 
-See [docs/bookmarks.md](docs/bookmarks.md) · epic [#24](https://github.com/gardusig/cli/issues/24) (shell scripts: [#1](https://github.com/gardusig/cli/issues/1)).
+See also [docs/bookmarks.md](docs/bookmarks.md).
 
 ## Notion (`cli notion`)
 
@@ -199,7 +199,7 @@ Local tasks: **`notion.task_root`** (private header/body) + **`notion.pairs_file
 | `cli notion sync --yes` | Ingest from Notion, then deploy local tasks |
 | `cli notion cleanup --yes` | Archive all database pages |
 
-See [docs/notion.md](docs/notion.md) · epic [#2](https://github.com/gardusig/cli/issues/2) · children [#20](https://github.com/gardusig/cli/issues/20)–[#23](https://github.com/gardusig/cli/issues/23).
+See [docs/notion.md](docs/notion.md) · epic [#2](https://github.com/gardusig/python-cli/issues/2) · children [#20](https://github.com/gardusig/python-cli/issues/20)–[#23](https://github.com/gardusig/python-cli/issues/23).
 
 ## Docker
 
@@ -222,7 +222,7 @@ Destructive commands use the write gate; pass `--yes` in scripts.
 
 ## Verify (Docker)
 
-Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) on macOS (or Docker Engine on Linux). The `cli:dev` Linux image is the only supported test environment:
+Requires Docker Engine on Linux. The Linux CI image is the supported test environment.
 
 ## CI and release
 
@@ -230,20 +230,22 @@ CI and Docker run **outside this repository** (central DevOps). This repo has no
 
 | Trigger | What runs |
 | --- | --- |
-| **Pull request** | Unit → integration → PyPI packaging (Docker) |
+| **Pull request** | `github-pipelines` consumes `cli test packages resolve` for selective package gates, with full-suite fallback |
+| **Nightly / manual full** | `github-pipelines` consumes `cli test packages suite` for the full regression safety net |
 | **Tag** `v*` | Publish `gardusig-cli` to PyPI |
 
 Configure release secrets on the central CI system (`PYPI_API_TOKEN`, `TESTPYPI_API_TOKEN`). Tag pushes trigger release via `repository_dispatch`.
 
-Details: [docs/release.md](docs/release.md) · [docs/setup.md](docs/setup.md).
+Details: [docs/release.md](docs/release.md) · [docs/setup.md](docs/setup.md) · [docs/ci-workflows.md](docs/ci-workflows.md).
 
 ## Docs
 
 - [Setup](docs/setup.md)
+- [Release](docs/release.md)
 - [Git commands](docs/git.md)
 - [GitHub (`cli gh`)](docs/gh.md)
 - [Drive (local + cloud)](docs/drive.md)
-- [Chrome](docs/bookmarks.md) · [Notion](docs/notion.md)
+- [Chrome](docs/chrome.md) · [Notion](docs/notion.md)
 - [Docker integration](docs/docker.md)
 - [Configuration](docs/configuration.md)
 - [Architecture](docs/architecture.md)
@@ -251,7 +253,8 @@ Details: [docs/release.md](docs/release.md) · [docs/setup.md](docs/setup.md).
 ## Related
 
 - [OpenCode](docs/opencode.md) — `cli opencode` AI entry point
-- Cloud drive epic: [cli #4](https://github.com/gardusig/cli/issues/4)
-- Bootstrap spec: [cli #3](https://github.com/gardusig/cli/issues/3)
-- Chrome: [cli #24](https://github.com/gardusig/cli/issues/24) · bookmarks scripts [#1](https://github.com/gardusig/cli/issues/1)
-- Docker integration: [cli #9](https://github.com/gardusig/cli/issues/9)
+- [Hub operator](docs/hub-operator.md) — headless ship lane + CI runner
+- Cloud drive epic: [cli #4](https://github.com/gardusig/python-cli/issues/4)
+- Bootstrap spec: [cli #3](https://github.com/gardusig/python-cli/issues/3)
+- Chrome: [cli #24](https://github.com/gardusig/python-cli/issues/24) · bookmarks [#1](https://github.com/gardusig/python-cli/issues/1) superseded
+- Docker integration: [cli #9](https://github.com/gardusig/python-cli/issues/9)

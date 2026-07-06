@@ -15,8 +15,8 @@ MERGE_FORBIDDEN_MESSAGE = (
 )
 
 PROJECTS_FORBIDDEN_MESSAGE = (
-    "GitHub Projects blocked from CLI — use issues, labels, and backlog tree instead.\n"
-    "See docs/gh.md#blocked-commands"
+    "Raw GitHub Projects operations should use `cli gh project ...` or `cli project ...`.\n"
+    "See docs/gh.md#projects"
 )
 
 ISSUE_CLOSE_FORBIDDEN_MESSAGE = (
@@ -54,13 +54,6 @@ class IssueCloseForbiddenError(GhPolicyError):
         super().__init__(ISSUE_CLOSE_FORBIDDEN_MESSAGE, operation="issue close")
 
 
-class ProjectsForbiddenError(GhPolicyError):
-    """Raised when gh project commands are attempted via CLI."""
-
-    def __init__(self) -> None:
-        super().__init__(PROJECTS_FORBIDDEN_MESSAGE, operation="project")
-
-
 class RulesetForbiddenError(GhPolicyError):
     """Raised when gh ruleset commands are attempted via CLI."""
 
@@ -87,10 +80,6 @@ def _is_pr_merge(args: Sequence[str]) -> bool:
     return len(args) >= 2 and args[0] == "pr" and args[1] == "merge"
 
 
-def _is_project(args: Sequence[str]) -> bool:
-    return len(args) >= 1 and args[0] == "project"
-
-
 def _is_issue_close(args: Sequence[str]) -> bool:
     return len(args) >= 2 and args[0] == "issue" and args[1] == "close"
 
@@ -107,13 +96,6 @@ BLOCKED_GH_OPERATIONS: tuple[BlockedGhOperation, ...] = (
         matches=_is_pr_merge,
         error_type=MergeForbiddenError,
         break_glass_env="CLI_ALLOW_GH_MERGE",
-    ),
-    BlockedGhOperation(
-        id="project",
-        message=PROJECTS_FORBIDDEN_MESSAGE,
-        doc="docs/gh.md#blocked-commands",
-        matches=_is_project,
-        error_type=ProjectsForbiddenError,
     ),
     BlockedGhOperation(
         id="issue-close",
@@ -150,8 +132,6 @@ def policy_for_cli_command(group: str, subcommand: str | None = None) -> Blocked
         return BLOCKED_BY_ID["pr-merge"]
     if group == "issue" and subcommand == "close":
         return BLOCKED_BY_ID["issue-close"]
-    if group == "project":
-        return BLOCKED_BY_ID["project"]
     if group == "ruleset":
         return BLOCKED_BY_ID["ruleset"]
     return None
@@ -165,19 +145,16 @@ def blocked_operations_catalog() -> list[dict[str, str]]:
             "gh_argv": {
                 "pr-merge": "gh pr merge …",
                 "issue-close": "gh issue close …",
-                "project": "gh project …",
                 "ruleset": "gh ruleset …",
             }.get(op.id, op.id),
             "cli": {
                 "pr-merge": "cli gh pr merge N",
                 "issue-close": "cli gh issue close N",
-                "project": "cli gh project …",
                 "ruleset": "cli gh ruleset …",
             }.get(op.id, f"cli gh {op.id}"),
             "alternative": {
                 "pr-merge": "GitHub UI or PR auto-merge",
                 "issue-close": "Merge PR in GitHub UI with Fixes/Closes/Resolves #N",
-                "project": "cli gh backlog organize + priority:N labels",
                 "ruleset": "GitHub repository/org settings UI",
             }.get(op.id, "GitHub web UI"),
             "doc": op.doc,

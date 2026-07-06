@@ -17,6 +17,10 @@ runner = CliRunner()
 FIXTURE_ROOT = notion_task_fixture_dir()
 
 
+def _patch_notion_token():
+    return patch("src.commands.notion.require_notion_token", return_value="test-token")
+
+
 def test_notion_ingest_requires_token(monkeypatch) -> None:
     monkeypatch.delenv("NOTION_TOKEN", raising=False)
     with patch("src.commands.notion.require_notion_token", side_effect=RuntimeError("NOTION_TOKEN")):
@@ -28,6 +32,7 @@ def test_notion_ingest_requires_token(monkeypatch) -> None:
 def test_notion_ingest_success(monkeypatch) -> None:
     monkeypatch.setenv("NOTION_TOKEN", "test-token")
     with (
+        _patch_notion_token(),
         patch("src.commands.notion.load_config") as mock_cfg,
         patch("src.commands.notion.export_tasks") as mock_export,
         patch("src.commands.notion.notion_task_root") as mock_root,
@@ -45,6 +50,7 @@ def test_notion_ingest_success(monkeypatch) -> None:
 def test_notion_deploy_requires_manifest(monkeypatch) -> None:
     monkeypatch.setenv("NOTION_TOKEN", "test-token")
     with (
+        _patch_notion_token(),
         patch("src.commands.notion.load_config") as mock_cfg,
         patch("src.commands.notion.notion_task_root") as mock_root,
         patch("src.commands.notion.notion_pairs_file") as mock_manifest,
@@ -59,7 +65,10 @@ def test_notion_deploy_requires_manifest(monkeypatch) -> None:
 
 def test_notion_cleanup_requires_yes(monkeypatch) -> None:
     monkeypatch.setenv("NOTION_TOKEN", "test-token")
-    with patch("src.commands.notion.load_config") as mock_cfg:
+    with (
+        _patch_notion_token(),
+        patch("src.commands.notion.load_config") as mock_cfg,
+    ):
         mock_cfg.return_value.notion.database_id = "db-123"
         result = runner.invoke(app, ["notion", "cleanup"])
     assert result.exit_code != 0
@@ -103,6 +112,7 @@ def test_notion_pairs_build(monkeypatch, tmp_path: Path) -> None:
 def test_notion_legacy_download_alias(monkeypatch) -> None:
     monkeypatch.setenv("NOTION_TOKEN", "test-token")
     with (
+        _patch_notion_token(),
         patch("src.commands.notion.load_config") as mock_cfg,
         patch("src.commands.notion.export_tasks") as mock_export,
         patch("src.commands.notion.notion_task_root") as mock_root,
@@ -121,6 +131,7 @@ def test_notion_deploy_success_with_warnings(monkeypatch, tmp_path: Path) -> Non
     manifest = tmp_path / "tasks.pairs.json"
     manifest.write_text("[]\n", encoding="utf-8")
     with (
+        _patch_notion_token(),
         patch("src.commands.notion.load_config") as mock_cfg,
         patch("src.commands.notion.import_tasks") as mock_import,
         patch("src.commands.notion.notion_task_root", return_value=tmp_path),
@@ -144,6 +155,7 @@ def test_notion_sync_runs_both_phases(monkeypatch, tmp_path: Path) -> None:
     manifest = tmp_path / "tasks.pairs.json"
     manifest.write_text("[]\n", encoding="utf-8")
     with (
+        _patch_notion_token(),
         patch("src.commands.notion.load_config") as mock_cfg,
         patch("src.commands.notion.export_tasks") as mock_export,
         patch("src.commands.notion.import_tasks") as mock_import,
@@ -163,6 +175,7 @@ def test_notion_sync_runs_both_phases(monkeypatch, tmp_path: Path) -> None:
 def test_notion_cleanup_with_yes(monkeypatch) -> None:
     monkeypatch.setenv("NOTION_TOKEN", "test-token")
     with (
+        _patch_notion_token(),
         patch("src.commands.notion.load_config") as mock_cfg,
         patch("src.commands.notion.cleanup_board") as mock_cleanup,
     ):

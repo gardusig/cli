@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.services.git_shortcuts import GitShortcuts
+from src.services.git_shortcuts import GitPushPlan, GitShortcuts
 from src.utils.process import GitCommandError
 
 PATCH = "src.services.git_shortcuts.run_git"
@@ -173,9 +173,13 @@ def test_push_on_main_starts_before_push(mock_run: MagicMock, svc: GitShortcuts)
         patch.object(svc, "remote_exists", return_value=True),
         patch.object(svc, "start", return_value="wip-001") as mock_start,
     ):
-        name = svc.push(yes=True, message="wip")
-    assert name == "wip-001"
-    mock_start.assert_called_once_with(None, yes=True, prep=False)
+        result = svc.push(yes=True, message="wip")
+    assert result.branch == "wip-001"
+    assert result.pushed is True
+    assert result.created_branch is True
+    mock_start.assert_called_once()
+    assert mock_start.call_args.args[0].startswith("wip-")
+    assert mock_start.call_args.kwargs == {"yes": True, "prep": False}
     assert mock_run.call_args.args[0] == ["push", "-u", "origin", "HEAD"]
 
 
@@ -188,8 +192,9 @@ def test_push_on_feature_branch_skips_start(mock_run: MagicMock, svc: GitShortcu
         patch.object(svc, "remote_exists", return_value=True),
         patch.object(svc, "start") as mock_start,
     ):
-        name = svc.push(yes=True, message="wip")
-    assert name == "feat-x"
+        result = svc.push(yes=True, message="wip")
+    assert result.branch == "feat-x"
+    assert result.pushed is True
     mock_start.assert_not_called()
 
 
@@ -209,13 +214,22 @@ def test_push_commits_dirty_then_pushes(mock_run: MagicMock, svc: GitShortcuts) 
 
 @patch(PATCH)
 def test_push_no_origin(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    plan = GitPushPlan(
+        source_branch="feat",
+        target_branch="feat",
+        remote=None,
+        dirty=False,
+        message=".",
+    )
     with (
+        patch.object(svc, "push_plan", return_value=plan),
         patch.object(svc, "current_branch", return_value="feat"),
-        patch.object(svc, "is_dirty", return_value=False),
-        patch.object(svc, "remote_exists", return_value=False),
     ):
-        with pytest.raises(RuntimeError, match="origin"):
-            svc.push(yes=True)
+        result = svc.push(yes=True)
+    assert result.branch == "feat"
+    assert result.pushed is False
+    assert result.remote is None
+    mock_run.assert_not_called()
 
 
 @patch(PATCH)
@@ -609,16 +623,44 @@ def test_align_main_delegates_to_sync_main(mock_run: MagicMock, svc: GitShortcut
 
 
 @patch(PATCH)
+def test_push_warnings_merged_branch(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    with (
+        patch.object(svc, "current_branch", return_value="feat"),
+        patch.object(svc, "is_branch_merged_into_main", return_value=True),
+        patch.object(svc, "remote_exists", return_value=True),
+        patch.object(svc, "has_upstream", return_value=True),
+    ):
+        warnings = svc.push_warnings()
+    assert warnings == ["branch 'feat' is already merged into main"]
+
+
+@patch(PATCH)
+def test_is_detached_head(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    mock_run.side_effect = [_ok("HEAD\n")]
+    assert svc.is_detached_head() is True
+    mock_run.side_effect = [_ok("main\n")]
+    assert svc.is_detached_head() is False
+
+
+@patch(PATCH)
 def test_push_allow_main_on_main(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    plan = GitPushPlan(
+        source_branch="main",
+        target_branch="main",
+        remote="origin",
+        dirty=False,
+        message=".",
+        allow_main=True,
+    )
     mock_run.side_effect = [
-        _ok("main\n"),  # current_branch
-        _ok(""),  # status_short (clean)
-        _ok(""),  # remote get-url origin
         _ok(""),  # push
         _ok("main\n"),  # current_branch after push
     ]
-    branch = svc.push(allow_main=True, yes=True)
-    assert branch == "main"
+    with patch.object(svc, "push_plan", return_value=plan):
+        result = svc.push(allow_main=True, yes=True)
+    assert result.branch == "main"
+    assert result.pushed is True
+    assert result.created_branch is False
     push_calls = [c for c in mock_run.call_args_list if c.args[0][0] == "push"]
     assert len(push_calls) == 1
 

@@ -1,4 +1,4 @@
-"""Proton Drive provider adapter."""
+"""Proton Drive provider adapter (deferred — no stable public upload API)."""
 
 from __future__ import annotations
 
@@ -6,26 +6,41 @@ from pathlib import Path
 
 name = "proton"
 
+_DEFER_MESSAGE = (
+    "Proton Drive upload is not supported: Proton does not offer a stable, "
+    "documented third-party API for programmatic uploads in this CLI. "
+    "Use Google Drive or OneDrive replicas, or a USB replica. "
+    "See docs/drive.md#proton-drive."
+)
+
+
+class ProtonDriveUnsupportedError(RuntimeError):
+    """Raised when Proton Drive operations are requested."""
+
+
+def _unsupported() -> None:
+    raise ProtonDriveUnsupportedError(_DEFER_MESSAGE)
+
 
 def list_files(_root: str) -> set[str]:
-    raise NotImplementedError("Proton Drive list_files not implemented yet")
+    _unsupported()
 
 
 def exists(_path: str) -> bool:
-    raise NotImplementedError("Proton Drive exists not implemented yet")
+    _unsupported()
 
 
 def create_directory(_path: str) -> None:
-    raise NotImplementedError("Proton Drive create_directory not implemented yet")
+    _unsupported()
 
 
 def upload(_local: Path, _remote: str) -> None:
-    raise NotImplementedError("Proton Drive upload not implemented yet")
+    _unsupported()
 
 
 def download(_remote_path: str, _local_path: str) -> None:
-    raise NotImplementedError("Proton Drive download not implemented yet")
+    _unsupported()
 
 
 def delete(_remote_path: str) -> None:
-    raise NotImplementedError("Proton Drive delete not implemented yet")
+    raise NotImplementedError("Proton Drive delete not implemented (append-only policy)")

@@ -155,6 +155,64 @@ def docker_checks() -> list[DockerCheck]:
             ("docker", "clean", "all", "--yes"),
             needle="removed",
         ),
+        DockerCheck("docker ps json", ("docker", "ps", "--format", "json"), needle="display_name"),
+        DockerCheck(
+            "docker containers json",
+            ("docker", "containers", "--status", "exited", "--format", "json"),
+            needle="cli-mock-stopped",
+        ),
+        DockerCheck(
+            "docker images json",
+            ("docker", "images", "--repository", "cli/mock", "--format", "json"),
+            needle="cli/mock",
+        ),
+        DockerCheck(
+            "docker stats json",
+            ("docker", "stats", "--by", "all", "--format", "json"),
+            needle='"cpu"',
+        ),
+        DockerCheck("docker top json", ("docker", "top", "--format", "json"), needle='"images"'),
+        DockerCheck("docker df json", ("docker", "df", "--format", "json"), needle='"text"'),
+        DockerCheck(
+            "docker ps name filter",
+            ("docker", "ps", "--name", "mock-running"),
+            needle="cli-mock-running",
+        ),
+        DockerCheck(
+            "docker containers status filter",
+            ("docker", "containers", "--status", "exited"),
+            needle="cli-mock-stopped",
+        ),
+        DockerCheck(
+            "docker images repository filter",
+            ("docker", "images", "--repository", "cli/mock"),
+            needle="cli/mock",
+        ),
+        DockerCheck(
+            "docker stop json yes",
+            ("docker", "stop", "--yes", "--format", "json"),
+            needle='"count"',
+        ),
+        DockerCheck(
+            "docker container-delete json yes",
+            ("docker", "container-delete", "--yes", "--format", "json"),
+            needle='"deleted"',
+        ),
+        DockerCheck(
+            "docker image-delete json yes",
+            ("docker", "image-delete", "--yes", "--format", "json"),
+            needle='"image_prune"',
+        ),
+        DockerCheck(
+            "docker reset json yes",
+            ("docker", "reset", "--yes", "--format", "json"),
+            needle='"removed_containers"',
+        ),
+        DockerCheck(
+            "docker clean containers json yes",
+            ("docker", "clean", "containers", "--yes", "--format", "json"),
+            needle='"removed"',
+        ),
     ]
 
 
@@ -284,6 +342,11 @@ def run_live_docker_checks(repo_root: Path) -> list[str]:
     try:
         live_checks = [
             DockerCheck("live docker ps", ("docker", "ps", "--top", "500"), needle=_LIVE_CONTAINER),
+            DockerCheck(
+                "live docker ps json",
+                ("docker", "ps", "--top", "500", "--format", "json"),
+                needle=_LIVE_CONTAINER,
+            ),
             DockerCheck(
                 "live docker stats",
                 ("docker", "stats", "--by", "memory", "--top", "500"),

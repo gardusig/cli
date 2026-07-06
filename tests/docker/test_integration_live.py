@@ -40,6 +40,7 @@ def test_live_docker_checks_success(mock_run: MagicMock) -> None:
             (0, ok_out),
             (0, ok_out),
             (0, ok_out),
+            (0, ok_out),
             (1, "non-interactive"),
             (0, "stopped"),
             (0, "deleted"),
@@ -47,7 +48,7 @@ def test_live_docker_checks_success(mock_run: MagicMock) -> None:
         errors = run_live_docker_checks(ROOT)
 
     assert errors == []
-    assert mock_check.call_count == 9
+    assert mock_check.call_count == 10
 
 
 @patch("src.integration.docker_integration.subprocess.run")

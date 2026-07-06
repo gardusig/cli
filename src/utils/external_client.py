@@ -52,6 +52,8 @@ def is_retryable_exception(exc: Exception) -> bool:
             token in text
             for token in ("rate limit", "timed out", "timeout", "502", "503", "504")
         )
+    if exc.__class__.__name__ == "DriveApiError" and getattr(exc, "retryable", False):
+        return True
     return False
 
 

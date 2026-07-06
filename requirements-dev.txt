@@ -1,5 +1,5 @@
 # Dev + test dependencies (keep in sync with pyproject.toml [project.optional-dependencies.dev]).
-# Dev deps (see pyproject.toml). Contributors: Docker gates only (scripts/docker/bootstrap.sh in container).
+# Dev deps (see pyproject.toml). Contributors: Docker gates run in central CI.
 -r requirements.txt
 build>=1.0
 pytest>=8.0

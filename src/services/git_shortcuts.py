@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 from src.utils.process import GitCommandError, run_git
@@ -8,6 +9,36 @@ from src.utils.quick_defaults import suggest_branch_name
 
 # Remotes consulted for canonical main (fork workflow: upstream → fork → origin).
 MAIN_REMOTES = ("upstream", "fork", "origin")
+
+
+@dataclass(frozen=True)
+class GitPushPlan:
+    """Resolved push intent before the write gate."""
+
+    source_branch: str
+    target_branch: str
+    remote: str | None
+    dirty: bool
+    message: str
+    allow_main: bool = False
+    create_branch_first: bool = False
+    warnings: tuple[str, ...] = ()
+
+    @property
+    def will_push(self) -> bool:
+        return self.remote is not None
+
+
+@dataclass(frozen=True)
+class GitPushResult:
+    """Outcome of `cli git push` after local commit/push work."""
+
+    branch: str
+    pushed: bool
+    remote: str | None
+    created_branch: bool = False
+    committed: bool = False
+    warnings: tuple[str, ...] = ()
 
 
 class GitShortcuts:
@@ -23,6 +54,36 @@ class GitShortcuts:
     def current_branch(self) -> str:
         return run_git(["branch", "--show-current"], cwd=self.top).stdout.strip()
 
+    def is_detached_head(self) -> bool:
+        result = run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=self.top, check=False)
+        if result.returncode != 0:
+            return True
+        ref = result.stdout.strip()
+        return ref == "HEAD" or not ref
+
+    def is_branch_merged_into_main(self, branch: str) -> bool:
+        if not branch or branch == "main":
+            return False
+        return branch in self.merged_branch_names(include_current=True)
+
+    def push_warnings(self, *, branch: str | None = None, allow_main: bool = False) -> list[str]:
+        """Informational warnings before push (never blocks without the write gate)."""
+        branch = branch or self.current_branch()
+        warnings: list[str] = []
+        if branch == "main":
+            if allow_main:
+                tracking = self.tracking_branch()
+                if tracking and tracking != "main":
+                    warnings.append(f"on main but upstream tracks {tracking!r}")
+            return warnings
+        if not branch:
+            return warnings
+        if self.is_branch_merged_into_main(branch):
+            warnings.append(f"branch {branch!r} is already merged into main")
+        if self.remote_exists("origin") and not self.has_upstream():
+            warnings.append(f"branch {branch!r} has no upstream; push will set origin HEAD")
+        return warnings
+
     def status_short(self) -> str:
         return run_git(["status", "--short"], cwd=self.top).stdout
 
@@ -36,6 +97,20 @@ class GitShortcuts:
             check=False,
         )
         return result.returncode == 0
+
+    def tracking_branch(self) -> str | None:
+        """Local branch name tracked by @{u}, if any."""
+        result = run_git(
+            ["rev-parse", "--abbrev-ref", "@{u}"],
+            cwd=self.top,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+        ref = result.stdout.strip()
+        if "/" in ref:
+            return ref.split("/", 1)[1]
+        return ref or None
 
     def remote_exists(self, name: str = "origin") -> bool:
         result = run_git(["remote", "get-url", name], cwd=self.top, check=False)
@@ -176,18 +251,65 @@ class GitShortcuts:
         run_git(["commit", "-m", message], cwd=self.top)
         return True
 
-    def push(self, *, allow_main: bool = False, message: str = ".", yes: bool = False) -> str:
-        """Stage if dirty, commit, and push. On main, start a random branch first."""
+    def push_plan(self, *, allow_main: bool = False, message: str = ".") -> GitPushPlan:
+        """Resolve push intent once so prompts and writes agree."""
+        current = self.current_branch()
+        dirty = self.is_dirty()
+        remote = "origin" if self.remote_exists("origin") else None
+        create_branch = current == "main" and not allow_main and remote is not None
+        target = (
+            suggest_branch_name(self.local_branch_names(exclude_main=False))
+            if create_branch
+            else current
+        )
+        warnings = tuple(self.push_warnings(branch=current, allow_main=allow_main))
+        return GitPushPlan(
+            source_branch=current,
+            target_branch=target,
+            remote=remote,
+            dirty=dirty,
+            message=message,
+            allow_main=allow_main,
+            create_branch_first=create_branch,
+            warnings=warnings,
+        )
+
+    def push(
+        self,
+        *,
+        allow_main: bool = False,
+        message: str = ".",
+        yes: bool = False,
+    ) -> GitPushResult:
+        """Stage if dirty, commit, and push when a remote is available."""
         if not yes:
             raise RuntimeError("Push requires confirmation. Pass --yes to proceed.")
-        if self.current_branch() == "main" and not allow_main:
-            self.start(None, yes=True, prep=False)
-        if self.is_dirty():
-            self.commit(message)
-        if not self.remote_exists("origin"):
-            raise RuntimeError("No origin remote configured.")
-        run_git(["push", "-u", "origin", "HEAD"], cwd=self.top)
-        return self.current_branch()
+        plan = self.push_plan(allow_main=allow_main, message=message)
+        created_branch = False
+        if plan.create_branch_first:
+            self.start(plan.target_branch, yes=True, prep=False)
+            created_branch = True
+        committed = False
+        if plan.dirty:
+            committed = self.commit(message)
+        if plan.remote is None:
+            return GitPushResult(
+                branch=self.current_branch(),
+                pushed=False,
+                remote=None,
+                created_branch=created_branch,
+                committed=committed,
+                warnings=plan.warnings,
+            )
+        run_git(["push", "-u", plan.remote, "HEAD"], cwd=self.top)
+        return GitPushResult(
+            branch=self.current_branch(),
+            pushed=True,
+            remote=plan.remote,
+            created_branch=created_branch,
+            committed=committed,
+            warnings=plan.warnings,
+        )
 
     def pull(self, *, merge_branch: str | None = None) -> None:
         self.fetch_all()

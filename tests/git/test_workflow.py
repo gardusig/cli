@@ -10,7 +10,7 @@ import pytest
 from typer.testing import CliRunner
 
 from src.cli import app
-from src.services.git_shortcuts import GitShortcuts
+from src.services.git_shortcuts import GitPushPlan, GitPushResult, GitShortcuts
 
 runner = CliRunner()
 SNAPSHOT = "src.commands.git.git_worktree_snapshot"
@@ -111,7 +111,7 @@ import pytest
 from typer.testing import CliRunner
 
 from src.cli import app
-from src.commands.git import _push_plan
+from src.commands.git import _interactive_allow_main, _push_plan
 from src.services.git_shortcuts import GitShortcuts
 
 runner = CliRunner()
@@ -127,10 +127,14 @@ def snapshot() -> MagicMock:
 
 def test_push_plan_on_main_starts_branch_first() -> None:
     svc = MagicMock()
-    svc.current_branch.return_value = "main"
-    svc.local_branch_names.return_value = []
-    svc.is_dirty.return_value = True
-    svc.remote_exists.return_value = True
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="main",
+        target_branch="wip-260611-001",
+        remote="origin",
+        dirty=True,
+        message="wip",
+        create_branch_first=True,
+    )
     question, lines = _push_plan(svc, "wip", allow_main=False)
     assert question.startswith("Start 'wip-")
     assert "commit, and push to origin?" in question
@@ -140,12 +144,75 @@ def test_push_plan_on_main_starts_branch_first() -> None:
 
 def test_push_plan_on_feature_branch() -> None:
     svc = MagicMock()
-    svc.current_branch.return_value = "feat-x"
-    svc.is_dirty.return_value = False
-    svc.remote_exists.return_value = True
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="feat-x",
+        target_branch="feat-x",
+        remote="origin",
+        dirty=False,
+        message=".",
+    )
     question, lines = _push_plan(svc, ".", allow_main=False)
     assert question == "Commit and push 'feat-x' to origin?"
     assert "branch: feat-x" in lines
+
+
+def test_push_plan_without_origin_commits_locally() -> None:
+    svc = MagicMock()
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="feat-x",
+        target_branch="feat-x",
+        remote=None,
+        dirty=True,
+        message="wip",
+    )
+    question, lines = _push_plan(svc, "wip", allow_main=False)
+    assert question == "Commit local work on 'feat-x' without pushing?"
+    assert "intent: git add -A → commit (no remote push)" in lines
+    assert "remote: (none)" in lines
+
+
+def test_push_plan_on_main_without_origin() -> None:
+    svc = MagicMock()
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="main",
+        target_branch="main",
+        remote=None,
+        dirty=True,
+        message=".",
+    )
+    question, lines = _push_plan(svc, ".", allow_main=False)
+    assert "main" in question
+    assert "local-only commit on main" in "\n".join(lines)
+
+
+def test_push_plan_warns_when_main_tracks_feature_upstream() -> None:
+    svc = MagicMock()
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="main",
+        target_branch="main",
+        remote="origin",
+        dirty=False,
+        message=".",
+        allow_main=True,
+        warnings=("on main but upstream tracks 'feat-x'",),
+    )
+    _, lines = _push_plan(svc, ".", allow_main=True)
+    assert "warning: on main but upstream tracks 'feat-x'" in lines
+
+
+def test_interactive_allow_main_opt_in(monkeypatch) -> None:
+    svc = MagicMock()
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="main",
+        target_branch="wip-001",
+        remote="origin",
+        dirty=False,
+        message=".",
+        create_branch_first=True,
+    )
+    monkeypatch.setattr("src.commands.git.sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("src.commands.git.typer.confirm", lambda *args, **kwargs: True)
+    assert _interactive_allow_main(svc, allow_main=False, yes=False) is True
 
 
 @patch.object(GitShortcuts, "push")
@@ -172,6 +239,29 @@ def test_git_push_with_yes(
     assert "pushed" in result.stdout
     assert "intent: git add -A" in result.stdout
     assert "branch: feat-x" in result.stdout
+    mock_push.assert_called_once_with(allow_main=False, message="wip", yes=True)
+
+
+@patch.object(GitShortcuts, "is_dirty", return_value=True)
+@patch.object(GitShortcuts, "remote_exists", return_value=False)
+@patch.object(GitShortcuts, "current_branch", return_value="feat-x")
+@patch.object(
+    GitShortcuts,
+    "push",
+    return_value=GitPushResult(branch="feat-x", pushed=False, remote=None, committed=True),
+)
+def test_git_push_without_origin_reports_local_commit(
+    mock_push: MagicMock,
+    _branch: MagicMock,
+    _remote: MagicMock,
+    _dirty: MagicMock,
+    snapshot: MagicMock,
+) -> None:
+    with patch(GIT_SNAPSHOT_PATCH, return_value=snapshot):
+        result = runner.invoke(app, ["git", "push", "--yes", "-m", "wip"])
+    assert result.exit_code == 0
+    assert "no origin remote" in result.stdout
+    assert "nothing pushed" in result.stdout
     mock_push.assert_called_once_with(allow_main=False, message="wip", yes=True)
 
 
@@ -205,4 +295,31 @@ def test_git_push_shows_write_gate(mock_push: MagicMock, snapshot: MagicMock) ->
     assert result.exit_code == 0
     assert "--- cli write gate ---" in result.stdout
     assert "operation: push" in result.stdout
+    mock_push.assert_called_once()
+
+
+@patch.object(GitShortcuts, "is_detached_head", return_value=True)
+def test_git_push_refuses_detached_head(_detached: MagicMock) -> None:
+    result = runner.invoke(app, ["git", "push", "--yes"])
+    assert result.exit_code != 0
+    assert "detached HEAD" in result.stdout
+
+
+@patch.object(
+    GitShortcuts,
+    "push",
+    return_value=GitPushResult(
+        branch="feat-x",
+        pushed=True,
+        remote="origin",
+        warnings=("branch 'feat-x' is already merged into main",),
+    ),
+)
+def test_git_push_json_format(mock_push: MagicMock, snapshot: MagicMock) -> None:
+    with patch(GIT_SNAPSHOT_PATCH, return_value=snapshot):
+        result = runner.invoke(app, ["git", "push", "--yes", "--format", "json"])
+    assert result.exit_code == 0
+    assert '"pushed": true' in result.stdout
+    assert '"warnings"' in result.stdout
+    assert "merged into main" in result.stdout
     mock_push.assert_called_once()

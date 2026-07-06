@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,9 @@ def main() -> None:
     resolve.add_argument("--job", default="")
     resolve.add_argument("--action", default="")
     resolve.add_argument("--dry-run", default="")
+    resolve.add_argument("--app-src", type=Path, default=None)
+    resolve.add_argument("--selective-base", default="")
+    resolve.add_argument("--selective-head", default="")
 
     docker = sub.add_parser("docker-run")
     docker.add_argument("--job-json", required=True)
@@ -90,10 +94,16 @@ def run_docker_job(args: argparse.Namespace) -> None:
         tag,
     ]
     dockerignore = str(job.get("dockerignore") or "")
+    ignore_backup: Path | None = None
+    ignore_dst: Path | None = None
     if dockerignore:
-        ignorefile = args.pipeline_src / dockerignore
-        if ignorefile.is_file():
-            cmd.extend(["--ignorefile", str(ignorefile)])
+        ignore_src = args.pipeline_src / dockerignore
+        if ignore_src.is_file():
+            ignore_dst = args.app_src / ".dockerignore"
+            if ignore_dst.is_file():
+                ignore_backup = args.app_src / ".dockerignore.pipeline-backup"
+                shutil.copy(ignore_dst, ignore_backup)
+            shutil.copy(ignore_src, ignore_dst)
 
     for key, value in _build_args(job, args.release_version).items():
         cmd.extend(["--build-arg", f"{key}={value}"])
@@ -103,7 +113,17 @@ def run_docker_job(args: argparse.Namespace) -> None:
 
     cmd.append(str(args.app_src))
     print("==>", " ".join(shlex.quote(part) for part in cmd))
-    subprocess.run(cmd, check=True)
+    try:
+        subprocess.run(cmd, check=True)
+    finally:
+        if ignore_dst is not None and ignore_dst.is_file():
+            if ignore_backup and ignore_backup.is_file():
+                shutil.copy(ignore_backup, ignore_dst)
+                ignore_backup.unlink()
+            else:
+                ignore_dst.unlink()
+        if ignore_backup and ignore_backup.is_file():
+            ignore_backup.unlink()
     _append_summary(job, target, dockerfile)
 
     if job.get("docker_socket"):
@@ -127,11 +147,15 @@ def run_task_action(args: argparse.Namespace) -> None:
 
 
 def _client_payload() -> dict[str, Any]:
-    raw = os.environ.get("CLIENT") or "{}"
+    raw = (os.environ.get("CLIENT") or "{}").strip()
+    if raw in {"", "null", "None"}:
+        return {}
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise SystemExit(f"invalid client payload: {exc}") from exc
+    if data is None:
+        return {}
     if not isinstance(data, dict):
         raise SystemExit("client payload must be an object")
     return data
@@ -205,7 +229,41 @@ def _validate_repo(cfg: dict[str, Any], requested_slug: str, requested_repositor
     return config_slug, config_repository
 
 
-def _stage_jobs(cfg: dict[str, Any], requested_job: str = "") -> list[list[dict[str, Any]]]:
+def _as_path(value: Any) -> Path | None:
+    if value is None or value == "":
+        return None
+    if isinstance(value, Path):
+        return value
+    return Path(str(value))
+
+
+def _apply_selective_jobs_if_configured(
+    jobs: dict[str, dict[str, Any]],
+    cfg: dict[str, Any],
+    *,
+    app_src: Path | None,
+    selective_base: str,
+    selective_head: str,
+) -> dict[str, dict[str, Any]]:
+    from src.services.pipeline_selective import apply_selective_jobs
+
+    return apply_selective_jobs(
+        jobs,
+        cfg=cfg,
+        app_src=app_src,
+        selective_base=selective_base,
+        selective_head=selective_head,
+    )
+
+
+def _stage_jobs(
+    cfg: dict[str, Any],
+    requested_job: str = "",
+    *,
+    app_src: Path | None = None,
+    selective_base: str = "",
+    selective_head: str = "",
+) -> list[list[dict[str, Any]]]:
     raw_jobs = cfg.get("jobs") or []
     if not isinstance(raw_jobs, list):
         raise SystemExit("jobs must be a list")
@@ -217,6 +275,13 @@ def _stage_jobs(cfg: dict[str, Any], requested_job: str = "") -> list[list[dict[
         if jid in jobs:
             raise SystemExit(f"duplicate job id: {jid}")
         jobs[jid] = dict(raw)
+    jobs = _apply_selective_jobs_if_configured(
+        jobs,
+        cfg,
+        app_src=app_src,
+        selective_base=selective_base,
+        selective_head=selective_head,
+    )
     if requested_job:
         if requested_job not in jobs:
             raise SystemExit(f"unknown job: {requested_job}")
@@ -305,7 +370,13 @@ def _resolve_job_family(args: argparse.Namespace, client: dict[str, Any]) -> dic
     config = _config_path(args.pipeline_src, args.family, repo_slug, pipeline)
     cfg = _load_yaml(config)
     config_slug, config_repository = _validate_repo(cfg, repo_slug, repository)
-    stages = _stage_jobs(cfg, requested_job=requested_job)
+    stages = _stage_jobs(
+        cfg,
+        requested_job=requested_job,
+        app_src=_as_path(getattr(args, "app_src", None)),
+        selective_base=str(getattr(args, "selective_base", "") or ""),
+        selective_head=str(getattr(args, "selective_head", "") or ""),
+    )
     outputs: dict[str, Any] = {
         "repo_slug": config_slug,
         "repository": config_repository,

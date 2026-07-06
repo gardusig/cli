@@ -18,6 +18,7 @@ class TaskMetadata(BaseModel):
     interval: int | None = None
     last_done: str | None = None
     forced_status: str | None = None
+    link: str | None = None
     labels: list[str] = Field(default_factory=list)
     enabled: bool = True
 

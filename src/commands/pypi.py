@@ -13,6 +13,7 @@ from src.services.pypi_publish import (
     TEST_REPOSITORY_URL,
     PyPiPublishError,
     assert_version_increased_vs_ref,
+    assert_version_increased_vs_version,
     build_distributions,
     publish_distributions,
     read_project_version,
@@ -37,12 +38,21 @@ def pypi_version_check_cmd(
         "--base",
         help="Git ref to compare against (must contain pyproject.toml).",
     ),
+    base_version: str = typer.Option(
+        "",
+        "--base-version",
+        help="Explicit base version when git refs are unavailable (e.g. Docker CI).",
+    ),
 ) -> None:
     """Fail unless working-tree version is strictly greater than *base* (PR gate)."""
     root = project_root()
     try:
-        head_v = assert_version_increased_vs_ref(base, root=root)
-        typer.echo(f"version ok: {head_v} > {base}")
+        if base_version.strip():
+            head_v = assert_version_increased_vs_version(base_version, root=root)
+            typer.echo(f"version ok: {head_v} > {base_version.strip()}")
+        else:
+            head_v = assert_version_increased_vs_ref(base, root=root)
+            typer.echo(f"version ok: {head_v} > {base}")
     except PyPiPublishError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1) from exc
@@ -115,9 +125,9 @@ def pypi_upload_cmd(
 ) -> None:
     """Build and upload gardusig-cli using PYPI_API_TOKEN."""
     root = project_root()
-    release_version = resolve_release_version(version, root=root)
 
     try:
+        release_version = resolve_release_version(version, root=root)
         if build_only:
             artifacts = build_distributions(
                 root,

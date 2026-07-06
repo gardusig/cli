@@ -8,8 +8,10 @@ repos:
     description: Headless operator hub — craft, gh, Docker workflows, PyPI package
   - name: chrome-extensions
     description: Browser extensions maintenance
-  - name: computer-science
-    description: Theory, patterns, orchestration across repos
+  - name: interviewing
+    description: Private interview prep — behavioral, system-design, problem-solving, resume
+  - name: code
+    description: Private runnable teaching code examples
   - name: gardusig
     description: Profile / meta repo
   - name: database

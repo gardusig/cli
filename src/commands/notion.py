@@ -44,6 +44,12 @@ def _token(cfg=None) -> str:
 def _print_sync_warnings(result) -> None:
     for warning in getattr(result, "warnings", []):
         rprint(f"[yellow]warning[/yellow] {warning}")
+    failed = getattr(result, "failed", None)
+    if not failed or isinstance(failed, int):
+        return
+    for name, err in failed:
+        label = name or "?"
+        rprint(f"[red]failed[/red] {label}: {err}")
 
 
 @notion_app.command("ingest")
@@ -62,6 +68,8 @@ def ingest_cmd() -> None:
         f"[green]ingested[/green] {result.processed} task(s) → {root} "
         f"({notion_pairs_file().name})"
     )
+    if result.failed:
+        raise typer.Exit(1)
 
 
 @notion_app.command("deploy")
@@ -102,6 +110,8 @@ def deploy_cmd(
         f"[green]deployed[/green] {result.processed} task(s) from {manifest} "
         f"(skipped {result.skipped} — disabled or broken pairs)"
     )
+    if result.failed:
+        raise typer.Exit(1)
 
 
 @notion_app.command("sync")

@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
-import os
-import subprocess
-import sys
+from argparse import Namespace
 from pathlib import Path
 
 import typer
+
+from src.services.pipeline_dispatch import dispatch_repository_event
+from src.services.pipeline_runtime import resolve_config, run_docker_job, run_task_action
 
 pipeline_app = typer.Typer(help="Dispatch centralized workflows.", no_args_is_help=True)
 config_app = typer.Typer(help="Resolve pipeline workflow config.", no_args_is_help=True)
@@ -33,7 +34,7 @@ def run_cmd(
     dry_run: bool = typer.Option(False, "--dry-run"),
 ) -> None:
     """POST repository_dispatch to gardusig/github-pipelines."""
-    payload = {
+    payload: dict[str, object] = {
         "repo_slug": repo,
         "repository": repository or f"gardusig/{repo}",
         "ref": ref,
@@ -47,19 +48,11 @@ def run_cmd(
         payload["pipeline"] = pipeline
     if sha:
         payload["sha"] = sha
-    subprocess.run(
-        [
-            "gh",
-            "api",
-            "repos/gardusig/github-pipelines/dispatches",
-            "-F",
-            f"event_type={family}",
-            "-F",
-            f"client_payload:={json.dumps(payload)}",
-        ],
-        check=True,
-    )
-    typer.echo(f"dispatched {family} for {repo}")
+    result = dispatch_repository_event(family, payload, dry_run=dry_run)
+    if dry_run:
+        typer.echo(json.dumps(result, indent=2))
+    else:
+        typer.echo(f"dispatched {family} for {repo}")
 
 
 @config_app.command("resolve")
@@ -74,6 +67,9 @@ def config_resolve_cmd(
     job: str = typer.Option("", "--job"),
     action: str = typer.Option("", "--action"),
     dry_run: str = typer.Option("", "--dry-run"),
+    app_src: Path | None = typer.Option(None, "--app-src"),
+    selective_base: str = typer.Option("", "--selective-base"),
+    selective_head: str = typer.Option("", "--selective-head"),
 ) -> None:
     args = [
         "--family",
@@ -97,7 +93,13 @@ def config_resolve_cmd(
         "--dry-run",
         dry_run,
     ]
-    _run_pipeline_script("config-resolve.sh", args)
+    if app_src is not None:
+        args.extend(["--app-src", str(app_src)])
+    if selective_base:
+        args.extend(["--selective-base", selective_base])
+    if selective_head:
+        args.extend(["--selective-head", selective_head])
+    _run_pipeline_runtime(resolve_config, _namespace_from_args(args))
 
 
 @docker_app.command("run")
@@ -109,22 +111,16 @@ def docker_run_cmd(
     release_version: str = typer.Option("", "--release-version"),
     pages_output: Path = typer.Option(Path("publish-pages"), "--pages-output"),
 ) -> None:
-    _run_pipeline_script(
-        "docker-run.sh",
-        [
-            "--job-json",
-            job_json,
-            "--pipeline-src",
-            str(pipeline_src),
-            "--app-src",
-            str(app_src),
-            "--tag-prefix",
-            tag_prefix,
-            "--release-version",
-            release_version,
-            "--pages-output",
-            str(pages_output),
-        ],
+    _run_pipeline_runtime(
+        run_docker_job,
+        Namespace(
+            job_json=job_json,
+            pipeline_src=pipeline_src,
+            app_src=app_src,
+            tag_prefix=tag_prefix,
+            release_version=release_version,
+            pages_output=pages_output,
+        ),
     )
 
 
@@ -134,26 +130,22 @@ def task_run_cmd(
     env_json: str = typer.Option("{}", "--env-json"),
     repo_dir: Path = typer.Option(..., "--repo-dir"),
 ) -> None:
-    _run_pipeline_script(
-        "task-run.sh",
-        ["--command-json", command_json, "--env-json", env_json, "--repo-dir", str(repo_dir)],
-    )
+    _run_pipeline_runtime(run_task_action, Namespace(command_json=command_json, env_json=env_json, repo_dir=repo_dir))
 
 
-def _run_pipeline_script(script_name: str, args: list[str]) -> None:
-    script = _scripts_root() / "pipeline" / script_name
-    if not script.is_file():
-        typer.echo(f"Missing script: {script}", err=True)
-        raise typer.Exit(1)
-    env = os.environ.copy()
-    env.setdefault("CLI_BIN", f"{sys.executable} -m src")
-    result = subprocess.run(["bash", str(script), *args], env=env, check=False)
-    if result.returncode != 0:
-        raise typer.Exit(result.returncode)
+def _run_pipeline_runtime(func, args: Namespace) -> None:
+    try:
+        func(args)
+    except SystemExit as exc:
+        code = exc.code if isinstance(exc.code, int) else 1
+        if exc.code and not isinstance(exc.code, int):
+            typer.echo(str(exc.code), err=True)
+        raise typer.Exit(code) from exc
 
 
-def _scripts_root() -> Path:
-    source_root = Path(__file__).resolve().parents[1] / "scripts"
-    if source_root.is_dir():
-        return source_root
-    return Path(sys.prefix) / "share" / "gardusig-cli" / "scripts"
+def _namespace_from_args(args: list[str]) -> Namespace:
+    values = {args[index].removeprefix("--").replace("-", "_"): args[index + 1] for index in range(0, len(args), 2)}
+    values["pipeline_src"] = Path(values["pipeline_src"])
+    if values.get("app_src"):
+        values["app_src"] = Path(values["app_src"])
+    return Namespace(**values)

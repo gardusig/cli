@@ -8,9 +8,11 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from src.models.task import TaskMetadata, TaskPair
 from src.services.gh_service import GhService
-from src.services.notion_pairs import dump_header, load_header, load_pairs, slugify
+from src.services.notion_pairs import _read_task_body, dump_header, load_header, load_pairs, slugify
 from src.services.notion_sync import build_pairs_manifest
 from src.utils.config import (
     gh_issues_closed_older_than,
@@ -82,7 +84,7 @@ def deploy_issues(*, svc: GhService | None = None, dry_run: bool = False) -> Iss
         meta = load_header(pair.header_path(root))
         if not meta.enabled:
             continue
-        body = pair.body_path(root).read_text(encoding="utf-8")
+        body = _read_task_body(pair.body_path(root))
         result.created.append(svc.issue_create(title=meta.name, body=body, labels=_labels(meta)))
     return result
 
@@ -103,7 +105,7 @@ def ingest_issues(*, svc: GhService | None = None) -> IssueSyncResult:
         pair = existing_pairs.get(title)
         if pair is None:
             slug = slugify(title)
-            pair = TaskPair(header_filepath=f"header/{slug}.yaml", body_filepath=f"body/{slug}.md")
+            pair = TaskPair(header_filepath=f"header/{slug}.yaml", body_filepath=f"body/{slug}.yaml")
         labels = [
             str(label.get("name", label)) if isinstance(label, dict) else str(label)
             for label in issue.get("labels", [])
@@ -118,7 +120,18 @@ def ingest_issues(*, svc: GhService | None = None) -> IssueSyncResult:
             meta = TaskMetadata(name=title, labels=labels)
         dump_header(header, meta)
         body.parent.mkdir(parents=True, exist_ok=True)
-        body.write_text(str(issue.get("body") or ""), encoding="utf-8")
+        body.write_text(
+            yaml.safe_dump(
+                {
+                    "format": "markdown",
+                    "wiki_filepath": "",
+                    "body": str(issue.get("body") or ""),
+                },
+                sort_keys=False,
+                allow_unicode=True,
+            ),
+            encoding="utf-8",
+        )
         result.created.append({"title": title, "number": issue.get("number")})
     build_pairs_manifest(root)
     return result

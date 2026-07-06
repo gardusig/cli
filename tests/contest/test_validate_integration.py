@@ -4,14 +4,11 @@ from __future__ import annotations
 
 from tests.constants import ROOT
 
-import subprocess
-from pathlib import Path
-
 import pytest
 from typer.testing import CliRunner
 
 from src.cli import app
-from src.services.docker_runtime import ensure_docker
+from src.services.docker_runtime import ensure_docker, run_docker
 
 
 TOY = ROOT / "tests" / "fixtures" / "contest" / "toy"
@@ -23,12 +20,13 @@ def test_contest_validate_toy_live() -> None:
     try:
         ensure_docker()
     except RuntimeError as exc:
-        pytest.fail(str(exc))
+        pytest.skip(str(exc))
 
-    build_script = ROOT / "src" / "scripts" / "docker" / "build-contest-image.sh"
-    if not build_script.is_file():
-        pytest.skip("contest Docker build wrapper is not part of this source layout")
-    subprocess.run([str(build_script)], check=True, cwd=ROOT)
+    image = run_docker(["image", "inspect", IMAGE], check=False)
+    if image.returncode != 0:
+        pytest.skip(
+            f"{IMAGE} is built by gardusig/github-pipelines; no repo-local Dockerfile or build script is expected"
+        )
 
     runner = CliRunner()
     result = runner.invoke(

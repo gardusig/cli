@@ -1,12 +1,10 @@
 # Language Toolkit
 
-`gardusig-cli` exposes action-first commands, but the implementation boundary is
-shell-first:
+`gardusig-cli` exposes action-first commands with Python-native orchestration:
 
 - Python owns Typer command UX, command catalog data, repo/language detection,
-  prerequisite checks, environment setup, and dispatch.
-- Every user-facing toolkit command maps to a related `.sh` under `src/scripts/`.
-- Shell scripts run terminal commands (`npm`, `pytest`, `mvn`, `clang-format`,
+  prerequisite checks, environment setup, and command handlers.
+- Python handlers run terminal commands (`npm`, `pytest`, `mvn`, `clang-format`,
   `markdownlint-cli2`, etc.).
 - Dockerfiles and workflow YAML stay in `github-pipelines`.
 
@@ -24,25 +22,7 @@ cli languages show java
 ```
 
 `cli lint repo` is the default CI lint entrypoint. It detects the languages
-present in the repo and calls each related language lint script once.
-
-## Script Layout
-
-```text
-src/scripts/toolkit/
-src/scripts/markdown/
-src/scripts/python/
-src/scripts/typescript/
-src/scripts/cpp/
-src/scripts/java/
-src/scripts/shell/
-src/scripts/structure/
-src/scripts/validate/
-src/scripts/pipeline/
-```
-
-Scripts read `WORKSPACE` and may call internal Python modules for structured
-data checks, but public CLI commands always cross the `.sh` boundary first.
+present in the repo and calls each related Python handler once.
 
 ## Dependency Model
 
@@ -52,8 +32,7 @@ check only Java/Maven/Gradle prerequisites and do not require Node or pytest.
 
 ## Pipeline Runtime
 
-`github-pipelines` workflow YAML calls CLI-owned runtime commands instead of
-pipeline-local scripts:
+`github-pipelines` workflow YAML calls CLI-owned runtime commands:
 
 ```bash
 cli pipeline config resolve --family pull-request --pipeline-src pipeline-src
@@ -61,6 +40,6 @@ cli pipeline docker run --job-json "$JOB_JSON" --pipeline-src pipeline-src --app
 cli pipeline task run --command-json "$TASK_COMMAND" --repo-dir database-src
 ```
 
-These commands are script-backed through `src/scripts/pipeline/` and keep resolver,
+These commands call `src.services.pipeline_runtime` directly and keep resolver,
 Docker job, and task-action behavior inside the CLI package.
 

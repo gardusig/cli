@@ -14,13 +14,13 @@ def test_links_lists_docs_and_defaults() -> None:
     assert result.exit_code == 0
     assert "Workflow lifecycle" in result.stdout
     assert "backlog next" in result.stdout
-    assert "src/scripts/git/push.sh" in result.stdout
-    assert "src/scripts/gh/pr-merge.sh" in result.stdout
-    assert "GitHub scripts" in result.stdout
+    assert "cli git push" in result.stdout
+    assert "cli gh pr merge" in result.stdout
+    assert "GitHub commands" in result.stdout
     assert "Quick defaults" in result.stdout
     assert "docs/large-files.md" in result.stdout
-    assert "src/scripts/git/start.sh" in result.stdout
-    assert "src/scripts/chrome/export.sh" in result.stdout
+    assert "cli git start" in result.stdout
+    assert "cli chrome bookmarks ingest" in result.stdout
     assert "wip-YYMMDD" in result.stdout
 
 
@@ -28,3 +28,25 @@ def test_root_help_mentions_links() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
     assert "links" in result.stdout
+
+
+def test_links_lists_visible_top_level_commands() -> None:
+    result = runner.invoke(app, ["links"])
+    assert result.exit_code == 0
+    visible_groups = {group.name for group in app.registered_groups if not group.hidden}
+    for name in sorted(visible_groups):
+        assert f"cli {name}" in result.stdout
+
+
+def test_links_documents_restore_placeholder() -> None:
+    result = runner.invoke(app, ["links"])
+    assert result.exit_code == 0
+    assert "restore" in result.stdout.lower()
+
+
+def test_links_mentions_project_tasks_contest() -> None:
+    result = runner.invoke(app, ["links"])
+    assert result.exit_code == 0
+    assert "cli project" in result.stdout
+    assert "cli tasks" in result.stdout
+    assert "cli contest" in result.stdout

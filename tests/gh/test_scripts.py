@@ -1,16 +1,10 @@
-from tests.constants import ROOT
+"""Verify GitHub workflow commands remain cataloged after removing shell wrappers."""
 
-"""Verify src/scripts/gh wrappers exist."""
-
-from pathlib import Path
-
-from src.utils.catalog import GH_SCRIPT_COMMANDS
+from src.utils.catalog import GH_COMMANDS
 
 
-GH_SCRIPTS = ROOT / "src" / "scripts" / "gh"
-
-
-def test_all_gh_script_wrappers_exist() -> None:
-    expected = {name for name, _ in GH_SCRIPT_COMMANDS}
-    found = {p.name for p in GH_SCRIPTS.glob("*.sh") if p.name != "_common.sh"}
-    assert expected <= found
+def test_gh_workflow_commands_are_cataloged() -> None:
+    commands = {command for _, command in GH_COMMANDS}
+    assert "gh issue list" in commands
+    assert "gh pr create" in commands
+    assert "gh pr merge (blocked — policy)" in commands

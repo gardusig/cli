@@ -29,10 +29,12 @@ from src.integration.public_endpoints import (
     pypi_subcommands_with_failure_check,
     prepare_git_repo,
 )
+from src.services.test_packages import assert_registry_covers_top_level_commands
 
 
 def test_top_level_commands_match_cli_registration() -> None:
     assert registered_top_level_commands() == set(TOP_LEVEL_COMMANDS)
+    assert_registry_covers_top_level_commands()
 
 
 def test_public_command_registry_is_complete() -> None:

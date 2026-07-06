@@ -7,6 +7,7 @@ Cli favors **suggested values** over prompts so common flows are one command.
 | `cli git start` | Prep + branch `wip-YYMMDD-NNN` or your slug | `cli git start issue-9-docker --yes` |
 | `cli git commit` | Message `.` | `cli git commit` |
 | `cli git push` | Add + commit + push; message `.` if dirty; on `main`, start random branch first | `cli git push --yes` |
+| `cli gh pr` | Title `.`, empty body, push first when needed | `cli gh pr --yes` |
 | `cli git reset` | Return to synced main; optional `--delete-merged` or interactive branch cleanup | `cli git reset --yes` |
 | `cli git reset --main-only` | Sync main only (skip branch prompt) | `cli git reset --yes --main-only` |
 | `cli git stash push` | Message `.` | `cli git stash push` |
@@ -19,16 +20,6 @@ Cli favors **suggested values** over prompts so common flows are one command.
 
 ```bash
 cli git start my-feature --no-prep
-```
-
-## Shell wrappers
-
-Scripts under `src/scripts/git/` forward flags to the CLI and inherit the same defaults:
-
-```bash
-./src/scripts/git/start.sh          # auto branch name
-./src/scripts/git/commit.sh         # message '.'
-./src/scripts/git/large-files.sh    # see docs/large-files.md
 ```
 
 Full index: `cli links` · [Git commands](git.md)

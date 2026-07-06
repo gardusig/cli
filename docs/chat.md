@@ -45,7 +45,7 @@ cli opencode chat issues --from-file summary.md --apply --yes
 
 Other repos can trigger the same reusable workflow via `workflow_call` from their central CI configuration.
 
-In the merged CLI workflow catalog, `chat-to-issues` is pipeline-triggered: it takes a summary, categorizes work by configured repo, creates or updates GitHub epics/children, and organizes backlog order.
+In the merged CLI workflow catalog, `chat-to-issues` is pipeline-triggered: it takes a summary, categorizes work by configured repo, creates or updates GitHub epic issues/subissues, and organizes backlog order.
 
 ## Output shape
 
@@ -53,7 +53,7 @@ Each repo in [`config/chat/repos.yaml`](../config/chat/repos.yaml) may get:
 
 - One **parent epic** (`issue-type:epic`, `epic:<slug>`, `priority:N`)
 - **Comments** on existing issues (`## [cli] plan`)
-- **New children** for vague but useful ideas
+- **New subissues** for vague but useful ideas
 
 Cross-repo impacts (e.g. cli API break affecting consumers) appear in `cross_repo_notes` on parent bodies.
 

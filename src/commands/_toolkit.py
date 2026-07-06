@@ -22,6 +22,11 @@ def dispatch(
     except (FileNotFoundError, KeyError, ToolkitDetectionError, ToolkitPrereqError) as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1) from exc
+    except SystemExit as exc:
+        if exc.code and not isinstance(exc.code, int):
+            typer.echo(str(exc.code), err=True)
+            raise typer.Exit(1) from exc
+        raise typer.Exit(exc.code or 0) from exc
     if code != 0:
         raise typer.Exit(code)
 

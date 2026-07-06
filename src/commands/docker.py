@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from dataclasses import asdict
 from typing import Literal
 
 import typer
@@ -32,6 +34,7 @@ docker_app = typer.Typer(
 )
 
 StatsDomain = Literal["cpu", "memory", "storage", "all"]
+DockerOutputFormat = Literal["table", "json"]
 
 
 def _require_docker() -> None:
@@ -86,6 +89,59 @@ def _print_image_table(rows: list[ImageRow], *, title: str) -> None:
     rprint(table)
 
 
+def _emit_json(data: object) -> None:
+    typer.echo(json.dumps(data, indent=2))
+
+
+def _container_payload(rows: list[ContainerRow]) -> list[dict[str, object]]:
+    return [
+        {
+            **asdict(row),
+            "display_name": row.display_name,
+            "size_bytes": row.size_bytes,
+            "size": format_bytes(row.size_bytes),
+        }
+        for row in rows
+    ]
+
+
+def _stats_payload(rows: list[ContainerStatsRow]) -> list[dict[str, object]]:
+    return [
+        {
+            **asdict(row),
+            "display_name": row.display_name,
+            "mem_used": format_bytes(row.mem_used_bytes),
+            "mem_limit": format_bytes(row.mem_limit_bytes) if row.mem_limit_bytes else "",
+        }
+        for row in rows
+    ]
+
+
+def _image_payload(rows: list[ImageRow]) -> list[dict[str, object]]:
+    return [
+        {
+            **asdict(row),
+            "name": row.name,
+            "size_display": format_bytes(row.size),
+        }
+        for row in rows
+    ]
+
+
+def _container_filters(name: str | None, filters: list[str] | None) -> list[str] | None:
+    values = list(filters or [])
+    if name:
+        values.append(f"name={name}")
+    return values or None
+
+
+def _image_filters(repository: str | None, filters: list[str] | None) -> list[str] | None:
+    values = list(filters or [])
+    if repository:
+        values.append(f"reference={repository}")
+    return values or None
+
+
 def _container_preview(rows: list[ContainerRow], *, limit: int = 5) -> list[str]:
     lines: list[str] = []
     for row in rows[:limit]:
@@ -95,13 +151,28 @@ def _container_preview(rows: list[ContainerRow], *, limit: int = 5) -> list[str]
     return lines
 
 
+def _image_preview(rows: list[ImageRow], *, limit: int = 5) -> list[str]:
+    lines: list[str] = []
+    for row in rows[:limit]:
+        lines.append(f"  - {row.name} ({format_bytes(row.size)})")
+    if len(rows) > limit:
+        lines.append(f"  ... ({len(rows) - limit} more)")
+    return lines
+
+
 @docker_app.command("ps")
 def ps_cmd(
     top: int = typer.Option(20, "--top", "-n", help="Max rows to show."),
+    name: str | None = typer.Option(None, "--name", help="Filter containers by name."),
+    filters: list[str] = typer.Option(None, "--filter", help="Docker ps filter, e.g. label=cli."),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Running containers sorted by writable layer size."""
     _require_docker()
-    rows = list_containers(running_only=True)[:top]
+    rows = list_containers(running_only=True, filters=_container_filters(name, filters))[:top]
+    if format == "json":
+        _emit_json(_container_payload(rows))
+        return
     if not rows:
         rprint("[dim]no running containers[/dim]")
         return
@@ -117,11 +188,30 @@ def stats_cmd(
         help="cpu | memory | storage | all",
     ),
     top: int = typer.Option(10, "--top", "-n", help="Max rows per section."),
+    name: str | None = typer.Option(None, "--name", help="Filter containers by name."),
+    filters: list[str] = typer.Option(None, "--filter", help="Docker ps filter, e.g. label=cli."),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Top resource consumers by CPU, memory, or container storage."""
     _require_docker()
+    container_filters = _container_filters(name, filters)
+    live = list_container_stats(filters=container_filters) if by in {"cpu", "memory", "all"} else []
+    storage_rows = list_containers(running_only=True, filters=container_filters)[:top] if by in {"storage", "all"} else []
+    if format == "json":
+        payload: dict[str, object] = {}
+        if by in {"cpu", "all"}:
+            payload["cpu"] = _stats_payload(
+                sorted(live, key=lambda row: row.cpu_percent, reverse=True)[:top]
+            )
+        if by in {"memory", "all"}:
+            payload["memory"] = _stats_payload(
+                sorted(live, key=lambda row: row.mem_used_bytes, reverse=True)[:top]
+            )
+        if by in {"storage", "all"}:
+            payload["storage"] = _container_payload(storage_rows)
+        _emit_json(payload)
+        return
     if by in {"cpu", "memory", "all"}:
-        live = list_container_stats()
         if not live:
             rprint("[dim]no running containers[/dim]")
         elif by in {"cpu", "all"}:
@@ -133,7 +223,6 @@ def stats_cmd(
             mem_rows = sorted(live, key=lambda row: row.mem_used_bytes, reverse=True)[:top]
             _print_stats_table(mem_rows, title=f"Top {len(mem_rows)} by memory")
     if by in {"storage", "all"}:
-        storage_rows = list_containers(running_only=True)[:top]
         if not storage_rows:
             if by == "storage":
                 rprint("[dim]no running containers[/dim]")
@@ -147,10 +236,20 @@ def stats_cmd(
 def containers_cmd(
     top: int = typer.Option(20, "--top", "-n", help="Max rows to show."),
     running: bool = typer.Option(False, "--running", help="Only running containers."),
+    name: str | None = typer.Option(None, "--name", help="Filter containers by name."),
+    status: str | None = typer.Option(None, "--status", help="Filter by Docker status, e.g. exited."),
+    filters: list[str] = typer.Option(None, "--filter", help="Docker ps filter, e.g. label=cli."),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """All containers sorted by on-disk size."""
     _require_docker()
-    rows = list_containers(all_containers=not running, running_only=running)[:top]
+    container_filters = _container_filters(name, filters)
+    if status:
+        container_filters = [*(container_filters or []), f"status={status}"]
+    rows = list_containers(all_containers=not running, running_only=running, filters=container_filters)[:top]
+    if format == "json":
+        _emit_json(_container_payload(rows))
+        return
     if not rows:
         rprint("[dim]no containers[/dim]")
         return
@@ -161,10 +260,16 @@ def containers_cmd(
 @docker_app.command("images")
 def images_cmd(
     top: int = typer.Option(20, "--top", "-n", help="Max rows to show."),
+    repository: str | None = typer.Option(None, "--repository", help="Filter image reference, e.g. cli-contest:runner."),
+    filters: list[str] = typer.Option(None, "--filter", help="Docker images filter, e.g. dangling=false."),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Images sorted by size."""
     _require_docker()
-    rows = list_images()[:top]
+    rows = list_images(filters=_image_filters(repository, filters))[:top]
+    if format == "json":
+        _emit_json(_image_payload(rows))
+        return
     if not rows:
         rprint("[dim]no images[/dim]")
         return
@@ -174,10 +279,27 @@ def images_cmd(
 @docker_app.command("top")
 def top_cmd(
     n: int = typer.Option(5, "--top", "-n", help="Rows per domain section."),
+    name: str | None = typer.Option(None, "--name", help="Filter containers by name."),
+    repository: str | None = typer.Option(None, "--repository", help="Filter image reference."),
+    filters: list[str] = typer.Option(None, "--filter", help="Docker ps filter for container sections."),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Dashboard: heaviest CPU, memory, and storage consumers."""
     _require_docker()
-    live = list_container_stats()
+    container_filters = _container_filters(name, filters)
+    live = list_container_stats(filters=container_filters)
+    all_containers = list_containers(all_containers=True, filters=container_filters)[:n]
+    images = list_images(filters=_image_filters(repository, None))[:n]
+    if format == "json":
+        _emit_json(
+            {
+                "cpu": _stats_payload(sorted(live, key=lambda row: row.cpu_percent, reverse=True)[:n]),
+                "memory": _stats_payload(sorted(live, key=lambda row: row.mem_used_bytes, reverse=True)[:n]),
+                "containers": _container_payload(all_containers),
+                "images": _image_payload(images),
+            }
+        )
+        return
     if live:
         cpu_rows = sorted(live, key=lambda row: row.cpu_percent, reverse=True)[:n]
         _print_stats_table(cpu_rows, title=f"CPU — top {len(cpu_rows)} running")
@@ -187,8 +309,6 @@ def top_cmd(
     else:
         rprint("[dim]no running containers (cpu/memory)[/dim]")
 
-    all_containers = list_containers(all_containers=True)[:n]
-    images = list_images()[:n]
     if all_containers:
         rprint()
         _print_container_table(all_containers, title=f"Storage — top {len(all_containers)} containers")
@@ -200,23 +320,33 @@ def top_cmd(
 
 
 @docker_app.command("df")
-def df_cmd() -> None:
+def df_cmd(
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
+) -> None:
     """Docker disk usage summary (docker system df)."""
     _require_docker()
-    rprint(system_df())
+    text = system_df()
+    if format == "json":
+        _emit_json({"text": text})
+        return
+    rprint(text)
 
 
 @docker_app.command("stop")
 def stop_cmd(
     names: list[str] = typer.Argument(None, help="Container names/ids (default: all running)."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirm stop."),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Stop running containers."""
     _require_docker()
     running = list_containers(running_only=True)
     targets = list(names) if names else [row.display_name for row in running]
     if not targets:
-        rprint("[yellow]no running containers[/yellow]")
+        if format == "json":
+            _emit_json({"stopped": [], "count": 0})
+        else:
+            rprint("[yellow]no running containers[/yellow]")
         return
     extra = [f"containers_to_stop: {len(targets)}", *[f"  - {name}" for name in targets[:10]]]
     if len(targets) > 10:
@@ -229,6 +359,9 @@ def stop_cmd(
         extra_lines=extra,
     )
     stopped = stop_containers(names=names)
+    if format == "json":
+        _emit_json({"stopped": stopped, "count": len(stopped)})
+        return
     rprint(f"[green]stopped[/green] {len(stopped)} container(s)")
 
 
@@ -236,6 +369,7 @@ def stop_cmd(
 def container_delete_cmd(
     names: list[str] = typer.Argument(None, help="Container names/ids (default: all)."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirm delete."),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Remove containers (stopped and running)."""
     _require_docker()
@@ -261,6 +395,9 @@ def container_delete_cmd(
         extra_lines=extra,
     )
     removed = remove_containers(names=names)
+    if format == "json":
+        _emit_json({"deleted": removed, "count": len(removed)})
+        return
     rprint(f"[green]deleted[/green] {len(removed)} container(s)")
 
 
@@ -272,6 +409,7 @@ def image_delete_cmd(
         "--all-images",
         help="Prune all unused images (not only dangling).",
     ),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Prune unused images."""
     _require_docker()
@@ -279,6 +417,7 @@ def image_delete_cmd(
     extra = [
         f"images_present: {len(images)}",
         f"prune_mode: {'all unused' if all_images else 'dangling only'}",
+        *_image_preview(images),
     ]
     require_write_gate(
         "docker-image-delete",
@@ -288,6 +427,9 @@ def image_delete_cmd(
         extra_lines=extra,
     )
     out = prune_images(all_unused=all_images)
+    if format == "json":
+        _emit_json({"image_prune": out, "all_images": all_images})
+        return
     if out:
         rprint(out)
     rprint("[green]image prune[/green] complete")
@@ -301,19 +443,23 @@ def reset_cmd(
         "--all-images/--dangling-only",
         help="Prune all unused images (default) or dangling only.",
     ),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Stop all containers, remove them, and prune images + build cache."""
     _require_docker()
     running = list_containers(running_only=True)
     all_rows = list_containers(all_containers=True)
+    images = list_images()
     extra = [
         "intent: stop all → rm all containers → image prune → build cache prune",
         f"running_containers: {len(running)}",
         f"total_containers: {len(all_rows)}",
+        f"images_present: {len(images)}",
         f"image_prune: {'all unused' if all_images else 'dangling only'}",
         "build_cache: prune",
     ]
     extra.extend(_container_preview(all_rows))
+    extra.extend(_image_preview(images))
     require_write_gate(
         "docker-reset",
         summary_lines=["intent: docker reset"],
@@ -322,6 +468,16 @@ def reset_cmd(
         extra_lines=extra,
     )
     summary = reset_docker(all_images=all_images)
+    if format == "json":
+        _emit_json(
+            {
+                "stopped": summary.stopped,
+                "removed_containers": summary.removed_containers,
+                "image_prune_output": summary.image_prune_output,
+                "cache_prune_output": summary.cache_prune_output,
+            }
+        )
+        return
     rprint(f"[green]stopped[/green] {len(summary.stopped)} container(s)")
     rprint(f"[green]deleted[/green] {len(summary.removed_containers)} container(s)")
     if summary.image_prune_output:
@@ -344,6 +500,7 @@ def clean_cmd(
         "--all-images",
         help="With images: prune all unused images (not only dangling).",
     ),
+    format: DockerOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Targeted cleanup (containers, images, cache). Prefer `reset` for full wipe."""
     _require_docker()
@@ -353,13 +510,16 @@ def clean_cmd(
         raise typer.BadParameter("target must be containers, images, cache, or all")
 
     preview_containers = list_containers(all_containers=True) if target in {"containers", "all"} else []
+    preview_images = list_images() if target in {"images", "all"} else []
 
     extra: list[str] = [f"target: {target}"]
     if preview_containers:
         extra.append(f"containers_to_remove: {len(preview_containers)}")
         extra.extend(_container_preview(preview_containers))
     if target in {"images", "all"}:
+        extra.append(f"images_present: {len(preview_images)}")
         extra.append(f"image_prune: {'all unused' if all_images else 'dangling only'}")
+        extra.extend(_image_preview(preview_images))
     if target in {"cache", "all"}:
         extra.append("build_cache: prune")
 
@@ -371,16 +531,29 @@ def clean_cmd(
         extra_lines=extra,
     )
 
+    result: dict[str, object] = {"target": target}
+
     if target in {"containers", "all"}:
         removed = remove_containers()
-        rprint(f"[green]removed[/green] {len(removed)} container(s)")
+        result["removed"] = removed
+        result["removed_count"] = len(removed)
+        if format != "json":
+            rprint(f"[green]removed[/green] {len(removed)} container(s)")
     if target in {"images", "all"}:
         out = prune_images(all_unused=all_images)
-        if out:
-            rprint(out)
-        rprint("[green]image prune[/green] complete")
+        result["image_prune"] = out
+        result["all_images"] = all_images
+        if format != "json":
+            if out:
+                rprint(out)
+            rprint("[green]image prune[/green] complete")
     if target in {"cache", "all"}:
         out = prune_build_cache()
-        if out:
-            rprint(out)
-        rprint("[green]build cache prune[/green] complete")
+        result["cache_prune"] = out
+        if format != "json":
+            if out:
+                rprint(out)
+            rprint("[green]build cache prune[/green] complete")
+
+    if format == "json":
+        _emit_json(result)

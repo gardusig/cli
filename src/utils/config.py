@@ -55,6 +55,7 @@ class NotionPropertyMap(BaseModel):
     interval: str = "Interval"
     last_done: str = "Last done"
     forced_status: str = "Forced status"
+    link: str = "link"
     # Legacy keys (ignored by pair sync unless remapped in config).
     status: str = "Status"
     tags: str = "Tags"
@@ -68,6 +69,7 @@ class NotionConfig(BaseModel):
     task_root: str = ""
     task_directory: str = ""  # deprecated alias for task_root
     pairs_file: str = "tasks.pairs.json"
+    link_branch: str = "main"
     cleanup_before_deploy: bool = True
     cleanup_before_upload: bool | None = None  # deprecated alias
     cleanup_before_import: bool | None = None  # deprecated alias
@@ -91,10 +93,17 @@ def notion_cleanup_before_deploy(cfg: NotionConfig) -> bool:
     return cfg.cleanup_before_deploy
 
 
+class ChromeProfileConfig(BaseModel):
+    bookmarks_file: str = ""
+
+
 class ChromeConfig(BaseModel):
     profile: str = "Default"
     bookmarks_file: str = ""
     downloads_dir: str = ""
+    profiles: dict[str, ChromeProfileConfig] = Field(default_factory=dict)
+    snapshots_dir: str = ""
+    snapshot_retention: int = 0
 
 
 class GhIssuesPruneConfig(BaseModel):
@@ -111,6 +120,61 @@ class GhConfig(BaseModel):
     issues: GhIssuesConfig = Field(default_factory=GhIssuesConfig)
 
 
+class ProjectDefaultConfig(BaseModel):
+    owner: str = ""
+    number: int | None = None
+    project_id: str = ""
+
+
+class ProjectAutoLinkConfig(BaseModel):
+    enabled: bool = False
+    default_lane: str = ""
+    on_issue_create: bool = True
+    on_pr_create: bool = False
+
+
+class ProjectFieldMap(BaseModel):
+    status: str = "Status"
+    deadline: str = "Deadline"
+    type: str = "Type"
+
+
+class ProjectConfig(BaseModel):
+    """GitHub Projects v2 settings for the top-level `cli project` surface."""
+
+    # v0a shorthand from #72.
+    owner: str = ""
+    number: int | None = None
+    project_id: str = ""
+    # v0.4 canonical shape from #75.
+    default: ProjectDefaultConfig = Field(default_factory=ProjectDefaultConfig)
+    auto_link: ProjectAutoLinkConfig = Field(default_factory=ProjectAutoLinkConfig)
+    fields: ProjectFieldMap = Field(default_factory=ProjectFieldMap)
+    lanes: dict[str, str] = Field(default_factory=dict)
+    task_root: str = "config/project"
+    pairs_file: str = "tasks.pairs.json"
+
+    def model_post_init(self, __context: object) -> None:
+        if self.owner.strip() and not self.default.owner.strip():
+            object.__setattr__(
+                self,
+                "default",
+                self.default.model_copy(update={"owner": self.owner.strip()}),
+            )
+        if self.number is not None and self.default.number is None:
+            object.__setattr__(
+                self,
+                "default",
+                self.default.model_copy(update={"number": self.number}),
+            )
+        if self.project_id.strip() and not self.default.project_id.strip():
+            object.__setattr__(
+                self,
+                "default",
+                self.default.model_copy(update={"project_id": self.project_id.strip()}),
+            )
+
+
 class AuthCredentialConfig(BaseModel):
     env: str = ""
     token_file: str = ""
@@ -122,6 +186,12 @@ class AuthConfig(BaseModel):
     backup: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
     deepseek: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
     pypi: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
+    google_drive: AuthCredentialConfig = Field(
+        default_factory=lambda: AuthCredentialConfig(env="GOOGLE_DRIVE_TOKEN")
+    )
+    onedrive: AuthCredentialConfig = Field(
+        default_factory=lambda: AuthCredentialConfig(env="ONEDRIVE_TOKEN")
+    )
 
 
 class CliConfig(BaseModel):
@@ -129,6 +199,7 @@ class CliConfig(BaseModel):
     drives: DrivesConfig = Field(default_factory=DrivesConfig)
     notion: NotionConfig = Field(default_factory=NotionConfig)
     gh: GhConfig = Field(default_factory=GhConfig)
+    project: ProjectConfig = Field(default_factory=ProjectConfig)
     chrome: ChromeConfig = Field(default_factory=ChromeConfig)
     auth: AuthConfig = Field(default_factory=AuthConfig)
 
@@ -261,21 +332,59 @@ def default_zip_path(repo_basename: str, tag: str, config_dir: Path | None = Non
     return tags_dir_path(config_dir) / repo_basename / f"{tag_zip_basename(repo_basename, tag)}.zip"
 
 
-def bookmarks_file_path(config_dir: Path | None = None) -> Path:
+def chrome_profile_key(profile: str | None = None, config_dir: Path | None = None) -> str:
+    """Resolve profile key from CLI flag or config default."""
+    if profile and profile.strip():
+        return profile.strip()
+    return load_config(config_dir).chrome.profile.strip() or "Default"
+
+
+def _resolve_bookmarks_raw(chrome: ChromeConfig, profile_key: str) -> str:
+    if profile_key in chrome.profiles:
+        profile_path = chrome.profiles[profile_key].bookmarks_file.strip()
+        if profile_path:
+            return profile_path
+    if profile_key == (chrome.profile.strip() or "Default") or not chrome.profiles:
+        return chrome.bookmarks_file.strip()
+    raise FileNotFoundError(
+        f"No chrome.bookmarks_file configured for profile {profile_key!r}. "
+        "Add chrome.profiles.<name>.bookmarks_file or chrome.bookmarks_file in config."
+    )
+
+
+def bookmarks_file_path(profile: str | None = None, config_dir: Path | None = None) -> Path:
     """Resolved path for Chrome bookmarks HTML backup."""
     env = os.environ.get("CLI_BOOKMARKS_FILE")
-    if env:
+    profile_key = chrome_profile_key(profile, config_dir)
+    if env and profile is None:
         return Path(env).expanduser().resolve()
     cfg = load_config(config_dir)
-    raw = cfg.chrome.bookmarks_file.strip()
+    raw = _resolve_bookmarks_raw(cfg.chrome, profile_key)
     if not raw:
         raise FileNotFoundError(
-            "chrome.bookmarks_file is not configured. Set chrome.bookmarks_file in config/config.yaml."
+            "chrome.bookmarks_file is not configured. Set chrome.bookmarks_file in config/config.yaml "
+            f"or chrome.profiles.{profile_key}.bookmarks_file."
         )
     path = Path(raw).expanduser()
     if path.is_absolute():
         return path.resolve()
     return (project_root() / path).resolve()
+
+
+def chrome_snapshots_dir(config_dir: Path | None = None) -> Path | None:
+    """Optional directory for timestamped bookmark snapshots."""
+    raw = load_config(config_dir).chrome.snapshots_dir.strip()
+    if not raw:
+        return None
+    path = Path(raw).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    return (project_root() / path).resolve()
+
+
+def chrome_snapshot_retention(config_dir: Path | None = None) -> int:
+    """Max snapshot files per profile (0 = unlimited)."""
+    return max(0, load_config(config_dir).chrome.snapshot_retention)
 
 
 def notion_task_root(config_dir: Path | None = None) -> Path:
@@ -368,6 +477,28 @@ def require_backup_zip_password() -> str:
     return password
 
 
+def require_google_drive_token(cfg: CliConfig | None = None) -> str:
+    """Google Drive OAuth access token from GOOGLE_DRIVE_TOKEN (never commit to config)."""
+    cfg = cfg or load_config()
+    token = _credential_token(cfg, "google_drive", "GOOGLE_DRIVE_TOKEN")
+    if not token:
+        raise RuntimeError(
+            "GOOGLE_DRIVE_TOKEN is not set. Export it or configure auth.google_drive.token_file."
+        )
+    return token
+
+
+def require_onedrive_token(cfg: CliConfig | None = None) -> str:
+    """OneDrive OAuth access token from ONEDRIVE_TOKEN (never commit to config)."""
+    cfg = cfg or load_config()
+    token = _credential_token(cfg, "onedrive", "ONEDRIVE_TOKEN")
+    if not token:
+        raise RuntimeError(
+            "ONEDRIVE_TOKEN is not set. Export it or configure auth.onedrive.token_file."
+        )
+    return token
+
+
 def backup_repository_entry(
     repo_path: Path,
     config_dir: Path | None = None,
@@ -403,6 +534,15 @@ def gh_issues_repo(config_dir: Path | None = None) -> str:
     return repo
 
 
+def task_runbook_url(body_filepath: str, *, config_dir: Path | None = None) -> str:
+    """GitHub blob URL for a task body under the private database repo (tasks/)."""
+    cfg = load_config(config_dir)
+    repo = gh_issues_repo(config_dir)
+    branch = (cfg.notion.link_branch or "main").strip()
+    rel = body_filepath.strip().lstrip("/")
+    return f"https://github.com/{repo}/blob/{branch}/tasks/{rel}"
+
+
 def gh_issues_labels_manifest(config_dir: Path | None = None) -> Path:
     cfg = load_config(config_dir)
     raw = cfg.gh.issues.labels_manifest.strip()
@@ -416,3 +556,60 @@ def gh_issues_labels_manifest(config_dir: Path | None = None) -> Path:
 
 def gh_issues_closed_older_than(config_dir: Path | None = None) -> str:
     return load_config(config_dir).gh.issues.prune.closed_older_than
+
+
+def project_default(config_dir: Path | None = None) -> ProjectDefaultConfig:
+    """Default GitHub Project v2 owner/number/id."""
+    default = load_config(config_dir).project.default
+    if not default.owner.strip():
+        raise RuntimeError(
+            "project.default.owner is not configured. Set project.default.owner in config/config.yaml."
+        )
+    if default.number is None and not default.project_id.strip():
+        raise RuntimeError(
+            "project.default.number or project.default.project_id is not configured."
+        )
+    return default
+
+
+def project_lane(alias_or_label: str, config_dir: Path | None = None) -> str:
+    """Resolve a friendly lane alias to the exact Status option label."""
+    value = alias_or_label.strip()
+    if not value:
+        raise RuntimeError("Project lane must not be blank.")
+    lanes = load_config(config_dir).project.lanes
+    if value in lanes:
+        return lanes[value]
+    lowered = value.lower()
+    for alias, label in lanes.items():
+        if alias.lower() == lowered:
+            return label
+    return value
+
+
+def project_auto_link(config_dir: Path | None = None) -> ProjectAutoLinkConfig:
+    """Auto-link settings for `cli gh issue create`."""
+    return load_config(config_dir).project.auto_link
+
+
+def project_task_root(config_dir: Path | None = None) -> Path:
+    """Resolved path to local GitHub Project task pairs."""
+    env = os.environ.get("PROJECT_TASK_ROOT", "").strip()
+    if env:
+        return Path(env).expanduser().resolve()
+    raw = load_config(config_dir).project.task_root.strip() or "config/project"
+    path = Path(raw).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    return (project_root() / path).resolve()
+
+
+def project_pairs_file(config_dir: Path | None = None) -> Path:
+    """Resolved path to the project pairs manifest."""
+    raw = load_config(config_dir).project.pairs_file.strip() or "tasks.pairs.json"
+    path = Path(raw).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    if len(path.parts) > 1:
+        return (project_root() / path).resolve()
+    return project_task_root(config_dir) / path.name

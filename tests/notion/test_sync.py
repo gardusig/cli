@@ -106,6 +106,9 @@ def test_import_tasks_deploys_enabled_pair(tmp_path: Path, monkeypatch) -> None:
     assert created
     props = created[0]["properties"]
     assert props["Name"]["title"][0]["text"]["content"] == "🧪 sample task"
+    assert props["link"]["url"] == (
+        "https://github.com/gardusig/database/blob/main/tasks/body/sample.md"
+    )
 
 
 def test_export_tasks_ingest_updates_local(tmp_path: Path, monkeypatch) -> None:
@@ -186,3 +189,110 @@ def test_notion_client_page_title() -> None:
     )
     client.close()
     assert title == "Hello"
+
+
+def test_import_tasks_continues_after_page_failure(tmp_path: Path, monkeypatch) -> None:
+    task_root = tmp_path / "tasks"
+    for rel in ("header/sample.yaml", "body/sample.md", "header/other.yaml", "body/other.md"):
+        src = FIXTURE_ROOT / rel.replace("other", "sample")
+        dest = task_root / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+    (task_root / "header/other.yaml").write_text(
+        (task_root / "header/other.yaml").read_text(encoding="utf-8").replace(
+            "🧪 sample task", "🔥 other task"
+        ),
+        encoding="utf-8",
+    )
+    manifest = task_root / "tasks.pairs.json"
+    manifest.write_text(
+        json.dumps(
+            [
+                {"header_filepath": "header/sample.yaml", "body_filepath": "body/sample.md"},
+                {"header_filepath": "header/other.yaml", "body_filepath": "body/other.md"},
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    created_titles: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path.endswith("/query"):
+            return httpx.Response(200, json={"results": [], "has_more": False})
+        if request.method == "POST" and request.url.path.endswith("/pages"):
+            payload = json.loads(request.content)
+            title = payload["properties"]["Name"]["title"][0]["text"]["content"]
+            if title == "🔥 other task":
+                return httpx.Response(400, json={"message": "rate limited"})
+            created_titles.append(title)
+            return httpx.Response(200, json={"id": "new-page"})
+        return httpx.Response(404, json={"message": "not found"})
+
+    cfg = NotionConfig(database_id="db-test", cleanup_before_deploy=False)
+    monkeypatch.setattr(
+        "src.services.notion_sync.notion_pairs_file",
+        lambda config_dir=None: manifest,
+    )
+    monkeypatch.setattr(
+        "src.services.notion_sync.notion_task_root",
+        lambda config_dir=None: task_root,
+    )
+
+    with _patch_notion_http(handler):
+        result = import_tasks(task_root, token="tok", config=cfg, cleanup_first=False)
+
+    assert result.processed == 1
+    assert created_titles == ["🧪 sample task"]
+    assert len(result.failed) == 1
+    assert result.failed[0][0] == "🔥 other task"
+    assert "rate limited" in result.failed[0][1]
+
+
+def test_export_tasks_writes_runbook_link_to_header(tmp_path: Path, monkeypatch) -> None:
+    task_root = tmp_path / "tasks"
+    for rel in ("header/sample.yaml", "body/sample.md"):
+        src = FIXTURE_ROOT / rel
+        dest = task_root / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+    manifest = task_root / "tasks.pairs.json"
+    manifest.write_text(
+        json.dumps(
+            [
+                {
+                    "header_filepath": "header/sample.yaml",
+                    "body_filepath": "body/sample.md",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    page = {
+        "id": "page-1",
+        "archived": False,
+        "properties": {
+            "Name": {"title": [{"plain_text": "🧪 sample task", "type": "text"}]},
+            "link": {"url": "https://notion.example/old-link"},
+        },
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path.endswith("/query"):
+            return httpx.Response(200, json={"results": [page], "has_more": False})
+        if request.method == "GET" and "/children" in request.url.path:
+            return httpx.Response(200, json={"results": [], "has_more": False})
+        return httpx.Response(404, json={"message": "not found"})
+
+    cfg = NotionConfig(database_id="db-test")
+    monkeypatch.setattr(
+        "src.services.notion_sync.notion_pairs_file",
+        lambda config_dir=None: manifest,
+    )
+
+    with _patch_notion_http(handler):
+        export_tasks(task_root, token="tok", config=cfg)
+
+    meta_text = (task_root / "header/sample.yaml").read_text(encoding="utf-8")
+    assert "gardusig/database/blob/main/tasks/body/sample.md" in meta_text

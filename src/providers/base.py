@@ -21,3 +21,7 @@ class DriveProvider(Protocol):
 
     def upload(self, local: Path, remote: str) -> None:
         ...
+
+    def download(self, remote_path: str, local_path: str) -> None:
+        """Download remote file to local path (one-way restore)."""
+        ...

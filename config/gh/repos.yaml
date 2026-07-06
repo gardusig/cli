@@ -13,16 +13,24 @@ repositories:
     profile: true
     pr_pipeline: true
     description: Browser extensions and recorder tooling.
-  - slug: computer-science
-    repository: gardusig/computer-science
-    visibility: public
-    profile: true
+  - slug: interviewing
+    repository: gardusig/interviewing
+    visibility: private
+    profile: false
     pr_pipeline: true
     pipelines:
       - resume
       - mermaid
       - cpp
-    description: Computer science notes, interview prep, and resume assets.
+    description: Private interview prep — behavioral, system-design, problem-solving, resume.
+  - slug: code
+    repository: gardusig/code
+    visibility: private
+    profile: false
+    pr_pipeline: true
+    pipelines:
+      - go
+    description: Private runnable teaching code examples (multi-language).
   - slug: gardusig
     repository: gardusig/gardusig
     visibility: public

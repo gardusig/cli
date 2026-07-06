@@ -3,10 +3,10 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-# PyPI distribution name (repo remains github.com/gardusig/cli).
+# PyPI distribution name (repo remains github.com/gardusig/python-cli).
 name = "gardusig-cli"
-version = "1.0.1"
-description = "macOS CLI for git shortcuts, backups, and sync workflows"
+version = "1.0.2"
+description = "Linux-first CLI for workflow automation, repository checks, and release orchestration"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -16,11 +16,11 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Environment :: Console",
   "Intended Audience :: Developers",
-  "Operating System :: MacOS",
   "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Software Development :: Version Control :: Git",
   "Topic :: Utilities",
 ]
@@ -53,11 +53,11 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/gardusig/cli"
-Documentation = "https://github.com/gardusig/cli#readme"
-Repository = "https://github.com/gardusig/cli"
-Issues = "https://github.com/gardusig/cli/issues"
-Changelog = "https://github.com/gardusig/cli/releases"
+Homepage = "https://github.com/gardusig/python-cli"
+Documentation = "https://github.com/gardusig/python-cli#readme"
+Repository = "https://github.com/gardusig/python-cli"
+Issues = "https://github.com/gardusig/python-cli/issues"
+Changelog = "https://github.com/gardusig/python-cli/releases"
 
 [project.scripts]
 cli = "src.cli:run"

@@ -7,6 +7,10 @@ from src.services.toolkit.catalog import REPO_LANGUAGE_PROFILES, lint_languages
 
 IGNORED_DIRS = {".git", ".venv", "__pycache__", "node_modules", ".pytest_cache", "dist", "build"}
 
+PACKAGE_REPO_PROFILES: dict[str, str] = {
+    "gardusig-cli": "python-cli",
+}
+
 
 class ToolkitDetectionError(RuntimeError):
     pass
@@ -34,11 +38,43 @@ def repo_languages(workspace: Path) -> tuple[str, ...]:
     return detected or ("markdown",)
 
 
-def _repo_profile(root: Path) -> tuple[str, ...] | None:
+def repo_slug(workspace: Path) -> str:
+    """Resolve the logical repository slug for policy and layout checks."""
+    root = workspace.expanduser().resolve()
     remote = _origin_repo_name(root)
-    if remote and remote in REPO_LANGUAGE_PROFILES:
-        return REPO_LANGUAGE_PROFILES[remote]
-    return REPO_LANGUAGE_PROFILES.get(root.name)
+    if remote:
+        return remote
+    if root.name in REPO_LANGUAGE_PROFILES:
+        return root.name
+    package_name = _pyproject_name(root)
+    if package_name:
+        return PACKAGE_REPO_PROFILES.get(package_name, package_name)
+    return root.name
+
+
+def _repo_profile(root: Path) -> tuple[str, ...] | None:
+    slug = repo_slug(root)
+    if slug in REPO_LANGUAGE_PROFILES:
+        return REPO_LANGUAGE_PROFILES[slug]
+    return None
+
+
+def _pyproject_name(root: Path) -> str | None:
+    path = root / "pyproject.toml"
+    if not path.is_file():
+        return None
+    try:
+        import tomllib
+
+        with path.open("rb") as handle:
+            data = tomllib.load(handle)
+    except (OSError, ValueError):
+        return None
+    project = data.get("project")
+    if not isinstance(project, dict):
+        return None
+    name = project.get("name")
+    return name if isinstance(name, str) and name else None
 
 
 def _origin_repo_name(root: Path) -> str | None:

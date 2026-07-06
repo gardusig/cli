@@ -10,14 +10,15 @@ from typing import Any
 import yaml
 
 from src.providers.gh import GhProvider
-from src.services.gh_policy import MergeForbiddenError
+from src.providers.gh_transport import GhTransportMode
+from src.services.gh_policy import IssueCloseForbiddenError, MergeForbiddenError
 from src.services.gh_sequence import SequenceKey
 from src.services.gh_topo import StepKey, build_parent_child_tree, load_priority_levels, pick_next_child, sort_children
 
 
 class GhService:
-    def __init__(self, *, repo: str | None = None) -> None:
-        self.provider = GhProvider(repo=repo)
+    def __init__(self, *, repo: str | None = None, transport: GhTransportMode = "cli") -> None:
+        self.provider = GhProvider(repo=repo, transport=transport)
 
     def repo_display(self) -> str:
         return self.provider.repo or self.provider.default_repo()
@@ -147,7 +148,7 @@ class GhService:
         args = ["issue", "create", "--title", title]
         if body_file:
             args.extend(["--body-file", str(body_file)])
-        elif body:
+        elif body is not None:
             args.extend(["--body", body])
         if labels:
             args.extend(["--label", ",".join(labels)])
@@ -176,16 +177,24 @@ class GhService:
         self.provider.run(args)
 
     def issue_close(self, number: int, *, comment: str | None = None) -> None:
-        args = ["issue", "close", str(number)]
-        if comment:
-            args.extend(["--comment", comment])
-        self.provider.run(args)
+        raise IssueCloseForbiddenError()
 
     def issue_delete(self, number: int) -> None:
         self.provider.run(["issue", "delete", str(number), "--yes"])
 
     def issue_comment(self, number: int, *, body: str) -> None:
         self.provider.run(["issue", "comment", str(number), "--body", body])
+
+    def issue_reopen(self, number: int) -> dict[str, Any]:
+        data = self.provider.run_json(["issue", "reopen", str(number)])
+        return data if isinstance(data, dict) else {"number": number, "action": "reopen"}
+
+    def issue_status(self) -> dict[str, Any]:
+        open_issues = self.issue_list(state="open", limit=100)
+        return {
+            "open_issues": len(open_issues),
+            "issues": open_issues[:10],
+        }
 
     def issue_batch(self, batch_file: Path) -> list[dict[str, Any]]:
         data = yaml.safe_load(batch_file.read_text(encoding="utf-8"))
@@ -375,6 +384,43 @@ class GhService:
 
     def pr_close(self, number: int) -> None:
         self.provider.run(["pr", "close", str(number)])
+
+    def pr_reopen(self, number: int) -> dict[str, Any]:
+        data = self.provider.run_json(["pr", "reopen", str(number)])
+        return data if isinstance(data, dict) else {"number": number, "action": "reopen"}
+
+    def pr_checks(self, number: int) -> list[dict[str, Any]]:
+        data = self.provider.run_json(["pr", "checks", str(number), "--json", "name,state,conclusion,detailsUrl"])
+        return data if isinstance(data, list) else data.get("checks", [])
+
+    def pr_review(
+        self,
+        number: int,
+        *,
+        approve: bool = False,
+        request_changes: bool = False,
+        comment: bool = False,
+        body: str = "",
+    ) -> dict[str, Any]:
+        args = ["pr", "review", str(number)]
+        if approve:
+            args.append("--approve")
+        elif request_changes:
+            args.append("--request-changes")
+        elif comment:
+            args.append("--comment")
+        if body:
+            args.extend(["--body", body])
+        data = self.provider.run_json(args)
+        return data if isinstance(data, dict) else {"number": number, "action": "review"}
+
+    def pr_ready(self, number: int) -> dict[str, Any]:
+        data = self.provider.run_json(["pr", "ready", str(number)])
+        return data if isinstance(data, dict) else {"number": number, "action": "ready"}
+
+    def pr_status(self) -> dict[str, Any]:
+        prs = self.pr_list(state="open", limit=100)
+        return {"open_prs": len(prs), "pull_requests": prs[:10]}
 
     def pr_merge(
         self,

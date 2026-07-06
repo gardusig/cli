@@ -24,7 +24,7 @@ def test_export_bookmarks_from_downloads_fixture(tmp_path: Path) -> None:
 
     with protected_repo_guard(CHROME_WS):
         subprocess.run(
-            ["bash", str(ROOT / "src/scripts/chrome/export.sh")],
+            ["python", "-m", "src", "chrome", "bookmarks", "ingest"],
             env=env,
             check=True,
             cwd=ROOT,
@@ -43,7 +43,7 @@ def test_import_bookmarks_script_runs(tmp_path: Path) -> None:
     bookmarks_file = Path(env["CLI_BOOKMARKS_FILE"])
 
     subprocess.run(
-        ["bash", str(ROOT / "src/scripts/chrome/export.sh")],
+        ["python", "-m", "src", "chrome", "bookmarks", "ingest"],
         env=env,
         check=True,
         cwd=ROOT,
@@ -51,7 +51,7 @@ def test_import_bookmarks_script_runs(tmp_path: Path) -> None:
 
     with protected_repo_guard(CHROME_WS):
         result = subprocess.run(
-            ["bash", str(ROOT / "src/scripts/chrome/import.sh")],
+            ["python", "-m", "src", "chrome", "bookmarks", "deploy"],
             env=env,
             capture_output=True,
             text=True,
@@ -59,5 +59,5 @@ def test_import_bookmarks_script_runs(tmp_path: Path) -> None:
         )
 
     assert result.returncode == 0
-    assert "Import complete" in result.stdout + result.stderr
+    assert "ready" in result.stdout + result.stderr
     assert bookmarks_file.is_file()

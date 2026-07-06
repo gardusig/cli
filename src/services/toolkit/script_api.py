@@ -6,7 +6,7 @@ from pathlib import Path
 
 from src.services.database_validator import validate_database_repo
 from src.services.notion_pairs import load_pairs, pair_file_warning, scan_task_root
-from src.services.repo_hygiene import check_repo_hygiene, load_hygiene_policy
+from src.services.repo_hygiene import check_repo_hygiene, load_hygiene_policy, policy_with_ignored_paths
 from src.services.toolkit.catalog import languages, specs_for_language
 
 
@@ -39,7 +39,14 @@ def _structure_check(workspace: Path) -> None:
     policy_file = os.environ.get("POLICY_FILE", "").strip()
     if policy_file:
         try:
-            policy = load_hygiene_policy(Path(policy_file))
+            policy_path = Path(policy_file)
+            policy = load_hygiene_policy(policy_path)
+            if policy_path.is_file():
+                try:
+                    rel = policy_path.resolve().relative_to(workspace.resolve()).as_posix()
+                    policy = policy_with_ignored_paths(policy, frozenset({rel}))
+                except ValueError:
+                    pass
         except (OSError, ValueError) as exc:
             errors.append(f"invalid hygiene policy: {exc}")
     errors.extend(
@@ -120,7 +127,7 @@ def _languages_show(language: str, workspace: Path) -> None:
     print(f"workspace: {workspace}")
     for spec in specs:
         suite = f" {spec.suite}" if spec.suite else ""
-        print(f"{spec.group} {spec.subject}{suite}: {spec.script}")
+        print(f"{spec.group} {spec.subject}{suite}: {spec.handler}")
 
 
 def _env_bool(name: str) -> bool:

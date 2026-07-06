@@ -2,227 +2,165 @@
 
 from __future__ import annotations
 
-from tests.constants import ROOT
-
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from typer.testing import CliRunner
 
+from src.services.bookmark_sync import newest_html_export, wait_for_exported_html
 from src.cli import app
 
 runner = CliRunner()
 
 
-@patch("src.commands.chrome.subprocess.run")
 @patch("src.commands.chrome.bookmarks_file_path")
-def test_chrome_bookmarks_ingest(mock_path: MagicMock, mock_run: MagicMock, tmp_path: Path) -> None:
+@patch("src.commands.chrome.chrome_downloads_dir")
+def test_chrome_bookmarks_merge(
+    mock_downloads: object,
+    mock_path: object,
+    tmp_path: Path,
+) -> None:
+    backup = tmp_path / "backup.html"
+    backup.write_text(
+        '<dl><p><dt><a href="https://a.example">A</a></dt></dl><p>',
+        encoding="utf-8",
+    )
+    downloads = tmp_path / "Downloads"
+    downloads.mkdir()
+    (downloads / "export.html").write_text(
+        '<dl><p><dt><a href="https://b.example">B</a></dt></dl><p>',
+        encoding="utf-8",
+    )
+    mock_path.return_value = backup
+    mock_downloads.return_value = downloads
+    result = runner.invoke(
+        app,
+        ["chrome", "bookmarks", "merge"],
+        env={"CLI_SKIP_CHROME_AUTOMATION": "1"},
+    )
+    assert result.exit_code == 0
+    assert "https://b.example" in backup.read_text(encoding="utf-8")
+
+
+@patch("src.commands.chrome.bookmarks_file_path")
+@patch("src.commands.chrome.chrome_snapshots_dir")
+def test_chrome_bookmarks_snapshot(
+    mock_snapshots: object,
+    mock_path: object,
+    tmp_path: Path,
+) -> None:
+    backup = tmp_path / "backup.html"
+    backup.write_text("<html></html>", encoding="utf-8")
+    snapshots = tmp_path / "snapshots"
+    mock_path.return_value = backup
+    mock_snapshots.return_value = snapshots
+    result = runner.invoke(app, ["chrome", "bookmarks", "snapshot"])
+    assert result.exit_code == 0
+    assert "snapshot" in result.stdout
+    assert list(snapshots.glob("Default-*.html"))
+
+
+def test_chrome_photos_deferred() -> None:
+    result = runner.invoke(app, ["chrome", "photos"])
+    assert result.exit_code == 2
+    assert "deferred" in result.output.lower()
+
+
+@patch("src.commands.chrome.bookmarks_file_path")
+@patch("src.commands.chrome.chrome_downloads_dir")
+def test_chrome_bookmarks_ingest(mock_downloads, mock_path, tmp_path: Path) -> None:
     dest = tmp_path / "bookmarks.html"
+    downloads = tmp_path / "Downloads"
+    downloads.mkdir()
+    exported = downloads / "export.html"
+    exported.write_text("<html>bookmarks</html>", encoding="utf-8")
     mock_path.return_value = dest
-    mock_run.return_value = MagicMock(returncode=0)
-    result = runner.invoke(app, ["chrome", "bookmarks", "ingest"])
+    mock_downloads.return_value = downloads
+    result = runner.invoke(
+        app,
+        ["chrome", "bookmarks", "ingest"],
+        env={"CLI_SKIP_CHROME_AUTOMATION": "1"},
+    )
     assert result.exit_code == 0
     assert "ingested" in result.stdout
-    mock_run.assert_called_once()
+    assert dest.read_text(encoding="utf-8") == "<html>bookmarks</html>"
 
 
-@patch("src.commands.chrome.subprocess.run")
 @patch("src.commands.chrome.bookmarks_file_path")
-def test_chrome_bookmarks_deploy(mock_path: MagicMock, mock_run: MagicMock, tmp_path: Path) -> None:
+def test_chrome_bookmarks_deploy(mock_path, tmp_path: Path) -> None:
     src = tmp_path / "bookmarks.html"
     src.write_text("<html></html>", encoding="utf-8")
     mock_path.return_value = src
-    mock_run.return_value = MagicMock(returncode=0)
     result = runner.invoke(app, ["chrome", "bookmarks", "deploy"])
     assert result.exit_code == 0
-    assert "deployed" in result.stdout
+    assert "ready" in result.stdout
 
 
 @patch("src.commands.chrome.bookmarks_file_path")
-def test_chrome_bookmarks_deploy_missing_backup(mock_path: MagicMock, tmp_path: Path) -> None:
+def test_chrome_bookmarks_deploy_missing_backup(mock_path, tmp_path: Path) -> None:
     mock_path.return_value = tmp_path / "missing.html"
     result = runner.invoke(app, ["chrome", "bookmarks", "deploy"])
     assert result.exit_code != 0
-    assert "Backup not found" in result.stdout
+    assert "Backup not found" in result.output
 
 
-def test_legacy_bookmarks_export_alias_calls_ingest() -> None:
-    with patch("src.commands.chrome.subprocess.run") as mock_run:
-        mock_run.return_value = MagicMock(returncode=0)
-        with patch("src.commands.chrome.bookmarks_file_path", return_value=Path("/tmp/b.html")):
-            result = runner.invoke(app, ["bookmarks", "export"])
+def test_legacy_bookmarks_export_alias_calls_ingest(tmp_path: Path) -> None:
+    downloads = tmp_path / "Downloads"
+    downloads.mkdir()
+    (downloads / "export.html").write_text("<html></html>", encoding="utf-8")
+    with (
+        patch("src.commands.chrome.bookmarks_file_path", return_value=tmp_path / "b.html"),
+        patch("src.commands.chrome.chrome_downloads_dir", return_value=downloads),
+    ):
+        result = runner.invoke(app, ["bookmarks", "export"], env={"CLI_SKIP_CHROME_AUTOMATION": "1"})
     assert result.exit_code == 0
     assert "ingested" in result.stdout
 
 
-@patch("src.commands.chrome.subprocess.run")
 @patch("src.commands.chrome.bookmarks_file_path")
-def test_chrome_legacy_export_alias_calls_ingest(mock_path: MagicMock, mock_run: MagicMock, tmp_path: Path) -> None:
+@patch("src.commands.chrome.chrome_downloads_dir")
+def test_chrome_legacy_export_alias_calls_ingest(mock_downloads, mock_path, tmp_path: Path) -> None:
     dest = tmp_path / "bookmarks.html"
+    downloads = tmp_path / "Downloads"
+    downloads.mkdir()
+    (downloads / "export.html").write_text("<html></html>", encoding="utf-8")
     mock_path.return_value = dest
-    mock_run.return_value = MagicMock(returncode=0)
-    result = runner.invoke(app, ["chrome", "bookmarks", "export"])
+    mock_downloads.return_value = downloads
+    result = runner.invoke(app, ["chrome", "bookmarks", "export"], env={"CLI_SKIP_CHROME_AUTOMATION": "1"})
     assert result.exit_code == 0
     assert "ingested" in result.stdout
 
 
-@patch("src.commands.chrome.subprocess.run")
 @patch("src.commands.chrome.bookmarks_file_path")
-def test_chrome_legacy_import_alias_calls_deploy(mock_path: MagicMock, mock_run: MagicMock, tmp_path: Path) -> None:
+def test_chrome_legacy_import_alias_calls_deploy(mock_path, tmp_path: Path) -> None:
     src = tmp_path / "bookmarks.html"
     src.write_text("<html></html>", encoding="utf-8")
     mock_path.return_value = src
-    mock_run.return_value = MagicMock(returncode=0)
     result = runner.invoke(app, ["chrome", "bookmarks", "import"])
     assert result.exit_code == 0
-    assert "deployed" in result.stdout
+    assert "ready" in result.stdout
 
 
-"""Issue #1 bookmark shell script tests (isolated temp dirs)."""
-
-
-import os
-import subprocess
 import time
-from pathlib import Path
-
-import pytest
 
 
-FIXTURE = ROOT / "tests" / "fixtures" / "bookmarks.html"
-CHROME_DIR = ROOT / "src" / "scripts" / "chrome"
-
-
-def _run_script(name: str, env: dict[str, str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
-    script = CHROME_DIR / name
-    merged = {**os.environ, **env}
-    return subprocess.run(
-        ["bash", str(script)],
-        cwd=ROOT,
-        env=merged,
-        capture_output=True,
-        text=True,
-        check=check,
-    )
-
-
-@pytest.fixture
-def sandbox(tmp_path: Path) -> dict[str, Path]:
-    downloads = tmp_path / "Downloads"
-    downloads.mkdir()
-    data_bookmarks = tmp_path / "data" / "bookmarks"
-    data_bookmarks.mkdir(parents=True)
-    return {
-        "root": tmp_path,
-        "downloads": downloads,
-        "bookmarks_file": data_bookmarks / "bookmarks.html",
-    }
-
-
-def test_wait_download_selects_newest_html(sandbox: dict[str, Path]) -> None:
-    older = sandbox["downloads"] / "older.html"
-    newer = sandbox["downloads"] / "newer.html"
+def test_wait_download_selects_newest_html(tmp_path: Path) -> None:
+    older = tmp_path / "older.html"
+    newer = tmp_path / "newer.html"
     older.write_text("<html>old</html>")
     time.sleep(1.1)
     newer.write_text("<html>new</html>")
 
-    result = _run_script(
-        "wait-download.sh",
-        {
-            "CLI_DOWNLOADS_DIR": str(sandbox["downloads"]),
-            "CLI_DOWNLOAD_TIMEOUT": "5",
-        },
-    )
-    assert result.returncode == 0
-    assert result.stdout.strip().endswith("newer.html")
+    assert newest_html_export(tmp_path) == newer
 
 
-def test_wait_download_ignores_crdownload(sandbox: dict[str, Path]) -> None:
-    partial = sandbox["downloads"] / "bookmarks.html.crdownload"
+def test_wait_download_times_out_without_html(tmp_path: Path) -> None:
+    partial = tmp_path / "bookmarks.html.crdownload"
     partial.write_text("partial")
-    result = _run_script(
-        "wait-download.sh",
-        {
-            "CLI_DOWNLOADS_DIR": str(sandbox["downloads"]),
-            "CLI_DOWNLOAD_TIMEOUT": "2",
-        },
-        check=False,
-    )
-    assert result.returncode != 0
-
-
-def test_export_from_fixture(sandbox: dict[str, Path]) -> None:
-    result = _run_script(
-        "export.sh",
-        {
-            "CLI_ROOT": str(sandbox["root"]),
-            "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
-            "CLI_SKIP_CHROME_AUTOMATION": "1",
-            "CLI_BOOKMARKS_FIXTURE": str(FIXTURE),
-        },
-    )
-    assert result.returncode == 0
-    assert sandbox["bookmarks_file"].exists()
-    assert "Cli Test Bookmark" in sandbox["bookmarks_file"].read_text()
-
-
-def test_export_overwrites_previous_backup(sandbox: dict[str, Path]) -> None:
-    sandbox["bookmarks_file"].write_text("<html>stale</html>")
-    _run_script(
-        "export.sh",
-        {
-            "CLI_ROOT": str(sandbox["root"]),
-            "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
-            "CLI_SKIP_CHROME_AUTOMATION": "1",
-            "CLI_BOOKMARKS_FIXTURE": str(FIXTURE),
-        },
-    )
-    content = sandbox["bookmarks_file"].read_text()
-    assert "stale" not in content
-    assert "Cli Test Bookmark" in content
-
-
-def test_export_from_downloads_dir(sandbox: dict[str, Path]) -> None:
-    downloaded = sandbox["downloads"] / "bookmarks_export.html"
-    downloaded.write_text(FIXTURE.read_text())
-    result = _run_script(
-        "export.sh",
-        {
-            "CLI_ROOT": str(sandbox["root"]),
-            "CLI_DOWNLOADS_DIR": str(sandbox["downloads"]),
-            "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
-            "CLI_SKIP_CHROME_AUTOMATION": "1",
-        },
-    )
-    assert result.returncode == 0
-    assert sandbox["bookmarks_file"].exists()
-    assert "Cli Test Bookmark" in sandbox["bookmarks_file"].read_text()
-    assert not downloaded.exists()
-
-
-def test_import_succeeds_with_backup(sandbox: dict[str, Path]) -> None:
-    sandbox["bookmarks_file"].write_text(FIXTURE.read_text())
-    result = _run_script(
-        "import.sh",
-        {
-            "CLI_ROOT": str(sandbox["root"]),
-            "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
-            "CLI_SKIP_CHROME_AUTOMATION": "1",
-        },
-    )
-    assert result.returncode == 0
-    assert "Import complete" in result.stdout
-
-
-def test_import_fails_without_backup(sandbox: dict[str, Path]) -> None:
-    result = _run_script(
-        "import.sh",
-        {
-            "CLI_ROOT": str(sandbox["root"]),
-            "CLI_BOOKMARKS_FILE": str(sandbox["bookmarks_file"]),
-            "CLI_SKIP_CHROME_AUTOMATION": "1",
-        },
-        check=False,
-    )
-    assert result.returncode != 0
-    assert "Backup not found" in result.stderr + result.stdout
+    assert newest_html_export(tmp_path) is None
+    try:
+        wait_for_exported_html(tmp_path, timeout=0, interval=0)
+    except TimeoutError:
+        pass
+    else:
+        raise AssertionError("expected TimeoutError")

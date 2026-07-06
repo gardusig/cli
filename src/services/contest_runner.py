@@ -81,6 +81,7 @@ def resolve_options(
     timeout: float | None,
     memory_mb: int | None,
     image: str | None,
+    cxx_std: str | None = None,
 ) -> ContestValidateOptions:
     defaults = contest_defaults()
     cfg: dict = {}
@@ -97,15 +98,21 @@ def resolve_options(
     fast_val = pick("fast", fast, None)
     brute_val = pick("brute", brute, None)
     generator_val = pick("generator", generator, None)
+    fast_from_config = fast is None and cfg.get("fast") is not None
+    brute_from_config = brute is None and cfg.get("brute") is not None
+    generator_from_config = generator is None and cfg.get("generator") is not None
 
-    def require_path(label: str, value: object) -> Path:
+    def require_path(label: str, value: object, *, from_config: bool = False) -> Path:
         if value is None or (isinstance(value, str) and not str(value).strip()):
             raise ValueError(f"missing required path: {label}")
-        return Path(value)
+        path = Path(value)
+        if from_config and config is not None and not path.is_absolute():
+            return config.parent / path
+        return path
 
-    fast_path = require_path("fast", fast_val)
-    brute_path = require_path("brute", brute_val)
-    generator_path = require_path("generator", generator_val)
+    fast_path = require_path("fast", fast_val, from_config=fast_from_config)
+    brute_path = require_path("brute", brute_val, from_config=brute_from_config)
+    generator_path = require_path("generator", generator_val, from_config=generator_from_config)
 
     for label, path in [("fast", fast_path), ("brute", brute_path), ("generator", generator_path)]:
         if not str(path) or str(path) == ".":
@@ -122,7 +129,7 @@ def resolve_options(
         timeout=float(pick("timeout", timeout, 10.0)),
         memory_mb=int(pick("memory_mb", memory_mb, 256)),
         image=str(pick("image", image, "cli-contest:runner")),
-        cxx_std=str(pick("cxx_std", None, "c++17")),
+        cxx_std=str(pick("cxx_std", cxx_std, "c++17")),
     )
 
 

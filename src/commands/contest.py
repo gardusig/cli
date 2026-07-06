@@ -99,6 +99,7 @@ def validate_cmd(
     timeout: float | None = typer.Option(None, "--timeout", help="Per-container time limit in seconds."),
     memory_mb: int | None = typer.Option(None, "--memory-mb", help="Per-container memory limit in MB."),
     image: str | None = typer.Option(None, "--image", help="Docker image for solution runs."),
+    cxx_std: str | None = typer.Option(None, "--cxx-std", help="C++ standard passed to g++, e.g. c++17."),
 ) -> None:
     """Validate fast C++ vs brute Python on small (compare) and large (stress) tiers."""
     try:
@@ -110,6 +111,7 @@ def validate_cmd(
             timeout=timeout,
             memory_mb=memory_mb,
             image=image,
+            cxx_std=cxx_std,
         )
     except (ValueError, FileNotFoundError) as exc:
         rprint(f"[red]error:[/red] {exc}")

@@ -116,6 +116,7 @@ class NotionClient:
             "interval": _read_number(props, self._props.interval),
             "last_done": _read_date(props, self._props.last_done),
             "forced_status": _read_select(props, self._props.forced_status),
+            "link": _read_url(props, self._props.link),
         }
 
     def page_body_markdown(self, page_id: str, *, task_name: str = "") -> str:
@@ -146,6 +147,8 @@ class NotionClient:
             out[p.forced_status] = {
                 "select": {"name": str(metadata["forced_status"])}
             }
+        if metadata.get("link"):
+            out[p.link] = {"url": str(metadata["link"])}
         return out
 
     def _get(self, path: str, *, params: dict[str, str] | None = None) -> dict[str, Any]:
@@ -229,6 +232,14 @@ def _read_date(props: dict[str, Any], name: str) -> str | None:
     if not date:
         return None
     return date.get("start")
+
+
+def _read_url(props: dict[str, Any], name: str) -> str | None:
+    prop = props.get(name, {})
+    url = prop.get("url")
+    if not url:
+        return None
+    return str(url)
 
 
 # Deprecated provider-level stubs (use NotionClient via notion_sync).

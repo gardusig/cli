@@ -88,11 +88,13 @@ def test_ingest_issues_round_trip(monkeypatch, tmp_path: Path) -> None:
 
     assert result.created == [{"title": "Two", "number": 7}]
     assert (root / "header" / "two.yaml").is_file()
-    assert (root / "body" / "two.md").read_text(encoding="utf-8") == "Imported body"
+    body_data = yaml.safe_load((root / "body" / "two.yaml").read_text(encoding="utf-8"))
+    assert body_data["format"] == "markdown"
+    assert body_data["body"] == "Imported body"
     manifest = json.loads((root / "tasks.pairs.json").read_text(encoding="utf-8"))
     assert {
         "header_filepath": "header/two.yaml",
-        "body_filepath": "body/two.md",
+        "body_filepath": "body/two.yaml",
     } in manifest
 
 

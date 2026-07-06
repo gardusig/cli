@@ -24,6 +24,7 @@ from src.commands.links import links_app
 from src.commands.lint import lint_app
 from src.commands.notion import notion_app
 from src.commands.pipeline import pipeline_app
+from src.commands.project import project_app
 from src.commands.database import database_app
 from src.commands.pypi import pypi_app
 from src.commands.publish import publish_app
@@ -41,7 +42,7 @@ from src.utils.logger import setup_logging
 
 app = typer.Typer(
     name="cli",
-    help="Git shortcuts and drive (tag zips) for macOS. Run `cli links` for docs and scripts.",
+    help="Linux-first workflow helper for repository checks, releases, and automation. Run `cli links` for docs.",
     no_args_is_help=True,
 )
 
@@ -65,6 +66,7 @@ app.add_typer(backup_app, name="backup", hidden=True)
 app.add_typer(restore_app, name="restore")
 app.add_typer(drive_app, name="drive")
 app.add_typer(notion_app, name="notion")
+app.add_typer(project_app, name="project")
 app.add_typer(chrome_app, name="chrome")
 app.add_typer(bookmarks_app, name="bookmarks", hidden=True)
 app.add_typer(docker_app, name="docker")
@@ -100,6 +102,7 @@ def main(
 
 def run() -> None:
     """CLI entrypoint — surfaces ExternalCallError as a clean user message."""
+    from src.providers.gh_transport import GhTransportError
     from src.services.gh_policy import GhPolicyError
     from src.utils.config import load_local_env
     from src.utils.external_client import ExternalCallError
@@ -111,6 +114,9 @@ def run() -> None:
         typer.echo(exc.user_message, err=True)
         raise typer.Exit(1) from exc
     except GhPolicyError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+    except GhTransportError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1) from exc
 
