@@ -75,7 +75,9 @@ uv run pytest tests/git/ tests/gh/ tests/docker/ tests/chrome/ \
   tests/notion/ tests/drive/ tests/contest/ tests/project/ tests/pypi/ -q
 ```
 
-Confirm central CI is green after [github-pipelines](https://github.com/gardusig/github-pipelines) selective yaml merges. Until PyPI ships `>= 1.0.2`, workflows install `gardusig-cli` from git `main` or editable `app-src`.
+Confirm central CI is green after [github-pipelines PR #20](https://github.com/gardusig/github-pipelines/pull/20) merges (needs `--force-full-suite` from PR #88). Until PyPI ships **1.0.2**, workflows install `gardusig-cli` from editable `app-src` or git `main`.
+
+**Merge order:** python-cli PR #88 → pipelines PR #20 → `cli release main --yes`.
 
 ## Post-merge release (maintainer)
 

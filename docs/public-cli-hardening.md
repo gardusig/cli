@@ -71,27 +71,27 @@ python tests/integration/check_api_integration.py
 - Close product epics **#2**, **#4**, **#24**, **#54**, **#66–#70** when PR #88 merges with evidence.
 - Close **#52** and Epic **09** (#67) — push warnings, detached-HEAD refusal, and `git push --format json` shipped on PR #88.
 - Close **#48** — superseded by `cli chrome bookmarks merge` and `snapshot` (see `docs/chrome.md`).
-- Epic **00-infra** ([#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85)): selective CI contract shipped (`pipeline_selective`, `cli pipeline config resolve --app-src`); **#83–#85** close when `github-pipelines` PR adopts selective yaml + nightly (`python-cli-test-nightly.yml`).
+- Epic **00-infra** ([#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85)): contract on PR #88; [pipelines PR #20](https://github.com/gardusig/github-pipelines/pull/20) for `ci:full` + nightly; close #81–#82 on merge, #83–#85 after pipelines merge + green nightly.
 - Epic **08-projects** ([#66](https://github.com/gardusig/python-cli/issues/66)–[#75](https://github.com/gardusig/python-cli/issues/75)): close when PR #88 merges — evidence in `docs/project.md` § Epic 08 closure; hub `project-recurrence.yml` ([pipelines #16](https://github.com/gardusig/github-pipelines/pull/16)).
 - Leave **#50** (Chrome Photos) open for future work.
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
 - **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.2` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
 
-## Next epic: selective CI adoption (`epic:00-infra`)
+## Next epic: merge & release (Epic 06c)
 
-After PR #88 merges, ships **1.0.2**, and product epics **#66–#75**, **#69** close, adopt
-**`epic:00-infra`** ([#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85)) in `gardusig/github-pipelines`:
+**Current gate:** merge [PR #88](https://github.com/gardusig/python-cli/pull/88), then [pipelines PR #20](https://github.com/gardusig/github-pipelines/pull/20), ship **1.0.2**, close epics per closure tables below.
 
-- **#81** — registry shipped on PR #88 (`test_packages.py`); close on merge + PyPI **1.0.2**
-- **#82** — nine-script policy in [`scripts/test/README.md`](scripts/test/README.md); close on merge
-- **#83** — PR CI matrix from `cli test packages resolve` (pipelines `main` shipped; prove E2E post-merge)
-- **#84** — per-package Docker legs via `cli test packages run PKG --no-unit` (pipelines `main` shipped)
-- **#85** — nightly `cli test packages suite` — rewrite `python-cli-test-nightly.yml` in pipelines
+| Step | Action |
+| --- | --- |
+| 1 | Green CI on PR #88 (selective matrix + TestPyPI) |
+| 2 | Merge PR #88 → `main` |
+| 3 | Merge pipelines PR #20 (`ci:full`, nightly suite, `BASE_VERSION` **1.0.2**) |
+| 4 | `cli release main --yes` → PyPI **1.0.2** |
+| 5 | Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.2` |
+| 6 | Close #57–#85, #2, #4, #24, #54, #66–#70 per § Closure recommendations |
 
-Contracts and closure table: [`docs/ci-workflows.md`](ci-workflows.md) § Epic 00 closure. Pack smoke: `tests/pack/test_infra_epic.py`.
+Evidence: [`docs/release.md`](release.md) § Pre-merge / Post-merge; pack smoke `tests/pack/test_merge_epic.py`.
 
-**Epic 11** (`epic:11-gh-hub`) lands on PR #88 — see [`docs/gh.md`](gh.md) § Epic 11 closure.
+**Shipped on PR #88 (close post-merge):** Epics **08**, **09**, **10**, **11**, **12**, **hub-operator**, **00-infra** (python-cli side) — see [`docs/project.md`](project.md), [`docs/gh.md`](gh.md), [`docs/docker.md`](docker.md), [`docs/ci-workflows.md`](ci-workflows.md).
 
-**Epic 12** (`epic:12-docker`) — monitor/cleanup hardening complete; close [#70](https://github.com/gardusig/python-cli/issues/70) with [`docs/docker.md`](docker.md) evidence.
-
-**Hub operator** (`epic:hub-operator`) is complete — see [`docs/hub-operator.md`](hub-operator.md).
+**Deferred:** [#50](https://github.com/gardusig/python-cli/issues/50) Chrome Photos.
