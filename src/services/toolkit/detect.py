@@ -7,6 +7,10 @@ from src.services.toolkit.catalog import REPO_LANGUAGE_PROFILES, lint_languages
 
 IGNORED_DIRS = {".git", ".venv", "__pycache__", "node_modules", ".pytest_cache", "dist", "build"}
 
+PACKAGE_REPO_PROFILES: dict[str, str] = {
+    "gardusig-cli": "python-cli",
+}
+
 
 class ToolkitDetectionError(RuntimeError):
     pass
@@ -38,7 +42,32 @@ def _repo_profile(root: Path) -> tuple[str, ...] | None:
     remote = _origin_repo_name(root)
     if remote and remote in REPO_LANGUAGE_PROFILES:
         return REPO_LANGUAGE_PROFILES[remote]
-    return REPO_LANGUAGE_PROFILES.get(root.name)
+    if root.name in REPO_LANGUAGE_PROFILES:
+        return REPO_LANGUAGE_PROFILES[root.name]
+    package_name = _pyproject_name(root)
+    if package_name:
+        profile_key = PACKAGE_REPO_PROFILES.get(package_name, package_name)
+        if profile_key in REPO_LANGUAGE_PROFILES:
+            return REPO_LANGUAGE_PROFILES[profile_key]
+    return None
+
+
+def _pyproject_name(root: Path) -> str | None:
+    path = root / "pyproject.toml"
+    if not path.is_file():
+        return None
+    try:
+        import tomllib
+
+        with path.open("rb") as handle:
+            data = tomllib.load(handle)
+    except (OSError, ValueError):
+        return None
+    project = data.get("project")
+    if not isinstance(project, dict):
+        return None
+    name = project.get("name")
+    return name if isinstance(name, str) and name else None
 
 
 def _origin_repo_name(root: Path) -> str | None:

@@ -33,6 +33,19 @@ def test_repo_languages_uses_known_profile_when_markers_present(tmp_path: Path, 
     assert repo_languages(root) == ("markdown", "python", "shell")
 
 
+def test_repo_languages_uses_pyproject_profile_without_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    root = tmp_path / "workspace"
+    root.mkdir()
+    (root / "pyproject.toml").write_text('[project]\nname = "gardusig-cli"\n', encoding="utf-8")
+    (root / "README.md").write_text("# hi\n", encoding="utf-8")
+    (root / "main.py").write_text("print(1)\n", encoding="utf-8")
+    fixtures = root / "tests" / "fixtures" / "contest" / "toy"
+    fixtures.mkdir(parents=True)
+    (fixtures / "solution.cpp").write_text("int main() {}\n", encoding="utf-8")
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args, 1, "", ""))
+    assert repo_languages(root) == ("markdown", "python")
+
+
 def test_runner_invokes_related_python_handler(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     (tmp_path / "pom.xml").write_text("<project />\n", encoding="utf-8")
     seen: dict[str, object] = {}
