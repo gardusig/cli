@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 # PyPI distribution name (repo remains github.com/gardusig/python-cli).
 name = "gardusig-cli"
-version = "1.0.1"
+version = "1.0.2"
 description = "Linux-first CLI for workflow automation, repository checks, and release orchestration"
 readme = "README.md"
 requires-python = ">=3.12"

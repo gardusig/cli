@@ -37,6 +37,7 @@ Per-package local scripts (delegate to `cli test packages run`):
 ```bash
 scripts/test/gh.sh --dry-run
 scripts/test/git.sh --no-unit --dry-run
+scripts/test/pypi.sh --dry-run
 scripts/test/all.sh
 ```
 

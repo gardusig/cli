@@ -6,7 +6,7 @@ Production releases publish **`gardusig-cli`** to [PyPI](https://pypi.org/projec
 
 Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync). PR CI requires the PR version to be **greater** than `origin/main` via `cli pypi version check`.
 
-Example: `main` ships `1.0.0`; a release candidate PR bumps to **`1.0.1`**.
+Example: `main` ships `1.0.1`; a release candidate PR bumps to **`1.0.2`** (strictly greater than base).
 
 ## Repository boundary
 

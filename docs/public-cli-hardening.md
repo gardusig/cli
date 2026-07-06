@@ -70,3 +70,4 @@ python tests/integration/check_api_integration.py
 - Epic **00-infra** ([#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85)): repo contract shipped (`cli test packages`); **#83–#85** close when `github-pipelines` adopts selective CI / nightly suite.
 - Leave **#50** (Chrome Photos) open for future work.
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
+- **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.2` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).

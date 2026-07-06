@@ -56,6 +56,7 @@ cli test packages run gh --dry-run --format table
 cli test packages run gh --no-unit --dry-run --format json
 cli test packages suite --format json
 scripts/test/gh.sh --dry-run
+scripts/test/pypi.sh --dry-run
 scripts/test/all.sh
 ```
 
