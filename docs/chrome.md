@@ -45,6 +45,17 @@ chrome:
 | `CLI_BOOKMARKS_SOURCE` / `CLI_BOOKMARKS_FIXTURE` | Explicit ingest/merge source (tests/CI) |
 | `CLI_SKIP_CHROME_AUTOMATION` | Skip download polling; use newest/fixture file |
 
+## Troubleshooting (#27)
+
+| Situation | What to do |
+| --- | --- |
+| Export poll times out | Set `CLI_SKIP_CHROME_AUTOMATION=1` and pass `CLI_BOOKMARKS_SOURCE` / place HTML in `CLI_DOWNLOADS_DIR` |
+| Wrong backup file | Set `CLI_BOOKMARKS_FILE` or use `--profile` with `chrome.profiles` |
+| No snapshots dir | Configure `chrome.snapshots_dir` before `cli chrome bookmarks snapshot` |
+| Scheduled export | Use **`gardusig/pipelines`** workflows — no `scripts/chrome/` in this repo |
+
+Child issues: [#27](https://github.com/gardusig/python-cli/issues/27) (workflow docs), [#28](https://github.com/gardusig/python-cli/issues/28) (snapshots + multi-profile).
+
 ## Commands
 
 ```bash

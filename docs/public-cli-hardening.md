@@ -77,6 +77,7 @@ python tests/integration/check_api_integration.py
 - Close **#30** when PR #96 merges with drive sync verification green (`tests/drive/`, `tests/pack/test_drive_sync_epic.py`).
 - Close **#12**, **#13**, **#29**, **#14** (deferred), **#15** when PR #96 merges with provider/automation evidence (`tests/pack/test_drive_providers_epic.py`).
 - Close **#20**, **#21**, **#22**, **#23**, **#31** when PR #96 merges with Notion evidence (`tests/notion/`, `tests/pack/test_notion_epic.py`).
+- Close **#27**, **#28** when PR #96 merges with Chrome bookmarks evidence (`tests/pack/test_chrome_bookmarks_epic.py`).
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
 - **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.3` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
 
@@ -152,4 +153,19 @@ Pack smoke: `tests/pack/test_notion_epic.py`. Matrix **#60 Pass**.
 ```bash
 uv run pytest tests/notion/ tests/pack/test_notion_epic.py -q
 uv run python tests/integration/check_integration_coverage.py
+```
+
+## Epic 02d — Chrome bookmarks backlog (#27, #28) on PR #96
+
+**Status:** close-as-shipped evidence on this PR (merge closes last open product children). Parent **#24** already closed.
+
+| Issue | Evidence |
+| --- | --- |
+| **#27** Workflow docs | `docs/chrome.md`, `docs/bookmarks.md`, env vars, pipelines boundary (no repo scripts) |
+| **#28** Snapshots + profiles | `cli chrome bookmarks snapshot`, `chrome.profiles`, `snapshot_retention` |
+
+Pack smoke: `tests/pack/test_chrome_bookmarks_epic.py`.
+
+```bash
+uv run pytest tests/chrome/ tests/pack/test_chrome_bookmarks_epic.py -q
 ```

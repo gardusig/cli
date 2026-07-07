@@ -15,7 +15,23 @@ chrome:
   downloads_dir: ~/Downloads
   snapshots_dir: ~/git-local/private/bookmarks/snapshots
   snapshot_retention: 30
+  profiles:
+    Work:
+      bookmarks_file: ~/git-local/private/bookmarks/bookmarks-work.html
 ```
+
+## Environment overrides
+
+| Env var | Purpose |
+| --- | --- |
+| `CLI_BOOKMARKS_FILE` | Override `chrome.bookmarks_file` (default profile) |
+| `CLI_DOWNLOADS_DIR` | Poll folder for HTML exports |
+| `CLI_BOOKMARKS_SOURCE` / `CLI_BOOKMARKS_FIXTURE` | Explicit ingest/merge source |
+| `CLI_SKIP_CHROME_AUTOMATION` | CI/headless: skip polling, use newest or fixture |
+
+Use `--profile NAME` when `chrome.profiles` defines multiple bookmark files ([#28](https://github.com/gardusig/python-cli/issues/28)).
+
+Scheduled jobs and shell wrappers belong in **`gardusig/pipelines`**, not this repo ([#27](https://github.com/gardusig/python-cli/issues/27)).
 
 ## Commands
 
