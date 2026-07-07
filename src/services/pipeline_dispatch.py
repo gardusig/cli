@@ -6,7 +6,7 @@ import json
 import subprocess
 from typing import Any
 
-HUB_REPOSITORY = "gardusig/github-pipelines"
+HUB_REPOSITORY = "gardusig/pipelines"
 
 
 def dispatch_repository_event(
