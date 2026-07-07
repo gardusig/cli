@@ -55,7 +55,6 @@ jobs:
     forbid_direct_cli_references: false
     allowed_paths:
     - .github/pull-request.yaml
-    - .github/workflows/pull-request.yml
 - id: version-check
   name: Version gate
   target: version-check
