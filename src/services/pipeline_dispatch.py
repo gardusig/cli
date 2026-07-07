@@ -6,7 +6,7 @@ import json
 import subprocess
 from typing import Any
 
-HUB_REPOSITORY = "gardusig/yaml"
+HUB_REPOSITORY = "gardusig/pipelines"
 _ACTIVE_RUN_STATUSES = frozenset({"in_progress", "queued", "pending", "waiting"})
 
 

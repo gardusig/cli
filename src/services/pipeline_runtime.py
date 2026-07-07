@@ -398,12 +398,6 @@ def _app_config_candidates(app_src: Path, pipeline: str) -> list[Path]:
     return [app_src / ".github" / "pull-request.yaml"]
 
 
-def _app_family_config_candidates(app_src: Path, family: str, pipeline: str) -> list[Path]:
-    if family == "pull-request":
-        return _app_config_candidates(app_src, pipeline)
-    return [app_src / ".github" / f"{family}.yaml"]
-
-
 def _config_path(
     pipeline_src: Path,
     family: str,
@@ -411,8 +405,8 @@ def _config_path(
     pipeline: str,
     app_src: Path | None = None,
 ) -> Path:
-    if family in {"pull-request", "release", "repo-review", "tasks"} and app_src is not None:
-        for candidate in _app_family_config_candidates(app_src, family, pipeline):
+    if family == "pull-request" and app_src is not None:
+        for candidate in _app_config_candidates(app_src, pipeline):
             if candidate.is_file():
                 return candidate
     base = pipeline_src / ".github" / "workflows" / family
