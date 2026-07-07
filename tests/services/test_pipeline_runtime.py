@@ -144,23 +144,73 @@ def test_pipeline_config_resolve_prefers_flattened_pipeline_config(tmp_path: Pat
     assert "config=" + str(cfg_dir / "cpp-compile.yaml") in output.read_text(encoding="utf-8")
 
 
+def test_pipeline_config_resolve_prefers_app_repo_config(tmp_path: Path, monkeypatch) -> None:
+    pipeline_src = tmp_path / "pipeline-src"
+    cfg_dir = pipeline_src / ".github" / "workflows" / "pull-request"
+    cfg_dir.mkdir(parents=True)
+    (cfg_dir / "demo.yaml").write_text(
+        "repo: gardusig/demo\ndockerfile: docker/demo-central.dockerfile\njobs:\n  - id: lint\n    target: lint\n",
+        encoding="utf-8",
+    )
+    app_src = tmp_path / "app-src"
+    (app_src / ".github").mkdir(parents=True)
+    (app_src / ".github" / "pull-request.yaml").write_text(
+        "repo: gardusig/demo\ndockerfile: docker/demo-local.dockerfile\njobs:\n  - id: unit\n    target: unit-test\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "out.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("CLIENT", "{}")
+
+    resolve_config(
+        argparse.Namespace(
+            family="pull-request",
+            pipeline_src=pipeline_src,
+            app_src=app_src,
+            repo_slug="demo",
+            pipeline="",
+            repository="gardusig/demo",
+            ref="feature",
+            sha="abc123",
+            job="",
+            action="",
+            dry_run="",
+        )
+    )
+
+    values = dict(line.split("=", 1) for line in output.read_text(encoding="utf-8").splitlines())
+    assert values["config"] == str(app_src / ".github" / "pull-request.yaml")
+    stage_0 = json.loads(values["stage_0"])
+    assert stage_0["include"][0]["job"]["id"] == "unit"
+
+
 @pytest.mark.integration
 def test_pull_request_configs_declare_inline_hygiene_policies() -> None:
-    pipelines_root = Path(__file__).resolve().parents[3] / "github-pipelines"
-    cfg_dir = pipelines_root / ".github" / "workflows" / "pull-request"
-    if not cfg_dir.is_dir():
-        pytest.skip("github-pipelines sibling checkout is not available")
+    github_roots = [
+        Path(__file__).resolve().parents[3],
+        Path(__file__).resolve().parents[3].parent / "private",
+    ]
+    configs: list[Path] = []
+    for github_root in github_roots:
+        if not github_root.is_dir():
+            continue
+        for repo_root in sorted(github_root.iterdir()):
+            if not repo_root.is_dir():
+                continue
+            config = repo_root / ".github" / "pull-request.yaml"
+            if config.is_file():
+                configs.append(config)
+    if not configs:
+        pytest.skip("no app-repo pull-request configs found locally")
 
-    configs = sorted(cfg_dir.glob("*.yaml"))
-    assert configs
     for config in configs:
         data = yaml.safe_load(config.read_text(encoding="utf-8")) or {}
         jobs = data.get("jobs") or []
         policy_jobs = [job for job in jobs if isinstance(job, dict) and job.get("id") == "repo-hygiene"]
-        assert policy_jobs, f"{config.name} missing repo-hygiene"
+        assert policy_jobs, f"{config} missing repo-hygiene"
         policy = policy_jobs[0].get("hygiene_policy") or {}
         for key in ("allowed_root_dirs", "allowed_root_files", "allowed_extensions"):
-            assert policy.get(key) is not None, f"{config.name} missing {key}"
-        assert ".sh" in (policy.get("forbidden_extensions") or []), config.name
+            assert policy.get(key) is not None, f"{config} missing {key}"
+        assert ".sh" in (policy.get("forbidden_extensions") or []), config
         if data.get("repo") == "gardusig/database":
-            assert ".md" not in (policy.get("allowed_extensions") or []), config.name
+            assert ".md" not in (policy.get("allowed_extensions") or []), config

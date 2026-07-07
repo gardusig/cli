@@ -5,11 +5,12 @@ This is the canonical repository contract for the gardusig repositories.
 ## Active Decisions
 
 - `python-cli` owns validation logic and developer commands.
-- `github-pipelines` owns GitHub Actions workflows, Dockerfiles, and CI job graphs.
-- App repositories keep application code plus one thin
-  `.github/workflows/pull-request.yml` caller workflow.
+- `github-pipelines` owns reusable GitHub Actions routers and Dockerfiles.
+- App repositories keep application code plus:
+  - `.github/workflows/pull-request.yml` — thin caller into the central router
+  - `.github/pull-request.yaml` — per-repo job graph and hygiene policy
 - App repositories must not contain Dockerfiles, CI scripts, or extra workflow
-  files. All orchestration stays in `github-pipelines`.
+  files. Docker stages stay in `github-pipelines`.
 - Each repository has exactly one multi-stage Dockerfile in
   `github-pipelines/docker/`.
 - Setup and validation are Docker-first. Run individual stages instead of
@@ -51,6 +52,7 @@ Standard app repositories require:
 - `docs/`
 - `test/` or `tests/`
 - `.github/workflows/pull-request.yml` as the only local workflow
+- `.github/pull-request.yaml` as the per-repo pipeline job graph
 
 Structure policy can also cap directory depth (for example `max_depth: 3` for
 profile repos, `max_depth: 5` for game repos).
@@ -84,7 +86,7 @@ centralized pipeline behavior.
 
 ```mermaid
 flowchart TB
-  workflowConfig["Per-repo workflow YAML"] --> runDockerJob["run-docker-job.py"]
+  workflowConfig["Per-repo .github/pull-request.yaml"] --> runDockerJob["run-docker-job.py"]
   runDockerJob --> lintStage["Docker lint stage"]
   lintStage --> structureStage["Docker repo-hygiene stage"]
   structureStage --> testStages["unit-test / integration-test / build"]

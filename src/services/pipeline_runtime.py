@@ -359,7 +359,26 @@ def _stage_outputs(stages: list[list[dict[str, Any]]]) -> dict[str, Any]:
     return outputs
 
 
-def _config_path(pipeline_src: Path, family: str, repo_slug: str, pipeline: str) -> Path:
+def _app_config_candidates(app_src: Path, pipeline: str) -> list[Path]:
+    if pipeline:
+        return [
+            app_src / ".github" / f"pull-request.{pipeline}.yaml",
+            app_src / ".github" / "pull-request" / f"{pipeline}.yaml",
+        ]
+    return [app_src / ".github" / "pull-request.yaml"]
+
+
+def _config_path(
+    pipeline_src: Path,
+    family: str,
+    repo_slug: str,
+    pipeline: str,
+    app_src: Path | None = None,
+) -> Path:
+    if family == "pull-request" and app_src is not None:
+        for candidate in _app_config_candidates(app_src, pipeline):
+            if candidate.is_file():
+                return candidate
     base = pipeline_src / ".github" / "workflows" / family
     if family == "pull-request" and pipeline:
         flat = base / f"{repo_slug}-{pipeline}.yaml"
@@ -387,7 +406,13 @@ def _resolve_job_family(args: argparse.Namespace, client: dict[str, Any]) -> dic
         raise SystemExit("repo_slug is required")
     if not checkout_ref:
         raise SystemExit("ref or sha is required")
-    config = _config_path(args.pipeline_src, args.family, repo_slug, pipeline)
+    config = _config_path(
+        args.pipeline_src,
+        args.family,
+        repo_slug,
+        pipeline,
+        app_src=_as_path(getattr(args, "app_src", None)),
+    )
     cfg = _load_yaml(config)
     config_slug, config_repository = _validate_repo(cfg, repo_slug, repository)
     stages = _stage_jobs(
