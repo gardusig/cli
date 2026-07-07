@@ -259,6 +259,32 @@ def _lint_markdown(spec: CommandSpec, workspace: Path, extra_env: dict[str, str]
     return 0
 
 
+def _mermaid_puppeteer_config() -> Path | None:
+    extra_args = [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--headless=new",
+    ]
+    base = Path("/usr/local/share/puppeteer-no-sandbox.json")
+    if base.is_file():
+        data = json.loads(base.read_text(encoding="utf-8"))
+    else:
+        chromium = shutil.which("chromium") or shutil.which("chromium-browser")
+        if not chromium:
+            return None
+        data = {"executablePath": chromium, "args": []}
+    args = list(data.get("args") or [])
+    for arg in extra_args:
+        if arg not in args:
+            args.append(arg)
+    data["args"] = args
+    config = Path(tempfile.gettempdir()) / "cli-mermaid-puppeteer.json"
+    config.write_text(json.dumps(data), encoding="utf-8")
+    return config
+
+
 def _lint_mermaid_blocks(workspace: Path, files: list[Path]) -> None:
     with tempfile.TemporaryDirectory() as tmp:
         tmp_dir = Path(tmp)
@@ -282,10 +308,10 @@ def _lint_mermaid_blocks(workspace: Path, files: list[Path]) -> None:
                     continue
                 if in_block:
                     block.append(line)
-        puppeteer_config = Path("/usr/local/share/puppeteer-no-sandbox.json")
+        puppeteer_config = _mermaid_puppeteer_config()
         for diagram in diagrams:
             cmd = ["mmdc", "-i", str(diagram), "-o", str(diagram.with_suffix(".svg"))]
-            if puppeteer_config.is_file():
+            if puppeteer_config is not None:
                 cmd[1:1] = ["-p", str(puppeteer_config)]
             subprocess.run(cmd, cwd=workspace, check=True, stdout=subprocess.DEVNULL)
 
