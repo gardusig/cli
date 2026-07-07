@@ -99,7 +99,7 @@ uv run pytest tests/pack/ -q
 uv run python tests/integration/check_integration_coverage.py
 ```
 
-Central CI on `gardusig/pipelines` must be green. Re-dispatch (use legacy repository name until hub accepts `gardusig/cli` checkout):
+Central CI on `gardusig/pipelines` must be green. Re-dispatch:
 
 ```bash
 uv run python -m src pipeline run pull-request python-cli \
@@ -107,6 +107,8 @@ uv run python -m src pipeline run pull-request python-cli \
   --ref feat/epic-06d-release \
   --sha "$(git rev-parse HEAD)"
 ```
+
+After Epic 06g hub merges, `--repository gardusig/cli` also works (see `docs/public-cli-hardening.md` § Epic 06g).
 
 ### Closes on merge
 

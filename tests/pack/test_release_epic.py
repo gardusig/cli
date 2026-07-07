@@ -29,6 +29,13 @@ def test_release_epic_hardening_pointer() -> None:
     assert "Epic 03d" in text or "#20" in text
     assert "Epic 02d" in text or "#27" in text
     assert "Epic 06e" in text or "Merge readiness" in text
+    assert "Epic 06g" in text
+
+
+@requires_docs
+def test_release_epic_cli_repo_urls() -> None:
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert "https://github.com/gardusig/cli" in text
 
 
 @requires_docs
