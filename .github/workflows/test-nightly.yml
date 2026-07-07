@@ -1,0 +1,48 @@
+name: Python CLI nightly full suite
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          ref: main
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/yaml
+          path: pipeline-src
+      - uses: docker/setup-buildx-action@v3
+      - name: Install cli
+        run: |
+          if [[ -f app-src/pyproject.toml ]] && grep -q '^name = "gardusig-cli"' app-src/pyproject.toml; then
+            pip install --no-cache-dir -e "app-src[dev]"
+          else
+            pip install --no-cache-dir "gardusig-cli @ git+https://github.com/gardusig/cli@main"
+          fi
+      - name: Plan full suite contract
+        run: cli test packages suite --format json | tee suite-plan.json
+      - name: Run nightly full suite
+        run: |
+          set -euo pipefail
+          run_job() {
+            cli pipeline docker run \
+              --job-json "$1" \
+              --pipeline-src pipeline-src \
+              --app-src app-src \
+              --tag-prefix nightly
+          }
+          run_job '{"id":"core-gates","target":"core-gates"}'
+          run_job '{"id":"unit","target":"unit-test"}'
+          run_job '{"id":"integration","target":"integration-test","docker_socket":true}'

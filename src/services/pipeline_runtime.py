@@ -71,6 +71,24 @@ def resolve_config(args: argparse.Namespace) -> None:
     _write_outputs(outputs)
 
 
+def _resolve_dockerfile_path(
+    app_src: Path,
+    pipeline_src: Path,
+    configured: str | None,
+) -> Path:
+    """Resolve Dockerfile path — app repo first, hub legacy fallback."""
+    candidates: list[Path] = []
+    if configured:
+        candidates.extend([app_src / configured, pipeline_src / configured])
+    else:
+        candidates.extend([app_src / "Dockerfile", app_src / "docker" / "Dockerfile"])
+    for path in candidates:
+        if path.is_file():
+            return path
+    searched = ", ".join(str(path) for path in candidates)
+    raise SystemExit(f"missing Dockerfile (searched: {searched})")
+
+
 def run_docker_job(args: argparse.Namespace) -> None:
     job = _load_job(args.job_json)
     jid = str(job["id"])
@@ -78,9 +96,8 @@ def run_docker_job(args: argparse.Namespace) -> None:
         print(f"::notice title={jid}::handled by upstream artifact job")
         return
 
-    dockerfile = args.pipeline_src / str(job.get("dockerfile") or "")
-    if not dockerfile.is_file():
-        raise SystemExit(f"missing dockerfile for {jid}: {dockerfile}")
+    configured = str(job.get("dockerfile") or "").strip() or None
+    dockerfile = _resolve_dockerfile_path(args.app_src, args.pipeline_src, configured)
     target = str(job.get("target") or "")
     if not target:
         raise SystemExit(f"job {jid} missing target")
@@ -102,8 +119,10 @@ def run_docker_job(args: argparse.Namespace) -> None:
     ignore_backup: Path | None = None
     ignore_dst: Path | None = None
     if dockerignore:
-        ignore_src = args.pipeline_src / dockerignore
-        if ignore_src.is_file():
+        ignore_src = args.app_src / dockerignore
+        if not ignore_src.is_file():
+            ignore_src = args.pipeline_src / dockerignore
+        if ignore_src.is_file() and not dockerfile.is_relative_to(args.app_src):
             ignore_dst = args.app_src / ".dockerignore"
             if ignore_dst.is_file():
                 ignore_backup = args.app_src / ".dockerignore.pipeline-backup"
@@ -331,9 +350,9 @@ def _stage_jobs(
         stage: list[dict[str, Any]] = []
         for jid in current_ids:
             job = remaining.pop(jid)
-            dockerfile = job.get("dockerfile") or cfg.get("dockerfile")
+            dockerfile = job.get("dockerfile") or cfg.get("dockerfile") or "Dockerfile"
             dockerignore = job.get("dockerignore") or cfg.get("dockerignore") or ""
-            if not dockerfile and not job.get("workflow_step"):
+            if not job.get("workflow_step") and not dockerfile:
                 raise SystemExit(f"job {jid} missing dockerfile")
             stage.append(
                 {
@@ -379,6 +398,12 @@ def _app_config_candidates(app_src: Path, pipeline: str) -> list[Path]:
     return [app_src / ".github" / "pull-request.yaml"]
 
 
+def _app_family_config_candidates(app_src: Path, family: str, pipeline: str) -> list[Path]:
+    if family == "pull-request":
+        return _app_config_candidates(app_src, pipeline)
+    return [app_src / ".github" / f"{family}.yaml"]
+
+
 def _config_path(
     pipeline_src: Path,
     family: str,
@@ -386,8 +411,8 @@ def _config_path(
     pipeline: str,
     app_src: Path | None = None,
 ) -> Path:
-    if family == "pull-request" and app_src is not None:
-        for candidate in _app_config_candidates(app_src, pipeline):
+    if family in {"pull-request", "release", "repo-review", "tasks"} and app_src is not None:
+        for candidate in _app_family_config_candidates(app_src, family, pipeline):
             if candidate.is_file():
                 return candidate
     base = pipeline_src / ".github" / "workflows" / family

@@ -18,7 +18,7 @@ jobs:
       contents: read
       pages: write
       id-token: write
-    uses: gardusig/pipelines/.github/workflows/pull-request.yml@main
+    uses: gardusig/yaml/.github/workflows/lib/pull-request-router.yml@main
     with:
       repo_slug: cli
       repository: gardusig/cli

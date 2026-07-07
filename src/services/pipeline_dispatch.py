@@ -1,4 +1,4 @@
-"""Dispatch gardusig/github-pipelines repository_dispatch events."""
+"""Dispatch gardusig/yaml repository_dispatch events."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import json
 import subprocess
 from typing import Any
 
-HUB_REPOSITORY = "gardusig/pipelines"
+HUB_REPOSITORY = "gardusig/yaml"
 _ACTIVE_RUN_STATUSES = frozenset({"in_progress", "queued", "pending", "waiting"})
 
 

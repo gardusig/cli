@@ -15,8 +15,10 @@ from src.services.toolkit.detect import repo_slug
 ALLOWED_WORKFLOWS = {
     ".github/workflows/pull-request.yml",
     ".github/workflows/release.yml",
+    ".github/workflows/test-nightly.yml",
+    ".github/workflows/release-main.yml",
 }
-EXEMPT_LAYOUT_REPOS = {"github-pipelines"}
+EXEMPT_LAYOUT_REPOS = {"github-pipelines", "yaml"}
 STANDARD_ROOT_DIRS = frozenset({"src", "docs", "tests", "test", ".github"})
 STANDARD_ROOT_FILES = frozenset({"README.md", "LICENSE", "CONTRIBUTING.md"})
 ORCHESTRATION_PREFIXES = (
@@ -281,8 +283,15 @@ def check_repo_hygiene(
                 errors.append(f"{forbidden}: {rel}" if rel not in forbidden else forbidden)
         if slug != "github-pipelines" and rel.startswith(".github/workflows/") and rel not in ALLOWED_WORKFLOWS:
             errors.append(f"workflow belongs in github-pipelines: {rel}")
-        elif rel == "Dockerfile" or any(rel.startswith(prefix) for prefix in forbidden_prefixes):
-            errors.append(f"orchestration/script artifact belongs in python-cli or github-pipelines: {rel}")
+        elif any(rel.startswith(prefix) for prefix in forbidden_prefixes):
+            if rel.startswith("docker/") and policy and (
+                "docker" in policy.allowed_root_dirs
+                or rel in policy.allowed_paths
+                or any(rel.startswith(f"{allowed}/") for allowed in policy.allowed_paths if allowed.endswith("/"))
+            ):
+                pass
+            else:
+                errors.append(f"orchestration/script artifact belongs in python-cli or github-pipelines: {rel}")
         if path.suffix == ".sh" and not _allows_shell_scripts(slug) and not (policy and ".sh" in policy.forbidden_extensions):
             errors.append(
                 "shell script belongs in gardusig/python-cli: "

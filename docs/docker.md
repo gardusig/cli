@@ -1,32 +1,27 @@
 # Docker
 
-Docker orchestration lives in `gardusig/github-pipelines`. This repo owns only the `cli docker` monitor and cleanup commands.
+Docker orchestration routers live in `gardusig/pipelines`. This repo owns the root `Dockerfile` (multi-stage CI), the `cli docker` monitor/cleanup commands, and pipeline config under `.github/`.
 
-App repos do not own Dockerfiles, compose files, workflow YAML, or Docker helper scripts. To run a gate, build the relevant pipeline Dockerfile from the app repo root:
+Run a gate from the repo root:
 
 ```bash
-docker build --target <target> \
-  -f ../github-pipelines/docker/<repo>.dockerfile \
-  .
+docker build --target <target> -f Dockerfile .
 ```
 
 ## CLI Inside Docker
 
-Pipeline images install the published CLI package:
+The repo `Dockerfile` installs the PR checkout with `pip install -e ".[dev]"` so unreleased CLI changes can be tested before publishing:
 
 ```dockerfile
-RUN pip install --no-cache-dir gardusig-cli \
-    && cli configure import-env \
+RUN pip install --no-cache-dir -e ".[dev]" \
     && cli structure check /workspace
 ```
 
-The exception is `python-cli.dockerfile`, which lives in `github-pipelines` and installs the PR checkout with `pip install -e ".[dev]"` so unreleased CLI changes can be tested before publishing.
-
 ## CLI Base Image
 
-`github-pipelines/docker/cli-base.dockerfile` is the lean Linux image for workflow jobs that mostly run `gardusig-cli` shortcuts. It starts from Python, installs common orchestration tools, and installs `gardusig-cli` from PyPI.
+`gardusig/pipelines/docker/cli-base.dockerfile` is the lean hub image for workflow jobs that mostly run published `gardusig-cli` shortcuts.
 
-Language-focused checks still use repo Dockerfiles based on Node, Java, Ubuntu, or other toolchain images when the repository needs those tools.
+Language-focused checks use each repo's `Dockerfile` (Node, Java, Ubuntu, or other toolchain bases as needed).
 
 ## Docker CLI Commands
 
