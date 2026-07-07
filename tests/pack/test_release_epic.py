@@ -46,6 +46,8 @@ def test_release_epic_post_merge_release_docs() -> None:
     assert "cli release main --yes" in text
     assert "1.0.3" in text
     assert "PR #96" in text
+    assert "Epic 06f" in text
+    assert "06d" in text and "06g" in text
 
 
 def test_release_epic_pack_smokes_present() -> None:
