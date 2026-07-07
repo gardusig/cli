@@ -19,6 +19,17 @@ def test_drive_sync_status_flag_registered() -> None:
     assert '"--status"' in text or "--status" in text
 
 
+def test_drive_sync_strict_flag_registered() -> None:
+    text = (ROOT / "src" / "commands" / "drive.py").read_text(encoding="utf-8")
+    assert "--strict/--no-strict" in text
+
+
+def test_drive_sync_integration_checks_registered() -> None:
+    text = (ROOT / "src" / "integration" / "cli_api_checks.py").read_text(encoding="utf-8")
+    assert "drive sync dry-run" in text
+    assert "drive sync status" in text
+
+
 @requires_docs
 def test_drive_sync_docs() -> None:
     text = (ROOT / "docs" / "drive.md").read_text(encoding="utf-8")

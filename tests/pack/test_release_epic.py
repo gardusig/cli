@@ -24,6 +24,7 @@ def test_release_epic_hardening_pointer() -> None:
     assert "Epic 06d" in text
     assert "Chrome Photos" in text
     assert "#50" in text
+    assert "Drive sync" in text or "#30" in text
 
 
 @requires_docs

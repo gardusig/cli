@@ -77,6 +77,29 @@ def test_plan_ingest_repositories_reports_missing_tags(
     assert rows[0][1].replaced == ["v1.0.0"]
 
 
+def test_sync_all_dry_run_plans_without_ingest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tags_root = tmp_path / "git-tags"
+    tags_root.mkdir()
+    calls = {"plan": 0, "ingest": 0}
+
+    def _plan(_path: str | None = None) -> list[tuple[Path, SyncResult]]:
+        calls["plan"] += 1
+        return []
+
+    def _ingest(_path: str | None = None) -> list[tuple[Path, SyncResult]]:
+        calls["ingest"] += 1
+        return []
+
+    monkeypatch.setattr("src.services.drive_sync.plan_ingest_repositories", _plan)
+    monkeypatch.setattr("src.services.drive_sync.ingest_repositories", _ingest)
+    result = sync_all(tags_root, [], dry_run=True)
+    assert result.dry_run is True
+    assert calls["plan"] == 1
+    assert calls["ingest"] == 0
+
+
 def test_sync_all_ingests_then_uploads(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo = tmp_path / "repos" / "demo"
     repo.mkdir(parents=True)
