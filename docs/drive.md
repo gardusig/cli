@@ -96,7 +96,7 @@ cli drive sync
 | `drive-deploy` | `cli drive deploy [replica]` | Deploy local zips to cloud and USB replicas |
 | `drive-sync` | `cli drive sync` | **Primary:** ingest all `backup.repositories`, then deploy all replicas |
 | `tag-backup-cloud` | `cli git tag --yes` -> `cli git zip` -> `cli drive upload` | Current repo end-of-day backup |
-| `multi-repo-drive-sync` | `cli drive sync --dry-run` -> `cli drive sync --yes` | Plan then run full backup loop |
+| `multi-repo-drive-sync` | `cli drive sync --dry-run` -> `cli drive sync` | Plan then run full backup loop |
 
 **Primary daily workflow:**
 
