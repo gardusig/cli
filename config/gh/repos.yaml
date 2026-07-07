@@ -2,7 +2,7 @@ owner: gardusig
 
 repositories:
   - slug: python-cli
-    repository: gardusig/python-cli
+    repository: gardusig/cli
     visibility: public
     profile: true
     pr_pipeline: true

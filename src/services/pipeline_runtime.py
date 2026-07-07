@@ -211,6 +211,14 @@ def _repo_slug(repository: str) -> str:
     return repository.rsplit("/", 1)[-1]
 
 
+def _normalize_repository(repository: str) -> str:
+    """Map renamed GitHub repos to workflow config repository keys."""
+    aliases = {
+        "gardusig/cli": "gardusig/python-cli",
+    }
+    return aliases.get(repository, repository)
+
+
 def _config_repo(cfg: dict[str, Any]) -> tuple[str, str]:
     repository = str(cfg.get("repository") or cfg.get("repo") or "")
     repo_slug = str(cfg.get("repo_slug") or (_repo_slug(repository) if repository else ""))
@@ -229,6 +237,9 @@ def _validate_repo(cfg: dict[str, Any], requested_slug: str, requested_repositor
     config_slug, config_repository = _config_repo(cfg)
     if requested_slug and requested_slug != config_slug:
         raise SystemExit(f"repo_slug {requested_slug!r} does not match config {config_slug!r}")
+    if requested_repository:
+        requested_repository = _normalize_repository(requested_repository)
+        config_repository = _normalize_repository(config_repository)
     if requested_repository and requested_repository != config_repository:
         raise SystemExit(f"repository {requested_repository!r} does not match config {config_repository!r}")
     return config_slug, config_repository

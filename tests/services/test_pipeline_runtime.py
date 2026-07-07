@@ -86,6 +86,35 @@ def test_pipeline_config_resolve_treats_null_client_as_empty(tmp_path: Path, mon
     assert "repo_slug=demo" in output.read_text(encoding="utf-8")
 
 
+def test_pipeline_config_resolve_accepts_renamed_cli_repository(tmp_path: Path, monkeypatch) -> None:
+    cfg_dir = tmp_path / ".github" / "workflows" / "pull-request"
+    cfg_dir.mkdir(parents=True)
+    (cfg_dir / "python-cli.yaml").write_text(
+        "repo: gardusig/python-cli\ndockerfile: docker/python-cli.dockerfile\njobs:\n  - id: lint\n    target: lint\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "out.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("CLIENT", "{}")
+
+    resolve_config(
+        argparse.Namespace(
+            family="pull-request",
+            pipeline_src=tmp_path,
+            repo_slug="python-cli",
+            pipeline="",
+            repository="gardusig/cli",
+            ref="feat/epic-06d-release",
+            sha="abc123",
+            job="",
+            action="",
+            dry_run="",
+        )
+    )
+
+    assert "repo_slug=python-cli" in output.read_text(encoding="utf-8")
+
+
 def test_pipeline_config_resolve_prefers_flattened_pipeline_config(tmp_path: Path, monkeypatch) -> None:
     cfg_dir = tmp_path / ".github" / "workflows" / "pull-request"
     cfg_dir.mkdir(parents=True)

@@ -103,7 +103,7 @@ Central CI on `gardusig/pipelines` must be green. Re-dispatch:
 
 ```bash
 uv run python -m src pipeline run pull-request python-cli \
-  --repository gardusig/python-cli \
+  --repository gardusig/cli \
   --ref feat/epic-06d-release \
   --sha "$(git rev-parse HEAD)"
 ```
