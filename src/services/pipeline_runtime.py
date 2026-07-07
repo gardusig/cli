@@ -233,9 +233,20 @@ def _config_repo(cfg: dict[str, Any]) -> tuple[str, str]:
     return repo_slug, repository
 
 
+def _slug_aliases_equivalent(left: str, right: str, repository: str) -> bool:
+    """Catalog slug python-cli matches gardusig/cli app configs keyed as cli."""
+    if left == right:
+        return True
+    if {left, right} != {"python-cli", "cli"}:
+        return False
+    return _normalize_repository(repository) == "gardusig/python-cli"
+
+
 def _validate_repo(cfg: dict[str, Any], requested_slug: str, requested_repository: str) -> tuple[str, str]:
     config_slug, config_repository = _config_repo(cfg)
-    if requested_slug and requested_slug != config_slug:
+    if requested_slug and not _slug_aliases_equivalent(
+        requested_slug, config_slug, requested_repository or config_repository
+    ):
         raise SystemExit(f"repo_slug {requested_slug!r} does not match config {config_slug!r}")
     if requested_repository:
         requested_repository = _normalize_repository(requested_repository)

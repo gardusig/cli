@@ -1,0 +1,27 @@
+name: Pull request
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pipeline:
+    uses: gardusig/pipelines/.github/workflows/pull-request.yml@main
+    with:
+      repo_slug: cli
+      repository: gardusig/cli
+      ref: ${{ github.event.pull_request.head.ref }}
+      sha: ${{ github.event.pull_request.head.sha }}
+      pr_number: ${{ github.event.pull_request.number }}
+    secrets:
+      CENTRAL_PIPELINE_PAT: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+      TESTPYPI_API_TOKEN: ${{ secrets.TESTPYPI_API_TOKEN }}
+      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
