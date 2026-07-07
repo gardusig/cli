@@ -5,14 +5,17 @@ This is the canonical repository contract for the gardusig repositories.
 ## Active Decisions
 
 - `python-cli` owns validation logic and developer commands.
-- `github-pipelines` owns reusable GitHub Actions routers, hub-only images (`docker/operator.dockerfile`, `docker/cli-base.dockerfile`), and schedules.
+- `github-pipelines` owns reusable GitHub Actions routers and Dockerfiles.
 - App repositories keep application code plus:
   - `.github/workflows/pull-request.yml` — thin caller into the central router
   - `.github/workflows/release.yml` — optional tag publish workflow (language libraries)
   - `.github/pull-request.yaml` — per-repo job graph and hygiene policy
-  - `Dockerfile` — multi-stage CI image (repo root; `docker/Dockerfile` only for complex layouts such as `tex`)
-- App repositories must not contain extra workflow files or CI shell scripts. Docker stages live in each repo's `Dockerfile`.
-- Setup and validation are Docker-first. Run individual stages instead of installing dependencies locally.
+- App repositories must not contain Dockerfiles, CI scripts, or extra workflow
+  files. Docker stages stay in `github-pipelines`.
+- Each repository has exactly one multi-stage Dockerfile in
+  `github-pipelines/docker/`.
+- Setup and validation are Docker-first. Run individual stages instead of
+  installing dependencies locally.
 
 ## Docker Stage Model
 
@@ -34,7 +37,12 @@ docker build --target unit-test -f Dockerfile .
 
 `cli structure check` in Docker `repo-hygiene` targets allows exactly one app-repo workflow file:
 
-- `.github/workflows/pull-request.yml`
+- `README.md`
+- `src/`
+- `docs/`
+- `test/` or `tests/`
+- `.github/workflows/pull-request.yml` as the only local workflow
+- `.github/pull-request.yaml` as the per-repo pipeline job graph
 
 Each repo also owns one pipeline config file:
 
@@ -53,9 +61,11 @@ Hub orchestration (extra workflows, shared `cli-base` / `operator` images) stays
 ## Resolve flow
 
 ```mermaid
-flowchart LR
-  caller["App .github/workflows/pull-request.yml"] --> hub["pipelines pull-request.yml"]
-  hub --> appConfig[".github/pull-request.yaml"]
-  appConfig --> dockerfile["App Dockerfile"]
-  dockerfile --> runDockerJob["cli pipeline docker run"]
+flowchart TB
+  workflowConfig["Per-repo .github/pull-request.yaml"] --> runDockerJob["run-docker-job.py"]
+  runDockerJob --> lintStage["Docker lint stage"]
+  lintStage --> structureStage["Docker repo-hygiene stage"]
+  structureStage --> testStages["unit-test / integration-test / build"]
+  lintStage --> cliLint["cli lint repo /workspace"]
+  structureStage --> cliStructure["cli structure check --require-structure"]
 ```

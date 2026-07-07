@@ -144,22 +144,6 @@ def test_pipeline_config_resolve_prefers_flattened_pipeline_config(tmp_path: Pat
     assert "config=" + str(cfg_dir / "cpp-compile.yaml") in output.read_text(encoding="utf-8")
 
 
-def test_pipeline_docker_run_resolves_app_dockerfile(tmp_path: Path, monkeypatch) -> None:
-    app_src = tmp_path / "app"
-    app_src.mkdir()
-    dockerfile = app_src / "Dockerfile"
-    dockerfile.write_text("FROM scratch\n", encoding="utf-8")
-    pipeline_src = tmp_path / "hub"
-    pipeline_src.mkdir()
-    (pipeline_src / "docker").mkdir()
-    (pipeline_src / "docker" / "legacy.dockerfile").write_text("FROM scratch\n", encoding="utf-8")
-
-    from src.services import pipeline_runtime as runtime
-
-    resolved = runtime._resolve_dockerfile_path(app_src, pipeline_src, None)
-    assert resolved == dockerfile
-
-
 def test_pipeline_config_resolve_prefers_app_repo_config(tmp_path: Path, monkeypatch) -> None:
     pipeline_src = tmp_path / "pipeline-src"
     cfg_dir = pipeline_src / ".github" / "workflows" / "pull-request"

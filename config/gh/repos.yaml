@@ -100,7 +100,7 @@ repositories:
     visibility: public
     profile: true
     pr_pipeline: false
-    description: Reusable GitHub Actions workflow library (quickstart/devops/yaml submodule).
+    description: Reusable GitHub Actions workflow library (index/devops/yaml submodule).
   - slug: database
     repository: gardusig/database
     visibility: private

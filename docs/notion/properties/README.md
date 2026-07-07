@@ -28,12 +28,13 @@ One page per Notion column. **Formulas** — paste into **Edit property → Form
    1. URL — external reference for the task row. · 1 files · ~236 B
 9. [Name](./name.md)
    1. Title — task label on the board. · 1 files · ~210 B
-10. [Priority](./priority.md)
-    1. Select — priority 1 through 5. · 1 files · ~647 B
-11. [Recurrent](./recurrent.md)
-    1. Formula — whether the row repeats. · 1 files · ~338 B
-12. [Tag](./tag.md)
-    1. Select — domain tag for filtering. · 1 files · ~308 B
+9. [Priority](./priority.md)
+   1. Select — priority 1 through 5. · 1 files · ~647 B
+10. [Recurrent](./recurrent.md)
+    - Formula — whether the row repeats. · 1 files · ~338 B
+
+11. [Tag](./tag.md)
+    - Select — domain tag for filtering. · 1 files · ~308 B
 
 Board UI (sort, visibility, layout) is documented in [board-ui.md](../board-ui.md).
 

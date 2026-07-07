@@ -1,5 +1,7 @@
 repo: gardusig/cli
 selective: true
+dockerfile: docker/python-cli.dockerfile
+dockerignore: docker/python-cli.dockerignore
 jobs:
 - id: lint
   name: Repo lint
@@ -17,7 +19,6 @@ jobs:
     - tests
     allowed_root_files:
     - .dockerignore
-    - Dockerfile
     - .env.example
     - .gitignore
     - .markdownlint.json
@@ -54,11 +55,7 @@ jobs:
     forbid_direct_cli_references: false
     allowed_paths:
     - .github/pull-request.yaml
-    - .github/release.yaml
-    - .github/repo-review.yaml
     - .github/workflows/pull-request.yml
-    - .github/workflows/test-nightly.yml
-    - .github/workflows/release-main.yml
 - id: version-check
   name: Version gate
   target: version-check
