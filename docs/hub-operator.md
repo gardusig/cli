@@ -1,6 +1,6 @@
 # Hub operator
 
-Headless operator lane for `gardusig/python-cli`: deterministic **`cli gh`** / **`cli git`** /
+Headless operator lane for [`gardusig/cli`](https://github.com/gardusig/cli): deterministic **`cli gh`** / **`cli git`** /
 **`cli test`**, optional token spend on **`cli opencode`**, and CI images/workflows owned by
 **`gardusig/github-pipelines`**.
 
@@ -10,7 +10,7 @@ Parent tracking: **`epic:hub-operator`** (`config/gh/phase5/cli.batch.yaml`).
 
 | Layer | Owns |
 | --- | --- |
-| `python-cli` | Command contracts, policy guards, OpenCode domain, test package resolve |
+| `python-cli` / `cli` | Command contracts, policy guards, OpenCode domain, test package resolve |
 | `github-pipelines` | Workflow YAML, Dockerfiles, `ghcr.io` images, schedules, secrets |
 
 This repo must not add `.github/workflows/` or root `Dockerfile` files for operator CI.
@@ -48,8 +48,8 @@ GitHub UI. See [gh.md](gh.md#blocked-commands).
 ## Ship lane (local)
 
 ```bash
-cli gh --repo gardusig/python-cli backlog next --format json
-cli gh --transport api --repo gardusig/python-cli issue context 81 --format json
+cli gh --repo gardusig/cli backlog next --format json
+cli gh --transport api --repo gardusig/cli issue context 81 --format json
 cli git reset --yes --main-only
 cli git start issue-81-slug --yes
 cli opencode gh issue --number 81 --plan --plan-only
@@ -71,24 +71,28 @@ Dispatch full PR pipeline (use **full** `git rev-parse HEAD` SHA):
 
 ```bash
 cli pipeline run pull-request python-cli \
-  --repository gardusig/python-cli \
-  --ref feat/language-first-cli-and-structure \
+  --repository gardusig/cli \
+  --ref feat/epic-06d-release \
   --sha "$(git rev-parse HEAD)"
 ```
 
-Hub workflow: `gardusig/github-pipelines` → **Pull request** (`repository_dispatch`).
+Canonical GitHub repo: **`gardusig/cli`**. `cli pipeline config resolve` maps `gardusig/cli` →
+`gardusig/python-cli` for hub YAML keys (`src/services/pipeline_runtime.py`). Legacy slug
+`gardusig/python-cli` still dispatches successfully.
+
+Hub workflow: `gardusig/pipelines` → **Pull request** (`repository_dispatch`).
 
 Equivalent deploy aliases:
 
 ```bash
 cli deploy pull-request python-cli \
-  --repository gardusig/python-cli \
-  --ref feat/language-first-cli-and-structure \
+  --repository gardusig/cli \
+  --ref feat/epic-06d-release \
   --sha "$(git rev-parse HEAD)" --yes
 
 cli deploy operator test \
-  --repository gardusig/python-cli \
-  --ref feat/language-first-cli-and-structure \
+  --repository gardusig/cli \
+  --ref feat/epic-06d-release \
   --sha "$(git rev-parse HEAD)" --yes
 
 cli deploy operator plan \

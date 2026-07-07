@@ -19,6 +19,7 @@ from src.services.backup_repository import (
     format_status_lines,
     ingest_repositories,
     list_downloaded_tags,
+    plan_ingest_repositories,
     resolve_repo_path,
 )
 from src.services.drive_sync import DownloadResult, UploadResult
@@ -75,8 +76,8 @@ def _download_payload(rows: list[tuple[str, DownloadResult]], *, dry_run: bool) 
     }
 
 
-def _exit_if_failures(*counts: int) -> None:
-    if any(count > 0 for count in counts):
+def _exit_if_failures(*counts: int, strict: bool = True) -> None:
+    if strict and any(count > 0 for count in counts):
         raise typer.Exit(1)
 
 
@@ -271,6 +272,62 @@ def _require_tags_dir() -> Path:
     return local_root
 
 
+def _ingest_payload(rows: list[tuple[Path, SyncResult]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "repo": str(repo),
+            "created": result.created,
+            "replaced": result.replaced,
+            "failed": [{"tag": tag, "error": err} for tag, err in result.failed],
+        }
+        for repo, result in rows
+    ]
+
+
+def _replica_preflight_payload(rows: list[Any]) -> list[dict[str, Any]]:
+    return [
+        {
+            "name": row.name,
+            "local_count": row.local_count,
+            "remote_count": row.remote_count,
+            "missing_remote": row.missing_remote,
+            "failed": [{"path": path, "error": err} for path, err in row.failed],
+        }
+        for row in rows
+    ]
+
+
+def _emit_sync_status(
+    *,
+    ingest_rows: list[tuple[Path, SyncResult]],
+    replica_rows: list[Any],
+    format: DriveOutputFormat,
+) -> None:
+    if format == DriveOutputFormat.json:
+        _emit_json(
+            {
+                "status": True,
+                "ingest": _ingest_payload(ingest_rows),
+                "replicas": _replica_preflight_payload(replica_rows),
+            }
+        )
+        return
+    rprint("[bold]Ingest plan[/bold] (backup.repositories)")
+    created, replaced, failed = _print_ingest_rows(ingest_rows)
+    rprint(f"Would create: {created}  Would replace: {replaced}  Failed: {failed}")
+    rprint()
+    rprint("[bold]Replica preflight[/bold]")
+    for row in replica_rows:
+        if row.failed:
+            for _, err in row.failed:
+                rprint(f"  [red]✗[/red] {row.name}: {err}")
+            continue
+        rprint(
+            f"  {row.name}: local={row.local_count} remote={row.remote_count} "
+            f"missing_remote={len(row.missing_remote)}"
+        )
+
+
 @drive_app.command("sync")
 def sync_cmd(
     replica: str | None = typer.Argument(
@@ -278,46 +335,60 @@ def sync_cmd(
         help="Replica name, provider, or USB path label (default: all replicas).",
     ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Compute actions without writing."),
+    status: bool = typer.Option(
+        False,
+        "--status",
+        help="Preflight only: ingest plan + replica gaps (no writes).",
+    ),
+    strict: bool = typer.Option(
+        True,
+        "--strict/--no-strict",
+        help="Exit 1 when any ingest or deploy leg reports failures (default: strict).",
+    ),
     format: DriveOutputFormat = typer.Option("table", "--format", help="table or json"),
 ) -> None:
     """Ingest all configured repositories, then deploy to replicas (cloud + USB)."""
     local_root = _require_tags_dir()
-    if dry_run:
-        ingest_rows: list[tuple[Path, SyncResult]] = []
-    else:
+    if status:
         try:
-            ingest_rows = ingest_repositories()
+            ingest_rows = plan_ingest_repositories()
+            replica_rows = preflight_replicas(local_root, selected=replica)
         except RuntimeError as exc:
             raise typer.Exit(str(exc)) from exc
+        _emit_sync_status(ingest_rows=ingest_rows, replica_rows=replica_rows, format=format)
+        ingest_fail = sum(len(r.failed) for _, r in ingest_rows)
+        replica_fail = sum(len(r.failed) for r in replica_rows)
+        _exit_if_failures(ingest_fail, replica_fail, strict=strict)
+        return
+
+    try:
+        if dry_run:
+            ingest_rows = plan_ingest_repositories()
+        else:
+            ingest_rows = ingest_repositories()
+    except RuntimeError as exc:
+        raise typer.Exit(str(exc)) from exc
 
     if format == DriveOutputFormat.json and dry_run:
         deploy_rows = deploy_replicas(local_root, selected=replica, dry_run=True)
         _emit_json(
             {
                 "dry_run": True,
-                "ingest": [
-                    {
-                        "repo": str(repo),
-                        "created": result.created,
-                        "replaced": result.replaced,
-                        "failed": [
-                            {"tag": tag, "error": err} for tag, err in result.failed
-                        ],
-                    }
-                    for repo, result in ingest_rows
-                ],
+                "ingest": _ingest_payload(ingest_rows),
                 **_upload_payload(deploy_rows, dry_run=True),
             }
         )
         ingest_fail = sum(len(r.failed) for _, r in ingest_rows)
         deploy_fail = sum(len(r.failed) for _, r in deploy_rows)
-        _exit_if_failures(ingest_fail, deploy_fail)
+        _exit_if_failures(ingest_fail, deploy_fail, strict=strict)
         return
 
     rprint("[bold]Phase 1 — ingest[/bold] (all backup.repositories)")
     if dry_run:
-        rprint("  [dim]dry-run: ingest skipped[/dim]")
-        created = replaced = failed = 0
+        created, replaced, failed = _print_ingest_rows(ingest_rows)
+        rprint(
+            f"Ingest plan. Would create: {created}  Would replace: {replaced}  Failed: {failed}"
+        )
     else:
         created, replaced, failed = _print_ingest_rows(ingest_rows)
         rprint(
@@ -334,17 +405,7 @@ def sync_cmd(
         _emit_json(
             {
                 "dry_run": dry_run,
-                "ingest": [
-                    {
-                        "repo": str(repo),
-                        "created": result.created,
-                        "replaced": result.replaced,
-                        "failed": [
-                            {"tag": tag, "error": err} for tag, err in result.failed
-                        ],
-                    }
-                    for repo, result in ingest_rows
-                ],
+                "ingest": _ingest_payload(ingest_rows),
                 **_upload_payload(deploy_rows, dry_run=dry_run),
             }
         )
@@ -355,7 +416,7 @@ def sync_cmd(
 
     ingest_fail = sum(len(r.failed) for _, r in ingest_rows)
     deploy_fail = sum(len(r.failed) for _, r in deploy_rows)
-    _exit_if_failures(ingest_fail, deploy_fail)
+    _exit_if_failures(ingest_fail, deploy_fail, strict=strict)
 
 
 @drive_app.command("deploy")

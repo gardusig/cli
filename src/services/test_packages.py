@@ -237,7 +237,12 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
     ),
     _pkg(
         "chrome",
-        source=("src/commands/chrome.py", "src/services/bookmark_sync.py", "src/models/bookmark.py"),
+        source=(
+            "src/commands/chrome.py",
+            "src/services/bookmark_sync.py",
+            "src/services/photos_sync.py",
+            "src/models/bookmark.py",
+        ),
         tests=("tests/chrome/", "tests/harness/chrome_harness.py"),
         checks=(_PACKAGE_INTEGRATION,),
     ),

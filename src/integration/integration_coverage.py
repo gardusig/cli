@@ -46,9 +46,7 @@ _FAIL_EXEMPT_PATHS: dict[Category, frozenset[tuple[str, ...]]] = {
 }
 
 # Deferred/blocked commands with no success path (inventory still lists fail checks).
-_OK_EXEMPT_API_PATHS: frozenset[tuple[str, ...]] = frozenset({
-    ("chrome", "photos"),
-})
+_OK_EXEMPT_API_PATHS: frozenset[tuple[str, ...]] = frozenset()
 
 
 @dataclass(frozen=True)

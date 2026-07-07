@@ -68,6 +68,6 @@ def links_root() -> None:
     rprint("  cli test python unit — unit gate")
     rprint("  cli test python integration — integration gate")
     rprint("  cli structure check PATH --require-layout — repo structure")
-    rprint("  cli repo inventory gardusig/python-cli — repository snapshot")
+    rprint("  cli repo inventory gardusig/cli — repository snapshot")
 
     rprint("\n[dim]Tip: cli git docs lists markdown paths for @git-docs[/dim]")

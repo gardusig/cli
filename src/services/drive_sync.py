@@ -7,7 +7,7 @@ from pathlib import Path
 
 from src.providers.base import DriveProvider
 from src.providers.drive_client import wrap_drive_provider
-from src.services.backup_repository import SyncResult, ingest_repositories
+from src.services.backup_repository import SyncResult, ingest_repositories, plan_ingest_repositories
 from src.utils.external_client import ExternalCallError
 
 
@@ -195,7 +195,10 @@ def sync_all(
     dry_run: bool = False,
 ) -> DriveSyncResult:
     """Zip tags for configured repositories, then push missing files to cloud."""
-    ingest_rows = ingest_repositories(ingest_path)
+    if dry_run:
+        ingest_rows = plan_ingest_repositories(ingest_path)
+    else:
+        ingest_rows = ingest_repositories(ingest_path)
     uploads: list[tuple[str, UploadResult]] = []
     if local_root.is_dir():
         for name, module, remote_root in providers:

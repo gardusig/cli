@@ -32,6 +32,11 @@ def run_cmd(
     sha: str | None = typer.Option(None, "--sha"),
     repository: str | None = typer.Option(None, "--repository"),
     dry_run: bool = typer.Option(False, "--dry-run"),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Dispatch even when the hub already has active pull-request runs.",
+    ),
 ) -> None:
     """POST repository_dispatch to gardusig/github-pipelines."""
     payload: dict[str, object] = {
@@ -48,7 +53,7 @@ def run_cmd(
         payload["pipeline"] = pipeline
     if sha:
         payload["sha"] = sha
-    result = dispatch_repository_event(family, payload, dry_run=dry_run)
+    result = dispatch_repository_event(family, payload, dry_run=dry_run, force=force)
     if dry_run:
         typer.echo(json.dumps(result, indent=2))
     else:

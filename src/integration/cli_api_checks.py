@@ -579,6 +579,18 @@ def _drive_success_checks(repo_path: str) -> list[CliApiCheck]:
         CliApiCheck("drive download", "drive", ("drive", "download", "google"), "Downloading"),
         CliApiCheck("drive deploy", "drive", ("drive", "deploy"), "Done."),
         CliApiCheck("drive sync", "drive", ("drive", "sync"), "Phase 2"),
+        CliApiCheck(
+            "drive sync dry-run",
+            "drive",
+            ("drive", "sync", "--dry-run", "--format", "json"),
+            '"dry_run": true',
+        ),
+        CliApiCheck(
+            "drive sync status",
+            "drive",
+            ("drive", "sync", "--status", "--format", "json"),
+            '"status": true',
+        ),
     ]
 
 
@@ -680,6 +692,24 @@ def _chrome_success_checks() -> list[CliApiCheck]:
             ("chrome", "bookmarks", "snapshot"),
             "snapshot",
         ),
+        CliApiCheck(
+            "chrome photos list",
+            "chrome",
+            ("chrome", "photos", "list"),
+            '"albums"',
+        ),
+        CliApiCheck(
+            "chrome photos status",
+            "chrome",
+            ("chrome", "photos", "status"),
+            "photos_dir",
+        ),
+        CliApiCheck(
+            "chrome photos ingest",
+            "chrome",
+            ("chrome", "photos", "ingest", "--yes"),
+            "Ingested",
+        ),
     ]
 
 
@@ -704,13 +734,31 @@ def _chrome_failure_checks() -> list[CliApiCheck]:
             failure="missing_bookmarks",
         ),
         CliApiCheck(
-            "chrome photos deferred",
+            "chrome photos ingest no takeout",
             "chrome",
-            ("chrome", "photos"),
+            ("chrome", "photos", "ingest", "--yes"),
             kind="fail",
-            needle="deferred",
-            accept_exit_codes=(2,),
-            failure="chrome_photos_deferred",
+            needle=None,
+            accept_exit_codes=(1,),
+            failure="chrome_photos_no_takeout",
+        ),
+        CliApiCheck(
+            "chrome photos list missing dir",
+            "chrome",
+            ("chrome", "photos", "list"),
+            kind="fail",
+            needle="photos_dir",
+            accept_exit_codes=(1,),
+            failure="chrome_photos_no_dir",
+        ),
+        CliApiCheck(
+            "chrome photos status missing dir",
+            "chrome",
+            ("chrome", "photos", "status"),
+            kind="fail",
+            needle="photos_dir",
+            accept_exit_codes=(1,),
+            failure="chrome_photos_no_dir",
         ),
         CliApiCheck(
             "chrome bookmarks merge no source",
@@ -804,9 +852,7 @@ def assert_every_api_command_has_ok_and_fail_check(
         },
     }
     local_fail_only: dict[ApiName, set[tuple[str, ...]]] = {
-        "chrome": {
-            ("chrome", "photos"),
-        },
+        "chrome": set(),
     }
     assert_cli_api_registry_covers_commands(checks, apis=apis)
     for api in apis:

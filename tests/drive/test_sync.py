@@ -38,7 +38,69 @@ class FakeProvider:
         self.files.add(remote)
 
 
-def test_sync_all_ingests_then_uploads(tmp_path: Path, monkeypatch) -> None:
+def test_plan_ingest_repositories_reports_missing_tags(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.services.backup_repository import plan_ingest_repositories
+
+    repo = tmp_path / "demo"
+    repo.mkdir()
+    (repo / ".git").mkdir()
+    tags_root = tmp_path / "git-tags" / "demo"
+    tags_root.mkdir(parents=True)
+    (tags_root / "demo-v1.0.0.zip").write_bytes(b"z")
+
+    monkeypatch.setattr(
+        "src.services.backup_repository.load_config",
+        lambda config_dir=None: type(
+            "Cfg",
+            (),
+            {
+                "backup": type(
+                    "Backup",
+                    (),
+                    {"repositories": [type("Entry", (), {"path": str(repo)})()]},
+                )()
+            },
+        )(),
+    )
+    monkeypatch.setattr(
+        "src.services.backup_repository.list_git_tags",
+        lambda _repo: ["v1.0.0", "v2.0.0"],
+    )
+    monkeypatch.setattr(
+        "src.services.backup_repository.list_downloaded_tags",
+        lambda _repo, config_dir=None: ["v1.0.0"],
+    )
+    rows = plan_ingest_repositories()
+    assert rows[0][1].created == ["v2.0.0"]
+    assert rows[0][1].replaced == ["v1.0.0"]
+
+
+def test_sync_all_dry_run_plans_without_ingest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tags_root = tmp_path / "git-tags"
+    tags_root.mkdir()
+    calls = {"plan": 0, "ingest": 0}
+
+    def _plan(_path: str | None = None) -> list[tuple[Path, SyncResult]]:
+        calls["plan"] += 1
+        return []
+
+    def _ingest(_path: str | None = None) -> list[tuple[Path, SyncResult]]:
+        calls["ingest"] += 1
+        return []
+
+    monkeypatch.setattr("src.services.drive_sync.plan_ingest_repositories", _plan)
+    monkeypatch.setattr("src.services.drive_sync.ingest_repositories", _ingest)
+    result = sync_all(tags_root, [], dry_run=True)
+    assert result.dry_run is True
+    assert calls["plan"] == 1
+    assert calls["ingest"] == 0
+
+
+def test_sync_all_ingests_then_uploads(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo = tmp_path / "repos" / "demo"
     repo.mkdir(parents=True)
     tags_root = tmp_path / "git-tags"

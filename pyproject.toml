@@ -3,9 +3,9 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-# PyPI distribution name (repo remains github.com/gardusig/python-cli).
+# PyPI distribution name gardusig-cli; GitHub repo github.com/gardusig/cli.
 name = "gardusig-cli"
-version = "1.0.3"
+version = "1.0.4"
 description = "Linux-first CLI for workflow automation, repository checks, and release orchestration"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -53,11 +53,11 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/gardusig/python-cli"
-Documentation = "https://github.com/gardusig/python-cli#readme"
-Repository = "https://github.com/gardusig/python-cli"
-Issues = "https://github.com/gardusig/python-cli/issues"
-Changelog = "https://github.com/gardusig/python-cli/releases"
+Homepage = "https://github.com/gardusig/cli"
+Documentation = "https://github.com/gardusig/cli#readme"
+Repository = "https://github.com/gardusig/cli"
+Issues = "https://github.com/gardusig/cli/issues"
+Changelog = "https://github.com/gardusig/cli/releases"
 
 [project.scripts]
 cli = "src.cli:run"

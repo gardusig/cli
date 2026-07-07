@@ -43,6 +43,8 @@ chrome:
   # Local bookmarks HTML (Chrome export/import). Absolute or ~ path recommended.
   bookmarks_file: ""                   # private path, e.g. ~/git-local/private/.../bookmarks.html
   downloads_dir: ~/Downloads
+  photos_dir: ""                       # private path, e.g. ~/git-local/private/photos
+  photos_takeout_dir: ""               # optional; defaults to downloads_dir
 
 gh:
   issues:

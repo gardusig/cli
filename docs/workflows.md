@@ -116,8 +116,8 @@ Pipeline-backed equivalents live in `github-pipelines`:
 
 | Workflow | Dispatch type | CLI command |
 | --- | --- | --- |
-| Issue refinement | `issue-refinement` | `cli craft --repo OWNER/REPO epic --number N --dry-run|--yes` |
-| Issue to PR | `issue-to-pr` | `cli craft --repo OWNER/REPO issue-to-pr --number N --dry-run true|false` |
+| Issue refinement | `issue-refinement` | `cli craft --repo OWNER/REPO epic --number N` (`--dry-run` or `--yes`) |
+| Issue to PR | `issue-to-pr` | `cli craft --repo OWNER/REPO issue-to-pr --number N` (`--dry-run true` or `false`) |
 
 Epic issues are not closed directly by CLI. Every epic issue should keep a generated subissue checklist, and PR bodies should close subissues with `Fixes #subissue` rather than closing the epic issue.
 

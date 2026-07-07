@@ -6,7 +6,7 @@ Production releases publish **`gardusig-cli`** to [PyPI](https://pypi.org/projec
 
 Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync). PR CI requires the PR version to be **greater** than `origin/main` via `cli pypi version check`.
 
-Example: `main` ships `1.0.2`; a release candidate PR bumps to **`1.0.3`** (strictly greater than base).
+Example: `main` ships `1.0.3`; a development PR bumps to **`1.0.4`** (strictly greater than base).
 
 ## Repository boundary
 
@@ -75,9 +75,52 @@ uv run pytest tests/git/ tests/gh/ tests/docker/ tests/chrome/ \
   tests/notion/ tests/drive/ tests/contest/ tests/project/ tests/pypi/ -q
 ```
 
-Confirm central CI is green on pipelines `main` ([PR #20](https://github.com/gardusig/github-pipelines/pull/20) merged; `BASE_VERSION` **1.0.2** via [PR #24](https://github.com/gardusig/github-pipelines/pull/24)). Until PyPI ships **1.0.3**, workflows install `gardusig-cli` from editable `app-src`.
+Confirm central CI is green on pipelines `main` (`BASE_VERSION` **1.0.3** after Epic 06d). Until PyPI ships **1.0.3**, workflows install `gardusig-cli` from editable `app-src`.
 
-**Merge order:** merge PR #88 → `cli release main --yes` → bump pipelines `BASE_VERSION` to **1.0.3**.
+**Merge order (Epic 06d):** on `main` at **1.0.3**, run `cli release main --yes` → merge dev-gate PR (**1.0.4**) → verify pipelines `BASE_VERSION` **1.0.3**.
+
+## PR #96 merge (Epic 06d–06g)
+
+**Branch:** `feat/epic-06d-release` · **Dev gate:** `1.0.4`
+
+**Shipped on branch:** product backlog (#50, #27–#28, #20–#23, #31, #30, #12–#15, #29), merge readiness (06e), `gardusig/cli` rename (06g + [pipelines #38](https://github.com/gardusig/pipelines/pull/38)).
+
+### Before merge (maintainer, on `main`)
+
+```bash
+git checkout main && git pull
+export PYPI_API_TOKEN='pypi-...'
+cli release main --yes          # PyPI 1.0.3 (current main version)
+```
+
+### Merge checklist
+
+```bash
+uv run python -m src pypi version check --base origin/main
+uv run pytest tests/pack/ -q
+uv run python tests/integration/check_integration_coverage.py
+```
+
+Central CI on `gardusig/pipelines` must be green. Re-dispatch:
+
+```bash
+uv run python -m src pipeline run pull-request python-cli \
+  --repository gardusig/cli \
+  --ref feat/epic-06d-release \
+  --sha "$(git rev-parse HEAD)"
+```
+
+Legacy slug `gardusig/python-cli` still works via `pipeline_runtime` alias.
+
+### Closes on merge
+
+`#50`, `#27`, `#28`, `#20`–`#23`, `#31`, `#30`, `#12`–`#15`, `#29` (see PR body `Fixes` lines).
+
+### After merge
+
+- `main` is at **1.0.4** dev gate
+- Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.3`
+- Open next dev-gate PR (**1.0.5**, Epic 06f)
 
 ## Post-merge release (maintainer)
 
@@ -91,4 +134,4 @@ pip install --upgrade gardusig-cli
 cli --version
 ```
 
-Then bump `main` to the next patch (e.g. `1.0.4`) for the next PR version gate, and close issues documented in `docs/public-cli-hardening.md`.
+Then open the next dev-gate PR (**1.0.5**, Epic 06f) from `main`. See `docs/public-cli-hardening.md`.

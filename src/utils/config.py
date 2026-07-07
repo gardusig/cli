@@ -101,6 +101,8 @@ class ChromeConfig(BaseModel):
     profile: str = "Default"
     bookmarks_file: str = ""
     downloads_dir: str = ""
+    photos_dir: str = ""
+    photos_takeout_dir: str = ""
     profiles: dict[str, ChromeProfileConfig] = Field(default_factory=dict)
     snapshots_dir: str = ""
     snapshot_retention: int = 0
@@ -525,6 +527,34 @@ def chrome_downloads_dir(config_dir: Path | None = None) -> Path:
     if raw:
         return Path(raw).expanduser().resolve()
     return Path.home() / "Downloads"
+
+
+def photos_dir_path(config_dir: Path | None = None) -> Path:
+    """Resolved private directory for ingested Google Photos albums."""
+    env = os.environ.get("CLI_PHOTOS_DIR")
+    if env:
+        return Path(env).expanduser().resolve()
+    raw = load_config(config_dir).chrome.photos_dir.strip()
+    if not raw:
+        raise FileNotFoundError(
+            "chrome.photos_dir is not configured. Set chrome.photos_dir in config/config.yaml "
+            "or CLI_PHOTOS_DIR."
+        )
+    path = Path(raw).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    return (project_root() / path).resolve()
+
+
+def photos_takeout_dir(config_dir: Path | None = None) -> Path:
+    """Folder polled for newest Google Takeout .zip (defaults to chrome.downloads_dir)."""
+    env = os.environ.get("CLI_PHOTOS_TAKEOUT_DIR")
+    if env:
+        return Path(env).expanduser().resolve()
+    raw = load_config(config_dir).chrome.photos_takeout_dir.strip()
+    if raw:
+        return Path(raw).expanduser().resolve()
+    return chrome_downloads_dir(config_dir)
 
 
 def gh_issues_repo(config_dir: Path | None = None) -> str:

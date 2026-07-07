@@ -6,6 +6,7 @@ from tests.constants import ROOT
 
 import os
 import subprocess
+import zipfile
 from collections.abc import Iterator
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
@@ -26,6 +27,16 @@ NOTION_CLI_WS = ROOT / "tests" / "fixtures" / "notion" / "cli-workspace"
 CHROME_WS = next(w for w in API_WORKSPACES if w.name == "chrome")
 DRIVE_WS = next(w for w in API_WORKSPACES if w.name == "drive")
 GH_WS = next(w for w in API_WORKSPACES if w.name == "gh")
+
+
+def _write_takeout_zip(downloads: Path) -> Path:
+    zip_path = downloads / "takeout-photos.zip"
+    if zip_path.is_file():
+        return zip_path
+    downloads.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        archive.writestr("Takeout/Google Photos/Cli Trip/photo.jpg", b"fake-jpeg")
+    return zip_path
 
 
 def _init_git_repo(path: Path) -> None:
@@ -169,6 +180,11 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
             raise RuntimeError("ingest failed")
         return ingest_rows
 
+    def _plan_ingest_repositories(*_args, **_kwargs):
+        if broken == "drive_ingest_error":
+            raise RuntimeError("ingest failed")
+        return ingest_rows
+
     def _tags_dir_path():
         if broken == "missing_tags_dir":
             return tmp_path / "missing-tags"
@@ -177,6 +193,11 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
     with (
         patch("src.commands.drive.backup_status", _backup_status),
         patch("src.commands.drive.ingest_repositories", _ingest_repositories),
+        patch("src.commands.drive.plan_ingest_repositories", _plan_ingest_repositories),
+        patch(
+            "src.commands.drive.preflight_replicas",
+            return_value=[],
+        ),
         patch(
             "src.commands.drive.deploy_replicas",
             return_value=[("google", UploadResult(uploaded=["demo-repo/demo-repo-v1.0.0.zip"]))],
@@ -206,12 +227,16 @@ def chrome_cli_context(
     bookmarks.parent.mkdir(parents=True, exist_ok=True)
     snapshots = workspace / "data" / "bookmarks" / "snapshots"
     snapshots.mkdir(parents=True, exist_ok=True)
+    photos = workspace / "data" / "photos"
+    photos.mkdir(parents=True, exist_ok=True)
     fixture_html = workspace / "Downloads" / "bookmarks.html"
+    takeout_zip = _write_takeout_zip(workspace / "Downloads")
     env = {
         **os.environ,
         "CLI_SKIP_CHROME_AUTOMATION": "1",
         "CLI_DOWNLOADS_DIR": str(workspace / "Downloads"),
         "CLI_BOOKMARKS_FILE": str(bookmarks),
+        "CLI_PHOTOS_DIR": str(photos),
         "CLI_ROOT": str(ROOT),
     }
     if use_fixture:
@@ -231,6 +256,8 @@ def chrome_cli_context(
         patch("src.commands.chrome.chrome_downloads_dir", lambda config_dir=None: workspace / "Downloads"),
         patch("src.commands.chrome.chrome_snapshots_dir", lambda config_dir=None: snapshots),
         patch("src.commands.chrome.chrome_snapshot_retention", lambda config_dir=None: 30),
+        patch("src.commands.chrome.photos_dir_path", lambda config_dir=None: photos),
+        patch("src.commands.chrome.photos_takeout_dir", lambda config_dir=None: workspace / "Downloads"),
     ):
         if skip_export and bookmarks.is_file():
             bookmarks.unlink()
@@ -407,6 +434,19 @@ def api_check_context(
                 empty = tmp_path / "empty-downloads"
                 empty.mkdir(exist_ok=True)
                 with patch("src.commands.chrome.chrome_downloads_dir", lambda config_dir=None: empty):
+                    yield chrome_env
+                return
+            if check.failure == "chrome_photos_no_takeout":
+                empty = tmp_path / "empty-takeout"
+                empty.mkdir(exist_ok=True)
+                with patch("src.commands.chrome.photos_takeout_dir", lambda config_dir=None: empty):
+                    yield chrome_env
+                return
+            if check.failure == "chrome_photos_no_dir":
+                with patch(
+                    "src.commands.chrome.photos_dir_path",
+                    side_effect=FileNotFoundError("chrome.photos_dir is not configured"),
+                ):
                     yield chrome_env
                 return
             yield chrome_env

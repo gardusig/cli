@@ -90,6 +90,45 @@ def backup_status(config_dir: Path | None = None) -> list[RepoBackupStatus]:
     return sorted(rows, key=lambda r: r.name)
 
 
+def _plan_repo_ingest(repo_path: Path, config_dir: Path | None) -> SyncResult:
+    resolve_repo_path(str(repo_path))
+    git_tags = list_git_tags(repo_path)
+    downloaded = set(list_downloaded_tags(repo_path, config_dir))
+    result = SyncResult()
+    for tag in git_tags:
+        if tag in downloaded:
+            result.replaced.append(tag)
+        else:
+            result.created.append(tag)
+    return result
+
+
+def plan_ingest_repositories(
+    path: str | None = None,
+    config_dir: Path | None = None,
+) -> list[tuple[Path, SyncResult]]:
+    """Report tags ingest would create or replace without writing zips."""
+    if path is not None:
+        repo = resolve_repo_path(path)
+        return [(repo, _plan_repo_ingest(repo, config_dir))]
+    cfg = load_config(config_dir)
+    if not cfg.backup.repositories:
+        raise RuntimeError(
+            "No repositories configured. Add backup.repositories to config.yaml "
+            "or pass a repository path to ingest."
+        )
+    rows: list[tuple[Path, SyncResult]] = []
+    for entry in cfg.backup.repositories:
+        repo_path = Path(entry.path).expanduser().resolve()
+        try:
+            rows.append((repo_path, _plan_repo_ingest(repo_path, config_dir)))
+        except RuntimeError as exc:
+            failed = SyncResult()
+            failed.failed.append(("", str(exc)))
+            rows.append((repo_path, failed))
+    return rows
+
+
 def ingest_repositories(
     path: str | None = None,
     config_dir: Path | None = None,

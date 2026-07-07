@@ -17,9 +17,9 @@ from src.services.gh_repo_readme import (
 def test_format_repo_lines_includes_description() -> None:
     lines = format_repo_lines(
         "gardusig",
-        [{"name": "python-cli", "url": "https://github.com/gardusig/python-cli", "description": "CLI"}],
+        [{"name": "python-cli", "url": "https://github.com/gardusig/cli", "description": "CLI"}],
     )
-    assert lines == "- [python-cli](https://github.com/gardusig/python-cli) — CLI"
+    assert lines == "- [python-cli](https://github.com/gardusig/cli) — CLI"
 
 
 def test_patch_readme_replaces_marked_section(tmp_path: Path) -> None:

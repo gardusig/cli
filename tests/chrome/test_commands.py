@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import time
+import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -60,10 +63,48 @@ def test_chrome_bookmarks_snapshot(
     assert list(snapshots.glob("Default-*.html"))
 
 
-def test_chrome_photos_deferred() -> None:
-    result = runner.invoke(app, ["chrome", "photos"])
-    assert result.exit_code == 2
-    assert "deferred" in result.output.lower()
+def test_chrome_photos_list_empty(tmp_path: Path) -> None:
+    photos = tmp_path / "photos"
+    photos.mkdir()
+    with (
+        patch("src.commands.chrome.photos_dir_path", return_value=photos),
+    ):
+        result = runner.invoke(app, ["chrome", "photos", "list", "--format", "json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["albums"] == []
+
+
+@patch("src.commands.chrome.photos_dir_path")
+@patch("src.commands.chrome.photos_takeout_dir")
+def test_chrome_photos_ingest(mock_takeout: object, mock_photos: object, tmp_path: Path) -> None:
+    photos = tmp_path / "photos"
+    takeout_dir = tmp_path / "Downloads"
+    takeout_dir.mkdir()
+    zip_path = takeout_dir / "takeout.zip"
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        archive.writestr("Takeout/Google Photos/Trip/photo.jpg", b"jpeg")
+    mock_photos.return_value = photos
+    mock_takeout.return_value = takeout_dir
+    result = runner.invoke(
+        app,
+        ["chrome", "photos", "ingest", "--dry-run", "--format", "json"],
+        env={"CLI_SKIP_CHROME_AUTOMATION": "1"},
+    )
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["media_files"] == 1
+    assert payload["albums"] == ["trip"]
+
+
+def test_chrome_photos_list_missing_dir() -> None:
+    with patch(
+        "src.commands.chrome.photos_dir_path",
+        side_effect=FileNotFoundError("chrome.photos_dir is not configured"),
+    ):
+        result = runner.invoke(app, ["chrome", "photos", "list"])
+    assert result.exit_code == 1
+    assert "photos_dir" in result.output
 
 
 @patch("src.commands.chrome.bookmarks_file_path")
@@ -139,9 +180,6 @@ def test_chrome_legacy_import_alias_calls_deploy(mock_path, tmp_path: Path) -> N
     result = runner.invoke(app, ["chrome", "bookmarks", "import"])
     assert result.exit_code == 0
     assert "ready" in result.stdout
-
-
-import time
 
 
 def test_wait_download_selects_newest_html(tmp_path: Path) -> None:

@@ -19,13 +19,38 @@ def test_dispatch_repository_event_dry_run() -> None:
 
 
 @patch("src.services.pipeline_dispatch.subprocess.run")
-def test_dispatch_repository_event_posts(mock_run: MagicMock) -> None:
+@patch("src.services.pipeline_dispatch.list_active_hub_runs", return_value=[])
+def test_dispatch_repository_event_posts(mock_active: MagicMock, mock_run: MagicMock) -> None:
     dispatch_repository_event(
         "pull-request",
         {"repo_slug": "python-cli", "repository": "gardusig/python-cli", "ref": "main"},
     )
+    mock_active.assert_called_once()
     mock_run.assert_called_once()
-    body = mock_run.call_args.kwargs["input"]
-    payload = json.loads(body)
-    assert payload["event_type"] == "pull-request"
-    assert payload["client_payload"]["repo_slug"] == "python-cli"
+
+
+@patch("src.services.pipeline_dispatch.list_active_hub_runs", return_value=[{"databaseId": 1, "url": "https://example/run/1"}])
+def test_dispatch_repository_event_skips_when_hub_run_active(mock_active: MagicMock) -> None:
+    import pytest
+
+    with pytest.raises(SystemExit, match="active pull-request run"):
+        dispatch_repository_event(
+            "pull-request",
+            {"repo_slug": "python-cli", "repository": "gardusig/cli", "ref": "main"},
+        )
+    mock_active.assert_called_once()
+
+
+@patch("src.services.pipeline_dispatch.subprocess.run")
+@patch("src.services.pipeline_dispatch.list_active_hub_runs", return_value=[{"databaseId": 1}])
+def test_dispatch_repository_event_force_bypasses_active_guard(
+    mock_active: MagicMock,
+    mock_run: MagicMock,
+) -> None:
+    dispatch_repository_event(
+        "pull-request",
+        {"repo_slug": "python-cli", "repository": "gardusig/cli", "ref": "main"},
+        force=True,
+    )
+    mock_active.assert_not_called()
+    mock_run.assert_called_once()

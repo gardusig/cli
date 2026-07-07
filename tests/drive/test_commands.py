@@ -42,6 +42,82 @@ def test_drive_ingest_failure(mock_ingest: MagicMock) -> None:
 
 
 @patch("src.commands.drive.deploy_replicas")
+@patch("src.commands.drive.plan_ingest_repositories")
+@patch("src.commands.drive.tags_dir_path")
+def test_drive_sync_dry_run_json(
+    mock_tags: MagicMock,
+    mock_plan: MagicMock,
+    mock_deploy: MagicMock,
+    tmp_path: Path,
+) -> None:
+    from src.services.drive_sync import UploadResult
+
+    tags_root = tmp_path / "git-tags"
+    tags_root.mkdir()
+    mock_tags.return_value = tags_root
+    repo = Path("/tmp/demo")
+    mock_plan.return_value = [(repo, SyncResult(created=["v2"], replaced=[], failed=[]))]
+    mock_deploy.return_value = [("google", UploadResult(uploaded=["demo/v2.zip"], dry_run=True))]
+    result = runner.invoke(app, ["drive", "sync", "--dry-run", "--format", "json"])
+    assert result.exit_code == 0
+    assert '"dry_run": true' in result.stdout
+    assert "v2" in result.stdout
+    mock_plan.assert_called_once()
+    mock_deploy.assert_called_once()
+
+
+@patch("src.commands.drive.preflight_replicas")
+@patch("src.commands.drive.plan_ingest_repositories")
+@patch("src.commands.drive.tags_dir_path")
+def test_drive_sync_status_json(
+    mock_tags: MagicMock,
+    mock_plan: MagicMock,
+    mock_preflight: MagicMock,
+    tmp_path: Path,
+) -> None:
+    from src.services.drive_sync import ReplicaPreflight
+
+    tags_root = tmp_path / "git-tags"
+    tags_root.mkdir()
+    mock_tags.return_value = tags_root
+    repo = Path("/tmp/demo")
+    mock_plan.return_value = [(repo, SyncResult(created=["v2"], replaced=[], failed=[]))]
+    mock_preflight.return_value = [
+        ReplicaPreflight(name="google", local_count=2, remote_count=1, missing_remote=["demo/v2.zip"])
+    ]
+    result = runner.invoke(app, ["drive", "sync", "--status", "--format", "json"])
+    assert result.exit_code == 0
+    assert '"status": true' in result.stdout
+    assert "missing_remote" in result.stdout
+    mock_plan.assert_called_once()
+    mock_preflight.assert_called_once()
+
+
+@patch("src.commands.drive.deploy_replicas")
+@patch("src.commands.drive.ingest_repositories")
+@patch("src.commands.drive.tags_dir_path")
+def test_drive_sync_no_strict_continues_on_ingest_failure(
+    mock_tags: MagicMock,
+    mock_ingest: MagicMock,
+    mock_deploy: MagicMock,
+    tmp_path: Path,
+) -> None:
+    from src.services.drive_sync import UploadResult
+
+    tags_root = tmp_path / "git-tags"
+    tags_root.mkdir()
+    mock_tags.return_value = tags_root
+    repo = Path("/tmp/demo")
+    mock_ingest.return_value = [
+        (repo, SyncResult(created=[], replaced=[], failed=[("v1", "zip failed")]))
+    ]
+    mock_deploy.return_value = [("google", UploadResult(uploaded=["demo/v1.zip"], skipped=[], failed=[]))]
+    result = runner.invoke(app, ["drive", "sync", "--no-strict"])
+    assert result.exit_code == 0
+    mock_deploy.assert_called_once()
+
+
+@patch("src.commands.drive.deploy_replicas")
 @patch("src.commands.drive.ingest_repositories")
 @patch("src.commands.drive.tags_dir_path")
 def test_drive_sync(

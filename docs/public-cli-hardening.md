@@ -2,20 +2,20 @@
 
 Epic [#57](https://github.com/gardusig/python-cli/issues/57) reviewed the public `cli` command surface after product epics landed. The console command is `cli`; the package is `gardusig-cli`.
 
-**Status (PR #88):** integration coverage gate **154/154**; child matrix #58–#65 verified; meta coverage tests aligned with `ok_exempt` deferred rows (`chrome photos` / #50).
+**Status (`main`):** integration coverage **156/156** on release PR; child matrix #58–#65 verified; product children ship on [PR #96](https://github.com/gardusig/cli/pull/96).
 
-**Merge readiness (PR #88, 2026-07-06):** `gardusig-cli` **1.0.3** (main already **1.0.2** via #87); integration gate **154/154**; verification **511+** tests green; `cli pypi version check` passes; selective resolve E2E against `github-pipelines` python-cli.yaml.
+**Shipped on `main`:** [#88](https://github.com/gardusig/cli/pull/88), [#95](https://github.com/gardusig/cli/pull/95). `gardusig-cli` **1.0.3** on `main`; dev gate **1.0.4** on PR #96 (`feat/epic-06d-release`).
 
-**Epic 06 status:** Pre-merge on branch; [github-pipelines PR #20](https://github.com/gardusig/github-pipelines/pull/20) and [PR #24](https://github.com/gardusig/github-pipelines/pull/24) (`BASE_VERSION` **1.0.2**) merged on `main`. Awaiting green PR #88 CI → merge → `docs/release.md` § Post-merge release.
+**Epic 06d–06g status:** Product backlog + rename shipped on PR #96; merge closes 14 child issues. Maintainer: PyPI **1.0.3** on `main` before merge, then **1.0.4** after. See § Epic 06d–06g below.
 
 ## Current Matrix
 
 | Issue | Surface | Status | Notes |
 | --- | --- | --- | --- |
 | [#58](https://github.com/gardusig/python-cli/issues/58) | `cli git` | **Pass** | `public_endpoints` git subcommands, remote mocks (`git_mocks.py`), `docs/git.md`, push warnings + `--format json`, workflow push scenarios. Epic 09 (#67) closes branch-policy edge cases. |
-| [#59](https://github.com/gardusig/python-cli/issues/59) | `cli drive` | **Pass** | Epic 04: providers, partial failure, `--dry-run`/JSON, Proton deferral, `cli_api_checks`. Close #4 epic. |
+| [#59](https://github.com/gardusig/python-cli/issues/59) | `cli drive` | **Pass** | Epic 04: providers, partial failure, `--dry-run`/JSON, `sync --status`, Proton deferral, `cli_api_checks`. #30 closes on PR #96. |
 | [#60](https://github.com/gardusig/python-cli/issues/60) | `cli notion` | **Pass** | Epic 03: pairs, repo-derived `link`, partial failure, `cli tasks` shortcuts, `tests/notion/`. Close #2 epic. |
-| [#61](https://github.com/gardusig/python-cli/issues/61) | `cli chrome` | **Pass** | Epic 02: merge/snapshot/`--profile`, `docs/chrome.md`, Photos deferral (#50). #48 (bookmarks update script) superseded by `cli chrome bookmarks merge|snapshot`. Close #24 epic. |
+| [#61](https://github.com/gardusig/python-cli/issues/61) | `cli chrome` | **Pass** | Epic 02: bookmarks + Takeout photos ingest (`cli chrome photos`), `docs/chrome.md`. #48 superseded by `merge` + `snapshot`. |
 | [#62](https://github.com/gardusig/python-cli/issues/62) | `cli docker` | **Pass** | JSON + filter integration smoke; write `--format json`; `check_docker_commands.py` mocked + `--live` contract in `docs/docker.md`. |
 | [#63](https://github.com/gardusig/python-cli/issues/63) | `cli gh` / `cli project` | **Pass** | GH CRUD + policy in `cli_api_checks`; API-transport smoke (`gh issue list api`, `gh issue context api`, `gh pr checks api`, `gh pr shortcut api`, `gh project view api`, `gh project item add api`, `gh transport refuse`); top-level `project_integration` checks for list/spawn/pairs/deploy/link. |
 | [#64](https://github.com/gardusig/python-cli/issues/64) | `cli contest` | **Pass** | `contest_integration` + Codeforces walkthrough in `docs/contest.md`. Close #54 epic. |
@@ -73,25 +73,122 @@ python tests/integration/check_api_integration.py
 - Close **#48** — superseded by `cli chrome bookmarks merge` and `snapshot` (see `docs/chrome.md`).
 - Epic **00-infra** ([#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85)): contract on PR #88; [pipelines PR #20](https://github.com/gardusig/github-pipelines/pull/20) for `ci:full` + nightly; close #81–#82 on merge, #83–#85 after pipelines merge + green nightly.
 - Epic **08-projects** ([#66](https://github.com/gardusig/python-cli/issues/66)–[#75](https://github.com/gardusig/python-cli/issues/75)): close when PR #88 merges — evidence in `docs/project.md` § Epic 08 closure; hub `project-recurrence.yml` ([pipelines #16](https://github.com/gardusig/github-pipelines/pull/16)).
-- Leave **#50** (Chrome Photos) open for future work.
+- Close **#50** when PR #96 merges with photos ingest verification green.
+- Close **#30** when PR #96 merges with drive sync verification green (`tests/drive/`, `tests/pack/test_drive_sync_epic.py`).
+- Close **#12**, **#13**, **#29**, **#14** (deferred), **#15** when PR #96 merges with provider/automation evidence (`tests/pack/test_drive_providers_epic.py`).
+- Close **#20**, **#21**, **#22**, **#23**, **#31** when PR #96 merges with Notion evidence (`tests/notion/`, `tests/pack/test_notion_epic.py`).
+- Close **#27**, **#28** when PR #96 merges with Chrome bookmarks evidence (`tests/pack/test_chrome_bookmarks_epic.py`).
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
 - **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.3` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
 
-## Next epic: merge & release (Epic 06c)
+## Epic 06d — Release and backlog closure
 
-**Current gate:** green CI on [PR #88](https://github.com/gardusig/python-cli/pull/88) → merge → ship **1.0.3** → close epics per closure tables below. Pipelines adoption ([PR #20](https://github.com/gardusig/github-pipelines/pull/20)) is on `main`.
+**Current gate:** PR #96 merges **1.0.4** dev gate + closes last product children.
 
-| Step | Action |
+| Step | Action | Status |
+| --- | --- | --- |
+| 1 | Merge PR #88 + #95 | **Done** |
+| 2 | `cli release main --yes` → PyPI **1.0.3** | Maintainer (`PYPI_API_TOKEN`) |
+| 3 | Bump `gardusig/pipelines` `BASE_VERSION` to **1.0.3** | **Done** ([pipelines #35](https://github.com/gardusig/pipelines/pull/35), [#37](https://github.com/gardusig/pipelines/pull/37)) |
+| 4 | Dev gate **1.0.4** + product backlog | **PR #96** (06d–06g) |
+| 5 | Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.3` | After PyPI ship |
+| 6 | Close #50, #27–#28, #20–#23, #31, #30, #12–#15, #29 on PR #96 merge | **PR #96** `Fixes` lines |
+
+Evidence: [`docs/release.md`](release.md) § Post-merge release; pack smoke `tests/pack/test_release_epic.py`.
+
+**Shipped on `main` (close in 06d):** Epics **08**, **09**, **10**, **11**, **12**, **hub-operator**, **00-infra** — see [`docs/project.md`](project.md), [`docs/gh.md`](gh.md), [`docs/docker.md`](docker.md), [`docs/ci-workflows.md`](ci-workflows.md), [`docs/hub-operator.md`](hub-operator.md).
+
+## Epic 02 — Chrome Photos (#50) on PR #96
+
+**Status:** `cli chrome photos list|ingest|status` shipped (Takeout file ingest). Closes #50 when PR merges.
+
+See [`docs/chrome.md`](chrome.md#google-photos).
+
+## Epic 04 — Drive sync (#30) on PR #96
+
+**Status:** `cli drive sync` hardening shipped — dry-run ingest+deploy plan, `--status` preflight, `--strict/--no-strict`, integration checks (**156/156**), pack smoke `tests/pack/test_drive_sync_epic.py`. Closes #30 when PR merges.
+
+Primary workflow:
+
+```bash
+cli drive sync --status --format json
+cli drive sync --dry-run --format json
+cli drive sync
+```
+
+See [`docs/drive.md`](drive.md) § Local workflow catalog.
+
+## Epic 04d — Drive providers & automation (#12–#15, #29) on PR #96
+
+**Status:** close-as-shipped evidence on this PR (merge closes children when verified green).
+
+| Issue | Evidence |
 | --- | --- |
-| 1 | Green CI on PR #88 (selective matrix + TestPyPI) |
-| 2 | Merge PR #88 → `main` |
-| 3 | `cli release main --yes` → PyPI **1.0.3** |
-| 4 | Bump `github-pipelines` `BASE_VERSION` to **1.0.3** and `main` to **1.0.4** for next gate |
-| 5 | Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.3` |
-| 6 | Close #57–#85, #2, #4, #24, #54, #66–#70 per § Closure recommendations |
+| **#12** Google Drive | `src/providers/google_drive.py`, `tests/providers/test_google_drive.py` |
+| **#13** OneDrive | `src/providers/onedrive.py`, `tests/providers/test_onedrive.py` |
+| **#14** Proton | Deferred — `ProtonDriveUnsupportedError`, `docs/drive.md` § Proton Drive |
+| **#29** Download | `cli drive download`, integration checks, `docs/drive.md` § Download semantics |
+| **#15** Automation | `docs/drive.md` § Tag backup automation + failure modes; hub owns launchd |
 
-Evidence: [`docs/release.md`](release.md) § Pre-merge / Post-merge; pack smoke `tests/pack/test_merge_epic.py`.
+Pack smoke: `tests/pack/test_drive_providers_epic.py`.
 
-**Shipped on PR #88 (close post-merge):** Epics **08**, **09**, **10**, **11**, **12**, **hub-operator**, **00-infra** (python-cli side) — see [`docs/project.md`](project.md), [`docs/gh.md`](gh.md), [`docs/docker.md`](docker.md), [`docs/ci-workflows.md`](ci-workflows.md).
+```bash
+uv run pytest tests/providers/ tests/pack/test_drive_providers_epic.py -q
+```
 
-**Deferred:** [#50](https://github.com/gardusig/python-cli/issues/50) Chrome Photos.
+## Epic 03d — Notion backlog closure (#20–#23, #31) on PR #96
+
+**Status:** close-as-shipped evidence on this PR (merge closes children when verified green). Parent **#2** already closed.
+
+| Issue | Evidence |
+| --- | --- |
+| **#20** Ingest | `export_tasks` in `notion_sync.py`, `cli notion ingest`, integration check |
+| **#21** Deploy | `import_tasks`, `cli notion deploy`, partial-failure exit codes |
+| **#22** Cleanup | `cleanup_board`, `cli notion cleanup` |
+| **#23** Auth/mapping | `NOTION_TOKEN`, `notion.properties` in `docs/notion.md`, `require_notion_token` |
+| **#31** Sync | `cli notion sync` Phase 1/2, `cli tasks` shortcuts in `docs/notion.md` |
+
+Pack smoke: `tests/pack/test_notion_epic.py`. Matrix **#60 Pass**.
+
+```bash
+uv run pytest tests/notion/ tests/pack/test_notion_epic.py -q
+uv run python tests/integration/check_integration_coverage.py
+```
+
+## Epic 02d — Chrome bookmarks backlog (#27, #28) on PR #96
+
+**Status:** close-as-shipped evidence on this PR (merge closes last open product children). Parent **#24** already closed.
+
+| Issue | Evidence |
+| --- | --- |
+| **#27** Workflow docs | `docs/chrome.md`, `docs/bookmarks.md`, env vars, pipelines boundary (no repo scripts) |
+| **#28** Snapshots + profiles | `cli chrome bookmarks snapshot`, `chrome.profiles`, `snapshot_retention` |
+
+Pack smoke: `tests/pack/test_chrome_bookmarks_epic.py`.
+
+```bash
+uv run pytest tests/chrome/ tests/pack/test_chrome_bookmarks_epic.py -q
+```
+
+## Epic 06e — Merge readiness (PR #96)
+
+**Status:** product child backlog complete on this branch; merge closes all open `issue-type:child` issues when PR body includes `Fixes #…`.
+
+| Check | Command |
+| --- | --- |
+| Version gate | `uv run python -m src pypi version check --base origin/main` |
+| Pack smoke | `uv run pytest tests/pack/ -q` |
+| Integration | `uv run python tests/integration/check_integration_coverage.py` |
+| PyPI before merge | `cli release main --yes` on `main` @ **1.0.3** (maintainer) |
+
+**Issues closed on merge:** #50, #27, #28, #20–#23, #31, #30, #12–#15, #29.
+
+## Epic 06g — Hub `gardusig/cli` rename
+
+**Status:** **Shipped** on PR #96 + [pipelines #38](https://github.com/gardusig/pipelines/pull/38).
+
+| Layer | Status |
+| --- | --- |
+| CLI | `config/gh/repos.yaml`, PyPI URLs, `pipeline_runtime` alias (**PR #96**) |
+| Hub | `pull-request.yml` checkout + git install URLs accept `gardusig/cli` (**pipelines #38**) |
+| Dispatch | `--repository gardusig/cli` (legacy `gardusig/python-cli` via resolve alias) |

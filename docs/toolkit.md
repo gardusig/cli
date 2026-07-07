@@ -42,4 +42,3 @@ cli pipeline task run --command-json "$TASK_COMMAND" --repo-dir database-src
 
 These commands call `src.services.pipeline_runtime` directly and keep resolver,
 Docker job, and task-action behavior inside the CLI package.
-

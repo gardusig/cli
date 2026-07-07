@@ -20,23 +20,22 @@ from src.services.bookmark_sync import (
     snapshot_bookmarks,
     wait_for_exported_html,
 )
+from src.services.photos_sync import ingest_takeout, list_albums, photos_status
+from src.internal.write.gate import require_write_gate
 from src.utils.config import (
     bookmarks_file_path,
     chrome_downloads_dir,
     chrome_profile_key,
     chrome_snapshot_retention,
     chrome_snapshots_dir,
+    photos_dir_path,
+    photos_takeout_dir,
     project_root,
 )
 
-chrome_app = typer.Typer(help="Chrome browser — bookmarks and future integrations.", no_args_is_help=True)
+chrome_app = typer.Typer(help="Chrome browser — bookmarks and photos integrations.", no_args_is_help=True)
 bookmarks_app = typer.Typer(help="Bookmark ingest / deploy (local-centric).", no_args_is_help=True)
-
-_PHOTOS_DEFER_MESSAGE = (
-    "Google Photos integration is deferred: Epic 02 keeps Chrome file-upload/ingest only. "
-    "Album retrieval is out of scope until a future upload contract is defined. "
-    "See docs/chrome.md#google-photos."
-)
+photos_app = typer.Typer(help="Google Photos Takeout ingest (file-based).", no_args_is_help=True)
 
 
 class ChromeOutputFormat(str, Enum):
@@ -216,11 +215,125 @@ def legacy_export_cmd() -> None:
     bookmarks_ingest_from_chrome()
 
 
-@chrome_app.command("photos")
-def photos_cmd() -> None:
-    """Google Photos integration (deferred)."""
-    typer.echo(_PHOTOS_DEFER_MESSAGE, err=True)
-    raise typer.Exit(2)
+@photos_app.command("list")
+def photos_list_cmd(
+    format: ChromeOutputFormat = typer.Option("table", "--format", help="table or json"),
+) -> None:
+    """List albums ingested under chrome.photos_dir."""
+    try:
+        photos_dir = photos_dir_path()
+        albums = list_albums(photos_dir)
+    except FileNotFoundError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+
+    if format == ChromeOutputFormat.json:
+        _emit_json(
+            {
+                "photos_dir": str(photos_dir),
+                "albums": [
+                    {
+                        "slug": album.slug,
+                        "title": album.title,
+                        "media_count": album.media_count,
+                        "path": album.path,
+                    }
+                    for album in albums
+                ],
+            }
+        )
+        return
+
+    if not albums:
+        rprint("[dim]No albums ingested yet.[/dim]")
+        return
+    for album in albums:
+        rprint(f"[bold]{album.title}[/bold] ({album.slug}) — {album.media_count} files")
+
+
+@photos_app.command("status")
+def photos_status_cmd(
+    format: ChromeOutputFormat = typer.Option("table", "--format", help="table or json"),
+) -> None:
+    """Summarize local Google Photos inventory."""
+    try:
+        payload = photos_status(photos_dir_path())
+    except FileNotFoundError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+
+    if format == ChromeOutputFormat.json:
+        _emit_json(payload)
+        return
+
+    rprint(f"[bold]photos_dir[/bold] {payload['photos_dir']}")
+    rprint(f"albums {payload['album_count']}  media {payload['media_count']}")
+    if payload.get("last_ingest"):
+        rprint(f"last_ingest {payload['last_ingest']}")
+
+
+@photos_app.command("ingest")
+def photos_ingest_cmd(
+    source: str | None = typer.Option(
+        None,
+        "--source",
+        help="Takeout .zip or extracted directory (default: newest .zip in takeout dir).",
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Report planned copies without writing."),
+    yes: bool = typer.Option(False, "--yes", help="Skip write gate in non-interactive mode."),
+    format: ChromeOutputFormat = typer.Option("table", "--format", help="table or json"),
+) -> None:
+    """Import Google Takeout album media into chrome.photos_dir."""
+    try:
+        photos_dir = photos_dir_path()
+        takeout_dir = photos_takeout_dir()
+    except FileNotFoundError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+
+    source_path = _resolve_source_path(
+        os.environ.get("CLI_PHOTOS_SOURCE") or os.environ.get("CLI_PHOTOS_FIXTURE") or source
+    )
+    if not dry_run:
+        require_write_gate(
+            "chrome-photos-ingest",
+            [f"photos_dir: {photos_dir}", f"takeout_dir: {takeout_dir}"],
+            question="Import Google Photos Takeout into the configured photos_dir?",
+            yes=yes,
+        )
+
+    since = None if os.environ.get("CLI_SKIP_CHROME_AUTOMATION") == "1" else time.time()
+    try:
+        result = ingest_takeout(
+            photos_dir,
+            takeout_dir,
+            source=source_path,
+            dry_run=dry_run,
+            timeout=int(os.environ.get("CLI_DOWNLOAD_TIMEOUT", "120")),
+            interval=float(os.environ.get("CLI_DOWNLOAD_INTERVAL", "1")),
+            since_epoch=since,
+        )
+    except (FileNotFoundError, TimeoutError) as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+
+    if format == ChromeOutputFormat.json:
+        _emit_json(
+            {
+                "dry_run": dry_run,
+                "photos_dir": str(photos_dir),
+                "source": result.source,
+                "albums": result.albums,
+                "media_files": result.media_files,
+            }
+        )
+        return
+
+    label = "Would ingest" if dry_run else "Ingested"
+    rprint(f"[green]{label}[/green] {result.media_files} files across {len(result.albums)} albums")
+    for slug in result.albums:
+        rprint(f"  [green]+[/green] {slug}")
 
 
 chrome_app.add_typer(bookmarks_app, name="bookmarks")
+chrome_app.add_typer(photos_app, name="photos")

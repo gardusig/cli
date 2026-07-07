@@ -21,7 +21,7 @@ Parent epic: [issue #4](https://github.com/gardusig/python-cli/issues/4). Downlo
 
 Default on macOS:
 
-```
+```text
 ~/Library/Mobile Documents/com~apple~CloudDocs/git-tags/
   {repo-name}/
     {repo-name}-2026-06-12.zip
@@ -44,7 +44,8 @@ cli drive download onedrive
 cli drive deploy --format json
 cli drive deploy usb-backup
 cli drive sync                        # ingest all + deploy all replicas
-cli drive sync --dry-run              # deploy plan only (ingest skipped)
+cli drive sync --dry-run              # ingest + deploy plan (no writes)
+cli drive sync --status               # preflight: ingest plan + replica gaps
 ```
 
 `--dry-run` and `--format json|table` apply to `upload`, `deploy`, `sync`, and `download`. JSON output lists replica names plus uploaded/skipped/failed (or downloaded) paths. Commands exit non-zero when any replica or file operation fails.
@@ -71,7 +72,7 @@ cli drive upload
 
 ## Tag backup automation (#15)
 
-No shell scripts or launchd plists live in this repo. The supported end-of-day chain is:
+No shell scripts or launchd plists live in this repo — scheduled jobs belong in **`gardusig/pipelines`**. The supported end-of-day chain is:
 
 ```bash
 cli git tag --yes
@@ -82,8 +83,20 @@ cli drive upload          # or: cli drive sync
 For all configured repositories:
 
 ```bash
+cli drive sync --status    # optional preflight
 cli drive sync
 ```
+
+### Failure modes
+
+| Situation | Behavior |
+| --- | --- |
+| Dirty git tree | `cli git tag` refuses until committed or `--allow-dirty` |
+| Missing `GOOGLE_DRIVE_TOKEN` / `ONEDRIVE_TOKEN` | Upload/deploy fails with actionable env error |
+| Offline / API error | Replica row reports `failed`; command exits non-zero unless `--no-strict` on `sync` |
+| Partial ingest failure | `drive sync --no-strict` continues deploy for other repos |
+| Missing `backup.tags_dir` | Commands exit with path to set `backup.tags_dir` in config |
+| Proton enabled | Clear deferral error — keep `drives.proton.enabled: false` |
 
 ## Local workflow catalog
 
@@ -94,9 +107,19 @@ cli drive sync
 | `drive-upload` | `cli drive upload [provider]` | Upload missing zips to enabled cloud replicas |
 | `drive-download` | `cli drive download [provider]` | Download missing zips from cloud replicas into local hub |
 | `drive-deploy` | `cli drive deploy [replica]` | Deploy local zips to cloud and USB replicas |
-| `drive-sync` | `cli drive ingest` -> `cli drive deploy` | Ingest all configured repos, then deploy all replicas |
+| `drive-sync` | `cli drive sync` | **Primary:** ingest all `backup.repositories`, then deploy all replicas |
 | `tag-backup-cloud` | `cli git tag --yes` -> `cli git zip` -> `cli drive upload` | Current repo end-of-day backup |
-| `multi-repo-drive-sync` | `cli drive ingest` -> `cli drive status` -> `cli drive deploy` | All configured repositories |
+| `multi-repo-drive-sync` | `cli drive sync --dry-run` -> `cli drive sync` | Plan then run full backup loop |
+
+**Primary daily workflow:**
+
+```bash
+cli drive sync --status --format json    # preflight only
+cli drive sync --dry-run --format json   # ingest + deploy plan
+cli drive sync                         # ingest all repos, deploy all replicas
+```
+
+Use `--no-strict` to continue when one repository ingest fails but others succeed.
 
 `github-pipelines` is not a target workflow repo for Drive. If it appears in `backup.repositories`, it is only a local backup source.
 
