@@ -14,25 +14,26 @@ One page per Notion column. **Formulas** — paste into **Edit property → Form
    1. Formula — board column from due date and forced status. · 1 files · ~885 B
 2. [Due date](./due-date.md)
    1. Formula — next due from last done and recurrence. · 1 files · ~603 B
-3. [Forced status](./forced-status.md)
-   1. Select — manual override for DerivedStatus. · 1 files · ~443 B
-4. [Frequency](./frequency.md)
-   1. Select — days, weeks, months cadence unit. · 1 files · ~318 B
-5. [Interval](./interval.md)
-   1. Number — multiplier for Frequency. · 1 files · ~249 B
-6. [Last done](./last-done.md)
-   1. Date — last completion stamp. · 1 files · ~313 B
-7. [Enabled](./enabled.md)
+3. [Enabled](./enabled.md)
    1. Yaml — pause task for current life; skipped on deploy. · 1 files
-8. [Name](./name.md)
+4. [Forced status](./forced-status.md)
+   1. Select — manual override for DerivedStatus. · 1 files · ~443 B
+5. [Frequency](./frequency.md)
+   1. Select — days, weeks, months cadence unit. · 1 files · ~318 B
+6. [Interval](./interval.md)
+   1. Number — multiplier for Frequency. · 1 files · ~249 B
+7. [Last done](./last-done.md)
+   1. Date — last completion stamp. · 1 files · ~313 B
+8. [Link](./link.md)
+   1. URL — external reference for the task row. · 1 files · ~236 B
+9. [Name](./name.md)
    1. Title — task label on the board. · 1 files · ~210 B
-9. [Priority](./priority.md)
-   1. Select — priority 1 through 5. · 1 files · ~647 B
-10. [Recurrent](./recurrent.md)
-    - Formula — whether the row repeats. · 1 files · ~338 B
-
-11. [Tag](./tag.md)
-    - Select — domain tag for filtering. · 1 files · ~308 B
+10. [Priority](./priority.md)
+    1. Select — priority 1 through 5. · 1 files · ~647 B
+11. [Recurrent](./recurrent.md)
+    1. Formula — whether the row repeats. · 1 files · ~338 B
+12. [Tag](./tag.md)
+    1. Select — domain tag for filtering. · 1 files · ~308 B
 
 Board UI (sort, visibility, layout) is documented in [board-ui.md](../board-ui.md).
 
