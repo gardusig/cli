@@ -180,6 +180,11 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
             raise RuntimeError("ingest failed")
         return ingest_rows
 
+    def _plan_ingest_repositories(*_args, **_kwargs):
+        if broken == "drive_ingest_error":
+            raise RuntimeError("ingest failed")
+        return ingest_rows
+
     def _tags_dir_path():
         if broken == "missing_tags_dir":
             return tmp_path / "missing-tags"
@@ -188,6 +193,11 @@ def drive_cli_context(tmp_path: Path, *, broken: str | None = None) -> Iterator[
     with (
         patch("src.commands.drive.backup_status", _backup_status),
         patch("src.commands.drive.ingest_repositories", _ingest_repositories),
+        patch("src.commands.drive.plan_ingest_repositories", _plan_ingest_repositories),
+        patch(
+            "src.commands.drive.preflight_replicas",
+            return_value=[],
+        ),
         patch(
             "src.commands.drive.deploy_replicas",
             return_value=[("google", UploadResult(uploaded=["demo-repo/demo-repo-v1.0.0.zip"]))],

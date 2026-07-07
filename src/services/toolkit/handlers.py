@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -265,7 +266,9 @@ def _mermaid_puppeteer_config() -> Path | None:
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
         "--disable-gpu",
-        "--headless=new",
+        "--headless",
+        "--single-process",
+        "--no-zygote",
     ]
     base = Path("/usr/local/share/puppeteer-no-sandbox.json")
     if base.is_file():
@@ -311,9 +314,21 @@ def _lint_mermaid_blocks(workspace: Path, files: list[Path]) -> None:
         puppeteer_config = _mermaid_puppeteer_config()
         for diagram in diagrams:
             cmd = ["mmdc", "-i", str(diagram), "-o", str(diagram.with_suffix(".svg"))]
+            env = os.environ.copy()
             if puppeteer_config is not None:
                 cmd[1:1] = ["-p", str(puppeteer_config)]
-            subprocess.run(cmd, cwd=workspace, check=True, stdout=subprocess.DEVNULL)
+                data = json.loads(puppeteer_config.read_text(encoding="utf-8"))
+                executable = data.get("executablePath")
+                if executable:
+                    env["PUPPETEER_EXECUTABLE_PATH"] = str(executable)
+            subprocess.run(
+                cmd,
+                cwd=workspace,
+                check=True,
+                env=env,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+            )
 
 
 def _lint_java(spec: CommandSpec, workspace: Path, extra_env: dict[str, str]) -> int:

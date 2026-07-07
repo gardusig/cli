@@ -44,7 +44,8 @@ cli drive download onedrive
 cli drive deploy --format json
 cli drive deploy usb-backup
 cli drive sync                        # ingest all + deploy all replicas
-cli drive sync --dry-run              # deploy plan only (ingest skipped)
+cli drive sync --dry-run              # ingest + deploy plan (no writes)
+cli drive sync --status               # preflight: ingest plan + replica gaps
 ```
 
 `--dry-run` and `--format json|table` apply to `upload`, `deploy`, `sync`, and `download`. JSON output lists replica names plus uploaded/skipped/failed (or downloaded) paths. Commands exit non-zero when any replica or file operation fails.
@@ -101,6 +102,7 @@ cli drive sync
 **Primary daily workflow:**
 
 ```bash
+cli drive sync --status --format json    # preflight only
 cli drive sync --dry-run --format json   # ingest + deploy plan
 cli drive sync                         # ingest all repos, deploy all replicas
 ```

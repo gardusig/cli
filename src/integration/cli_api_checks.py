@@ -579,6 +579,18 @@ def _drive_success_checks(repo_path: str) -> list[CliApiCheck]:
         CliApiCheck("drive download", "drive", ("drive", "download", "google"), "Downloading"),
         CliApiCheck("drive deploy", "drive", ("drive", "deploy"), "Done."),
         CliApiCheck("drive sync", "drive", ("drive", "sync"), "Phase 2"),
+        CliApiCheck(
+            "drive sync dry-run",
+            "drive",
+            ("drive", "sync", "--dry-run", "--format", "json"),
+            '"dry_run": true',
+        ),
+        CliApiCheck(
+            "drive sync status",
+            "drive",
+            ("drive", "sync", "--status", "--format", "json"),
+            '"status": true',
+        ),
     ]
 
 
