@@ -14,6 +14,10 @@ permissions:
 
 jobs:
   pipeline:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: gardusig/pipelines/.github/workflows/pull-request.yml@main
     with:
       repo_slug: cli
