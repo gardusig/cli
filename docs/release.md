@@ -79,6 +79,45 @@ Confirm central CI is green on pipelines `main` (`BASE_VERSION` **1.0.3** after 
 
 **Merge order (Epic 06d):** on `main` at **1.0.3**, run `cli release main --yes` → merge dev-gate PR (**1.0.4**) → verify pipelines `BASE_VERSION` **1.0.3**.
 
+## PR #96 merge (Epic 06d–06e)
+
+**Branch:** `feat/epic-06d-release` · **Dev gate:** `1.0.4`
+
+### Before merge (maintainer, on `main`)
+
+```bash
+git checkout main && git pull
+export PYPI_API_TOKEN='pypi-...'
+cli release main --yes          # PyPI 1.0.3 (current main version)
+```
+
+### Merge checklist
+
+```bash
+uv run python -m src pypi version check --base origin/main
+uv run pytest tests/pack/ -q
+uv run python tests/integration/check_integration_coverage.py
+```
+
+Central CI on `gardusig/pipelines` must be green. Re-dispatch:
+
+```bash
+uv run python -m src pipeline run pull-request python-cli \
+  --repository gardusig/python-cli \
+  --ref feat/epic-06d-release \
+  --sha "$(git rev-parse HEAD)"
+```
+
+### Closes on merge
+
+`#50`, `#27`, `#28`, `#20`–`#23`, `#31`, `#30`, `#12`–`#15`, `#29` (see PR body `Fixes` lines).
+
+### After merge
+
+- `main` is at **1.0.4** dev gate
+- Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.3`
+- Open next dev-gate PR (**1.0.5**, Epic 06f)
+
 ## Post-merge release (maintainer)
 
 After the release candidate PR merges to `main`:
