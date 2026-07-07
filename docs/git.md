@@ -6,6 +6,7 @@ Core commands:
 
 | Command | Purpose |
 | --- | --- |
+| `cli ship` | stage, commit (`.`), push `main` — personal backup flow |
 | `cli git start` | align main and create a branch |
 | `cli git push` | add, commit, and push current work |
 | `cli git reset` | return to synced main and optionally clean branches |
@@ -30,6 +31,7 @@ Operations that mutate remote state or discard local work require confirmation:
 
 | Operation | Confirmation |
 | --- | --- |
+| `ship` | `--yes` or interactive prompt |
 | `git push` | `--yes` or interactive prompt (shows branch + intent summary) |
 | `git reset` | `--yes` or interactive prompt (commits dirty branch work by default) |
 | `git main` (align main only) | `--yes` or interactive prompt |
@@ -74,6 +76,20 @@ On a feature branch with uncommitted edits, `reset` commits with `.` (or `-m`) b
 
 ## Publish
 
+### Ship to main (default personal flow)
+
+One entry point — no PR branch, no wip branch:
+
+```bash
+cli ship              # interactive write gate
+cli ship --yes        # stage all, commit '.', push origin/main
+cli s --yes           # hidden alias
+```
+
+Requires checkout on `main`. For feature branches use `cli git push`.
+
+### Push (feature branches + optional wip flow)
+
 ```bash
 cli git push              # interactive: branch summary → add + commit + push
 cli git push --yes        # non-interactive
@@ -85,13 +101,14 @@ cli git commit -m "wip"   # commit only (no push)
 | Current state | Behavior |
 | --- | --- |
 | Feature branch with `origin` | `git add -A`, commit if dirty, push `origin HEAD` |
-| `main` without `--allow-main` and with `origin` | create a generated `wip-YYMMDD-NNN` branch, commit if dirty, push that branch |
-| `main` with `--allow-main` and with `origin` | commit if dirty and push `main`; the write gate calls this out explicitly |
+| `main` with `origin` (default) | commit if dirty and push `main` directly |
+| `main` with `--branch` and `origin` | create a generated `wip-YYMMDD-NNN` branch, commit if dirty, push that branch |
+| `main` with `--no-allow-main` and `origin` | same as `--branch` (wip flow) |
 | No `origin` remote | commit local work only and report that nothing was pushed |
 | `main` without `origin` | commit on `main` locally after confirmation (no push target) |
 | Detached HEAD | refused before the write gate (`Cannot push from detached HEAD`) |
 
-On `main` with `origin`, an interactive `cli git push` asks whether to push directly to `main` before starting a generated `wip-*` branch. Non-interactive runs keep the wip-branch default unless you pass `--allow-main`.
+On `main` with `origin`, an interactive `cli git push --branch` may ask whether to push directly to `main` instead of starting a wip branch. Non-interactive runs use the flags you pass (`--branch` → wip flow; default → push `main`).
 
 Before the write gate, `push` may surface **warnings** (informational; they do not block unless you decline the gate):
 

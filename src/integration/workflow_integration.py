@@ -519,9 +519,10 @@ def _assert_push_gate(
     prefix: str,
     from_main: bool,
     branch: str | None = None,
+    use_branch: bool = False,
 ) -> None:
-    """Write gate must describe start-first on main vs push on current branch."""
-    if from_main:
+    """Write gate must describe main push vs wip branch vs feature-branch push."""
+    if from_main and use_branch:
         for needle in (
             "from_branch: main",
             "target_branch: wip-",
@@ -531,6 +532,18 @@ def _assert_push_gate(
                 errors.append(f"{prefix}: gate missing {needle!r}\n{output}")
         if "Push changes from 'main'" in output:
             errors.append(f"{prefix}: gate must not offer direct push from main\n{output}")
+        return
+
+    if from_main:
+        for needle in (
+            "branch: main",
+            "note: pushing directly on main",
+            "intent: git add -A → commit → push origin HEAD",
+        ):
+            if needle not in output:
+                errors.append(f"{prefix}: gate missing {needle!r}\n{output}")
+        if "target_branch: wip-" in output:
+            errors.append(f"{prefix}: gate must not start wip branch by default\n{output}")
         return
 
     if "from_branch: main" in output or "target_branch: wip-" in output:
@@ -551,6 +564,7 @@ def _invoke_push(
     extra_args: tuple[str, ...] = (),
     from_main: bool | None = None,
     branch: str | None = None,
+    use_branch: bool = False,
     output_format: str = "table",
 ) -> tuple[bool, str]:
     cli_args: list[str] = ["git", "push", "--yes", "-m", message, *extra_args]
@@ -568,7 +582,14 @@ def _invoke_push(
         errors.append(f"{prefix}: missing success message\n{output}")
         return False, output
     if from_main is not None:
-        _assert_push_gate(output, errors, prefix=prefix, from_main=from_main, branch=branch)
+        _assert_push_gate(
+            output,
+            errors,
+            prefix=prefix,
+            from_main=from_main,
+            branch=branch,
+            use_branch=use_branch,
+        )
     return True, output
 
 
@@ -598,7 +619,7 @@ def _assert_pushed(
 
 
 def check_push_from_dirty_main(git_root: Path, repo_root: Path) -> list[str]:
-    """On dirty main → push --yes → auto branch, commit, push."""
+    """On dirty main → push --yes → commit and push main."""
     errors: list[str] = []
     message = "push from main"
     reset_integration_git(git_root)
@@ -620,6 +641,37 @@ def check_push_from_dirty_main(git_root: Path, repo_root: Path) -> list[str]:
         git_root,
         errors,
         prefix="push from dirty main",
+        branch="main",
+        message=message,
+    )
+    return errors
+
+
+def check_push_from_dirty_main_branch(git_root: Path, repo_root: Path) -> list[str]:
+    """On dirty main → push --yes --branch → wip branch, commit, push."""
+    errors: list[str] = []
+    message = "push from main branch"
+    reset_integration_git(git_root)
+    dirty_integration_git(git_root)
+    if _current_branch(git_root) != "main" or not _is_dirty(git_root):
+        return ["push from dirty main branch setup: expected dirty main"]
+
+    ok, _output = _invoke_push(
+        repo_root,
+        git_root,
+        errors,
+        prefix="push from dirty main branch",
+        message=message,
+        extra_args=("--branch",),
+        from_main=True,
+        use_branch=True,
+    )
+    if not ok:
+        return errors
+    _assert_pushed(
+        git_root,
+        errors,
+        prefix="push from dirty main branch",
         branch=None,
         message=message,
         leave_main=True,
@@ -731,7 +783,7 @@ def check_push_from_clean_branch(git_root: Path, repo_root: Path) -> list[str]:
 
 
 def check_push_from_clean_main(git_root: Path, repo_root: Path) -> list[str]:
-    """On clean main → push --yes → new wip branch, no extra commit, push HEAD."""
+    """On clean main → push --yes → push main, no extra commit."""
     errors: list[str] = []
     reset_integration_git(git_root)
     if _current_branch(git_root) != "main" or _is_dirty(git_root):
@@ -751,6 +803,35 @@ def check_push_from_clean_main(git_root: Path, repo_root: Path) -> list[str]:
         git_root,
         errors,
         prefix="push from clean main",
+        branch="main",
+        message=None,
+    )
+    return errors
+
+
+def check_push_from_clean_main_branch(git_root: Path, repo_root: Path) -> list[str]:
+    """On clean main → push --yes --branch → new wip branch, push HEAD."""
+    errors: list[str] = []
+    reset_integration_git(git_root)
+    if _current_branch(git_root) != "main" or _is_dirty(git_root):
+        return ["push from clean main branch setup: expected clean main"]
+
+    ok, _output = _invoke_push(
+        repo_root,
+        git_root,
+        errors,
+        prefix="push from clean main branch",
+        message=".",
+        extra_args=("--branch",),
+        from_main=True,
+        use_branch=True,
+    )
+    if not ok:
+        return errors
+    _assert_pushed(
+        git_root,
+        errors,
+        prefix="push from clean main branch",
         branch=None,
         message=None,
         leave_main=True,
@@ -852,6 +933,8 @@ START_WORKFLOW_CHECKS: tuple[tuple[str, Callable[[Path, Path], list[str]]], ...]
 PUSH_WORKFLOW_CHECKS: tuple[tuple[str, Callable[[Path, Path], list[str]]], ...] = (
     ("push from dirty main", check_push_from_dirty_main),
     ("push from clean main", check_push_from_clean_main),
+    ("push from dirty main branch", check_push_from_dirty_main_branch),
+    ("push from clean main branch", check_push_from_clean_main_branch),
     ("push from dirty branch", check_push_from_dirty_branch),
     ("push from nested branch", check_push_from_nested_branch),
     ("push from clean branch", check_push_from_clean_branch),

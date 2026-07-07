@@ -173,13 +173,32 @@ def test_push_on_main_starts_before_push(mock_run: MagicMock, svc: GitShortcuts)
         patch.object(svc, "remote_exists", return_value=True),
         patch.object(svc, "start", return_value="wip-001") as mock_start,
     ):
-        result = svc.push(yes=True, message="wip")
+        result = svc.push(yes=True, message="wip", use_branch=True, allow_main=False)
     assert result.branch == "wip-001"
     assert result.pushed is True
     assert result.created_branch is True
     mock_start.assert_called_once()
     assert mock_start.call_args.args[0].startswith("wip-")
     assert mock_start.call_args.kwargs == {"yes": True, "prep": False}
+    assert mock_run.call_args.args[0] == ["push", "-u", "origin", "HEAD"]
+
+
+@patch(PATCH)
+def test_push_on_main_pushes_main_by_default(mock_run: MagicMock, svc: GitShortcuts) -> None:
+    mock_run.return_value = _ok()
+    with (
+        patch.object(svc, "current_branch", return_value="main"),
+        patch.object(svc, "is_dirty", return_value=True),
+        patch.object(svc, "remote_exists", return_value=True),
+        patch.object(svc, "start") as mock_start,
+        patch.object(svc, "commit", return_value=True) as mock_commit,
+    ):
+        result = svc.push(yes=True, message=".")
+    assert result.branch == "main"
+    assert result.pushed is True
+    assert result.created_branch is False
+    mock_start.assert_not_called()
+    mock_commit.assert_called_once_with(".")
     assert mock_run.call_args.args[0] == ["push", "-u", "origin", "HEAD"]
 
 

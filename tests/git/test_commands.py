@@ -47,7 +47,9 @@ def test_git_push_with_yes(mock_push: MagicMock) -> None:
     result = runner.invoke(app, ["git", "push", "--yes"])
     assert result.exit_code == 0
     assert "pushed" in result.stdout
-    mock_push.assert_called_once_with(allow_main=False, message=".", yes=True)
+    mock_push.assert_called_once_with(
+        allow_main=True, message=".", yes=True, use_branch=False
+    )
 
 
 @patch.object(GitShortcuts, "push", return_value="main")
@@ -55,7 +57,19 @@ def test_git_push_allow_main(mock_push: MagicMock, snapshot: MagicMock) -> None:
     with patch(SNAPSHOT, return_value=snapshot):
         result = runner.invoke(app, ["git", "push", "--allow-main", "--yes"])
     assert result.exit_code == 0
-    mock_push.assert_called_once_with(allow_main=True, message=".", yes=True)
+    mock_push.assert_called_once_with(
+        allow_main=True, message=".", yes=True, use_branch=False
+    )
+
+
+@patch.object(GitShortcuts, "push", return_value="wip-001")
+def test_git_push_branch_flag(mock_push: MagicMock, snapshot: MagicMock) -> None:
+    with patch(SNAPSHOT, return_value=snapshot):
+        result = runner.invoke(app, ["git", "push", "--branch", "--yes"])
+    assert result.exit_code == 0
+    mock_push.assert_called_once_with(
+        allow_main=False, message=".", yes=True, use_branch=True
+    )
 
 
 @patch.object(GitShortcuts, "start", return_value="feature-x")

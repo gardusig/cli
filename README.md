@@ -116,7 +116,9 @@ Run from inside a repository (`cd` into the repo first).
 | --- | --- |
 | **Sync main** (before/after work) | `cli git reset --yes` (`--delete-merged` to prune; `--main-only` to skip branch prompt) |
 | **Start issue** (align main + branch) | `cli git start issue-9-slug --yes` |
-| **During work** (add + commit + push) | `cli git push --yes` (on `main`, starts random branch first) |
+| **Ship to main** (personal backup) | `cli ship --yes` |
+| **During work** (feature branch) | `cli git push --yes` |
+| **Wip branch from main** | `cli git push --yes --branch` |
 | Branch in place (no align) | `cli git start [name] --no-prep` |
 | Commit only | `cli git commit` |
 | Sync feature branch | `cli git pull` |
