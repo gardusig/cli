@@ -49,5 +49,6 @@ def test_release_epic_pack_smokes_present() -> None:
         "test_drive_sync_epic.py",
         "test_drive_providers_epic.py",
         "test_notion_epic.py",
+        "test_merge_readiness_epic.py",
     ):
         assert (pack / name).is_file(), name
