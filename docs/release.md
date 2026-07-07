@@ -134,4 +134,4 @@ pip install --upgrade gardusig-cli
 cli --version
 ```
 
-Then bump `main` to the next patch (e.g. `1.0.4`) for the next PR version gate, and close issues documented in `docs/public-cli-hardening.md`.
+Then open the next dev-gate PR (**1.0.5**, Epic 06f) from `main`. See `docs/public-cli-hardening.md`.

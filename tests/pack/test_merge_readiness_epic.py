@@ -1,4 +1,4 @@
-"""Pack tests — Epic 06e merge readiness (PR #96)."""
+"""Pack tests — Epic 06d–06g merge readiness (PR #96)."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ def test_merge_readiness_release_checklist() -> None:
     assert "Epic 06d" in text or "06d–06g" in text or "06d-06g" in text
     assert "pipeline run pull-request python-cli" in text
     assert "gardusig/cli" in text
+    assert "pipelines #38" in text
     for issue in ("#50", "#27", "#28", "#31", "#30", "#29"):
         assert issue in text
     assert "#20" in text and "#23" in text
