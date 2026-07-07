@@ -4,7 +4,7 @@
 
 | Layer | Location | Owns |
 | --- | --- | --- |
-| **Library** | `gardusig/yaml` (submodule: `quickstart/devops/yaml/`) | Reusable `workflow_call` routers, `catalog.yaml`, hub images (`docker/operator`, `docker/cli-base`) |
+| **Library** | `gardusig/yaml` (submodule: `index/devops/yaml/`) | Reusable `workflow_call` routers, `catalog.yaml`, hub images (`docker/operator`, `docker/cli-base`) |
 | **App repo** | `gardusig/cli`, language repos, … | `Dockerfile`, `.github/pull-request.yaml`, thin `.github/workflows/pull-request.yml` caller |
 | **App-specific automation** | Same app repo | `.github/workflows/test-nightly.yml`, `.github/release.yaml`, `.github/repo-review.yaml` |
 
@@ -16,8 +16,8 @@
 
 ## Catalog
 
-See `quickstart/devops/yaml/catalog.yaml` for registered workflow ids, lib paths, and dispatch types.
+See `index/devops/yaml/catalog.yaml` for registered workflow ids, lib paths, and dispatch types.
 
 ## History
 
-`gardusig/pipelines` was renamed to **`gardusig/yaml`**. The library submodule now lives at **`quickstart/devops/yaml/`** alongside other devops tracks.
+`gardusig/pipelines` was renamed to **`gardusig/yaml`**. The library submodule lives at **`index/devops/yaml/`**.
