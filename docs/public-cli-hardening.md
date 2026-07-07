@@ -2,11 +2,11 @@
 
 Epic [#57](https://github.com/gardusig/python-cli/issues/57) reviewed the public `cli` command surface after product epics landed. The console command is `cli`; the package is `gardusig-cli`.
 
-**Status (PR #88):** integration coverage gate **154/154**; child matrix #58–#65 verified; meta coverage tests aligned with `ok_exempt` deferred rows (`chrome photos` / #50).
+**Status (`main`, post-#88):** integration coverage gate **154/154**; child matrix #58–#65 verified; meta coverage tests aligned with `ok_exempt` deferred rows (`chrome photos` / #50).
 
-**Merge readiness (PR #88, 2026-07-06):** `gardusig-cli` **1.0.3** (main already **1.0.2** via #87); integration gate **154/154**; verification **511+** tests green; `cli pypi version check` passes; selective resolve E2E against `github-pipelines` python-cli.yaml.
+**Shipped on `main`:** [#88](https://github.com/gardusig/python-cli/pull/88) (language-first CLI, epics 07–12, 00-infra) and [#95](https://github.com/gardusig/python-cli/pull/95) (`cli ship`). `gardusig-cli` **1.0.3** on `main`; dev gate **1.0.4** on release PR.
 
-**Epic 06 status:** Pre-merge on branch; [github-pipelines PR #20](https://github.com/gardusig/github-pipelines/pull/20) and [PR #24](https://github.com/gardusig/github-pipelines/pull/24) (`BASE_VERSION` **1.0.2**) merged on `main`. Awaiting green PR #88 CI → merge → `docs/release.md` § Post-merge release.
+**Epic 06d status:** PR #88 merged; PyPI release **1.0.3** pending `cli release main --yes`; pipelines `BASE_VERSION` → **1.0.3**; backlog closure in progress. See § Epic 06d below.
 
 ## Current Matrix
 
@@ -77,21 +77,23 @@ python tests/integration/check_api_integration.py
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
 - **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.3` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
 
-## Next epic: merge & release (Epic 06c)
+## Epic 06d — Release and backlog closure
 
-**Current gate:** green CI on [PR #88](https://github.com/gardusig/python-cli/pull/88) → merge → ship **1.0.3** → close epics per closure tables below. Pipelines adoption ([PR #20](https://github.com/gardusig/github-pipelines/pull/20)) is on `main`.
+**Current gate:** release **1.0.3** from `main` (pre-1.0.4 bump), pin hub CI, close shipped issues.
 
-| Step | Action |
-| --- | --- |
-| 1 | Green CI on PR #88 (selective matrix + TestPyPI) |
-| 2 | Merge PR #88 → `main` |
-| 3 | `cli release main --yes` → PyPI **1.0.3** |
-| 4 | Bump `github-pipelines` `BASE_VERSION` to **1.0.3** and `main` to **1.0.4** for next gate |
-| 5 | Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.3` |
-| 6 | Close #57–#85, #2, #4, #24, #54, #66–#70 per § Closure recommendations |
+| Step | Action | Status |
+| --- | --- | --- |
+| 1 | Merge PR #88 + #95 | **Done** |
+| 2 | `cli release main --yes` → PyPI **1.0.3** | Maintainer (`PYPI_API_TOKEN`) |
+| 3 | Bump `github-pipelines` `BASE_VERSION` to **1.0.3** | PR with this epic |
+| 4 | Bump `main` dev gate to **1.0.4** | PR with this epic |
+| 5 | Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.3` | After PyPI ship |
+| 6 | Close #57–#85, #2, #4, #24, #54, #66–#70 per § Closure recommendations | PR / maintainer |
 
-Evidence: [`docs/release.md`](release.md) § Pre-merge / Post-merge; pack smoke `tests/pack/test_merge_epic.py`.
+Evidence: [`docs/release.md`](release.md) § Post-merge release; pack smoke `tests/pack/test_release_epic.py`.
 
-**Shipped on PR #88 (close post-merge):** Epics **08**, **09**, **10**, **11**, **12**, **hub-operator**, **00-infra** (python-cli side) — see [`docs/project.md`](project.md), [`docs/gh.md`](gh.md), [`docs/docker.md`](docker.md), [`docs/ci-workflows.md`](ci-workflows.md).
+**Shipped on `main` (close in 06d):** Epics **08**, **09**, **10**, **11**, **12**, **hub-operator**, **00-infra** — see [`docs/project.md`](project.md), [`docs/gh.md`](gh.md), [`docs/docker.md`](docker.md), [`docs/ci-workflows.md`](ci-workflows.md), [`docs/hub-operator.md`](hub-operator.md).
 
-**Deferred:** [#50](https://github.com/gardusig/python-cli/issues/50) Chrome Photos.
+## Next product epic: Chrome Photos (#50)
+
+**Deferred surface:** `cli chrome photos` (stub). Bookmarks shipped; parent [#24](https://github.com/gardusig/python-cli/issues/24) closes when #50 ships. See [`docs/chrome.md`](chrome.md#google-photos).

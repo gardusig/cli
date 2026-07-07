@@ -6,7 +6,7 @@ Production releases publish **`gardusig-cli`** to [PyPI](https://pypi.org/projec
 
 Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync). PR CI requires the PR version to be **greater** than `origin/main` via `cli pypi version check`.
 
-Example: `main` ships `1.0.2`; a release candidate PR bumps to **`1.0.3`** (strictly greater than base).
+Example: `main` ships `1.0.3`; a development PR bumps to **`1.0.4`** (strictly greater than base).
 
 ## Repository boundary
 
@@ -75,9 +75,9 @@ uv run pytest tests/git/ tests/gh/ tests/docker/ tests/chrome/ \
   tests/notion/ tests/drive/ tests/contest/ tests/project/ tests/pypi/ -q
 ```
 
-Confirm central CI is green on pipelines `main` ([PR #20](https://github.com/gardusig/github-pipelines/pull/20) merged; `BASE_VERSION` **1.0.2** via [PR #24](https://github.com/gardusig/github-pipelines/pull/24)). Until PyPI ships **1.0.3**, workflows install `gardusig-cli` from editable `app-src`.
+Confirm central CI is green on pipelines `main` (`BASE_VERSION` **1.0.3** after Epic 06d). Until PyPI ships **1.0.3**, workflows install `gardusig-cli` from editable `app-src`.
 
-**Merge order:** merge PR #88 → `cli release main --yes` → bump pipelines `BASE_VERSION` to **1.0.3**.
+**Merge order (Epic 06d):** on `main` at **1.0.3**, run `cli release main --yes` → merge dev-gate PR (**1.0.4**) → verify pipelines `BASE_VERSION` **1.0.3**.
 
 ## Post-merge release (maintainer)
 
