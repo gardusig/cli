@@ -28,6 +28,7 @@ def test_release_epic_hardening_pointer() -> None:
     assert "Epic 04d" in text or "#12" in text
     assert "Epic 03d" in text or "#20" in text
     assert "Epic 02d" in text or "#27" in text
+    assert "Epic 06e" in text or "Merge readiness" in text
 
 
 @requires_docs
@@ -36,3 +37,16 @@ def test_release_epic_post_merge_release_docs() -> None:
     assert "Post-merge release" in text
     assert "cli release main --yes" in text
     assert "1.0.3" in text
+
+
+def test_release_epic_pack_smokes_present() -> None:
+    pack = ROOT / "tests" / "pack"
+    for name in (
+        "test_release_epic.py",
+        "test_chrome_photos_epic.py",
+        "test_chrome_bookmarks_epic.py",
+        "test_drive_sync_epic.py",
+        "test_drive_providers_epic.py",
+        "test_notion_epic.py",
+    ):
+        assert (pack / name).is_file(), name

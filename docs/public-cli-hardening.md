@@ -89,8 +89,8 @@ python tests/integration/check_api_integration.py
 | --- | --- | --- |
 | 1 | Merge PR #88 + #95 | **Done** |
 | 2 | `cli release main --yes` → PyPI **1.0.3** | Maintainer (`PYPI_API_TOKEN`) |
-| 3 | Bump `github-pipelines` `BASE_VERSION` to **1.0.3** | PR with this epic |
-| 4 | Bump `main` dev gate to **1.0.4** | PR with this epic |
+| 3 | Bump `github-pipelines` `BASE_VERSION` to **1.0.3** | **Done** ([pipelines #35](https://github.com/gardusig/pipelines/pull/35), [#37](https://github.com/gardusig/pipelines/pull/37)) |
+| 4 | Bump `main` dev gate to **1.0.4** | **This PR** |
 | 5 | Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.3` | After PyPI ship |
 | 6 | Close #57–#85, #2, #4, #24, #54, #66–#70 per § Closure recommendations | PR / maintainer |
 
@@ -169,3 +169,16 @@ Pack smoke: `tests/pack/test_chrome_bookmarks_epic.py`.
 ```bash
 uv run pytest tests/chrome/ tests/pack/test_chrome_bookmarks_epic.py -q
 ```
+
+## Epic 06e — Merge readiness (PR #96)
+
+**Status:** product child backlog complete on this branch; merge closes all open `issue-type:child` issues when PR body includes `Fixes #…`.
+
+| Check | Command |
+| --- | --- |
+| Version gate | `uv run python -m src pypi version check --base origin/main` |
+| Pack smoke | `uv run pytest tests/pack/ -q` |
+| Integration | `uv run python tests/integration/check_integration_coverage.py` |
+| PyPI before merge | `cli release main --yes` on `main` @ **1.0.3** (maintainer) |
+
+**Issues closed on merge:** #50, #27, #28, #20–#23, #31, #30, #12–#15, #29.
