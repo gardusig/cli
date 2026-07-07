@@ -30,6 +30,7 @@ def test_release_epic_hardening_pointer() -> None:
     assert "Epic 02d" in text or "#27" in text
     assert "Epic 06e" in text or "Merge readiness" in text
     assert "Epic 06g" in text
+    assert "156/156" in text or "PR #96" in text
 
 
 @requires_docs

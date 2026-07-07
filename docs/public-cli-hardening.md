@@ -2,11 +2,11 @@
 
 Epic [#57](https://github.com/gardusig/python-cli/issues/57) reviewed the public `cli` command surface after product epics landed. The console command is `cli`; the package is `gardusig-cli`.
 
-**Status (`main`, post-#88):** integration coverage gate **154/154**+; child matrix #58–#65 verified; `chrome photos` ingest shipped on PR #96 ([#50](https://github.com/gardusig/python-cli/issues/50)).
+**Status (`main`):** integration coverage **156/156** on release PR; child matrix #58–#65 verified; product children ship on [PR #96](https://github.com/gardusig/cli/pull/96).
 
-**Shipped on `main`:** [#88](https://github.com/gardusig/python-cli/pull/88) (language-first CLI, epics 07–12, 00-infra) and [#95](https://github.com/gardusig/python-cli/pull/95) (`cli ship`). `gardusig-cli` **1.0.3** on `main`; dev gate **1.0.4** on release PR.
+**Shipped on `main`:** [#88](https://github.com/gardusig/cli/pull/88), [#95](https://github.com/gardusig/cli/pull/95). `gardusig-cli` **1.0.3** on `main`; dev gate **1.0.4** on PR #96 (`feat/epic-06d-release`).
 
-**Epic 06d status:** PR #88 merged; PyPI release **1.0.3** pending `cli release main --yes`; pipelines `BASE_VERSION` → **1.0.3**; backlog closure in progress. See § Epic 06d below.
+**Epic 06d–06g status:** Product backlog + rename shipped on PR #96; merge closes 14 child issues. Maintainer: PyPI **1.0.3** on `main` before merge, then **1.0.4** after. See § Epic 06d–06g below.
 
 ## Current Matrix
 
@@ -83,16 +83,16 @@ python tests/integration/check_api_integration.py
 
 ## Epic 06d — Release and backlog closure
 
-**Current gate:** release **1.0.3** from `main` (pre-1.0.4 bump), pin hub CI, close shipped issues.
+**Current gate:** PR #96 merges **1.0.4** dev gate + closes last product children.
 
 | Step | Action | Status |
 | --- | --- | --- |
 | 1 | Merge PR #88 + #95 | **Done** |
 | 2 | `cli release main --yes` → PyPI **1.0.3** | Maintainer (`PYPI_API_TOKEN`) |
-| 3 | Bump `github-pipelines` `BASE_VERSION` to **1.0.3** | **Done** ([pipelines #35](https://github.com/gardusig/pipelines/pull/35), [#37](https://github.com/gardusig/pipelines/pull/37)) |
-| 4 | Bump `main` dev gate to **1.0.4** | **This PR** |
+| 3 | Bump `gardusig/pipelines` `BASE_VERSION` to **1.0.3** | **Done** ([pipelines #35](https://github.com/gardusig/pipelines/pull/35), [#37](https://github.com/gardusig/pipelines/pull/37)) |
+| 4 | Dev gate **1.0.4** + product backlog | **PR #96** (06d–06g) |
 | 5 | Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.3` | After PyPI ship |
-| 6 | Close #57–#85, #2, #4, #24, #54, #66–#70 per § Closure recommendations | PR / maintainer |
+| 6 | Close #50, #27–#28, #20–#23, #31, #30, #12–#15, #29 on PR #96 merge | **PR #96** `Fixes` lines |
 
 Evidence: [`docs/release.md`](release.md) § Post-merge release; pack smoke `tests/pack/test_release_epic.py`.
 
