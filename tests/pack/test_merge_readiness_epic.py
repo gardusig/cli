@@ -42,6 +42,14 @@ def test_merge_readiness_repo_rename_contract() -> None:
     assert '"gardusig/cli": "gardusig/python-cli"' in runtime
 
 
+def test_merge_readiness_app_local_pipeline_config() -> None:
+    pr_config = (ROOT / ".github" / "pull-request.yaml").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github" / "workflows" / "pull-request.yml").read_text(encoding="utf-8")
+    assert "repo: gardusig/cli" in pr_config
+    assert "gardusig/pipelines/.github/workflows/pull-request.yml" in workflow
+    assert "repository: gardusig/cli" in workflow
+
+
 @requires_docs
 def test_merge_readiness_hub_operator_rename_note() -> None:
     hub = (ROOT / "docs" / "hub-operator.md").read_text(encoding="utf-8")

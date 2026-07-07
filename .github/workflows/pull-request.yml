@@ -14,10 +14,10 @@ permissions:
 
 jobs:
   pipeline:
-    uses: gardusig/github-pipelines/.github/workflows/pull-request.yml@main
+    uses: gardusig/pipelines/.github/workflows/pull-request.yml@main
     with:
       repo_slug: python-cli
-      repository: gardusig/python-cli
+      repository: gardusig/cli
       ref: ${{ github.event.pull_request.head.ref }}
       sha: ${{ github.event.pull_request.head.sha }}
       pr_number: ${{ github.event.pull_request.number }}
