@@ -183,13 +183,12 @@ uv run pytest tests/chrome/ tests/pack/test_chrome_bookmarks_epic.py -q
 
 **Issues closed on merge:** #50, #27, #28, #20–#23, #31, #30, #12–#15, #29.
 
-## Epic 06g — Hub `gardusig/cli` rename (post-06e)
+## Epic 06g — Hub `gardusig/cli` rename
 
-**Status on PR #96:** CLI side shipped — `config/gh/repos.yaml`, PyPI URLs, `pipeline_runtime`
-alias. Hub still keys `gardusig/python-cli` for checkout until `gardusig/pipelines` PR lands.
+**Status:** **Shipped** on PR #96 + [pipelines #38](https://github.com/gardusig/pipelines/pull/38).
 
-| Layer | Done when |
+| Layer | Status |
 | --- | --- |
-| CLI | `gardusig/cli` in repos registry + resolve alias (**PR #96**) |
-| Hub | `pull-request.yml` checkout + git install URLs accept `gardusig/cli` (**[pipelines #38](https://github.com/gardusig/pipelines/pull/38)**) |
-| Dispatch | `--repository gardusig/cli` without legacy slug |
+| CLI | `config/gh/repos.yaml`, PyPI URLs, `pipeline_runtime` alias (**PR #96**) |
+| Hub | `pull-request.yml` checkout + git install URLs accept `gardusig/cli` (**pipelines #38**) |
+| Dispatch | `--repository gardusig/cli` (legacy `gardusig/python-cli` via resolve alias) |

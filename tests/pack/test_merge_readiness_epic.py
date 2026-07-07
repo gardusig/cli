@@ -13,6 +13,7 @@ def test_merge_readiness_release_checklist() -> None:
     text = (ROOT / "docs" / "release.md").read_text(encoding="utf-8")
     assert "PR #96 merge" in text
     assert "pipeline run pull-request python-cli" in text
+    assert "gardusig/cli" in text
     for issue in ("#50", "#27", "#28", "#31", "#30", "#29"):
         assert issue in text
     assert "#20" in text and "#23" in text
@@ -26,6 +27,8 @@ def test_merge_readiness_hardening_section() -> None:
     assert "Merge readiness" in text
     assert "PR #96" in text
     assert "156/156" in text or "156" in text
+    assert "Epic 06g" in text
+    assert "Shipped" in text
 
 
 def test_merge_readiness_repo_rename_contract() -> None:
