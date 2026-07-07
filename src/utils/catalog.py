@@ -139,7 +139,9 @@ CHROME_COMMANDS: tuple[tuple[str, str], ...] = (
     ("bookmarks merge", "merge new URLs from export into backup"),
     ("bookmarks snapshot", "timestamped copy under chrome.snapshots_dir"),
     ("bookmarks deploy", "validate configured local file for browser import"),
-    ("photos", "Google Photos (deferred)"),
+    ("photos list", "list ingested Google Photos albums"),
+    ("photos ingest", "import Google Takeout zip into photos_dir"),
+    ("photos status", "summarize local Google Photos inventory"),
     ("bookmarks export", "legacy alias for bookmarks ingest"),
     ("bookmarks import", "legacy alias for bookmarks deploy"),
 )

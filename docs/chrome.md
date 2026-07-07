@@ -67,9 +67,49 @@ cli chrome bookmarks snapshot --profile Default
 
 ## Google Photos {#google-photos}
 
-**Deferred** ([#50](https://github.com/gardusig/python-cli/issues/50)). Epic 02 keeps Chrome integration to **file upload/ingest** (bookmark HTML). Google Photos album retrieval is out of scope until a future upload contract is defined.
+**Epic:** [#50](https://github.com/gardusig/python-cli/issues/50) — file-based ingest from [Google Takeout](https://takeout.google.com/) (no live API in v1).
 
-`cli chrome photos` exits with a clear defer message. Use bookmark commands above for supported workflows.
+| Phase | Command | What it does |
+| --- | --- | --- |
+| Inventory | `chrome photos list` | Albums under `chrome.photos_dir` |
+| Ingest | `chrome photos ingest` | Import newest Takeout `.zip` (or `--source`) |
+| Status | `chrome photos status` | Summary JSON/table for local inventory |
+
+### Manual roundtrip
+
+```bash
+# In Google Takeout: select Google Photos → create export → download .zip
+cli chrome photos ingest --yes
+cli chrome photos list --format json
+cli chrome photos status --format json
+```
+
+Output lands in a **private** path (`chrome.photos_dir`), not this public repo.
+
+### Configuration
+
+```yaml
+chrome:
+  photos_dir: ~/git-local/private/photos
+  photos_takeout_dir: ~/Downloads   # optional; defaults to chrome.downloads_dir
+```
+
+| Env var | Purpose |
+| --- | --- |
+| `CLI_PHOTOS_DIR` | Override `chrome.photos_dir` |
+| `CLI_PHOTOS_TAKEOUT_DIR` | Override Takeout poll directory |
+| `CLI_PHOTOS_SOURCE` / `CLI_PHOTOS_FIXTURE` | Explicit Takeout zip/dir (tests/CI) |
+| `CLI_SKIP_CHROME_AUTOMATION` | Use newest `.zip` without polling |
+
+Layout after ingest:
+
+```text
+photos_dir/
+  manifest.json
+  albums/
+    summer/
+      photo.jpg
+```
 
 ## See also
 

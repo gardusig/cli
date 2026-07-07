@@ -62,6 +62,8 @@ chrome:
 - `downloads_dir` — folder polled for newest HTML export
 - `snapshots_dir` — timestamped copies from `cli chrome bookmarks snapshot`
 - `snapshot_retention` — max snapshots per profile (0 = unlimited)
+- `photos_dir` — private Google Photos album store (`cli chrome photos ingest`)
+- `photos_takeout_dir` — folder polled for Takeout `.zip` files (defaults to `downloads_dir`)
 - `profile` / `profiles` — multi-profile backup paths (`--profile` on bookmark commands)
 
 ## Backup (local git-tags)

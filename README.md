@@ -185,7 +185,7 @@ cli chrome bookmarks merge --dry-run
 cli chrome bookmarks deploy
 ```
 
-Google Photos ([#50](https://github.com/gardusig/python-cli/issues/50)) is deferred — `cli chrome photos` prints a clear message.
+Google Photos ([#50](https://github.com/gardusig/python-cli/issues/50)): `cli chrome photos ingest` imports Google Takeout exports into a configured private `photos_dir`.
 
 See also [docs/bookmarks.md](docs/bookmarks.md).
 
