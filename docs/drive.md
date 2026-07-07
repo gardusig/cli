@@ -21,7 +21,7 @@ Parent epic: [issue #4](https://github.com/gardusig/python-cli/issues/4). Downlo
 
 Default on macOS:
 
-```
+```text
 ~/Library/Mobile Documents/com~apple~CloudDocs/git-tags/
   {repo-name}/
     {repo-name}-2026-06-12.zip

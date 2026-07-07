@@ -86,7 +86,7 @@ cli chrome photos status --format json
 
 Output lands in a **private** path (`chrome.photos_dir`), not this public repo.
 
-### Configuration
+### Photos paths
 
 ```yaml
 chrome:
