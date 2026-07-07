@@ -17,9 +17,10 @@ class CatalogEntry:
 
 
 QUICK_DEFAULTS = (
+    ("ship", "stage, commit ('.'), push main — personal backup flow"),
     ("git start", "issue start: align main + branch (wip-YYMMDD-NNN or issue slug); --no-prep to branch in place"),
     ("git commit", "message defaults to '.'"),
-    ("git push", "add + commit + push; on main starts random branch — use --yes -y to skip prompt"),
+    ("git push", "add + commit + push; on main pushes main by default — use --branch for wip flow; --yes -y to skip prompt"),
     ("git reset", "return to synced main; optional --delete-merged or interactive branch cleanup — --yes"),
     ("git stash push", "message defaults to '.'"),
     ("git tag", "sync main, tag with per-repo pattern (config/tag.yaml)"),

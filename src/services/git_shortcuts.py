@@ -251,12 +251,23 @@ class GitShortcuts:
         run_git(["commit", "-m", message], cwd=self.top)
         return True
 
-    def push_plan(self, *, allow_main: bool = False, message: str = ".") -> GitPushPlan:
+    def push_plan(
+        self,
+        *,
+        allow_main: bool = True,
+        message: str = ".",
+        use_branch: bool = False,
+    ) -> GitPushPlan:
         """Resolve push intent once so prompts and writes agree."""
         current = self.current_branch()
         dirty = self.is_dirty()
         remote = "origin" if self.remote_exists("origin") else None
-        create_branch = current == "main" and not allow_main and remote is not None
+        create_branch = (
+            current == "main"
+            and use_branch
+            and not allow_main
+            and remote is not None
+        )
         target = (
             suggest_branch_name(self.local_branch_names(exclude_main=False))
             if create_branch
@@ -277,14 +288,19 @@ class GitShortcuts:
     def push(
         self,
         *,
-        allow_main: bool = False,
+        allow_main: bool = True,
         message: str = ".",
         yes: bool = False,
+        use_branch: bool = False,
     ) -> GitPushResult:
         """Stage if dirty, commit, and push when a remote is available."""
         if not yes:
             raise RuntimeError("Push requires confirmation. Pass --yes to proceed.")
-        plan = self.push_plan(allow_main=allow_main, message=message)
+        plan = self.push_plan(
+            allow_main=allow_main,
+            message=message,
+            use_branch=use_branch,
+        )
         created_branch = False
         if plan.create_branch_first:
             self.start(plan.target_branch, yes=True, prep=False)

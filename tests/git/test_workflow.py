@@ -135,7 +135,7 @@ def test_push_plan_on_main_starts_branch_first() -> None:
         message="wip",
         create_branch_first=True,
     )
-    question, lines = _push_plan(svc, "wip", allow_main=False)
+    question, lines = _push_plan(svc, "wip", allow_main=False, use_branch=True)
     assert question.startswith("Start 'wip-")
     assert "commit, and push to origin?" in question
     assert any(line.startswith("target_branch: wip-") for line in lines)
@@ -200,7 +200,22 @@ def test_push_plan_warns_when_main_tracks_feature_upstream() -> None:
     assert "warning: on main but upstream tracks 'feat-x'" in lines
 
 
-def test_interactive_allow_main_opt_in(monkeypatch) -> None:
+def test_push_plan_on_main_pushes_main_by_default() -> None:
+    svc = MagicMock()
+    svc.push_plan.return_value = GitPushPlan(
+        source_branch="main",
+        target_branch="main",
+        remote="origin",
+        dirty=True,
+        message=".",
+        allow_main=True,
+    )
+    question, lines = _push_plan(svc, ".", allow_main=True, use_branch=False)
+    assert "main" in question
+    assert "note: pushing directly on main" in lines
+
+
+def test_interactive_allow_main_on_branch_flow(monkeypatch) -> None:
     svc = MagicMock()
     svc.push_plan.return_value = GitPushPlan(
         source_branch="main",
@@ -211,8 +226,8 @@ def test_interactive_allow_main_opt_in(monkeypatch) -> None:
         create_branch_first=True,
     )
     monkeypatch.setattr("src.commands.git.sys.stdin.isatty", lambda: True)
-    monkeypatch.setattr("src.commands.git.typer.confirm", lambda *args, **kwargs: True)
-    assert _interactive_allow_main(svc, allow_main=False, yes=False) is True
+    monkeypatch.setattr("src.commands.git.typer.confirm", lambda *args, **kwargs: False)
+    assert _interactive_allow_main(svc, allow_main=False, yes=False, use_branch=True) is False
 
 
 @patch.object(GitShortcuts, "push")
@@ -239,7 +254,9 @@ def test_git_push_with_yes(
     assert "pushed" in result.stdout
     assert "intent: git add -A" in result.stdout
     assert "branch: feat-x" in result.stdout
-    mock_push.assert_called_once_with(allow_main=False, message="wip", yes=True)
+    mock_push.assert_called_once_with(
+        allow_main=True, message="wip", yes=True, use_branch=False
+    )
 
 
 @patch.object(GitShortcuts, "is_dirty", return_value=True)
@@ -262,15 +279,21 @@ def test_git_push_without_origin_reports_local_commit(
     assert result.exit_code == 0
     assert "no origin remote" in result.stdout
     assert "nothing pushed" in result.stdout
-    mock_push.assert_called_once_with(allow_main=False, message="wip", yes=True)
+    mock_push.assert_called_once_with(
+        allow_main=True, message="wip", yes=True, use_branch=False
+    )
 
 
 @patch.object(GitShortcuts, "current_branch", return_value="main")
 @patch.object(GitShortcuts, "local_branch_names", return_value=[])
 @patch.object(GitShortcuts, "is_dirty", return_value=True)
 @patch.object(GitShortcuts, "remote_exists", return_value=True)
-@patch.object(GitShortcuts, "push", return_value="wip-260611-001")
-def test_git_push_on_main_starts_first(
+@patch.object(
+    GitShortcuts,
+    "push",
+    return_value=GitPushResult(branch="main", pushed=True, remote="origin"),
+)
+def test_git_push_on_main_pushes_main_by_default(
     mock_push: MagicMock,
     _remote: MagicMock,
     _dirty: MagicMock,
@@ -281,11 +304,35 @@ def test_git_push_on_main_starts_first(
     with patch(GIT_SNAPSHOT_PATCH, return_value=snapshot):
         result = runner.invoke(app, ["git", "push", "--yes", "-m", "wip"])
     assert result.exit_code == 0
+    assert "branch: main" in result.stdout
+    assert "note: pushing directly on main" in result.stdout
+    mock_push.assert_called_once_with(
+        allow_main=True, message="wip", yes=True, use_branch=False
+    )
+
+
+@patch.object(GitShortcuts, "current_branch", return_value="main")
+@patch.object(GitShortcuts, "local_branch_names", return_value=[])
+@patch.object(GitShortcuts, "is_dirty", return_value=True)
+@patch.object(GitShortcuts, "remote_exists", return_value=True)
+@patch.object(GitShortcuts, "push", return_value="wip-260611-001")
+def test_git_push_on_main_with_branch_flag_starts_first(
+    mock_push: MagicMock,
+    _remote: MagicMock,
+    _dirty: MagicMock,
+    _branches: MagicMock,
+    _current: MagicMock,
+    snapshot: MagicMock,
+) -> None:
+    with patch(GIT_SNAPSHOT_PATCH, return_value=snapshot):
+        result = runner.invoke(app, ["git", "push", "--yes", "--branch", "-m", "wip"])
+    assert result.exit_code == 0
     assert "target_branch: wip-" in result.stdout
     assert "from_branch: main" in result.stdout
     assert "intent: start 'wip-" in result.stdout
-    assert "Push changes from 'main'" not in result.stdout
-    mock_push.assert_called_once_with(allow_main=False, message="wip", yes=True)
+    mock_push.assert_called_once_with(
+        allow_main=False, message="wip", yes=True, use_branch=True
+    )
 
 
 @patch.object(GitShortcuts, "push", return_value="feat-x")
@@ -323,3 +370,27 @@ def test_git_push_json_format(mock_push: MagicMock, snapshot: MagicMock) -> None
     assert '"warnings"' in result.stdout
     assert "merged into main" in result.stdout
     mock_push.assert_called_once()
+
+
+@patch.object(GitShortcuts, "current_branch", return_value="main")
+@patch.object(
+    GitShortcuts,
+    "push",
+    return_value=GitPushResult(branch="main", pushed=True, remote="origin"),
+)
+def test_cli_ship_pushes_main(mock_push: MagicMock, _branch: MagicMock, snapshot: MagicMock) -> None:
+    with patch(GIT_SNAPSHOT_PATCH, return_value=snapshot):
+        result = runner.invoke(app, ["ship", "--yes"])
+    assert result.exit_code == 0
+    assert "operation: ship" in result.stdout
+    assert "pushed" in result.stdout
+    mock_push.assert_called_once_with(
+        allow_main=True, message=".", yes=True, use_branch=False
+    )
+
+
+@patch.object(GitShortcuts, "current_branch", return_value="feat-x")
+def test_cli_ship_requires_main(_branch: MagicMock) -> None:
+    result = runner.invoke(app, ["ship", "--yes"])
+    assert result.exit_code != 0
+    assert "checkout main" in result.stdout

@@ -124,14 +124,15 @@ def _interactive_allow_main(
     allow_main: bool,
     yes: bool,
     message: str = ".",
+    use_branch: bool = False,
 ) -> bool:
-    """On main with origin, interactive sessions may opt into --allow-main."""
-    if allow_main or yes:
+    """Legacy hook: only used when --branch on main needs explicit opt-out of wip flow."""
+    if use_branch or yes:
         return allow_main
-    plan = svc.push_plan(allow_main=False, message=message)
+    plan = svc.push_plan(allow_main=False, message=message, use_branch=True)
     if plan.create_branch_first and sys.stdin.isatty():
-        return typer.confirm("Push directly to main?", default=False)
-    return False
+        return typer.confirm("Push directly to main instead of starting a wip branch?", default=True)
+    return allow_main
 
 
 def _push_plan(
@@ -139,9 +140,10 @@ def _push_plan(
     message: str,
     *,
     allow_main: bool,
+    use_branch: bool = False,
 ) -> tuple[str, list[str]]:
-    """Write-gate question + intent lines for push (start first when on main)."""
-    plan = svc.push_plan(allow_main=allow_main, message=message)
+    """Write-gate question + intent lines for push."""
+    plan = svc.push_plan(allow_main=allow_main, message=message, use_branch=use_branch)
     remote = plan.remote or "(none)"
     if plan.create_branch_first:
         question = f"Start {plan.target_branch!r}, commit, and push to {remote}?"
@@ -179,7 +181,9 @@ def _push_plan(
             f"remote: {remote}",
         ]
     if plan.source_branch == "main" and allow_main:
-        lines.append("note: pushing directly on main (--allow-main)")
+        lines.append("note: pushing directly on main")
+    elif plan.source_branch == "main" and use_branch:
+        lines.append("note: starting wip branch from main (--branch)")
     lines.extend(f"warning: {warning}" for warning in plan.warnings)
     return question, lines
 
@@ -196,13 +200,22 @@ def _push_result_message(result: GitPushResult | str) -> str:
     if result.created_branch:
         return f"[green]pushed[/green] new branch {result.branch}"
     if result.branch == "main":
-        return "[green]pushed[/green] main (--allow-main)"
+        return "[green]pushed[/green] main"
     return f"[green]pushed[/green] on {result.branch}"
 
 
 @git_app.command("push")
 def push_cmd(
-    allow_main: bool = typer.Option(False, "--allow-main", help="Allow pushing from main."),
+    branch: bool = typer.Option(
+        False,
+        "--branch",
+        help="On main, start a generated wip branch instead of pushing main.",
+    ),
+    allow_main: bool = typer.Option(
+        True,
+        "--allow-main/--no-allow-main",
+        help="Push from main to origin/main (default). Use --branch for wip flow.",
+    ),
     message: str = typer.Option(".", "-m", "--message", help="Commit message if tree is dirty."),
     yes: bool = typer.Option(
         False,
@@ -212,16 +225,35 @@ def push_cmd(
     ),
     format: str = typer.Option("table", "--format", help="table or json"),
 ) -> None:
-    """Stage if dirty, commit, and push (start first when on main)."""
+    """Stage if dirty, commit, and push (main by default when on main)."""
     if format not in {"table", "json"}:
         raise typer.Exit("Error: --format expected one of: table, json")
     svc = _svc()
     if svc.is_detached_head():
         raise typer.Exit("Cannot push from detached HEAD; checkout a branch first.")
-    allow_main = _interactive_allow_main(svc, allow_main=allow_main, yes=yes, message=message)
-    question, intent_lines = _push_plan(svc, message, allow_main=allow_main)
+    use_branch = branch
+    if branch:
+        allow_main = False
+    allow_main = _interactive_allow_main(
+        svc,
+        allow_main=allow_main,
+        yes=yes,
+        message=message,
+        use_branch=use_branch,
+    )
+    question, intent_lines = _push_plan(
+        svc,
+        message,
+        allow_main=allow_main,
+        use_branch=use_branch,
+    )
     _write_gate("push", yes=yes, question=question, extra_lines=intent_lines)
-    result = svc.push(allow_main=allow_main, message=message, yes=True)
+    result = svc.push(
+        allow_main=allow_main,
+        message=message,
+        yes=True,
+        use_branch=use_branch,
+    )
     if format == "json":
         typer.echo(
             json.dumps(
@@ -237,6 +269,34 @@ def push_cmd(
             )
         )
         return
+    rprint(_push_result_message(result))
+
+
+def ship_cmd(
+    message: str = typer.Option(".", "-m", "--message", help="Commit message if tree is dirty."),
+    yes: bool = typer.Option(
+        False,
+        "--yes",
+        "-y",
+        help="Skip confirmation prompt.",
+    ),
+) -> None:
+    """Stage all, commit, and push main — default personal backup flow (no PR branch)."""
+    svc = _svc()
+    if svc.is_detached_head():
+        raise typer.Exit("Cannot ship from detached HEAD; checkout main first.")
+    if svc.current_branch() != "main":
+        raise typer.Exit(
+            f"On {svc.current_branch()!r}; checkout main or use `cli git push` for feature branches."
+        )
+    question, intent_lines = _push_plan(
+        svc,
+        message,
+        allow_main=True,
+        use_branch=False,
+    )
+    _write_gate("ship", yes=yes, question=question, extra_lines=intent_lines)
+    result = svc.push(allow_main=True, message=message, yes=True, use_branch=False)
     rprint(_push_result_message(result))
 
 

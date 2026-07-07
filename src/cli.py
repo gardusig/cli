@@ -17,7 +17,7 @@ from src.commands.craft import craft_app
 from src.commands.docker import docker_app
 from src.commands.drive import drive_app
 from src.commands.gh import gh_app
-from src.commands.git import git_app
+from src.commands.git import git_app, ship_cmd
 from src.commands.hygiene import hygiene_app
 from src.commands.languages import languages_app
 from src.commands.links import links_app
@@ -47,6 +47,7 @@ app = typer.Typer(
 )
 
 app.add_typer(links_app, name="links")
+app.command("ship", help="Stage, commit ('.'), and push main — personal backup flow.")(ship_cmd)
 app.add_typer(git_app, name="git")
 app.add_typer(gh_app, name="gh")
 app.add_typer(hygiene_app, name="hygiene", hidden=True)
@@ -123,3 +124,5 @@ def run() -> None:
 
 # Short alias: cli g <cmd> == cli git <cmd>
 app.add_typer(git_app, name="g", hidden=True)
+# Short alias: cli s == cli ship
+app.command("s", hidden=True)(ship_cmd)
