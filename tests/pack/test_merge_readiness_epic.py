@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_merge_readiness_release_checklist() -> None:
     text = (ROOT / "docs" / "release.md").read_text(encoding="utf-8")
     assert "PR #96 merge" in text
+    assert "Epic 06d" in text or "06d–06g" in text or "06d-06g" in text
     assert "pipeline run pull-request python-cli" in text
     assert "gardusig/cli" in text
     for issue in ("#50", "#27", "#28", "#31", "#30", "#29"):

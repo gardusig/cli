@@ -79,9 +79,11 @@ Confirm central CI is green on pipelines `main` (`BASE_VERSION` **1.0.3** after 
 
 **Merge order (Epic 06d):** on `main` at **1.0.3**, run `cli release main --yes` → merge dev-gate PR (**1.0.4**) → verify pipelines `BASE_VERSION` **1.0.3**.
 
-## PR #96 merge (Epic 06d–06e)
+## PR #96 merge (Epic 06d–06g)
 
 **Branch:** `feat/epic-06d-release` · **Dev gate:** `1.0.4`
+
+**Shipped on branch:** product backlog (#50, #27–#28, #20–#23, #31, #30, #12–#15, #29), merge readiness (06e), `gardusig/cli` rename (06g + [pipelines #38](https://github.com/gardusig/pipelines/pull/38)).
 
 ### Before merge (maintainer, on `main`)
 
