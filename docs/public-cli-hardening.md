@@ -76,6 +76,7 @@ python tests/integration/check_api_integration.py
 - Close **#50** when PR #96 merges with photos ingest verification green.
 - Close **#30** when PR #96 merges with drive sync verification green (`tests/drive/`, `tests/pack/test_drive_sync_epic.py`).
 - Close **#12**, **#13**, **#29**, **#14** (deferred), **#15** when PR #96 merges with provider/automation evidence (`tests/pack/test_drive_providers_epic.py`).
+- Close **#20**, **#21**, **#22**, **#23**, **#31** when PR #96 merges with Notion evidence (`tests/notion/`, `tests/pack/test_notion_epic.py`).
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
 - **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.3` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
 
@@ -132,4 +133,23 @@ Pack smoke: `tests/pack/test_drive_providers_epic.py`.
 
 ```bash
 uv run pytest tests/providers/ tests/pack/test_drive_providers_epic.py -q
+```
+
+## Epic 03d — Notion backlog closure (#20–#23, #31) on PR #96
+
+**Status:** close-as-shipped evidence on this PR (merge closes children when verified green). Parent **#2** already closed.
+
+| Issue | Evidence |
+| --- | --- |
+| **#20** Ingest | `export_tasks` in `notion_sync.py`, `cli notion ingest`, integration check |
+| **#21** Deploy | `import_tasks`, `cli notion deploy`, partial-failure exit codes |
+| **#22** Cleanup | `cleanup_board`, `cli notion cleanup` |
+| **#23** Auth/mapping | `NOTION_TOKEN`, `notion.properties` in `docs/notion.md`, `require_notion_token` |
+| **#31** Sync | `cli notion sync` Phase 1/2, `cli tasks` shortcuts in `docs/notion.md` |
+
+Pack smoke: `tests/pack/test_notion_epic.py`. Matrix **#60 Pass**.
+
+```bash
+uv run pytest tests/notion/ tests/pack/test_notion_epic.py -q
+uv run python tests/integration/check_integration_coverage.py
 ```

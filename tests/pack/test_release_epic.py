@@ -26,6 +26,7 @@ def test_release_epic_hardening_pointer() -> None:
     assert "#50" in text
     assert "Drive sync" in text or "#30" in text
     assert "Epic 04d" in text or "#12" in text
+    assert "Epic 03d" in text or "#20" in text
 
 
 @requires_docs
