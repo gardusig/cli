@@ -75,7 +75,7 @@ cli chrome bookmarks snapshot --profile Default
 | Ingest | `chrome photos ingest` | Import newest Takeout `.zip` (or `--source`) |
 | Status | `chrome photos status` | Summary JSON/table for local inventory |
 
-### Manual roundtrip
+### Takeout roundtrip
 
 ```bash
 # In Google Takeout: select Google Photos → create export → download .zip
