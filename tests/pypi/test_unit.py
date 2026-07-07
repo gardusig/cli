@@ -87,9 +87,9 @@ def test_pypi_distribution_name_is_src() -> None:
 
 def test_pypi_urls_point_at_cli_repo() -> None:
     urls = _project()["urls"]
-    assert urls["Repository"] == "https://github.com/gardusig/python-cli"
-    assert urls["Homepage"] == "https://github.com/gardusig/python-cli"
-    assert urls["Issues"] == "https://github.com/gardusig/python-cli/issues"
+    assert urls["Repository"] == "https://github.com/gardusig/cli"
+    assert urls["Homepage"] == "https://github.com/gardusig/cli"
+    assert urls["Issues"] == "https://github.com/gardusig/cli/issues"
 
 
 def test_console_entrypoint_stays_cli() -> None:

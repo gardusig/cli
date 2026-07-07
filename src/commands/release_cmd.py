@@ -51,7 +51,7 @@ def release_main_cmd(
         require_write_gate(
             "release-main",
             [
-                "repo: gardusig/python-cli",
+                "repo: gardusig/cli",
                 f"tag: {tag}",
                 f"package: {PACKAGE_NAME}=={release_version}",
             ],

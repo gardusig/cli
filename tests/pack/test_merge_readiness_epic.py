@@ -28,6 +28,13 @@ def test_merge_readiness_hardening_section() -> None:
     assert "156/156" in text or "156" in text
 
 
+def test_merge_readiness_repo_rename_contract() -> None:
+    repos = (ROOT / "config" / "gh" / "repos.yaml").read_text(encoding="utf-8")
+    assert "repository: gardusig/cli" in repos
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert "https://github.com/gardusig/cli" in pyproject
+
+
 def test_merge_readiness_pack_smokes_present() -> None:
     pack = ROOT / "tests" / "pack"
     for name in (

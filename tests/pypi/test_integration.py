@@ -70,7 +70,7 @@ def test_built_wheel_exposes_cli_install_contract(pypi_workspace: Path) -> None:
 
     assert "cli = src.cli:run" in entry_points
     assert "Name: gardusig-cli" in metadata
-    assert "Project-URL: Repository, https://github.com/gardusig/python-cli" in metadata
+    assert "Project-URL: Repository, https://github.com/gardusig/cli" in metadata
 
 
 @pytest.mark.integration
