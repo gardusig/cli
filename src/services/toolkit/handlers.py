@@ -254,7 +254,7 @@ def _lint_markdown(spec: CommandSpec, workspace: Path, extra_env: dict[str, str]
     code = _run(["markdownlint-cli2", *(str(path.relative_to(workspace)) for path in files)], workspace)
     if code != 0:
         return code
-    if shutil.which("mmdc"):
+    if shutil.which("mmdc") and os.environ.get("CLI_LINT_MERMAID", "1") != "0":
         _lint_mermaid_blocks(workspace, files)
     print("markdown lint ok")
     return 0
