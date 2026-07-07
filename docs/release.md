@@ -99,11 +99,11 @@ uv run pytest tests/pack/ -q
 uv run python tests/integration/check_integration_coverage.py
 ```
 
-Central CI on `gardusig/pipelines` must be green. Re-dispatch:
+Central CI on `gardusig/pipelines` must be green. Re-dispatch (use legacy repository name until hub accepts `gardusig/cli` checkout):
 
 ```bash
 uv run python -m src pipeline run pull-request python-cli \
-  --repository gardusig/cli \
+  --repository gardusig/python-cli \
   --ref feat/epic-06d-release \
   --sha "$(git rev-parse HEAD)"
 ```
