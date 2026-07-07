@@ -103,12 +103,12 @@ Central CI on `gardusig/pipelines` must be green. Re-dispatch:
 
 ```bash
 uv run python -m src pipeline run pull-request python-cli \
-  --repository gardusig/python-cli \
+  --repository gardusig/cli \
   --ref feat/epic-06d-release \
   --sha "$(git rev-parse HEAD)"
 ```
 
-After Epic 06g hub merges, `--repository gardusig/cli` also works (see `docs/public-cli-hardening.md` § Epic 06g).
+Legacy slug `gardusig/python-cli` still works via `pipeline_runtime` alias.
 
 ### Closes on merge
 

@@ -191,5 +191,5 @@ alias. Hub still keys `gardusig/python-cli` for checkout until `gardusig/pipelin
 | Layer | Done when |
 | --- | --- |
 | CLI | `gardusig/cli` in repos registry + resolve alias (**PR #96**) |
-| Hub | `pull-request.yml` checkout + git install URLs accept `gardusig/cli` |
+| Hub | `pull-request.yml` checkout + git install URLs accept `gardusig/cli` (**[pipelines #38](https://github.com/gardusig/pipelines/pull/38)**) |
 | Dispatch | `--repository gardusig/cli` without legacy slug |

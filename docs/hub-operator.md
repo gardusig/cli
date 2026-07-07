@@ -67,18 +67,18 @@ cli git reset --yes --delete-merged
 
 ## CI operator lane
 
-Dispatch full PR pipeline (use **full** `git rev-parse HEAD` SHA). Until hub workflows accept
-`gardusig/cli` checkout, pass the legacy repository slug:
+Dispatch full PR pipeline (use **full** `git rev-parse HEAD` SHA):
 
 ```bash
 cli pipeline run pull-request python-cli \
-  --repository gardusig/python-cli \
+  --repository gardusig/cli \
   --ref feat/epic-06d-release \
   --sha "$(git rev-parse HEAD)"
 ```
 
 Canonical GitHub repo: **`gardusig/cli`**. `cli pipeline config resolve` maps `gardusig/cli` →
-`gardusig/python-cli` for hub YAML keys (`src/services/pipeline_runtime.py`).
+`gardusig/python-cli` for hub YAML keys (`src/services/pipeline_runtime.py`). Legacy slug
+`gardusig/python-cli` still dispatches successfully.
 
 Hub workflow: `gardusig/pipelines` → **Pull request** (`repository_dispatch`).
 
@@ -86,12 +86,12 @@ Equivalent deploy aliases:
 
 ```bash
 cli deploy pull-request python-cli \
-  --repository gardusig/python-cli \
+  --repository gardusig/cli \
   --ref feat/epic-06d-release \
   --sha "$(git rev-parse HEAD)" --yes
 
 cli deploy operator test \
-  --repository gardusig/python-cli \
+  --repository gardusig/cli \
   --ref feat/epic-06d-release \
   --sha "$(git rev-parse HEAD)" --yes
 
