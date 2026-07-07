@@ -75,6 +75,7 @@ python tests/integration/check_api_integration.py
 - Epic **08-projects** ([#66](https://github.com/gardusig/python-cli/issues/66)–[#75](https://github.com/gardusig/python-cli/issues/75)): close when PR #88 merges — evidence in `docs/project.md` § Epic 08 closure; hub `project-recurrence.yml` ([pipelines #16](https://github.com/gardusig/github-pipelines/pull/16)).
 - Close **#50** when PR #96 merges with photos ingest verification green.
 - Close **#30** when PR #96 merges with drive sync verification green (`tests/drive/`, `tests/pack/test_drive_sync_epic.py`).
+- Close **#12**, **#13**, **#29**, **#14** (deferred), **#15** when PR #96 merges with provider/automation evidence (`tests/pack/test_drive_providers_epic.py`).
 - Retarget only genuinely new automation to the owning product epic, not Epic 07.
 - **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.3` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
 
@@ -114,3 +115,21 @@ cli drive sync
 ```
 
 See [`docs/drive.md`](drive.md) § Local workflow catalog.
+
+## Epic 04d — Drive providers & automation (#12–#15, #29) on PR #96
+
+**Status:** close-as-shipped evidence on this PR (merge closes children when verified green).
+
+| Issue | Evidence |
+| --- | --- |
+| **#12** Google Drive | `src/providers/google_drive.py`, `tests/providers/test_google_drive.py` |
+| **#13** OneDrive | `src/providers/onedrive.py`, `tests/providers/test_onedrive.py` |
+| **#14** Proton | Deferred — `ProtonDriveUnsupportedError`, `docs/drive.md` § Proton Drive |
+| **#29** Download | `cli drive download`, integration checks, `docs/drive.md` § Download semantics |
+| **#15** Automation | `docs/drive.md` § Tag backup automation + failure modes; hub owns launchd |
+
+Pack smoke: `tests/pack/test_drive_providers_epic.py`.
+
+```bash
+uv run pytest tests/providers/ tests/pack/test_drive_providers_epic.py -q
+```

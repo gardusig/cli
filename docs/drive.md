@@ -72,7 +72,7 @@ cli drive upload
 
 ## Tag backup automation (#15)
 
-No shell scripts or launchd plists live in this repo. The supported end-of-day chain is:
+No shell scripts or launchd plists live in this repo — scheduled jobs belong in **`gardusig/pipelines`**. The supported end-of-day chain is:
 
 ```bash
 cli git tag --yes
@@ -83,8 +83,20 @@ cli drive upload          # or: cli drive sync
 For all configured repositories:
 
 ```bash
+cli drive sync --status    # optional preflight
 cli drive sync
 ```
+
+### Failure modes
+
+| Situation | Behavior |
+| --- | --- |
+| Dirty git tree | `cli git tag` refuses until committed or `--allow-dirty` |
+| Missing `GOOGLE_DRIVE_TOKEN` / `ONEDRIVE_TOKEN` | Upload/deploy fails with actionable env error |
+| Offline / API error | Replica row reports `failed`; command exits non-zero unless `--no-strict` on `sync` |
+| Partial ingest failure | `drive sync --no-strict` continues deploy for other repos |
+| Missing `backup.tags_dir` | Commands exit with path to set `backup.tags_dir` in config |
+| Proton enabled | Clear deferral error — keep `drives.proton.enabled: false` |
 
 ## Local workflow catalog
 
