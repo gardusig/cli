@@ -8,8 +8,6 @@ repos:
     description: Headless operator hub — craft, gh, Docker workflows, PyPI package
   - name: chrome-extensions
     description: Browser extensions maintenance
-  - name: interviewing
-    description: Private interview prep — behavioral, system-design, problem-solving, resume
   - name: go
     description: Public Go library and teaching examples
   - name: cpp
@@ -30,8 +28,6 @@ repos:
     description: Public Rust library and teaching examples
   - name: assembly
     description: Public assembly reference and teaching examples
-  - name: code
-    description: Polyglot workspace — language repos as git submodules
   - name: gardusig
     description: Profile / meta repo
   - name: database

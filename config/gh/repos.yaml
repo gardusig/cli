@@ -13,16 +13,6 @@ repositories:
     profile: true
     pr_pipeline: true
     description: Browser extensions and recorder tooling.
-  - slug: interviewing
-    repository: gardusig/interviewing
-    visibility: private
-    profile: false
-    pr_pipeline: true
-    pipelines:
-      - resume
-      - mermaid
-      - cpp
-    description: Private interview prep — behavioral, system-design, competition solutions, resume.
   - slug: go
     repository: gardusig/go
     visibility: public
@@ -87,12 +77,6 @@ repositories:
     profile: true
     pr_pipeline: true
     description: Public assembly reference and teaching examples.
-  - slug: code
-    repository: gardusig/code
-    visibility: public
-    profile: true
-    pr_pipeline: true
-    description: Polyglot workspace — language repos as git submodules.
   - slug: gardusig
     repository: gardusig/gardusig
     visibility: public

@@ -118,8 +118,8 @@ def test_pipeline_config_resolve_accepts_renamed_cli_repository(tmp_path: Path, 
 def test_pipeline_config_resolve_prefers_flattened_pipeline_config(tmp_path: Path, monkeypatch) -> None:
     cfg_dir = tmp_path / ".github" / "workflows" / "pull-request"
     cfg_dir.mkdir(parents=True)
-    (cfg_dir / "interviewing-cpp.yaml").write_text(
-        "repo: gardusig/interviewing\ndockerfile: docker/cpp.dockerfile\njobs:\n  - id: lint\n    target: lint\n",
+    (cfg_dir / "cpp-compile.yaml").write_text(
+        "repo: gardusig/cpp\ndockerfile: docker/cpp.dockerfile\njobs:\n  - id: lint\n    target: lint\n",
         encoding="utf-8",
     )
     output = tmp_path / "out.txt"
@@ -130,9 +130,9 @@ def test_pipeline_config_resolve_prefers_flattened_pipeline_config(tmp_path: Pat
         argparse.Namespace(
             family="pull-request",
             pipeline_src=tmp_path,
-            repo_slug="interviewing",
-            pipeline="cpp",
-            repository="gardusig/interviewing",
+            repo_slug="cpp",
+            pipeline="compile",
+            repository="gardusig/cpp",
             ref="main",
             sha="",
             job="",
@@ -141,7 +141,7 @@ def test_pipeline_config_resolve_prefers_flattened_pipeline_config(tmp_path: Pat
         )
     )
 
-    assert "config=" + str(cfg_dir / "interviewing-cpp.yaml") in output.read_text(encoding="utf-8")
+    assert "config=" + str(cfg_dir / "cpp-compile.yaml") in output.read_text(encoding="utf-8")
 
 
 @pytest.mark.integration
