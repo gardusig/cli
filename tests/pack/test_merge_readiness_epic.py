@@ -33,6 +33,16 @@ def test_merge_readiness_repo_rename_contract() -> None:
     assert "repository: gardusig/cli" in repos
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert "https://github.com/gardusig/cli" in pyproject
+    runtime = (ROOT / "src" / "services" / "pipeline_runtime.py").read_text(encoding="utf-8")
+    assert '"gardusig/cli": "gardusig/python-cli"' in runtime
+
+
+@requires_docs
+def test_merge_readiness_hub_operator_rename_note() -> None:
+    hub = (ROOT / "docs" / "hub-operator.md").read_text(encoding="utf-8")
+    assert "gardusig/cli" in hub
+    assert "gardusig/python-cli" in hub
+    assert "pipeline_runtime" in hub or "resolve alias" in hub.lower()
 
 
 def test_merge_readiness_pack_smokes_present() -> None:

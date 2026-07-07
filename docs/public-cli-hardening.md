@@ -182,3 +182,14 @@ uv run pytest tests/chrome/ tests/pack/test_chrome_bookmarks_epic.py -q
 | PyPI before merge | `cli release main --yes` on `main` @ **1.0.3** (maintainer) |
 
 **Issues closed on merge:** #50, #27, #28, #20–#23, #31, #30, #12–#15, #29.
+
+## Epic 06g — Hub `gardusig/cli` rename (post-06e)
+
+**Status on PR #96:** CLI side shipped — `config/gh/repos.yaml`, PyPI URLs, `pipeline_runtime`
+alias. Hub still keys `gardusig/python-cli` for checkout until `gardusig/pipelines` PR lands.
+
+| Layer | Done when |
+| --- | --- |
+| CLI | `gardusig/cli` in repos registry + resolve alias (**this PR**) |
+| Hub | `pull-request.yml` checkout + git install URLs accept `gardusig/cli` |
+| Dispatch | `--repository gardusig/cli` without legacy slug |
