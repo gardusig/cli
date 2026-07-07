@@ -12,7 +12,10 @@ import yaml
 
 from src.services.toolkit.detect import repo_slug
 
-ALLOWED_WORKFLOWS = {".github/workflows/pull-request.yml"}
+ALLOWED_WORKFLOWS = {
+    ".github/workflows/pull-request.yml",
+    ".github/workflows/release.yml",
+}
 EXEMPT_LAYOUT_REPOS = {"github-pipelines"}
 STANDARD_ROOT_DIRS = frozenset({"src", "docs", "tests", "test", ".github"})
 STANDARD_ROOT_FILES = frozenset({"README.md", "LICENSE", "CONTRIBUTING.md"})

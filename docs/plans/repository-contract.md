@@ -8,6 +8,7 @@ This is the canonical repository contract for the gardusig repositories.
 - `github-pipelines` owns reusable GitHub Actions routers and Dockerfiles.
 - App repositories keep application code plus:
   - `.github/workflows/pull-request.yml` — thin caller into the central router
+  - `.github/workflows/release.yml` — optional tag publish workflow (language libraries)
   - `.github/pull-request.yaml` — per-repo job graph and hygiene policy
 - App repositories must not contain Dockerfiles, CI scripts, or extra workflow
   files. Docker stages stay in `github-pipelines`.
