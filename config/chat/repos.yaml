@@ -28,6 +28,8 @@ repos:
     description: Public Rust library and teaching examples
   - name: assembly
     description: Public assembly reference and teaching examples
+  - name: code
+    description: Polyglot workspace — language repos as git submodules
   - name: gardusig
     description: Profile / meta repo
   - name: database

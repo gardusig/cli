@@ -54,6 +54,7 @@ REPO_LANGUAGE_PROFILES: dict[str, tuple[str, ...]] = {
     "c": ("markdown",),
     "rust": ("markdown",),
     "assembly": ("markdown",),
+    "code": ("markdown",),
     "database": ("markdown",),
     "gardusig": ("markdown",),
     "github-pipelines": ("markdown", "python", "shell"),
