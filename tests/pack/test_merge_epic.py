@@ -11,11 +11,11 @@ from tests.pack.conftest import requires_docs
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_merge_epic_version_synced() -> None:
+def test_merge_epic_version_is_1_0_3() -> None:
     data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    pyproject_version = data["project"]["version"]
+    assert data["project"]["version"] == "1.0.3"
     init = (ROOT / "src" / "__init__.py").read_text(encoding="utf-8")
-    assert f'__version__ = "{pyproject_version}"' in init
+    assert '__version__ = "1.0.3"' in init
 
 
 def test_merge_epic_wheel_has_no_removed_script_data_files() -> None:
@@ -36,7 +36,7 @@ def test_merge_epic_release_docs() -> None:
 def test_merge_epic_hardening_pointer() -> None:
     text = (ROOT / "docs" / "public-cli-hardening.md").read_text(encoding="utf-8")
     assert "Merge readiness" in text
-    assert "Epic 06d" in text or "merge & release" in text
+    assert "Epic 06c" in text or "merge & release" in text
     assert "PR #88" in text
 
 
