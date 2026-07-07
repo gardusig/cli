@@ -100,13 +100,7 @@ repositories:
     visibility: public
     profile: true
     pr_pipeline: false
-    description: Reusable GitHub Actions workflow library (quickstart submodule).
-  - slug: github-pipelines
-    repository: gardusig/yaml
-    visibility: public
-    profile: true
-    pr_pipeline: false
-    description: Legacy slug alias for gardusig/yaml workflow library.
+    description: Reusable GitHub Actions workflow library (quickstart/devops/yaml submodule).
   - slug: database
     repository: gardusig/database
     visibility: private

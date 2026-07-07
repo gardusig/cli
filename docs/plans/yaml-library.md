@@ -4,7 +4,7 @@
 
 | Layer | Location | Owns |
 | --- | --- | --- |
-| **Library** | `gardusig/yaml` (submodule: `quickstart/yaml/`) | Reusable `workflow_call` routers, `catalog.yaml`, hub images (`docker/operator`, `docker/cli-base`) |
+| **Library** | `gardusig/yaml` (submodule: `quickstart/devops/yaml/`) | Reusable `workflow_call` routers, `catalog.yaml`, hub images (`docker/operator`, `docker/cli-base`) |
 | **App repo** | `gardusig/cli`, language repos, … | `Dockerfile`, `.github/pull-request.yaml`, thin `.github/workflows/pull-request.yml` caller |
 | **App-specific automation** | Same app repo | `.github/workflows/test-nightly.yml`, `.github/release.yaml`, `.github/repo-review.yaml` |
 
@@ -16,13 +16,8 @@
 
 ## Catalog
 
-See `quickstart/yaml/catalog.yaml` for registered workflow ids, lib paths, and dispatch types.
+See `quickstart/devops/yaml/catalog.yaml` for registered workflow ids, lib paths, and dispatch types.
 
-## Migration from `gardusig/pipelines`
+## History
 
-- Hub renamed conceptually to **`gardusig/yaml`**
-- Nested under **`quickstart/yaml/`** git submodule
-- Per-repo Dockerfiles live in each app repo root
-- Repo-specific workflows (nightly, main release, repo-review) moved into owning repos
-
-Create the GitHub repo `gardusig/yaml` from `quickstart/yaml/` (or `/home/gardusig/github/public/yaml`) and enable redirects from `gardusig/pipelines` if renaming.
+`gardusig/pipelines` was renamed to **`gardusig/yaml`**. The library submodule now lives at **`quickstart/devops/yaml/`** alongside other devops tracks.
