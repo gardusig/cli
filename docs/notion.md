@@ -28,7 +28,7 @@ Full pair contract: [notion/task-pairs.md](./notion/task-pairs.md).
 ```yaml
 notion:
   database_id: your-notion-database-id
-  task_root: ~/git-local/private/configured/tasks
+  task_root: ~/git-local/private/database/tasks
   pairs_file: config/notion/tasks.pairs.json
   link_branch: main
   cleanup_before_deploy: true

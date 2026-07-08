@@ -77,7 +77,7 @@ backup:
 
 notion:
   database_id: your-notion-database-id
-  task_root: ~/git-local/private/configured/tasks
+  task_root: ~/git-local/private/database/tasks
   pairs_file: config/notion/tasks.pairs.json
 
 chrome:
