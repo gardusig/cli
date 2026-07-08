@@ -14,7 +14,7 @@ This README is the **long description on [PyPI](https://pypi.org/project/gardusi
 | --- | --- |
 | **GitHub** ([gardusig/cli](https://github.com/gardusig/cli)) | Source and issues — **application code only** |
 | **PyPI** (`pip install gardusig-cli`) | Installable package; console command is `cli` |
-| **CI / release** | In-repo [`Dockerfile`](Dockerfile) + [`.github/workflows/`](.github/workflows/) (TestPyPI on PR, PyPI on tag) |
+| **CI / release** | In-repo [`.github/Dockerfile`](.github/Dockerfile) + [`.github/workflows/`](.github/workflows/) (TestPyPI on PR, PyPI on tag) |
 | **Unit coverage** | [`coverage-unit.ini`](coverage-unit.ini) — `cli` package, ≥80% |
 
 Install from PyPI when you only need the tool; clone the repo when you want config and product scripts.
@@ -218,7 +218,7 @@ Local Docker monitor and cleanup (requires `docker` on PATH; no container start)
 | **Full reset** | `cli docker reset --yes` |
 | Targeted cleanup | `cli docker clean containers --yes` · `clean images` · `clean all` |
 
-Docker cleanup is exposed through `cli docker ...`; CI Docker stages live in this repo's root `Dockerfile` (`scripts/ci/*.sh` entrypoints).
+Docker cleanup is exposed through `cli docker ...`; CI Docker stages live in [`.github/Dockerfile`](.github/Dockerfile) (`scripts/ci/*.sh` entrypoints).
 
 Destructive commands use the write gate; pass `--yes` in scripts.
 
@@ -228,13 +228,13 @@ Requires Docker Engine on Linux. Stages mirror central CI:
 
 ```bash
 export BASE_VERSION="$(bash scripts/ci/host-base-version.sh origin/main)"
-docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
-docker build --target unit-test .
+docker build -f .github/Dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build -f .github/Dockerfile --target unit-test .
 ```
 
 ## CI and release
 
-Thin GitHub Actions workflows live in [`.github/workflows/`](.github/workflows/) (`pull-request.yaml`, `release.yaml`). Each job only runs `docker build --target …`; logic is in the root `Dockerfile` and `scripts/ci/*.sh`.
+Thin GitHub Actions workflows live in [`.github/workflows/`](.github/workflows/) (`pull-request.yaml`, `release.yaml`). Each job runs `docker build -f .github/Dockerfile --target …`; logic is in `.github/Dockerfile` and `scripts/ci/*.sh`.
 
 | Trigger | What runs |
 | --- | --- |

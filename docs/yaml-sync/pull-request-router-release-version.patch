@@ -89,7 +89,7 @@ index b115f36..c773a0e 100644
 @@ -1,5 +1,7 @@
  repo: gardusig/cli
  selective: true
-+dockerfile: Dockerfile
++dockerfile: .github/Dockerfile
 +dockerignore: .dockerignore
  jobs:
  - id: lint
@@ -142,7 +142,7 @@ index 8b54d11..0f8d7c1 100644
 +++ b/.github/workflows/release/python-cli.yaml
 @@ -1,4 +1,6 @@
  repo: gardusig/cli
-+dockerfile: Dockerfile
++dockerfile: .github/Dockerfile
 +dockerignore: .dockerignore
  jobs:
    - id: release

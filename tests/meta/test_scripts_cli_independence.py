@@ -93,7 +93,7 @@ def test_version_check_uses_host_base_version_not_git() -> None:
 @pytest.mark.parametrize(
     "relative",
     [
-        "Dockerfile",
+        ".github/Dockerfile",
         "scripts/ci/_common.sh",
         "scripts/ci/unit-test.sh",
     ],

@@ -33,7 +33,7 @@ Hidden aliases and placeholders are allowed, but they should be intentional and 
 
 ## CI ownership
 
-This repository owns Python application code, docs, fixtures, command registries, the root `Dockerfile`, `scripts/ci/*.sh`, and pull-request / release workflows under `.github/workflows/`. Broader monorepo routers and selective package matrices may live in [`gardusig/yaml`](https://github.com/gardusig/yaml).
+This repository owns Python application code, docs, fixtures, command registries, the `.github/Dockerfile`, `scripts/ci/*.sh`, and pull-request / release workflows under `.github/workflows/`. Broader monorepo routers and selective package matrices may live in [`gardusig/yaml`](https://github.com/gardusig/yaml).
 
 ## Verification
 
@@ -43,6 +43,6 @@ This repository owns Python application code, docs, fixtures, command registries
 | Changed-path selection | this repo | `cli test packages resolve --base BASE --head HEAD` |
 | Full-suite safety net | this repo | `cli test packages suite` |
 | Unit / integration wrappers | this repo | `cli test python unit .`, `cli test python integration .` |
-| PR / release Docker stages | this repo | `docker build --target …` (see [ci-workflows.md](ci-workflows.md)) |
+| PR / release Docker stages | this repo | `docker build -f .github/Dockerfile --target …` (see [ci-workflows.md](ci-workflows.md)) |
 
 The Docker harness copies the repo into an ephemeral workspace so git resets and fixtures never touch the host checkout. See [docker.md](docker.md).

@@ -195,7 +195,7 @@ def test_pipeline_release_resolve_prefers_app_repo_config(tmp_path: Path, monkey
     app_src = tmp_path / "app-src"
     (app_src / ".github" / "workflows").mkdir(parents=True)
     (app_src / ".github" / "workflows" / "release.yaml").write_text(
-        "repo: gardusig/cli\ndockerfile: Dockerfile\njobs:\n"
+        "repo: gardusig/cli\ndockerfile: .github/Dockerfile\njobs:\n"
         "  - id: release\n    target: release\n"
         "  - id: pypi-consumer\n    target: pypi-consumer\n    needs: release\n",
         encoding="utf-8",

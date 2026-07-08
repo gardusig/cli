@@ -29,10 +29,10 @@ All stages delegate to `scripts/ci/*.sh` (raw shell — no `cli` or `python3 -m 
 export BASE_VERSION="$(bash scripts/ci/host-base-version.sh origin/main)"
 export CLI_RELEASE_VERSION="$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
 
-docker build --target lint .
-docker build --target unit-test .
-docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
-docker build --target pypi-test --build-arg "CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION}" .
+docker build -f .github/Dockerfile --target lint .
+docker build -f .github/Dockerfile --target unit-test .
+docker build -f .github/Dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build -f .github/Dockerfile --target pypi-test --build-arg "CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION}" .
 ```
 
 Git runs **only on the host** (`host-base-version.sh` or the workflow). Docker stages read copied files and build-args.

@@ -81,7 +81,11 @@ def _resolve_dockerfile_path(
     if configured:
         candidates.extend([app_src / configured, pipeline_src / configured])
     else:
-        candidates.extend([app_src / "Dockerfile", app_src / "docker" / "Dockerfile"])
+        candidates.extend([
+            app_src / ".github" / "Dockerfile",
+            app_src / "Dockerfile",
+            app_src / "docker" / "Dockerfile",
+        ])
     for path in candidates:
         if path.is_file():
             return path
@@ -350,7 +354,7 @@ def _stage_jobs(
         stage: list[dict[str, Any]] = []
         for jid in current_ids:
             job = remaining.pop(jid)
-            dockerfile = job.get("dockerfile") or cfg.get("dockerfile") or "Dockerfile"
+            dockerfile = job.get("dockerfile") or cfg.get("dockerfile") or ".github/Dockerfile"
             dockerignore = job.get("dockerignore") or cfg.get("dockerignore") or ""
             if not job.get("workflow_step") and not dockerfile:
                 raise SystemExit(f"job {jid} missing dockerfile")

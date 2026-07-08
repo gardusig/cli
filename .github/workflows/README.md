@@ -1,6 +1,6 @@
 # CI workflows
 
-Two files — each is a GitHub Actions workflow that only runs `docker build --target …`. All commands live in the root `Dockerfile` → `scripts/ci/*.sh`.
+Two files — each is a GitHub Actions workflow that only runs `docker build -f .github/Dockerfile --target …`. All commands live in [`.github/Dockerfile`](../Dockerfile) → `scripts/ci/*.sh`.
 
 | File | Trigger | Docker targets |
 | --- | --- | --- |

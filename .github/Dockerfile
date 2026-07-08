@@ -1,5 +1,5 @@
 # Multi-stage CI for gardusig/cli (app context = repo root).
-# Build: docker build --target <stage> -f Dockerfile .
+# Build: docker build -f .github/Dockerfile --target <stage> .
 # Stage entrypoints: scripts/ci/<stage>.sh (raw shell — independent from cli package).
 
 # -----------------------------------------------------------------------------

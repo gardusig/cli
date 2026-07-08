@@ -37,11 +37,11 @@ uv run pytest tests/git/ tests/gh/ tests/docker/ tests/chrome/ tests/notion/ tes
 Docker integration (full public command matrix):
 
 ```bash
-docker build --target integration-test .
+docker build -f .github/Dockerfile --target integration-test .
 python tests/integration/check_public_commands.py
 python tests/integration/check_api_integration.py
 ```
 
 ## CI ownership
 
-This repository owns application code, docs, the root [`Dockerfile`](../Dockerfile), `scripts/ci/*.sh`, and [`.github/workflows/`](../.github/workflows/) for pull-request and tag release pipelines. Optional hub routers live in [`gardusig/yaml`](https://github.com/gardusig/yaml) for broader monorepo CI.
+This repository owns application code, docs, [`.github/Dockerfile`](../.github/Dockerfile), `scripts/ci/*.sh`, and [`.github/workflows/`](../.github/workflows/) for pull-request and tag release pipelines. Optional hub routers live in [`gardusig/yaml`](https://github.com/gardusig/yaml) for broader monorepo CI.

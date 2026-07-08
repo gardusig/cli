@@ -1,6 +1,6 @@
 # Gardusig CI/CD — Docker pipeline
 
-This repo owns two GitHub Actions workflows and one root `Dockerfile`. Workflows only run `docker build --target …`; all commands live in `scripts/ci/*.sh`.
+This repo owns two GitHub Actions workflows and one `.github/Dockerfile`. Workflows only run `docker build -f .github/Dockerfile --target …`; all commands live in `scripts/ci/*.sh`.
 
 ## Triggers
 
@@ -25,8 +25,8 @@ This repo owns two GitHub Actions workflows and one root `Dockerfile`. Workflows
 Other targets (`lint`, `repo-hygiene`, `core-gates`, package matrix legs) remain for local/hub use:
 
 ```bash
-docker build --target lint .
-docker build --target unit-test .
+docker build -f .github/Dockerfile --target lint .
+docker build -f .github/Dockerfile --target unit-test .
 ```
 
 ## Scripts ⊥ CLI
@@ -52,8 +52,8 @@ Hard timeouts (also enforced in `.github/workflows/pull-request.yaml`):
 ```bash
 uv run pytest tests/meta/test_scripts_cli_independence.py -q
 export BASE_VERSION="$(bash scripts/ci/host-base-version.sh origin/main)"
-docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
-docker build --target unit-test .
+docker build -f .github/Dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build -f .github/Dockerfile --target unit-test .
 ```
 
 See [release.md](release.md) and [development.md](development.md).

@@ -41,7 +41,7 @@ def test_merge_readiness_repo_rename_contract() -> None:
 def test_merge_readiness_app_local_pipeline_config() -> None:
     pr_workflow = (ROOT / ".github" / "workflows" / "pull-request.yaml").read_text(encoding="utf-8")
     assert "pull_request:" in pr_workflow
-    assert "docker build" in pr_workflow
+    assert "CI_DOCKERFILE" in pr_workflow or ".github/Dockerfile" in pr_workflow
     assert "--target version-check" in pr_workflow
     assert "--target unit-test" in pr_workflow
     assert "--target pypi-test" in pr_workflow

@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+env:
+  CI_DOCKERFILE: .github/Dockerfile
+
 jobs:
   release:
     name: Publish to PyPI
@@ -26,6 +29,7 @@ jobs:
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: |
           docker build \
+            -f "$CI_DOCKERFILE" \
             --target release \
             --build-arg "CLI_RELEASE_VERSION=${{ steps.meta.outputs.version }}" \
             --build-arg "PYPI_API_TOKEN=${PYPI_API_TOKEN}" \
@@ -45,6 +49,7 @@ jobs:
       - name: docker build --target pypi-consumer
         run: |
           docker build \
+            -f "$CI_DOCKERFILE" \
             --target pypi-consumer \
             --build-arg "CLI_RELEASE_VERSION=${{ steps.meta.outputs.version }}" \
             .

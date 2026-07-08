@@ -1,11 +1,11 @@
 # Docker
 
-Workflow routers live in [`gardusig/yaml`](https://github.com/gardusig/yaml). This repo owns the root `Dockerfile` (multi-stage CI via `scripts/ci/*.sh`), the `cli docker` monitor/cleanup commands, and pipeline contracts under [`.github/workflows/`](../.github/workflows/).
+Workflow routers live in [`gardusig/yaml`](https://github.com/gardusig/yaml). This repo owns the `.github/Dockerfile` (multi-stage CI via `scripts/ci/*.sh`), the `cli docker` monitor/cleanup commands, and pipeline contracts under [`.github/workflows/`](../.github/workflows/).
 
 Run a gate from the repo root:
 
 ```bash
-docker build --target <stage> -f Dockerfile .
+docker build -f .github/Dockerfile --target <stage> .
 ```
 
 Common targets: `lint`, `version-check`, `unit-test`, `integration-test`, `pypi-test`, `testpypi-consumer`, `release`, `pypi-consumer`.
@@ -15,7 +15,7 @@ Common targets: `lint`, `version-check`, `unit-test`, `integration-test`, `pypi-
 Each Dockerfile stage copies the repo (or consumer scripts only) and runs `bash scripts/ci/<stage>.sh`. Local verification:
 
 ```bash
-docker build --target unit-test .
+docker build -f .github/Dockerfile --target unit-test .
 ```
 
 ## CLI base image (hub)

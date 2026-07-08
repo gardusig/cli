@@ -10,7 +10,7 @@ Parent tracking: **`epic:hub-operator`** (`config/gh/phase5/cli.batch.yaml`).
 
 | Layer | Owns |
 | --- | --- |
-| `gardusig/cli` | Application code, in-repo PR/release `Dockerfile`, `scripts/ci/`, command contracts |
+| `gardusig/cli` | Application code, in-repo PR/release `.github/Dockerfile`, `scripts/ci/`, command contracts |
 | `gardusig/yaml` | Hub workflow routers, operator images, schedules, shared secrets |
 
 ## Cost boundary

@@ -1,6 +1,6 @@
 repo: gardusig/cli
 selective: true
-dockerfile: Dockerfile
+dockerfile: .github/Dockerfile
 dockerignore: .dockerignore
 jobs:
 - id: lint

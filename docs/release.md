@@ -70,7 +70,7 @@ cli --version
 
 ```bash
 export BASE_VERSION="$(bash scripts/ci/host-base-version.sh origin/main)"
-docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build -f .github/Dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
 bash scripts/ci/unit-test.sh
 uv run pytest tests/meta/ tests/services/test_pipeline_selective.py \
   tests/services/test_pipeline_runtime.py -q
@@ -89,7 +89,7 @@ git tag v1.1.1
 git push origin v1.1.1
 ```
 
-GitHub Actions runs [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) → `docker build --target release` → `pypi-consumer`.
+GitHub Actions runs [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) → `docker build -f .github/Dockerfile --target release` → `pypi-consumer`.
 
 Alternatively, local publish (maintainer only):
 
