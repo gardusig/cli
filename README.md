@@ -6,13 +6,13 @@ Linux-first CLI helper: **`cli git`** · **`cli lint`** · **`cli pipeline`** ·
 
 [![PyPI version](https://img.shields.io/pypi/v/gardusig-cli?label=PyPI)](https://pypi.org/project/gardusig-cli/)
 [![Python](https://img.shields.io/pypi/pyversions/gardusig-cli?label=Python)](https://pypi.org/project/gardusig-cli/)
-[![License: MIT](https://img.shields.io/pypi/l/gardusig-cli?label=License)](https://github.com/gardusig/python-cli/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/pypi/l/gardusig-cli?label=License)](https://github.com/gardusig/cli/blob/main/LICENSE)
 
 This README is the **long description on [PyPI](https://pypi.org/project/gardusig-cli/)** and the **GitHub project page** — badges link to the same sources of truth on both sites.
 
 | Where | What you get |
 | --- | --- |
-| **GitHub** ([gardusig/python-cli](https://github.com/gardusig/python-cli)) | Source and issues — **application code only** |
+| **GitHub** ([gardusig/cli](https://github.com/gardusig/cli)) | Source and issues — **application code only** |
 | **PyPI** (`pip install gardusig-cli`) | Installable package; console command is `cli` |
 | **CI / release** | External Docker pipelines — not in this repo |
 | **Unit coverage** | [`coverage-unit.ini`](coverage-unit.ini) — `cli` package, ≥80% |
@@ -23,7 +23,7 @@ Install from PyPI when you only need the tool; clone the repo when you want conf
 
 | Context | Identifier |
 | --- | --- |
-| **GitHub repo** | [gardusig/python-cli](https://github.com/gardusig/python-cli) |
+| **GitHub repo** | [gardusig/cli](https://github.com/gardusig/cli) |
 | **PyPI package** | `gardusig-cli` — `pip install gardusig-cli` |
 | **Console command** | `cli` (unchanged after PyPI install) |
 | **Python import** | `src` |
@@ -218,31 +218,45 @@ Local Docker monitor and cleanup (requires `docker` on PATH; no container start)
 | **Full reset** | `cli docker reset --yes` |
 | Targeted cleanup | `cli docker clean containers --yes` · `clean images` · `clean all` |
 
-Docker cleanup is exposed through `cli docker ...`; CI Docker stages live in `github-pipelines`.
+Docker cleanup is exposed through `cli docker ...`; CI Docker stages live in this repo's root `Dockerfile` (`scripts/ci/*.sh` entrypoints).
 
 Destructive commands use the write gate; pass `--yes` in scripts.
 
 ## Verify (Docker)
 
-Requires Docker Engine on Linux. The Linux CI image is the supported test environment.
+Requires Docker Engine on Linux. Stages mirror central CI:
+
+```bash
+docker build --target version-check .
+docker build --target unit-test .
+```
 
 ## CI and release
 
-CI and Docker run **outside this repository** (central DevOps). This repo has no `.github/` workflows or `Dockerfile`.
+Thin GitHub Actions workflows live in [`.github/workflows/`](.github/workflows/) (`pull-request.yaml`, `release.yaml`). Each job only runs `docker build --target …`; logic is in the root `Dockerfile` and `scripts/ci/*.sh`.
 
 | Trigger | What runs |
 | --- | --- |
-| **Pull request** | `github-pipelines` consumes `cli test packages resolve` for selective package gates, with full-suite fallback |
-| **Nightly / manual full** | `github-pipelines` consumes `cli test packages suite` for the full regression safety net |
-| **Tag** `v*` | Publish `gardusig-cli` to PyPI |
+| **Pull request** | `docker build --target pr` then `testpypi-consumer` |
+| **Tag** `v*` | `docker build --target release` then `pypi-consumer` |
 
-Configure release secrets on the central CI system (`PYPI_API_TOKEN`, `TESTPYPI_API_TOKEN`). Tag pushes trigger release via `repository_dispatch`.
+Configure secrets on **`gardusig/cli`**: `TESTPYPI_API_TOKEN`, `PYPI_API_TOKEN`.
 
-Details: [docs/release.md](docs/release.md) · [docs/setup.md](docs/setup.md) · [docs/ci-workflows.md](docs/ci-workflows.md).
+Details: [docs/release.md](docs/release.md) · [docs/ci-workflows.md](docs/ci-workflows.md) · [docs/development.md](docs/development.md).
+
+## Development
+
+Clone **`gardusig/cli`** directly — you do not need the [`gardusig/gardusig`](https://github.com/gardusig/gardusig) profile monorepo to work on this package.
+
+```bash
+git clone git@github.com:gardusig/cli.git && cd cli
+uv sync
+.venv/bin/python -m pytest tests/meta/ -q
+```
 
 ## Docs
 
-- [Setup](docs/setup.md)
+- [Development](docs/development.md)
 - [Release](docs/release.md)
 - [Git commands](docs/git.md)
 - [GitHub (`cli gh`)](docs/gh.md)

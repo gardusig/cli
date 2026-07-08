@@ -43,13 +43,17 @@ def test_merge_readiness_repo_rename_contract() -> None:
 
 
 def test_merge_readiness_app_local_pipeline_config() -> None:
-    pr_config = (ROOT / ".github" / "pull-request.yaml").read_text(encoding="utf-8")
-    assert "repo: gardusig/cli" in pr_config
-    assert "docker/python-cli.dockerfile" in pr_config
-    caller = (ROOT / ".github" / "workflows" / "pull-request.yml").read_text(encoding="utf-8")
-    assert "gardusig/pipelines/.github/workflows/pull-request.yml@main" in caller
-    assert "repo_slug: cli" in caller
-    assert "repository: gardusig/cli" in caller
+    pr_workflow = (ROOT / ".github" / "workflows" / "pull-request.yaml").read_text(encoding="utf-8")
+    assert "pull_request:" in pr_workflow
+    assert "docker build" in pr_workflow
+    assert "--target pr" in pr_workflow
+    assert "--target testpypi-consumer" in pr_workflow
+    release_workflow = (ROOT / ".github" / "workflows" / "release.yaml").read_text(encoding="utf-8")
+    assert 'tags:' in release_workflow
+    assert "--target release" in release_workflow
+    assert "--target pypi-consumer" in release_workflow
+    assert not (ROOT / ".github" / "pull-request.yaml").exists()
+    assert not (ROOT / ".github" / "workflows" / "pull-request.workflow.yaml").exists()
 
 
 @requires_docs

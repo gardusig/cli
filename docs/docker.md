@@ -1,27 +1,26 @@
 # Docker
 
-Docker orchestration routers live in `gardusig/pipelines`. This repo owns the root `Dockerfile` (multi-stage CI), the `cli docker` monitor/cleanup commands, and pipeline config under `.github/`.
+Workflow routers live in [`gardusig/yaml`](https://github.com/gardusig/yaml). This repo owns the root `Dockerfile` (multi-stage CI via `scripts/ci/*.sh`), the `cli docker` monitor/cleanup commands, and pipeline contracts under [`.github/workflows/`](../.github/workflows/).
 
 Run a gate from the repo root:
 
 ```bash
-docker build --target <target> -f Dockerfile .
+docker build --target <stage> -f Dockerfile .
 ```
 
-## CLI Inside Docker
+Common targets: `lint`, `version-check`, `unit-test`, `integration-test`, `pypi-test`, `testpypi-consumer`, `release`, `pypi-consumer`.
 
-The repo `Dockerfile` installs the PR checkout with `pip install -e ".[dev]"` so unreleased CLI changes can be tested before publishing:
+## CI image layout
 
-```dockerfile
-RUN pip install --no-cache-dir -e ".[dev]" \
-    && cli structure check /workspace
+Each Dockerfile stage copies the repo (or consumer scripts only) and runs `bash scripts/ci/<stage>.sh`. Local verification:
+
+```bash
+docker build --target unit-test .
 ```
 
-## CLI Base Image
+## CLI base image (hub)
 
-`gardusig/pipelines/docker/cli-base.dockerfile` is the lean hub image for workflow jobs that mostly run published `gardusig-cli` shortcuts.
-
-Language-focused checks use each repo's `Dockerfile` (Node, Java, Ubuntu, or other toolchain bases as needed).
+`gardusig/yaml` may publish a lean hub image for jobs that run pip-installed `gardusig-cli` shortcuts. Language repos use their own `Dockerfile` bases.
 
 ## Docker CLI Commands
 

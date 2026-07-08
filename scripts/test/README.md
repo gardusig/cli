@@ -1,16 +1,16 @@
 # Per-package test scripts (Epic 00-infra #82)
 
-Thin wrappers around `cli test packages run`. Each script sets `CLI_CONFIG_DIR=config/ci`
-and delegates to the registry in `src/services/test_packages.py`.
+Thin wrappers around **raw `pytest`** paths (no `cli test packages run`, no `python3 -m src`).
+Shared helpers live in `_common.sh`.
 
 ## Nine-script policy
 
 Shell scripts exist only for packages that own a **Docker integration leg** in selective
-CI (`check_package_integration.py`). All other packages use the CLI directly:
+CI (`check_package_integration.py`). All other packages use pytest or the CLI locally:
 
 ```bash
-cli test packages run lint --dry-run
-cli test packages run deploy --dry-run
+uv run pytest tests/lint/ -q
+cli test packages run deploy --dry-run   # local only; not used in scripts/
 ```
 
 | Script | Package | Integration leg |
@@ -25,8 +25,8 @@ cli test packages run deploy --dry-run
 | `project.sh` | `project` | Top-level `cli project` checks |
 | `pypi.sh` | `pypi` | PyPI package integration |
 
-`all.sh` prints the **full-suite** contract (`cli test packages suite`) for nightly /
-`ci:full` safety-net runs.
+`all.sh` documents the **full-suite** contract (`scripts/ci/unit-test.sh` +
+`scripts/ci/integration-test.sh`) for nightly / `ci:full` runs.
 
 ## Examples
 

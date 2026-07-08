@@ -1,6 +1,7 @@
 .git/
 .cursor/
 .venv/
+.uv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -12,6 +13,9 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+.hypothesis/
+pip-wheel-metadata/
+.eggs/
 src-*/
 *.whl
 cli-git-*/

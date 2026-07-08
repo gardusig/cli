@@ -153,8 +153,8 @@ def test_pipeline_config_resolve_prefers_app_repo_config(tmp_path: Path, monkeyp
         encoding="utf-8",
     )
     app_src = tmp_path / "app-src"
-    (app_src / ".github").mkdir(parents=True)
-    (app_src / ".github" / "pull-request.yaml").write_text(
+    (app_src / ".github" / "workflows").mkdir(parents=True)
+    (app_src / ".github" / "workflows" / "pull-request.yaml").write_text(
         "repo: gardusig/demo\ndockerfile: docker/demo-local.dockerfile\njobs:\n  - id: unit\n    target: unit-test\n",
         encoding="utf-8",
     )
@@ -179,9 +179,55 @@ def test_pipeline_config_resolve_prefers_app_repo_config(tmp_path: Path, monkeyp
     )
 
     values = dict(line.split("=", 1) for line in output.read_text(encoding="utf-8").splitlines())
-    assert values["config"] == str(app_src / ".github" / "pull-request.yaml")
+    assert values["config"] == str(app_src / ".github" / "workflows" / "pull-request.yaml")
     stage_0 = json.loads(values["stage_0"])
     assert stage_0["include"][0]["job"]["id"] == "unit"
+
+
+def test_pipeline_release_resolve_prefers_app_repo_config(tmp_path: Path, monkeypatch) -> None:
+    pipeline_src = tmp_path / "pipeline-src"
+    hub_cfg = pipeline_src / ".github" / "workflows" / "release"
+    hub_cfg.mkdir(parents=True)
+    (hub_cfg / "cli.yaml").write_text(
+        "repo: gardusig/cli\ndockerfile: hub.dockerfile\njobs:\n  - id: release\n    target: release\n",
+        encoding="utf-8",
+    )
+    app_src = tmp_path / "app-src"
+    (app_src / ".github" / "workflows").mkdir(parents=True)
+    (app_src / ".github" / "workflows" / "release.yaml").write_text(
+        "repo: gardusig/cli\ndockerfile: Dockerfile\njobs:\n"
+        "  - id: release\n    target: release\n"
+        "  - id: pypi-consumer\n    target: pypi-consumer\n    needs: release\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "out.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(output))
+    monkeypatch.setenv("CLIENT", "{}")
+
+    resolve_config(
+        argparse.Namespace(
+            family="release",
+            pipeline_src=pipeline_src,
+            app_src=app_src,
+            repo_slug="cli",
+            pipeline="",
+            repository="gardusig/cli",
+            ref="refs/tags/v1.0.3",
+            sha="",
+            job="",
+            action="",
+            dry_run="",
+        )
+    )
+
+    values = dict(line.split("=", 1) for line in output.read_text(encoding="utf-8").splitlines())
+    assert values["config"] == str(app_src / ".github" / "workflows" / "release.yaml")
+    assert values["version"] == "1.0.3"
+    stage_0 = json.loads(values["stage_0"])
+    assert stage_0["include"][0]["job"]["id"] == "release"
+    assert values["has_stage_1"] == "true"
+    stage_1 = json.loads(values["stage_1"])
+    assert stage_1["include"][0]["job"]["id"] == "pypi-consumer"
 
 
 @pytest.mark.integration
@@ -197,9 +243,12 @@ def test_pull_request_configs_declare_inline_hygiene_policies() -> None:
         for repo_root in sorted(github_root.iterdir()):
             if not repo_root.is_dir():
                 continue
-            config = repo_root / ".github" / "pull-request.yaml"
-            if config.is_file():
-                configs.append(config)
+            for config_name in ("pull-request.yaml",):
+                config = repo_root / ".github" / "workflows" / config_name
+                if not config.is_file():
+                    config = repo_root / ".github" / config_name
+                if config.is_file():
+                    configs.append(config)
     if not configs:
         pytest.skip("no app-repo pull-request configs found locally")
 

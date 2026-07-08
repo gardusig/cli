@@ -80,7 +80,7 @@ Canonical GitHub repo: **`gardusig/cli`**. `cli pipeline config resolve` maps `g
 `gardusig/python-cli` for hub YAML keys (`src/services/pipeline_runtime.py`). Legacy slug
 `gardusig/python-cli` still dispatches successfully.
 
-Hub workflow: `gardusig/pipelines` → **Pull request** (`repository_dispatch`).
+Hub workflow: `gardusig/yaml` → **Pull request** (`repository_dispatch`).
 
 Equivalent deploy aliases:
 
@@ -131,7 +131,7 @@ Pin `CLI_VERSION` at build time after PyPI releases; local dev may use editable 
 
 | Workflow | Status |
 |----------|--------|
-| `operator-test.yml` | **Shipped** — selective resolve + package matrix; full-suite → `pull-request.yml` |
+| `operator-test.yml` | **Shipped** — selective resolve + package matrix; full-suite → pull-request router |
 | `operator-craft-plan.yml` | **Shipped** — issue context + `cli opencode gh issue --plan-only` |
 | `operator-craft-execute.yml` | **Shipped** — `cli opencode gh execute` (`yes` gate + `DEEPSEEK_API_KEY`) |
 | `operator-review.yml` | **Shipped** — `cli opencode gh review` (no merge) |

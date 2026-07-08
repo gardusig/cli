@@ -15,12 +15,15 @@ import pytest
 
 GITIGNORE_REQUIRED_PATTERNS = (
     ".venv/",
+    ".uv/",
+    ".hypothesis/",
     ".integration-scratch/",
     "dist/",
     "src-*/",
     "cli-git-*/",
     "cli-public-*/",
     ".env",
+    "*.egg-info/",
 )
 
 UNTRACKED_PREFIXES = (

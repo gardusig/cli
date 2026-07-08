@@ -371,12 +371,15 @@ class GhService:
         *,
         title: str | None = None,
         body_file: Path | None = None,
+        body: str | None = None,
     ) -> None:
         args = ["pr", "edit", str(number)]
         if title:
             args.extend(["--title", title])
         if body_file:
             args.extend(["--body-file", str(body_file)])
+        elif body is not None:
+            args.extend(["--body", body])
         self.provider.run(args)
 
     def pr_comment(self, number: int, *, body: str) -> None:

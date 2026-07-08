@@ -390,12 +390,26 @@ def _stage_outputs(stages: list[list[dict[str, Any]]]) -> dict[str, Any]:
 
 
 def _app_config_candidates(app_src: Path, pipeline: str) -> list[Path]:
+    workflows = app_src / ".github" / "workflows"
     if pipeline:
         return [
+            workflows / f"pull-request.{pipeline}.yaml",
+            workflows / "pull-request" / f"{pipeline}.yaml",
             app_src / ".github" / f"pull-request.{pipeline}.yaml",
             app_src / ".github" / "pull-request" / f"{pipeline}.yaml",
         ]
-    return [app_src / ".github" / "pull-request.yaml"]
+    return [
+        workflows / "pull-request.yaml",
+        app_src / ".github" / "pull-request.yaml",
+    ]
+
+
+def _app_family_config_candidates(app_src: Path, family: str) -> list[Path]:
+    workflows = app_src / ".github" / "workflows"
+    return [
+        workflows / f"{family}.yaml",
+        app_src / ".github" / f"{family}.yaml",
+    ]
 
 
 def _config_path(
@@ -405,10 +419,15 @@ def _config_path(
     pipeline: str,
     app_src: Path | None = None,
 ) -> Path:
-    if family == "pull-request" and app_src is not None:
-        for candidate in _app_config_candidates(app_src, pipeline):
-            if candidate.is_file():
-                return candidate
+    if app_src is not None:
+        if family == "pull-request":
+            for candidate in _app_config_candidates(app_src, pipeline):
+                if candidate.is_file():
+                    return candidate
+        elif family in {"release", "repo-review"}:
+            for candidate in _app_family_config_candidates(app_src, family):
+                if candidate.is_file():
+                    return candidate
     base = pipeline_src / ".github" / "workflows" / family
     if family == "pull-request" and pipeline:
         flat = base / f"{repo_slug}-{pipeline}.yaml"
@@ -475,7 +494,8 @@ def _resolve_release(args: argparse.Namespace, client: dict[str, Any]) -> dict[s
     if not repo_slug or not repository or not ref:
         raise SystemExit("repo_slug, repository, and ref are required")
     version = ref.removeprefix("refs/tags/").removeprefix("v")
-    config = _config_path(args.pipeline_src, "release", repo_slug, "")
+    app_src = _as_path(getattr(args, "app_src", None))
+    config = _config_path(args.pipeline_src, "release", repo_slug, "", app_src=app_src)
     cfg = _load_yaml(config)
     config_slug, config_repository = _validate_repo(cfg, repo_slug, repository)
     stages = _stage_jobs(cfg)

@@ -33,7 +33,6 @@ def _base_jobs() -> dict[str, dict]:
         "unit": {
             "id": "unit",
             "target": "unit-test",
-            "when_full_suite": True,
             "needs": "version-check",
         },
         "integration": {
@@ -96,8 +95,8 @@ def test_apply_selective_jobs_expands_package_matrix(tmp_path: Path) -> None:
     assert "integration-gh" in jobs
     assert "test-gate" in jobs
     assert "integration-gh" in jobs["test-gate"]["needs"]
-    assert jobs["pypi"]["needs"] == ["test-gate"]
-    assert "unit" not in jobs
+    assert jobs["pypi"]["needs"] == ["test-gate", "unit"]
+    assert "unit" in jobs
 
 
 def test_apply_selective_jobs_falls_back_to_full_suite(tmp_path: Path) -> None:

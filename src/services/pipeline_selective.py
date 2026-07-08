@@ -89,10 +89,17 @@ def apply_selective_jobs(
             "needs": matrix_integration_ids,
         }
         for jid, job in list(result.items()):
-            if jid == "pypi" or jid == "testpypi-consumer":
+            if jid in {"pypi", "testpypi-consumer"}:
                 needs = list(_as_list(job.get("needs")))
-                needs = [dep for dep in needs if dep not in {"unit", "package-unit", "package-integration", "integration"}]
-                needs.append("test-gate")
+                needs = [
+                    dep
+                    for dep in needs
+                    if dep not in {"package-unit", "package-integration", "integration", "test-gate"}
+                ]
+                if "unit" not in needs:
+                    needs.append("unit")
+                if "test-gate" in result:
+                    needs.append("test-gate")
                 job["needs"] = sorted(set(needs))
     elif full_suite:
         for jid, job in list(result.items()):

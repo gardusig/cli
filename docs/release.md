@@ -4,58 +4,63 @@ Production releases publish **`gardusig-cli`** to [PyPI](https://pypi.org/projec
 
 ## Version source
 
-Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync). PR CI requires the PR version to be **greater** than `origin/main` via `cli pypi version check`.
+Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync).
 
-Example: `main` ships `1.0.2`; a release candidate PR bumps to **`1.0.3`** (strictly greater than base).
+PR CI compares the PR version against `origin/main` via `scripts/ci/version-check.sh` (tomllib; no `cli` in CI scripts). The PR version must be **strictly greater** than `main`.
 
-## Repository boundary
+Example: `main` ships `1.0.2`; a release candidate PR bumps to **`1.0.3`**.
 
-`python-cli` owns package metadata, release commands, version checks, and tests. `gardusig/github-pipelines` owns workflow YAML, Dockerfiles, schedules, branch protection, trusted publishing/OIDC setup, and repository secrets.
+## PR pipeline (four gates)
 
-Do not add `.github/workflows/`, Dockerfiles, or publish shell scripts to this repo for PyPI releases.
+Linear publish path on every PR (selective package legs run in parallel but cannot replace unit coverage):
 
-## Pull request pipeline
+| Step | Docker target | Script |
+| --- | --- | --- |
+| 1 | `version-check` | `scripts/ci/version-check.sh` |
+| 2 | `unit-test` | `scripts/ci/unit-test.sh` (≥80% via `coverage-unit.ini`) |
+| 3 | `pypi-test` | `scripts/ci/pypi-test.sh` → TestPyPI |
+| 4 | `testpypi-consumer` | `scripts/ci/testpypi-consumer.sh` → `scripts/ci/consumer/run.sh` |
 
-The central pipeline should call repo-local command contracts:
+Config: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml). Hub fallback: [`docs/yaml-sync/pull-request-python-cli.yaml`](yaml-sync/pull-request-python-cli.yaml).
 
-1. `cli pypi version check --base origin/main`
-2. `cli test packages resolve --base "$BASE_SHA" --head "$HEAD_SHA" --format json`
-3. Package unit/integration commands from `cli test packages run PACKAGE`
-4. `cli pypi upload --testpypi --skip-existing` with `TESTPYPI_API_TOKEN`
-5. TestPyPI consumer install from a clean image
+`pypi` / `testpypi-consumer` always `needs: unit` (enforced in `src/services/pipeline_selective.py`).
 
-Local equivalents:
+## Release pipeline (tag `v*`)
+
+On tag push matching `v*`:
+
+1. `release` target → `scripts/ci/pypi-release.sh` (production PyPI)
+2. `pypi-consumer` target → install `gardusig-cli==$CLI_RELEASE_VERSION` from PyPI and run consumer integration
+
+Config: [`.github/workflows/release.yaml`](../.github/workflows/release.yaml). Workflow caller: [`.github/workflows/release.workflow.yaml`](../.github/workflows/release.workflow.yaml).
+
+Tag `vX.Y.Z` must match `pyproject.toml` (see `config/tag.yaml`).
+
+## Scripts ⊥ CLI boundary
+
+CI shell under `scripts/ci/` and `scripts/test/` must not invoke `cli …` or `python3 -m src`. Exception: `scripts/ci/consumer/` runs the **pip-installed** `cli` binary after TestPyPI/PyPI install.
+
+Local maintainer flows may still use `cli`:
 
 ```bash
 export TESTPYPI_API_TOKEN='pypi-...'
-cli test python unit .
-cli pypi upload --yes --testpypi --skip-existing
+bash scripts/ci/unit-test.sh
+bash scripts/ci/pypi-test.sh
 ```
 
-## Production deploy (official PyPI)
+## GitHub secrets
 
-**Not TestPyPI.** Uses `PYPI_API_TOKEN` and the guarded release command.
+Configure on **`gardusig/cli`** (not in repo):
 
-```bash
-export PYPI_API_TOKEN='pypi-...'
-cli release main --yes
-```
-
-Tag push `vX.Y.Z` should match `pyproject.toml` (see `config/tag.yaml`).
-
-For lower-level publishing, maintainers can use `cli pypi upload --yes`, but `cli release main --yes` is the preferred production path because it creates/pushes the tag, publishes, verifies the PyPI project page, and creates the GitHub release.
-
-## Commands
-
-| Command | Index |
+| Secret | Purpose |
 | --- | --- |
-| `cli pypi upload --testpypi` | TestPyPI |
-| `cli pypi upload` | Production PyPI |
-| `cli release main` | Tag, publish, verify, GitHub release |
+| `TESTPYPI_API_TOKEN` | PR TestPyPI upload (`pypi-test` job) |
+| `PYPI_API_TOKEN` | Tag release publish (`release` job) |
+| `CENTRAL_PIPELINE_PAT` | Pipeline checkout + dispatch |
 
 ## Install contract
 
-The package name is **`gardusig-cli`** and the installed console command is **`cli`**:
+Package name **`gardusig-cli`**, console script **`cli`**:
 
 ```bash
 pip install gardusig-cli
@@ -64,31 +69,35 @@ cli --version
 
 ## Pre-merge checklist (release candidate PR)
 
-Run on the PR branch before merge:
-
 ```bash
-uv run python -m src pypi version check --base origin/main
-uv run python tests/integration/check_integration_coverage.py
+bash scripts/ci/version-check.sh
+bash scripts/ci/unit-test.sh
 uv run pytest tests/meta/ tests/services/test_pipeline_selective.py \
   tests/services/test_pipeline_runtime.py -q
-uv run pytest tests/git/ tests/gh/ tests/docker/ tests/chrome/ \
-  tests/notion/ tests/drive/ tests/contest/ tests/project/ tests/pypi/ -q
 ```
 
-Confirm central CI is green on pipelines `main` ([PR #20](https://github.com/gardusig/github-pipelines/pull/20) merged; `BASE_VERSION` **1.0.2** via [PR #24](https://github.com/gardusig/github-pipelines/pull/24)). Until PyPI ships **1.0.3**, workflows install `gardusig-cli` from editable `app-src`.
-
-**Merge order:** merge PR #88 → `cli release main --yes` → bump pipelines `BASE_VERSION` to **1.0.3**.
+Confirm central CI is green (hub: `gardusig/yaml` pull-request router + `python-cli.yaml`).
 
 ## Post-merge release (maintainer)
 
-After the release candidate PR merges to `main`:
+After merge to `main`:
 
 ```bash
 git checkout main && git pull
+# Ensure pyproject.toml version matches the tag you will push
+git tag v1.0.3
+git push origin v1.0.3
+```
+
+GitHub Actions runs [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) → `docker build --target release` → `pypi-consumer`.
+
+Alternatively, local publish (maintainer only):
+
+```bash
 export PYPI_API_TOKEN='pypi-...'
-cli release main --yes
+bash scripts/ci/pypi-release.sh
 pip install --upgrade gardusig-cli
 cli --version
 ```
 
-Then bump `main` to the next patch (e.g. `1.0.4`) for the next PR version gate, and close issues documented in `docs/public-cli-hardening.md`.
+Hub sync for `gardusig/yaml`: see [`docs/yaml-sync/README.md`](yaml-sync/README.md).

@@ -4,18 +4,12 @@ This is the canonical repository contract for the gardusig repositories.
 
 ## Active Decisions
 
-- `python-cli` owns validation logic and developer commands.
-- `github-pipelines` owns reusable GitHub Actions routers and Dockerfiles.
-- App repositories keep application code plus:
-  - `.github/workflows/pull-request.yml` — thin caller into the central router
-  - `.github/workflows/release.yml` — optional tag publish workflow (language libraries)
-  - `.github/pull-request.yaml` — per-repo job graph and hygiene policy
-- App repositories must not contain Dockerfiles, CI scripts, or extra workflow
-  files. Docker stages stay in `github-pipelines`.
-- Each repository has exactly one multi-stage Dockerfile in
-  `github-pipelines/docker/`.
-- Setup and validation are Docker-first. Run individual stages instead of
-  installing dependencies locally.
+- `gardusig/cli` owns validation logic, developer commands, root `Dockerfile`, and `scripts/ci/`.
+- `gardusig/yaml` owns reusable GitHub Actions routers.
+- App repositories keep application code plus [`.github/workflows/`](../.github/workflows/README.md):
+  - `pull-request.workflow.yaml` / `release.workflow.yaml` — thin callers
+  - `pull-request.yaml` / `release.yaml` — per-repo Docker job graphs
+- CI shell stays in `scripts/ci/`; the installable package stays in `src/`.
 
 ## Docker Stage Model
 
@@ -41,20 +35,18 @@ docker build --target unit-test -f Dockerfile .
 - `src/`
 - `docs/`
 - `test/` or `tests/`
-- `.github/workflows/pull-request.yml` as the only local workflow
-- `.github/pull-request.yaml` as the per-repo pipeline job graph
+- `.github/workflows/pull-request.workflow.yaml` as the PR caller
+- `.github/workflows/pull-request.yaml` as the per-repo pipeline job graph
 
-Each repo also owns one pipeline config file:
+Each repo also owns pipeline config YAML under `.github/workflows/` (for example `pull-request.yaml`).
 
-- `.github/pull-request.yaml`
+Hub orchestration (extra workflows, shared hub images) stays in `gardusig/yaml`.
 
-Hub orchestration (extra workflows, shared `cli-base` / `operator` images) stays in `github-pipelines`.
-
-`repo-hygiene` jobs declare `hygiene_policy` in `.github/pull-request.yaml`. The reusable workflow forwards that policy to Docker as `HYGIENE_POLICY_JSON`, and the Docker target runs `cli structure check --policy-file` to enforce allowed languages and metadata files.
+`repo-hygiene` jobs declare `hygiene_policy` in `.github/workflows/pull-request.yaml`.
 
 ## Layout by repo type
 
-- `python-cli`: `src/`, `docs/`, `tests/`, `config/`, `Dockerfile`, `.github/pull-request.yaml`
+- `python-cli`: `src/`, `docs/`, `tests/`, `config/`, `Dockerfile`, `.github/workflows/pull-request.yaml`
 - Language libraries: `src/`, `docs/`, `tests/`, `Dockerfile`
 - `github-pipelines`: `.github/`, `docker/` (hub images only), `docs/`, `Dockerfile`
 

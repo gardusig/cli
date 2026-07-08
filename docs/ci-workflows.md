@@ -1,122 +1,48 @@
 # Gardusig CI/CD — Docker pipeline
 
-CI and Docker workflow definitions run **outside this repository** (central DevOps).
-This repo has no root `Dockerfile` or `.github/workflows/`; command behavior lives in Python services.
+This repo owns two GitHub Actions workflows and one root `Dockerfile`. Workflows only run `docker build --target …`; all commands live in `scripts/ci/*.sh`.
 
 ## Triggers
 
-| Event | Pipeline |
-| --- | --- |
-| Pull request | Unit → integration → regression → PyPI smoke |
-| Tag `v*` | Build wheel/sdist → publish to PyPI |
-
-## Local development
-
-Use a normal Python venv for day-to-day work. Docker-based verification mirrors what central CI runs; ask maintainers for the current `docker build` invocation.
-
-## Selective test contract
-
-`python-cli` does not own GitHub Actions workflow YAML. The central
-`gardusig/github-pipelines` repo owns pull-request matrices, Dockerfiles,
-schedules, branch protection, and labels.
-
-This repo exposes the stable command contract that those pipelines consume:
-
-```bash
-cli test packages resolve --base "$BASE_SHA" --head "$HEAD_SHA" --format json
-cli test packages run gh --dry-run --format json
-cli test packages run gh --no-unit --dry-run --format json
-cli test packages suite --format json
-cli pypi version check --base origin/main
-cli pypi upload --testpypi --skip-existing --yes
-cli release main --yes
-```
-
-Per-package local scripts (delegate to `cli test packages run`):
-
-```bash
-scripts/test/gh.sh --dry-run
-scripts/test/git.sh --no-unit --dry-run
-scripts/test/pypi.sh --dry-run
-scripts/test/all.sh
-```
-
-**Nine-script policy (#82):** only packages with Docker integration legs get
-`scripts/test/*.sh` wrappers. Other packages use `cli test packages run PKG`
-directly. See [`scripts/test/README.md`](../scripts/test/README.md).
-
-### Package matrix
-
-| Package | Unit tests | Integration leg |
+| Event | Workflow | Docker targets |
 | --- | --- | --- |
-| `git` | `tests/git/` | `check_package_integration.py --package git` (workflows + git endpoints) |
-| `gh` | `tests/gh/` | package integration + filtered `cli_api_checks` |
-| `notion` / `drive` / `chrome` | `tests/{pkg}/` | package integration + API workspace |
-| `docker` | `tests/docker/` | package integration + `check_docker_commands.py` |
-| `contest` | `tests/contest/` | package integration |
-| `project` | `tests/project/` | package integration |
-| `pypi` | `tests/pypi/` | package integration + `pypi --help` |
-| `cli` (broad) | `tests/cli/` | full `check_public_commands.py` via core gates |
+| Pull request | [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml) | `pr` → `testpypi-consumer` |
+| Tag `v*` | [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) | `release` → `pypi-consumer` |
 
-`resolve` returns package names, focused unit paths, integration checks, broad
-fallback flags, token-cost flags, and recommended stable check names. If
-`full_suite=true`, pipelines should run the full-suite contract instead of only
-selected package legs.
+## Docker stages
 
-`run PACKAGE --no-unit --dry-run` is the package-filtered integration contract
-for Docker jobs. Integration legs use `tests/integration/check_package_integration.py`
-for API and workflow packages instead of the monolithic `check_api_integration.py`.
+| Target | Script / chain |
+| --- | --- |
+| `pr` | `scripts/ci/pr.sh` → version-check + unit-test + pypi-test |
+| `unit-test` | `scripts/ci/unit-test.sh` (≥80% via `coverage-unit.ini`) |
+| `pypi-test` | `scripts/ci/pypi-test.sh` |
+| `testpypi-consumer` | `scripts/ci/testpypi-consumer.sh` |
+| `release` | `scripts/ci/pypi-release.sh` |
+| `pypi-consumer` | `scripts/ci/pypi-consumer.sh` |
 
-### Nightly full suite (#85)
-
-`suite` is the nightly/manual full-suite safety net: core gates, every package
-unit/integration command, plus optional `check_docker_commands.py --live`.
+Other targets (`lint`, `repo-hygiene`, `core-gates`, package matrix legs) remain for local/hub use:
 
 ```bash
-cli test packages suite --format json   # full-suite leg plan
-scripts/test/all.sh --format json
+docker build --target lint .
+docker build --target unit-test .
 ```
 
-`github-pipelines` should schedule `python-cli-test-nightly.yml` on `main` (cron +
-`workflow_dispatch`) and honor label `ci:full` on PRs for the same contract.
+## Scripts ⊥ CLI
 
-### PR CI flow (github-pipelines)
+`scripts/ci/` uses raw `pytest`, `pip`, `twine`, and `git` — not `cli …` or `python3 -m src`. Consumer stages install `gardusig-cli` from TestPyPI/PyPI and run `scripts/ci/consumer/run.sh`.
 
-1. `cli test packages resolve --base "$BASE" --head "$HEAD" --format json`
-2. If `full_suite` → run `cli test packages suite` (+ execute live docker leg)
-3. Else matrix `package_names` → `cli test packages run "$pkg" --no-unit` per cell
-4. Always run core gates: `check_integration_coverage.py`, `check_public_commands.py`
-5. Label `ci:full` → `cli pipeline config resolve --force-full-suite` (full `unit-test` + `integration-test` legs)
+## Secrets
 
-PyPI publishing uses the same split: this repo owns `cli pypi ...` and
-`cli release ...`; `github-pipelines` owns workflow YAML, Docker images,
-trusted publishing/OIDC or token wiring, schedules, and branch protection.
+| Secret | Used by |
+| --- | --- |
+| `TESTPYPI_API_TOKEN` | PR `pr` target (`pypi-test.sh`) |
+| `PYPI_API_TOKEN` | Release `release` target |
 
-## Timeouts
-
-| Gate | Default |
-|------|---------|
-| Unit | 10 min |
-| Integration | 20 min |
-| Regression | 15 min |
-
-See [setup.md](setup.md) and [docker.md](docker.md) for install and harness details.
-
-## Epic 00 closure (PR #88)
-
-Parent issues [#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85). Close when PR #88 merges, **1.0.3** ships, and `github-pipelines` adoption is green.
-
-| Child | Issue | python-cli evidence | github-pipelines adoption |
-| --- | --- | --- | --- |
-| Registry | [#81](https://github.com/gardusig/python-cli/issues/81) | `src/services/test_packages.py`; `cli test packages {list,resolve,run,suite}` | `cli test packages resolve` in `pull-request.yml` |
-| Scripts | [#82](https://github.com/gardusig/python-cli/issues/82) | `scripts/test/*.sh` + [`scripts/test/README.md`](../scripts/test/README.md) nine-script policy | N/A |
-| Selective PR CI | [#83](https://github.com/gardusig/python-cli/issues/83) | `src/services/pipeline_selective.py`; `tests/services/test_pipeline_selective.py` | `pull-request/python-cli.yaml` `selective: true`; `operator-test.yml` |
-| Docker split | [#84](https://github.com/gardusig/python-cli/issues/84) | `tests/integration/check_package_integration.py`; `package_integration.py` | `docker/python-cli.dockerfile` `package-unit` / `package-integration` |
-| Nightly suite | [#85](https://github.com/gardusig/python-cli/issues/85) | `cli test packages suite`; § Nightly full suite above | `python-cli-test-nightly.yml` — suite plan + core-gates + full legs |
-
-**Pipelines:** [PR #20](https://github.com/gardusig/github-pipelines/pull/20) — `ci:full` label, nightly suite contract, `BASE_VERSION` **1.0.3**. Close #81–#82 on PR #88 merge; #83–#85 after pipelines merge + green nightly.
+## Local validation
 
 ```bash
-uv run pytest tests/integration/test_test_packages.py tests/services/test_pipeline_selective.py tests/pack/test_infra_epic.py -q
-cli test packages suite --format json
+uv run pytest tests/meta/test_scripts_cli_independence.py -q
+docker build --target pr --build-arg CLI_RELEASE_VERSION=1.0.3 .
 ```
+
+See [release.md](release.md) and [development.md](development.md).
