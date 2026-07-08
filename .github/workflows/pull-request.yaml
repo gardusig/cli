@@ -24,8 +24,14 @@ jobs:
       - name: Resolve versions on runner
         id: meta
         run: |
-          echo "version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")" >> "$GITHUB_OUTPUT"
-          echo "base_version=$(bash scripts/ci/host-base-version.sh origin/main)" >> "$GITHUB_OUTPUT"
+          version="$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
+          base_version="$(bash scripts/ci/host-base-version.sh origin/main)"
+          if [[ -z "$base_version" ]]; then
+            echo "failed to resolve base version from origin/main" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "base_version=${base_version}" >> "$GITHUB_OUTPUT"
       - name: docker build --target pr
         env:
           TESTPYPI_API_TOKEN: ${{ secrets.TESTPYPI_API_TOKEN }}
