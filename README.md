@@ -14,7 +14,7 @@ This README is the **long description on [PyPI](https://pypi.org/project/gardusi
 | --- | --- |
 | **GitHub** ([gardusig/cli](https://github.com/gardusig/cli)) | Source and issues — **application code only** |
 | **PyPI** (`pip install gardusig-cli`) | Installable package; console command is `cli` |
-| **CI / release** | External Docker pipelines — not in this repo |
+| **CI / release** | In-repo [`Dockerfile`](Dockerfile) + [`.github/workflows/`](.github/workflows/) (TestPyPI on PR, PyPI on tag) |
 | **Unit coverage** | [`coverage-unit.ini`](coverage-unit.ini) — `cli` package, ≥80% |
 
 Install from PyPI when you only need the tool; clone the repo when you want config and product scripts.
@@ -165,11 +165,11 @@ cli drive status
 cli drive upload
 ```
 
-`git zip` is the quick path for the current repo; `drive ingest` iterates configured repositories (or one `PATH`). See [docs/drive.md](docs/drive.md) · [issue #4](https://github.com/gardusig/python-cli/issues/4).
+`git zip` is the quick path for the current repo; `drive ingest` iterates configured repositories (or one `PATH`). See [docs/drive.md](docs/drive.md).
 
 ## Chrome (`cli chrome`)
 
-Bookmark file ingest/deploy (manual browser export/import). See [docs/chrome.md](docs/chrome.md) · epic [#24](https://github.com/gardusig/python-cli/issues/24).
+Bookmark file ingest/deploy (manual browser export/import). See [docs/chrome.md](docs/chrome.md).
 
 | Task | Command |
 | --- | --- |
@@ -185,7 +185,7 @@ cli chrome bookmarks merge --dry-run
 cli chrome bookmarks deploy
 ```
 
-Google Photos ([#50](https://github.com/gardusig/python-cli/issues/50)): `cli chrome photos ingest` imports Google Takeout exports into a configured private `photos_dir`.
+Google Photos: `cli chrome photos ingest` imports Google Takeout exports into a configured private `photos_dir`.
 
 See also [docs/bookmarks.md](docs/bookmarks.md).
 
@@ -201,7 +201,7 @@ Local tasks: **`notion.task_root`** (private header/body) + **`notion.pairs_file
 | `cli notion sync --yes` | Ingest from Notion, then deploy local tasks |
 | `cli notion cleanup --yes` | Archive all database pages |
 
-See [docs/notion.md](docs/notion.md) · epic [#2](https://github.com/gardusig/python-cli/issues/2) · children [#20](https://github.com/gardusig/python-cli/issues/20)–[#23](https://github.com/gardusig/python-cli/issues/23).
+See [docs/notion.md](docs/notion.md).
 
 ## Docker
 
@@ -271,7 +271,3 @@ uv sync
 
 - [OpenCode](docs/opencode.md) — `cli opencode` AI entry point
 - [Hub operator](docs/hub-operator.md) — headless ship lane + CI runner
-- Cloud drive epic: [cli #4](https://github.com/gardusig/python-cli/issues/4)
-- Bootstrap spec: [cli #3](https://github.com/gardusig/python-cli/issues/3)
-- Chrome: [cli #24](https://github.com/gardusig/python-cli/issues/24) · bookmarks [#1](https://github.com/gardusig/python-cli/issues/1) superseded
-- Docker integration: [cli #9](https://github.com/gardusig/python-cli/issues/9)

@@ -28,7 +28,7 @@ def test_chrome_bookmarks_child_issue_docs() -> None:
     bookmarks = (ROOT / "docs" / "bookmarks.md").read_text(encoding="utf-8")
     assert "CLI_SKIP_CHROME_AUTOMATION" in chrome
     assert "CLI_BOOKMARKS_FILE" in chrome
-    assert "github-pipelines" in chrome.lower() or "gardusig/pipelines" in chrome
+    assert "github-pipelines" in chrome.lower() or "gardusig/yaml" in chrome or "gardusig/pipelines" in chrome
     assert "chrome.md" in bookmarks
     assert "CLI_DOWNLOADS_DIR" in bookmarks or "CLI_BOOKMARKS" in bookmarks
 

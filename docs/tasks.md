@@ -1,6 +1,6 @@
 # Task Shortcuts
 
-Task data lives in `gardusig/database/tasks`. The CLI provides reusable shortcuts only; workflow policy lives in `gardusig/github-pipelines`.
+Task data lives in `gardusig/database/tasks`. The CLI provides reusable shortcuts only; workflow policy lives in `gardusig/gardusig/yaml`.
 
 ## Pair validation
 
@@ -25,7 +25,7 @@ cli pipeline run tasks database --action github-deploy
 cli pipeline run repo-review python-cli --job version-check
 ```
 
-The dispatch target is always `gardusig/github-pipelines`; app repos do not contain workflows.
+The dispatch target is always `gardusig/gardusig/yaml`; app repos do not contain workflows.
 
 ## Named CLI workflows
 

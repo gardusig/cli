@@ -11,4 +11,4 @@
 9. [Architecture](architecture.md) — CLI → command → service → provider
 10. [Public CLI hardening](public-cli-hardening.md) — registry/docs/write-gate review
 
-**CI:** Pull requests and tag releases are validated by external Docker pipelines (not in this repo). See [setup.md](setup.md) and [release.md](release.md).
+**CI:** Pull requests and tag releases are validated in-repo via [`.github/workflows/`](../.github/workflows/) and the root `Dockerfile`. See [setup.md](setup.md) and [release.md](release.md).

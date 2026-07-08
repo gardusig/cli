@@ -28,7 +28,7 @@ docker build --target unit-test .
 
 ### Command matrix
 
-Epic 12 ([#70](https://github.com/gardusig/python-cli/issues/70)) acceptance checklist. Integration gate exercises JSON and filter rows in `docker_integration.py`.
+Public `cli docker` acceptance checklist. Integration gate exercises JSON and filter rows in `docker_integration.py`.
 
 | Command | Read/Write | `--format json` | Filters | Write gate |
 | --- | --- | --- | --- | --- |
@@ -125,7 +125,7 @@ Filters affect monitoring output only. Cleanup commands still require explicit n
 
 ## Contest Runner Lifecycle
 
-`cli contest validate` uses the `cli-contest:runner` image for Docker-backed competitive programming checks. The image build recipe belongs to `github-pipelines`; `python-cli` documents and monitors it.
+`cli contest validate` uses the `cli-contest:runner` image for Docker-backed competitive programming checks. The image build recipe belongs to the CI hub; this repo documents and monitors it.
 
 Useful read-only checks:
 
@@ -140,21 +140,4 @@ Use cleanup commands only after reviewing the write-gate preview:
 ```bash
 cli docker container-delete cli-contest-runner --yes
 cli docker image-delete --yes
-```
-
-## Epic 12 closure (PR #88)
-
-Parent [#70](https://github.com/gardusig/python-cli/issues/70). Close when PR #88 merges and
-verification below is green.
-
-| Theme | Shipped evidence |
-| --- | --- |
-| Command matrix | § Command matrix above; read/write JSON + filters |
-| Contest linkage | § Contest Runner Lifecycle |
-| Integration gate | `docker_integration.py`; `tests/docker/` |
-| Hardening review | [#62](https://github.com/gardusig/python-cli/issues/62) Pass in `docs/public-cli-hardening.md` |
-
-```bash
-uv run pytest tests/docker/ tests/pack/test_docker_epic.py -q
-uv run python tests/integration/check_integration_coverage.py
 ```

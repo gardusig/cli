@@ -16,6 +16,6 @@ cli config check --tasks
 Secrets:
 
 - local: `.env` or `~/.config/cli/secrets/*`
-- CI: `gardusig/github-pipelines` secrets only
+- CI: `gardusig/gardusig/yaml` secrets only
 
 Do not put CI secrets in app repos.

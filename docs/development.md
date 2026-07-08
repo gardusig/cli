@@ -32,9 +32,6 @@ export CLI_RELEASE_VERSION="$(python3 -c "import tomllib; print(tomllib.load(ope
 docker build --target lint .
 docker build --target unit-test .
 docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
-docker build --target pr \
-  --build-arg "BASE_VERSION=${BASE_VERSION}" \
-  --build-arg "CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION}" .
 docker build --target pypi-test --build-arg "CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION}" .
 ```
 
@@ -57,6 +54,6 @@ GitHub Actions entrypoints: same files — see [`.github/workflows/README.md`](.
 
 1. Bump `pyproject.toml` / `src/__init__.py` (strictly greater than `main` for PR gate).
 2. Merge PR; push tag `vX.Y.Z` matching the version.
-3. [`.github/workflows/release.workflow.yaml`](../.github/workflows/release.workflow.yaml) publishes to PyPI and runs consumer integration.
+3. [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) publishes to PyPI and runs consumer integration.
 
 See [release.md](release.md) for secrets and hub sync (`docs/yaml-sync/`).

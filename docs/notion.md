@@ -1,6 +1,6 @@
 # Notion task board
 
-Sync tasks between an **existing** Notion database and local **header/body pairs** ([issue #2](https://github.com/gardusig/python-cli/issues/2)).
+Sync tasks between an **existing** Notion database and local **header/body pairs**.
 
 Local repo is the source of truth. Cli does not create databases, views, or formulas — see [notion/board-ui.md](./notion/board-ui.md) and [notion/properties/](./notion/properties/README.md) for one-time board setup.
 
@@ -76,15 +76,16 @@ Per-task API failures are reported and the command exits non-zero if any deploy 
 3. **`last_done`:** Notion wins on ingest
 4. **`link`:** database repo url written to header yaml (overwrites Notion board value)
 
-## Child issues
+## Commands
 
-| Issue | Scope |
+| Command | Direction |
 | --- | --- |
-| [#20](https://github.com/gardusig/python-cli/issues/20) | Ingest (board → pairs) |
-| [#21](https://github.com/gardusig/python-cli/issues/21) | Deploy (pairs → board) |
-| [#22](https://github.com/gardusig/python-cli/issues/22) | Cleanup (archive all pages) |
-| [#23](https://github.com/gardusig/python-cli/issues/23) | Auth, property mapping, automation |
-| [#31](https://github.com/gardusig/python-cli/issues/31) | `cli tasks` shortcuts (`run`, `ingest-pr`, pairs validate) |
+| `cli notion ingest` | Notion board → local pairs |
+| `cli notion deploy` | Local pairs → Notion board |
+| `cli notion cleanup` | Archive all board pages |
+| `cli notion sync` | Ingest then deploy |
+| `cli notion pairs build` | Scan header/body → manifest |
+| `cli tasks …` | Shortcuts — see [tasks.md](./tasks.md) |
 
 ## Task automation
 

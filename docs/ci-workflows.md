@@ -51,7 +51,9 @@ Hard timeouts (also enforced in `.github/workflows/pull-request.yaml`):
 
 ```bash
 uv run pytest tests/meta/test_scripts_cli_independence.py -q
-docker build --target pr --build-arg CLI_RELEASE_VERSION=1.0.3 .
+export BASE_VERSION="$(bash scripts/ci/host-base-version.sh origin/main)"
+docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build --target unit-test .
 ```
 
 See [release.md](release.md) and [development.md](development.md).

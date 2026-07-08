@@ -8,7 +8,7 @@ Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync).
 
 PR CI compares the PR version against `main` via `scripts/ci/version-check.sh`. The workflow resolves `BASE_VERSION` on the runner (`scripts/ci/host-base-version.sh`) and passes it as a Docker build-arg — **no git inside the image**. The PR version must be **strictly greater** than `main`.
 
-Example: `main` ships `1.0.2`; a release candidate PR bumps to **`1.0.3`**.
+Example: `main` ships `1.0.3`; a release candidate PR bumps to **`1.1.0`** (or the next semver).
 
 ## PR pipeline (four sequential jobs)
 
@@ -23,9 +23,7 @@ Linear publish path on every PR (selective package legs run in parallel on the h
 
 Unit and integration stages enforce hard limits of **5 minutes** and **10 minutes** respectively (`CI_UNIT_TIMEOUT`, `CI_INTEGRATION_TIMEOUT`; see [ci-workflows.md](ci-workflows.md)).
 
-Config: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml). Hub fallback: [`docs/yaml-sync/pull-request-python-cli.yaml`](yaml-sync/pull-request-python-cli.yaml).
-
-`pypi` / `testpypi-consumer` always `needs: unit` (enforced in `src/services/pipeline_selective.py`).
+Config: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml). Hub mirror: [`docs/yaml-sync/pull-request-python-cli.yaml`](yaml-sync/pull-request-python-cli.yaml).
 
 ## Release pipeline (tag `v*`)
 
@@ -34,7 +32,7 @@ On tag push matching `v*`:
 1. `release` target → `scripts/ci/pypi-release.sh` (production PyPI)
 2. `pypi-consumer` target → install `gardusig-cli==$CLI_RELEASE_VERSION` from PyPI and run consumer integration
 
-Config: [`.github/workflows/release.yaml`](../.github/workflows/release.yaml). Workflow caller: [`.github/workflows/release.workflow.yaml`](../.github/workflows/release.workflow.yaml).
+Config: [`.github/workflows/release.yaml`](../.github/workflows/release.yaml).
 
 Tag `vX.Y.Z` must match `pyproject.toml` (see `config/tag.yaml`).
 
@@ -58,7 +56,6 @@ Configure on **`gardusig/cli`** (not in repo):
 | --- | --- |
 | `TESTPYPI_API_TOKEN` | PR TestPyPI upload (`pypi-test` job) |
 | `PYPI_API_TOKEN` | Tag release publish (`release` job) |
-| `CENTRAL_PIPELINE_PAT` | Pipeline checkout + dispatch |
 
 ## Install contract
 
@@ -79,7 +76,7 @@ uv run pytest tests/meta/ tests/services/test_pipeline_selective.py \
   tests/services/test_pipeline_runtime.py -q
 ```
 
-Confirm central CI is green (hub: `gardusig/yaml` pull-request router + `python-cli.yaml`).
+Confirm PR CI is green on GitHub Actions (see [ci-workflows.md](ci-workflows.md)).
 
 ## Post-merge release (maintainer)
 
@@ -88,8 +85,8 @@ After merge to `main`:
 ```bash
 git checkout main && git pull
 # Ensure pyproject.toml version matches the tag you will push
-git tag v1.0.3
-git push origin v1.0.3
+git tag v1.1.1
+git push origin v1.1.1
 ```
 
 GitHub Actions runs [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) → `docker build --target release` → `pypi-consumer`.

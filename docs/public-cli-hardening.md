@@ -1,49 +1,27 @@
-# Public CLI Hardening Review
+# Public CLI hardening
 
-Epic [#57](https://github.com/gardusig/python-cli/issues/57) reviewed the public `cli` command surface after product epics landed. The console command is `cli`; the package is `gardusig-cli`.
-
-**Status (`main`):** integration coverage **156/156** on release PR; child matrix #58–#65 verified; product children ship on [PR #96](https://github.com/gardusig/cli/pull/96).
-
-**Merge readiness (PR #88, 2026-07-06):** `gardusig-cli` **1.0.3** (main already **1.0.2** via #87); integration gate **154/154**; verification **511+** tests green; `cli pypi version check` passes; selective resolve E2E against `github-pipelines` python-cli.yaml.
-
-**Epic 06 status:** Pre-merge on branch; [github-pipelines PR #20](https://github.com/gardusig/github-pipelines/pull/20) and [PR #24](https://github.com/gardusig/github-pipelines/pull/24) (`BASE_VERSION` **1.0.2**) merged on `main`. Awaiting green PR #88 CI → merge → `docs/release.md` § Post-merge release.
-
-## Current Matrix
-
-| Issue | Surface | Status | Notes |
-| --- | --- | --- | --- |
-| [#58](https://github.com/gardusig/python-cli/issues/58) | `cli git` | **Pass** | `public_endpoints` git subcommands, remote mocks (`git_mocks.py`), `docs/git.md`, push warnings + `--format json`, workflow push scenarios. Epic 09 (#67) closes branch-policy edge cases. |
-| [#59](https://github.com/gardusig/python-cli/issues/59) | `cli drive` | **Pass** | Epic 04: providers, partial failure, `--dry-run`/JSON, `sync --status`, Proton deferral, `cli_api_checks`. #30 closes on PR #96. |
-| [#60](https://github.com/gardusig/python-cli/issues/60) | `cli notion` | **Pass** | Epic 03: pairs, repo-derived `link`, partial failure, `cli tasks` shortcuts, `tests/notion/`. Close #2 epic. |
-| [#61](https://github.com/gardusig/python-cli/issues/61) | `cli chrome` | **Pass** | Epic 02: bookmarks + Takeout photos ingest (`cli chrome photos`), `docs/chrome.md`. #48 superseded by `merge` + `snapshot`. |
-| [#62](https://github.com/gardusig/python-cli/issues/62) | `cli docker` | **Pass** | JSON + filter integration smoke; write `--format json`; `check_docker_commands.py` mocked + `--live` contract in `docs/docker.md`. |
-| [#63](https://github.com/gardusig/python-cli/issues/63) | `cli gh` / `cli project` | **Pass** | GH CRUD + policy in `cli_api_checks`; API-transport smoke (`gh issue list api`, `gh issue context api`, `gh pr checks api`, `gh pr shortcut api`, `gh project view api`, `gh project item add api`, `gh transport refuse`); top-level `project_integration` checks for list/spawn/pairs/deploy/link. |
-| [#64](https://github.com/gardusig/python-cli/issues/64) | `cli contest` | **Pass** | `contest_integration` + Codeforces walkthrough in `docs/contest.md`. Close #54 epic. |
-| [#65](https://github.com/gardusig/python-cli/issues/65) | `cli links`, `restore`, aliases | **Pass** | `catalog.py` indexes visible groups; `restore` placeholder stable; hidden aliases intentional. |
-| [#51](https://github.com/gardusig/python-cli/issues/51) | Output organization | **Closed policy** | JSON-first for agents; Rich tables where already useful; no broad theme rewrite. |
-
-## Output policy (#51)
-
-- Agent-facing commands expose `--format json` where structured output helps automation (`gh`, `docker`, `project`, `git push`, many `git` reads).
-- Human-readable Rich tables and color remain on commands that already use them; do not introduce a global theme layer.
-- Errors use `[red]error:[/red]` or actionable `RuntimeError` messages (missing tokens, manifests, config paths).
-- Write gates print `Refusing write in non-interactive mode` unless `--yes` is passed.
+Checklist for the public `cli` command surface. Console command: **`cli`**; PyPI package: **`gardusig-cli`**.
 
 ## Registry contracts
 
 | File | Role |
 | --- | --- |
-| [`src/cli.py`](src/cli.py) | Visible and hidden command groups |
-| [`src/integration/public_endpoints.py`](src/integration/public_endpoints.py) | Top-level and git/pypi endpoint smoke |
-| [`src/integration/cli_api_checks.py`](src/integration/cli_api_checks.py) | Mocked gh/notion/drive/chrome API checks |
-| [`src/integration/project_integration.py`](src/integration/project_integration.py) | Mocked top-level `cli project` checks |
-| [`src/integration/contest_integration.py`](src/integration/contest_integration.py) | Mocked `cli contest validate` checks |
-| [`src/integration/docker_integration.py`](src/integration/docker_integration.py) | Mocked `cli docker` checks |
-| [`src/integration/integration_coverage.py`](src/integration/integration_coverage.py) | ok/fail inventory gate |
-| [`src/services/test_packages.py`](src/services/test_packages.py) | Changed-path → focused tests |
-| [`src/utils/catalog.py`](src/utils/catalog.py) | `cli links` discoverability |
+| [`src/cli.py`](../src/cli.py) | Visible and hidden command groups |
+| [`src/integration/public_endpoints.py`](../src/integration/public_endpoints.py) | Top-level and git/pypi endpoint smoke |
+| [`src/integration/cli_api_checks.py`](../src/integration/cli_api_checks.py) | Mocked gh/notion/drive/chrome API checks |
+| [`src/integration/project_integration.py`](../src/integration/project_integration.py) | Mocked top-level `cli project` checks |
+| [`src/integration/contest_integration.py`](../src/integration/contest_integration.py) | Mocked `cli contest validate` checks |
+| [`src/integration/docker_integration.py`](../src/integration/docker_integration.py) | Mocked `cli docker` checks |
+| [`src/integration/integration_coverage.py`](../src/integration/integration_coverage.py) | ok/fail inventory gate |
+| [`src/services/test_packages.py`](../src/services/test_packages.py) | Changed-path → focused tests |
+| [`src/utils/catalog.py`](../src/utils/catalog.py) | `cli links` discoverability |
 
-`gardusig/github-pipelines` owns workflow YAML, Dockerfiles, schedules, and job graphs.
+## Output policy
+
+- Agent-facing commands expose `--format json` where structured output helps automation (`gh`, `docker`, `project`, `git push`, many `git` reads).
+- Human-readable Rich tables and color remain on commands that already use them.
+- Errors use `[red]error:[/red]` or actionable `RuntimeError` messages (missing tokens, manifests, config paths).
+- Write gates print `Refusing write in non-interactive mode` unless `--yes` is passed.
 
 ## Verification
 
@@ -59,43 +37,11 @@ uv run pytest tests/git/ tests/gh/ tests/docker/ tests/chrome/ tests/notion/ tes
 Docker integration (full public command matrix):
 
 ```bash
-# In github-pipelines docker integration job
+docker build --target integration-test .
 python tests/integration/check_public_commands.py
 python tests/integration/check_api_integration.py
 ```
 
-## Closure recommendations
+## CI ownership
 
-- Close **#57** when [PR #88](https://github.com/gardusig/python-cli/pull/88) merges with the verification block above green.
-- Close child issues **#58–#65** and output policy **#51** (documented above; no theme rewrite).
-- Close product epics **#2**, **#4**, **#24**, **#54**, **#66–#70** when PR #88 merges with evidence.
-- Close **#52** and Epic **09** (#67) — push warnings, detached-HEAD refusal, and `git push --format json` shipped on PR #88.
-- Close **#48** — superseded by `cli chrome bookmarks merge` and `snapshot` (see `docs/chrome.md`).
-- Epic **00-infra** ([#81](https://github.com/gardusig/python-cli/issues/81)–[#85](https://github.com/gardusig/python-cli/issues/85)): contract on PR #88; [pipelines PR #20](https://github.com/gardusig/github-pipelines/pull/20) for `ci:full` + nightly; close #81–#82 on merge, #83–#85 after pipelines merge + green nightly.
-- Epic **08-projects** ([#66](https://github.com/gardusig/python-cli/issues/66)–[#75](https://github.com/gardusig/python-cli/issues/75)): close when PR #88 merges — evidence in `docs/project.md` § Epic 08 closure; hub `project-recurrence.yml` ([pipelines #16](https://github.com/gardusig/github-pipelines/pull/16)).
-- Close **#50** when PR #96 merges with photos ingest verification green.
-- Close **#30** when PR #96 merges with drive sync verification green (`tests/drive/`, `tests/pack/test_drive_sync_epic.py`).
-- Close **#12**, **#13**, **#29**, **#14** (deferred), **#15** when PR #96 merges with provider/automation evidence (`tests/pack/test_drive_providers_epic.py`).
-- Close **#20**, **#21**, **#22**, **#23**, **#31** when PR #96 merges with Notion evidence (`tests/notion/`, `tests/pack/test_notion_epic.py`).
-- Close **#27**, **#28** when PR #96 merges with Chrome bookmarks evidence (`tests/pack/test_chrome_bookmarks_epic.py`).
-- Retarget only genuinely new automation to the owning product epic, not Epic 07.
-- **Epic 06 (PyPI release):** PR #88 bumps `gardusig-cli` to `1.0.3` for `cli pypi version check`; post-merge run TestPyPI then `cli release main --yes` (see `docs/release.md`).
-
-## Next epic: merge & release (Epic 06c)
-
-**Current gate:** green CI on [PR #88](https://github.com/gardusig/python-cli/pull/88) → merge → ship **1.0.3** → close epics per closure tables below. Pipelines adoption ([PR #20](https://github.com/gardusig/github-pipelines/pull/20)) is on `main`.
-
-| Step | Action |
-| --- | --- |
-| 1 | Green CI on PR #88 (selective matrix + TestPyPI) |
-| 2 | Merge PR #88 → `main` |
-| 3 | `cli release main --yes` → PyPI **1.0.3** |
-| 4 | Bump `github-pipelines` `BASE_VERSION` to **1.0.3** and `main` to **1.0.4** for next gate |
-| 5 | Rebuild `ghcr.io/gardusig/operator-runner` with `CLI_VERSION=1.0.3` |
-| 6 | Close #57–#85, #2, #4, #24, #54, #66–#70 per § Closure recommendations |
-
-Evidence: [`docs/release.md`](release.md) § Pre-merge / Post-merge; pack smoke `tests/pack/test_merge_epic.py`.
-
-**Shipped on PR #88 (close post-merge):** Epics **08**, **09**, **10**, **11**, **12**, **hub-operator**, **00-infra** (python-cli side) — see [`docs/project.md`](project.md), [`docs/gh.md`](gh.md), [`docs/docker.md`](docker.md), [`docs/ci-workflows.md`](ci-workflows.md).
-
-**Deferred:** [#50](https://github.com/gardusig/python-cli/issues/50) Chrome Photos.
+This repository owns application code, docs, the root [`Dockerfile`](../Dockerfile), `scripts/ci/*.sh`, and [`.github/workflows/`](../.github/workflows/) for pull-request and tag release pipelines. Optional hub routers live in [`gardusig/yaml`](https://github.com/gardusig/yaml) for broader monorepo CI.

@@ -6,7 +6,7 @@
   prerequisite checks, environment setup, and command handlers.
 - Python handlers run terminal commands (`npm`, `pytest`, `mvn`, `clang-format`,
   `markdownlint-cli2`, etc.).
-- Dockerfiles and workflow YAML stay in `github-pipelines`.
+- Dockerfiles and workflow YAML stay in `gardusig/yaml`.
 
 ## Commands
 
@@ -32,7 +32,7 @@ check only Java/Maven/Gradle prerequisites and do not require Node or pytest.
 
 ## Pipeline Runtime
 
-`github-pipelines` workflow YAML calls CLI-owned runtime commands:
+`gardusig/yaml` workflow YAML calls CLI-owned runtime commands:
 
 ```bash
 cli pipeline config resolve --family pull-request --pipeline-src pipeline-src

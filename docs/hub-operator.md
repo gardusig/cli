@@ -2,7 +2,7 @@
 
 Headless operator lane for [`gardusig/cli`](https://github.com/gardusig/cli): deterministic **`cli gh`** / **`cli git`** /
 **`cli test`**, optional token spend on **`cli opencode`**, and CI images/workflows owned by
-**`gardusig/github-pipelines`**.
+**`gardusig/yaml`**.
 
 Parent tracking: **`epic:hub-operator`** (`config/gh/phase5/cli.batch.yaml`).
 
@@ -10,10 +10,8 @@ Parent tracking: **`epic:hub-operator`** (`config/gh/phase5/cli.batch.yaml`).
 
 | Layer | Owns |
 | --- | --- |
-| `python-cli` / `cli` | Command contracts, policy guards, OpenCode domain, test package resolve |
-| `github-pipelines` | Workflow YAML, Dockerfiles, `ghcr.io` images, schedules, secrets |
-
-This repo must not add `.github/workflows/` or root `Dockerfile` files for operator CI.
+| `gardusig/cli` | Application code, in-repo PR/release `Dockerfile`, `scripts/ci/`, command contracts |
+| `gardusig/yaml` | Hub workflow routers, operator images, schedules, shared secrets |
 
 ## Cost boundary
 
@@ -77,8 +75,8 @@ cli pipeline run pull-request python-cli \
 ```
 
 Canonical GitHub repo: **`gardusig/cli`**. `cli pipeline config resolve` maps `gardusig/cli` →
-`gardusig/python-cli` for hub YAML keys (`src/services/pipeline_runtime.py`). Legacy slug
-`gardusig/python-cli` still dispatches successfully.
+`gardusig/cli` for hub YAML keys (`src/services/pipeline_runtime.py`). Legacy slug
+`gardusig/cli` still dispatches successfully.
 
 Hub workflow: `gardusig/yaml` → **Pull request** (`repository_dispatch`).
 
@@ -96,7 +94,7 @@ cli deploy operator test \
   --sha "$(git rev-parse HEAD)" --yes
 
 cli deploy operator plan \
-  --repository gardusig/python-cli \
+  --repository gardusig/cli \
   --issue 81 \
   --ref main --yes
 ```
@@ -119,7 +117,7 @@ cli deploy operator plan \
 
 Slim image for workflow jobs that only need `cli`, `git`, `gh`, and optional Docker socket:
 
-- Dockerfile: `github-pipelines/docker/operator.dockerfile`
+- Dockerfile: `gardusig/yaml/docker/operator.dockerfile`
 - Target: `operator-runner`
 - Publish: `ghcr.io/gardusig/operator-runner` (workflow `operator-runner-publish.yml`)
 
@@ -127,7 +125,7 @@ Pin `CLI_VERSION` at build time after PyPI releases; local dev may use editable 
 
 ### Reusable workflows
 
-`workflow_call` entrypoints in `github-pipelines`:
+`workflow_call` entrypoints in `gardusig/yaml`:
 
 | Workflow | Status |
 |----------|--------|
@@ -137,29 +135,29 @@ Pin `CLI_VERSION` at build time after PyPI releases; local dev may use editable 
 | `operator-review.yml` | **Shipped** — `cli opencode gh review` (no merge) |
 | `operator-dispatch.yml` | **Shipped** — routes `lane` → test/plan/execute/review reusables |
 
-Docs: `github-pipelines/docs/workflows/operator.md`.
+Docs: `gardusig/yaml/docs/workflows/operator.md`.
 
 Dispatch examples:
 
 ```bash
-gh workflow run operator-dispatch.yml -R gardusig/github-pipelines \
+gh workflow run operator-dispatch.yml -R gardusig/gardusig/yaml \
   -f lane=test \
-  -f repository=gardusig/python-cli \
+  -f repository=gardusig/cli \
   -f ref=feat/language-first-cli-and-structure \
   -f sha="$(git rev-parse HEAD)"
 
-gh workflow run operator-test.yml -R gardusig/github-pipelines \
-  -f repository=gardusig/python-cli \
+gh workflow run operator-test.yml -R gardusig/gardusig/yaml \
+  -f repository=gardusig/cli \
   -f ref=feat/language-first-cli-and-structure \
   -f sha="$(git rev-parse HEAD)"
 
-gh workflow run operator-craft-plan.yml -R gardusig/github-pipelines \
-  -f repository=gardusig/python-cli \
+gh workflow run operator-craft-plan.yml -R gardusig/gardusig/yaml \
+  -f repository=gardusig/cli \
   -f issue=81 \
   -f ref=main
 
-gh workflow run operator-review.yml -R gardusig/github-pipelines \
-  -f repository=gardusig/python-cli \
+gh workflow run operator-review.yml -R gardusig/gardusig/yaml \
+  -f repository=gardusig/cli \
   -f pr=88 \
   -f issue=81 \
   -f ref=feat/language-first-cli-and-structure \
@@ -177,21 +175,8 @@ gh workflow run operator-review.yml -R gardusig/github-pipelines \
 
 Break-glass: `CLI_ALLOW_GH_MERGE=1` allows raw `gh pr merge` inside providers (emergency only).
 
-## Epic progress
-
-| Child | Status |
-| --- | --- |
-| 0 — docs / snapshot | **This doc** + [opencode.md](opencode.md) |
-| 1 — tag policy + hub CI | Shipped (Epic 06, `github-pipelines` PR #2) |
-| 2 — forbid `cli gh pr merge` | Shipped (`gh_policy.py`) |
-| 3 — runner image + ghcr | **Done** ([github-pipelines #11](https://github.com/gardusig/github-pipelines/pull/11)) |
-| 4 — reusable `workflow_call` | **Done** — test + craft plan/execute + review |
-| 5–8 — OpenCode + `gh_topo` | Shipped on PR #88 |
-| 9 — `test` / `deploy` / `release` | **Done** — `test` + `release` + `cli deploy` dispatch |
-| 10 — dispatch orchestrator | **Done** (`operator-dispatch.yml`) |
-
 ## See also
 
-- [ci-workflows.md](ci-workflows.md) — selective test contract
+- [ci-workflows.md](ci-workflows.md) — PR and release Docker pipeline
 - [release.md](release.md) — PyPI lane
-- [public-cli-hardening.md](public-cli-hardening.md) — Epic 07 matrix
+- [public-cli-hardening.md](public-cli-hardening.md) — public CLI hardening checklist

@@ -1,4 +1,4 @@
-"""Pack tests — Epic 06d–06g merge readiness (PR #96)."""
+"""Pack tests — merge readiness and in-repo CI contract."""
 
 from __future__ import annotations
 
@@ -8,29 +8,25 @@ from tests.pack.conftest import requires_docs
 
 ROOT = Path(__file__).resolve().parents[2]
 
+
 @requires_docs
 def test_merge_readiness_release_checklist() -> None:
     text = (ROOT / "docs" / "release.md").read_text(encoding="utf-8")
-    assert "PR #96 merge" in text
-    assert "Epic 06d" in text or "06d–06g" in text or "06d-06g" in text
-    assert "pipeline run pull-request python-cli" in text
+    assert "Pre-merge checklist" in text
+    assert "Post-merge release" in text
     assert "gardusig/cli" in text
-    assert "pipelines #38" in text
-    for issue in ("#50", "#27", "#28", "#31", "#30", "#29"):
-        assert issue in text
-    assert "#20" in text and "#23" in text
-    assert "#12" in text and "#15" in text
+    assert "version-check" in text
+    assert "unit-test" in text
+    assert "pypi-test" in text
+    assert "integration-test" in text
 
 
 @requires_docs
 def test_merge_readiness_hardening_section() -> None:
     text = (ROOT / "docs" / "public-cli-hardening.md").read_text(encoding="utf-8")
-    assert "Epic 06e" in text
-    assert "Merge readiness" in text
-    assert "PR #96" in text
-    assert "156/156" in text or "156" in text
-    assert "Epic 06g" in text
-    assert "Shipped" in text
+    assert "Registry contracts" in text
+    assert "Verification" in text
+    assert "Dockerfile" in text or "integration-test" in text
 
 
 def test_merge_readiness_repo_rename_contract() -> None:
@@ -46,22 +42,22 @@ def test_merge_readiness_app_local_pipeline_config() -> None:
     pr_workflow = (ROOT / ".github" / "workflows" / "pull-request.yaml").read_text(encoding="utf-8")
     assert "pull_request:" in pr_workflow
     assert "docker build" in pr_workflow
-    assert "--target pr" in pr_workflow
+    assert "--target version-check" in pr_workflow
+    assert "--target unit-test" in pr_workflow
+    assert "--target pypi-test" in pr_workflow
+    assert "--target integration-test" in pr_workflow
     assert "--target testpypi-consumer" in pr_workflow
+    assert "timeout-minutes: 5" in pr_workflow
     release_workflow = (ROOT / ".github" / "workflows" / "release.yaml").read_text(encoding="utf-8")
-    assert 'tags:' in release_workflow
+    assert "tags:" in release_workflow
     assert "--target release" in release_workflow
     assert "--target pypi-consumer" in release_workflow
-    assert not (ROOT / ".github" / "pull-request.yaml").exists()
-    assert not (ROOT / ".github" / "workflows" / "pull-request.workflow.yaml").exists()
 
 
 @requires_docs
 def test_merge_readiness_hub_operator_rename_note() -> None:
     hub = (ROOT / "docs" / "hub-operator.md").read_text(encoding="utf-8")
     assert "gardusig/cli" in hub
-    assert "gardusig/python-cli" in hub
-    assert "pipeline_runtime" in hub or "resolve alias" in hub.lower()
 
 
 def test_merge_readiness_pack_smokes_present() -> None:

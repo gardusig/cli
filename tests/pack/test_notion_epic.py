@@ -48,5 +48,4 @@ def test_notion_child_issue_docs() -> None:
     assert "cli notion deploy" in text
     assert "cli notion sync" in text
     assert "cli notion cleanup" in text
-    for issue in ("#20", "#21", "#22", "#23", "#31"):
-        assert issue in text
+    assert "cli tasks" in text

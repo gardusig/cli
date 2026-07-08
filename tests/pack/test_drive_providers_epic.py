@@ -38,5 +38,5 @@ def test_drive_provider_docs() -> None:
     assert "GOOGLE_DRIVE_TOKEN" in text
     assert "ONEDRIVE_TOKEN" in text
     assert "Proton Drive is **deferred**" in text
-    assert "Download semantics (#29)" in text
-    assert "Tag backup automation (#15)" in text
+    assert "Download semantics" in text
+    assert "Tag backup automation" in text

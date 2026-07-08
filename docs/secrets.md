@@ -6,10 +6,10 @@ Secrets are configured through `cli configure` or readable environment variables
 
 | Configure key | Env var | Example shape | GitHub secret | Get it |
 |---------------|---------|---------------|---------------|--------|
-| `notion.token` | `NOTION_TOKEN` | `secret_...` | `gardusig/github-pipelines` / `tasks` / `NOTION_TOKEN` | [Google](https://www.google.com/search?q=how+to+create+notion+internal+integration+token) |
-| `gh.token` | `GH_TOKEN` | `ghp_...` | `gardusig/github-pipelines` / `tasks` / `CENTRAL_PIPELINE_PAT` | [Google](https://www.google.com/search?q=how+to+create+a+github+fine+grained+personal+access+token) |
-| `pypi.token` | `PYPI_API_TOKEN` | `pypi-...` | `gardusig/github-pipelines` / `release` / `PYPI_API_TOKEN` | [Google](https://www.google.com/search?q=how+to+create+a+pypi+api+token) |
-| `testpypi.token` | `TESTPYPI_API_TOKEN` | `pypi-...` | `gardusig/github-pipelines` / default / `TESTPYPI_API_TOKEN` | [Google](https://www.google.com/search?q=how+to+create+a+testpypi+api+token) |
+| `notion.token` | `NOTION_TOKEN` | `secret_...` | `gardusig/gardusig/yaml` / `tasks` / `NOTION_TOKEN` | [Google](https://www.google.com/search?q=how+to+create+notion+internal+integration+token) |
+| `gh.token` | `GH_TOKEN` | `ghp_...` | `gardusig/gardusig/yaml` / `tasks` / `CENTRAL_PIPELINE_PAT` | [Google](https://www.google.com/search?q=how+to+create+a+github+fine+grained+personal+access+token) |
+| `pypi.token` | `PYPI_API_TOKEN` | `pypi-...` | `gardusig/gardusig/yaml` / `release` / `PYPI_API_TOKEN` | [Google](https://www.google.com/search?q=how+to+create+a+pypi+api+token) |
+| `testpypi.token` | `TESTPYPI_API_TOKEN` | `pypi-...` | `gardusig/gardusig/yaml` / default / `TESTPYPI_API_TOKEN` | [Google](https://www.google.com/search?q=how+to+create+a+testpypi+api+token) |
 | `backup.password` | `BACKUP_ZIP_PASSWORD` | long random password | local-only | [Google](https://www.google.com/search?q=how+to+generate+a+strong+random+password+openssl) |
 | `deepseek.token` | `DEEPSEEK_API_KEY` | `sk-...` | local-only | [Google](https://www.google.com/search?q=how+to+create+a+deepseek+api+key) |
 
