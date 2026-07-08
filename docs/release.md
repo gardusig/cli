@@ -10,16 +10,16 @@ PR CI compares the PR version against `main` via `scripts/ci/version-check.sh`. 
 
 Example: `main` ships `1.0.2`; a release candidate PR bumps to **`1.0.3`**.
 
-## PR pipeline (four gates)
+## PR pipeline (four sequential jobs)
 
-Linear publish path on every PR (selective package legs run in parallel but cannot replace unit coverage):
+Linear publish path on every PR (selective package legs run in parallel on the hub but cannot replace unit coverage):
 
-| Step | Docker target | Script |
+| Job | Docker target(s) | Script |
 | --- | --- | --- |
-| 1 | `version-check` | `scripts/ci/version-check.sh` |
-| 2 | `unit-test` | `scripts/ci/unit-test.sh` (≥80% via `coverage-unit.ini`) |
-| 3 | `pypi-test` | `scripts/ci/pypi-test.sh` → TestPyPI |
-| 4 | `testpypi-consumer` | `scripts/ci/testpypi-consumer.sh` → `scripts/ci/consumer/run.sh` |
+| 1 — Version | `version-check` | `scripts/ci/version-check.sh` |
+| 2 — Unit tests | `unit-test` | `scripts/ci/unit-test.sh` (≥80% via `coverage-unit.ini`) |
+| 3 — TestPyPI | `pypi-test` | `scripts/ci/pypi-test.sh` → TestPyPI |
+| 4 — Post-publish | `integration-test`, then `testpypi-consumer` | `scripts/ci/integration-test.sh` then `scripts/ci/testpypi-consumer.sh` → `scripts/ci/consumer/run.sh` |
 
 Config: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml). Hub fallback: [`docs/yaml-sync/pull-request-python-cli.yaml`](yaml-sync/pull-request-python-cli.yaml).
 

@@ -238,7 +238,7 @@ Thin GitHub Actions workflows live in [`.github/workflows/`](.github/workflows/)
 
 | Trigger | What runs |
 | --- | --- |
-| **Pull request** | `docker build --target pr` then `testpypi-consumer` |
+| **Pull request** | `version-check` → `unit-test` → `pypi-test` → `integration-test` + `testpypi-consumer` |
 | **Tag** `v*` | `docker build --target release` then `pypi-consumer` |
 
 Configure secrets on **`gardusig/cli`**: `TESTPYPI_API_TOKEN`, `PYPI_API_TOKEN`.

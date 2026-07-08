@@ -6,17 +6,19 @@ This repo owns two GitHub Actions workflows and one root `Dockerfile`. Workflows
 
 | Event | Workflow | Docker targets |
 | --- | --- | --- |
-| Pull request | [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml) | `pr` → `testpypi-consumer` |
+| Pull request | [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml) | `version-check` → `unit-test` → `pypi-test` → `integration-test` + `testpypi-consumer` |
 | Tag `v*` | [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) | `release` → `pypi-consumer` |
 
 ## Docker stages
 
 | Target | Script / chain |
 | --- | --- |
-| `pr` | `scripts/ci/pr.sh` → version-check + unit-test + pypi-test |
+| `version-check` | `scripts/ci/version-check.sh` |
 | `unit-test` | `scripts/ci/unit-test.sh` (≥80% via `coverage-unit.ini`) |
 | `pypi-test` | `scripts/ci/pypi-test.sh` |
+| `integration-test` | `scripts/ci/integration-test.sh` |
 | `testpypi-consumer` | `scripts/ci/testpypi-consumer.sh` |
+| `pr` | `scripts/ci/pr.sh` → version-check + unit-test + pypi-test (local shortcut) |
 | `release` | `scripts/ci/pypi-release.sh` |
 | `pypi-consumer` | `scripts/ci/pypi-consumer.sh` |
 
@@ -35,7 +37,7 @@ docker build --target unit-test .
 
 | Secret | Used by |
 | --- | --- |
-| `TESTPYPI_API_TOKEN` | PR `pr` target (`pypi-test.sh`) |
+| `TESTPYPI_API_TOKEN` | PR `pypi-test` + `testpypi-consumer` targets |
 | `PYPI_API_TOKEN` | Release `release` target |
 
 ## Local validation

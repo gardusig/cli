@@ -81,12 +81,6 @@ jobs:
   name: Unit tests (full suite)
   target: unit-test
   needs: version-check
-- id: integration
-  name: Integration tests (full suite)
-  target: integration-test
-  when_full_suite: true
-  docker_socket: true
-  needs: unit
 - id: pypi
   name: TestPyPI publish (Docker)
   target: pypi-test
@@ -94,9 +88,15 @@ jobs:
   build_args_from_ref: true
   secrets:
     TESTPYPI_API_TOKEN: TESTPYPI_API_TOKEN
+- id: integration
+  name: Integration tests (full suite)
+  target: integration-test
+  when_full_suite: true
+  docker_socket: true
+  needs: pypi
 - id: testpypi-consumer
   name: TestPyPI consumer install
   target: testpypi-consumer
-  needs: pypi
+  needs: integration
   build_args_from_ref: true
   docker_socket: true
