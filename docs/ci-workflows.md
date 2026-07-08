@@ -33,6 +33,13 @@ docker build --target unit-test .
 
 `scripts/ci/` uses raw `pytest`, `pip`, `twine`, and `git` — not `cli …` or `python3 -m src`. Consumer stages install `gardusig-cli` from TestPyPI/PyPI and run `scripts/ci/consumer/run.sh`.
 
+Hard timeouts (also enforced in `.github/workflows/pull-request.yaml`):
+
+| Stage | Limit | Env override |
+| --- | --- | --- |
+| Unit tests | 5 minutes | `CI_UNIT_TIMEOUT` |
+| Integration tests | 10 minutes | `CI_INTEGRATION_TIMEOUT` |
+
 ## Secrets
 
 | Secret | Used by |

@@ -54,3 +54,13 @@ if head <= base:
 print(f"version ok: {sys.argv[2]} > {sys.argv[1]}")
 PY
 }
+
+ci_run_with_timeout() {
+  local limit="$1"
+  shift
+  if ! command -v timeout >/dev/null 2>&1; then
+    echo "timeout command not found (install coreutils)" >&2
+    exit 1
+  fi
+  timeout --signal=TERM --kill-after=30s "$limit" "$@"
+}

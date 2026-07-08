@@ -21,6 +21,8 @@ Linear publish path on every PR (selective package legs run in parallel on the h
 | 3 — TestPyPI | `pypi-test` | `scripts/ci/pypi-test.sh` → TestPyPI |
 | 4 — Post-publish | `integration-test`, then `testpypi-consumer` | `scripts/ci/integration-test.sh` then `scripts/ci/testpypi-consumer.sh` → `scripts/ci/consumer/run.sh` |
 
+Unit and integration stages enforce hard limits of **5 minutes** and **10 minutes** respectively (`CI_UNIT_TIMEOUT`, `CI_INTEGRATION_TIMEOUT`; see [ci-workflows.md](ci-workflows.md)).
+
 Config: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml). Hub fallback: [`docs/yaml-sync/pull-request-python-cli.yaml`](yaml-sync/pull-request-python-cli.yaml).
 
 `pypi` / `testpypi-consumer` always `needs: unit` (enforced in `src/services/pipeline_selective.py`).
