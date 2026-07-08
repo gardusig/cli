@@ -61,6 +61,58 @@ def _docs_available() -> bool:
     return (ROOT / "docs" / "release.md").is_file()
 
 
+def _contest_runner_image_ready() -> bool:
+    try:
+        from src.services.docker_runtime import ensure_docker, run_docker
+
+        ensure_docker()
+    except RuntimeError:
+        return False
+    return run_docker(["image", "inspect", "cli-contest:runner"], check=False).returncode == 0
+
+
+def _github_pipelines_python_cli_config() -> bool:
+    config = (
+        ROOT.parent
+        / "github-pipelines"
+        / ".github"
+        / "workflows"
+        / "pull-request"
+        / "python-cli.yaml"
+    )
+    return config.is_file()
+
+
+def _local_pull_request_workflow_configs() -> bool:
+    github_roots = [ROOT.parent, ROOT.parent.parent / "private"]
+    for github_root in github_roots:
+        if not github_root.is_dir():
+            continue
+        for repo_root in github_root.iterdir():
+            if not repo_root.is_dir():
+                continue
+            for config_name in ("pull-request.yaml",):
+                config = repo_root / ".github" / "workflows" / config_name
+                if not config.is_file():
+                    config = repo_root / ".github" / config_name
+                if config.is_file():
+                    return True
+    return False
+
+
+def _optional_integration_ready(item: pytest.Item) -> bool:
+    """Drop env-specific integration tests at collection time (skips are forbidden)."""
+    checks: dict[str, bool] = {
+        "test_contest_validate_toy_live": _contest_runner_image_ready(),
+        "test_python_cli_pipeline_config_resolve_against_pipelines": _github_pipelines_python_cli_config(),
+        "test_pull_request_configs_declare_inline_hygiene_policies": _local_pull_request_workflow_configs(),
+    }
+    ready = checks.get(item.name)
+    if ready is None:
+        return True
+    return ready
+
+
 def pytest_deselected(items: list[pytest.Item]) -> None:
     _DESELECTED.extend(items)
 
@@ -76,6 +128,8 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
             continue
         if not in_docker_integration() and item.get_closest_marker("integration"):
             continue
+        if item.get_closest_marker("integration") and not _optional_integration_ready(item):
+            continue
         kept.append(item)
     items[:] = kept
     for item in items:
@@ -86,6 +140,9 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
 @pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if not _DESELECTED:
+        return
+    # Marker filters (e.g. -m integration) legitimately deselect the complementary suite.
+    if session.config.getoption("markexpr", default=""):
         return
     if all(item.get_closest_marker("integration") for item in _DESELECTED):
         return

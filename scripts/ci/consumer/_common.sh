@@ -20,7 +20,7 @@ consumer_wait_for_index() {
   fi
   local attempt=1
   while (( attempt <= attempts )); do
-    if curl -fsSL "$url" | python3 -c "
+    if response="$(curl -fsS "$url" 2>/dev/null)" && [[ -n "$response" ]] && printf '%s' "$response" | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
 version = sys.argv[1]
