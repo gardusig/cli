@@ -19,6 +19,9 @@ FORBIDDEN_IN_SRC = (
     "Path('scripts/",
 )
 CONSUMER_PREFIX = ROOT / "scripts" / "ci" / "consumer"
+HOST_ONLY_SCRIPTS = {
+    ROOT / "scripts" / "ci" / "host-base-version.sh",
+}
 
 
 def _iter_shell_scripts(base: Path) -> list[Path]:
@@ -39,6 +42,8 @@ def test_scripts_avoid_cli_package_entrypoints() -> None:
     offenders: list[str] = []
     for path in _iter_shell_scripts(ROOT / "scripts"):
         if CONSUMER_PREFIX in path.parents or path.parent == CONSUMER_PREFIX:
+            continue
+        if path in HOST_ONLY_SCRIPTS:
             continue
         code = "\n".join(_code_lines(path.read_text(encoding="utf-8")))
         for token in FORBIDDEN_IN_SCRIPTS:
@@ -75,6 +80,14 @@ def test_ci_unit_script_enforces_coverage_gate() -> None:
     assert "--cov-fail-under=80" in code
     assert "python3 -m src" not in code
     assert not any(line.strip().startswith("cli ") for line in code.splitlines())
+
+
+def test_version_check_uses_host_base_version_not_git() -> None:
+    script = ROOT / "scripts" / "ci" / "version-check.sh"
+    code = "\n".join(_code_lines(script.read_text(encoding="utf-8")))
+    assert "BASE_VERSION" in code
+    assert "git show" not in code
+    assert "git fetch" not in code
 
 
 @pytest.mark.parametrize(

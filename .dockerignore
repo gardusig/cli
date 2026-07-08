@@ -1,3 +1,4 @@
+# VCS metadata stays on the host (BASE_VERSION, etc.); never copy into the image.
 .git/
 .cursor/
 .venv/

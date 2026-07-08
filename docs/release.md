@@ -6,7 +6,7 @@ Production releases publish **`gardusig-cli`** to [PyPI](https://pypi.org/projec
 
 Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync).
 
-PR CI compares the PR version against `origin/main` via `scripts/ci/version-check.sh` (tomllib; no `cli` in CI scripts). The PR version must be **strictly greater** than `main`.
+PR CI compares the PR version against `main` via `scripts/ci/version-check.sh`. The workflow resolves `BASE_VERSION` on the runner (`scripts/ci/host-base-version.sh`) and passes it as a Docker build-arg — **no git inside the image**. The PR version must be **strictly greater** than `main`.
 
 Example: `main` ships `1.0.2`; a release candidate PR bumps to **`1.0.3`**.
 
@@ -70,7 +70,8 @@ cli --version
 ## Pre-merge checklist (release candidate PR)
 
 ```bash
-bash scripts/ci/version-check.sh
+export BASE_VERSION="$(bash scripts/ci/host-base-version.sh origin/main)"
+docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
 bash scripts/ci/unit-test.sh
 uv run pytest tests/meta/ tests/services/test_pipeline_selective.py \
   tests/services/test_pipeline_runtime.py -q

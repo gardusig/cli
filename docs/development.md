@@ -26,11 +26,19 @@ Unit coverage gate (≥80%): `coverage-unit.ini` — enforced in CI via `scripts
 All stages delegate to `scripts/ci/*.sh` (raw shell — no `cli` or `python3 -m src` in those scripts).
 
 ```bash
+export BASE_VERSION="$(bash scripts/ci/host-base-version.sh origin/main)"
+export CLI_RELEASE_VERSION="$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
+
 docker build --target lint .
-docker build --target version-check .
 docker build --target unit-test .
-docker build --target pypi-test --build-arg CLI_RELEASE_VERSION=1.0.3 .
+docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build --target pr \
+  --build-arg "BASE_VERSION=${BASE_VERSION}" \
+  --build-arg "CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION}" .
+docker build --target pypi-test --build-arg "CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION}" .
 ```
+
+Git runs **only on the host** (`host-base-version.sh` or the workflow). Docker stages read copied files and build-args.
 
 Pipeline job graphs: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml), [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) (each file is a workflow that only invokes Docker targets).
 

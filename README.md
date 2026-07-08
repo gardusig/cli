@@ -227,7 +227,8 @@ Destructive commands use the write gate; pass `--yes` in scripts.
 Requires Docker Engine on Linux. Stages mirror central CI:
 
 ```bash
-docker build --target version-check .
+export BASE_VERSION="$(bash scripts/ci/host-base-version.sh origin/main)"
+docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
 docker build --target unit-test .
 ```
 
