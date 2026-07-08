@@ -555,7 +555,7 @@ def pr_upsert_cmd(
     shortcut = _pr_shortcut(_ctx_repo(ctx), _ctx_transport(ctx))
     _write_gate(
         "gh-pr-upsert",
-        shortcut.gh.snapshot_summary(),
+        shortcut.gh,
         yes=yes,
         question=f"Commit, push, and upsert PR for {branch!r}?",
         extra_lines=[
