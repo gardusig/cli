@@ -45,7 +45,7 @@ def _mock_snapshot(snapshot: MagicMock):
 @pytest.mark.parametrize(
     ("args", "needle"),
     [
-        (["drive", "status"], "repositories"),
+        (["drive", "status"], "Repository"),
         (["drive", "--help"], "ingest"),
         (["restore"], "restore: not implemented yet"),
         (["chrome", "--help"], "bookmarks"),
