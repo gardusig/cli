@@ -14,3 +14,6 @@ auth:
   pypi:
     env: PYPI_API_TOKEN
     token_file: ~/.config/cli/secrets/pypi.token
+  docker:
+    env: DOCKERHUB_TOKEN
+    token_file: ~/.config/cli/secrets/docker.token
