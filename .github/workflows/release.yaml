@@ -35,16 +35,22 @@ jobs:
           pip install --no-cache-dir build
           python -m build
       - name: Publish to PyPI (trusted publishing)
+        id: oidc
+        continue-on-error: true
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
           print-hash: true
       - name: Publish to PyPI (API token fallback)
-        if: ${{ secrets.PYPI_API_TOKEN != '' }}
+        if: steps.oidc.outcome == 'failure'
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
+          if [[ -z "${TWINE_PASSWORD}" ]]; then
+            echo "OIDC publish failed and PYPI_API_TOKEN is not set" >&2
+            exit 1
+          fi
           pip install --no-cache-dir twine
           twine upload dist/* --skip-existing
 
