@@ -23,9 +23,8 @@ from src.commands.languages import languages_app
 from src.commands.links import links_app
 from src.commands.lint import lint_app
 from src.commands.notion import notion_app
-from src.commands.pipeline import pipeline_app
+from src.commands.gh_wf import wf_app
 from src.commands.project import project_app
-from src.commands.database import database_app
 from src.commands.pypi import pypi_app
 from src.commands.publish import publish_app
 from src.commands.puzzles import puzzles_app
@@ -37,7 +36,6 @@ from src.commands.tasks import tasks_app
 from src.commands.test_cmd import test_app
 from src.commands.structure import structure_app
 from src.commands.validate import validate_app
-from src.commands.wiki import wiki_app
 from src.utils.logger import setup_logging
 
 app = typer.Typer(
@@ -75,12 +73,9 @@ app.add_typer(contest_app, name="contest")
 app.add_typer(configure_app, name="configure")
 app.add_typer(config_app, name="config")
 app.add_typer(pypi_app, name="pypi")
-app.add_typer(pipeline_app, name="pipeline")
-app.add_typer(database_app, name="database", hidden=True)
 app.add_typer(puzzles_app, name="puzzles")
 app.add_typer(repo_app, name="repo")
 app.add_typer(tasks_app, name="tasks")
-app.add_typer(wiki_app, name="wiki")
 app.add_typer(publish_app, name="publish", hidden=True)
 
 
@@ -124,5 +119,7 @@ def run() -> None:
 
 # Short alias: cli g <cmd> == cli git <cmd>
 app.add_typer(git_app, name="g", hidden=True)
+# Short alias: cli cfg <cmd> == cli config <cmd>
+app.add_typer(config_app, name="cfg", hidden=True)
 # Short alias: cli s == cli ship
 app.command("s", hidden=True)(ship_cmd)

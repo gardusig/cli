@@ -182,7 +182,7 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
     ),
     _pkg(
         "validate",
-        source=("src/commands/validate.py", "src/services/database_validator.py", "src/commands/_toolkit.py"),
+        source=("src/commands/validate.py", "src/commands/_toolkit.py", "src/services/toolkit/**"),
         tests=("tests/services/test_toolkit.py",),
         checks=("validate --help",),
     ),
@@ -194,8 +194,8 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
     ),
     _pkg(
         "deploy",
-        source=("src/commands/deploy_cmd.py", "src/services/pipeline_dispatch.py", "src/services/pipeline_runtime.py"),
-        tests=("tests/services/test_pipeline_runtime.py",),
+        source=("src/commands/deploy_cmd.py", "src/services/gh_dispatch.py"),
+        tests=("tests/gh/test_commands.py",),
         checks=("deploy --help",),
     ),
     _pkg(
@@ -283,12 +283,6 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
         ),
         tests=("tests/pypi/", "tests/cli/test_release_commands.py"),
         checks=(_PACKAGE_INTEGRATION, "pypi --help"),
-    ),
-    _pkg(
-        "pipeline",
-        source=("src/commands/pipeline.py", "src/services/pipeline_runtime.py"),
-        tests=("tests/services/test_pipeline_runtime.py",),
-        checks=("pipeline --help",),
     ),
     _pkg(
         "puzzles",
@@ -511,9 +505,9 @@ def full_suite_reasons_for_matches(
 
 
 def pipeline_contract() -> dict[str, Any]:
-    """Describe the stable contract consumed by gardusig/github-pipelines."""
+    """Describe the stable contract consumed by gardusig/yaml hub CI."""
     return {
-        "owner": "gardusig/github-pipelines",
+        "owner": "gardusig/yaml",
         "repo_local_commands": {
             "resolve_paths": "cli test packages resolve --changed-path PATH",
             "resolve_range": "cli test packages resolve --base BASE --head HEAD",
@@ -600,7 +594,7 @@ def live_suite_commands() -> list[TestCommand]:
 
 
 def full_suite_payload() -> dict[str, Any]:
-    """Describe the repo-local full-suite composition for github-pipelines."""
+    """Describe the repo-local full-suite composition for gardusig/yaml."""
     package_payloads = [
         package_command_payload(package.name) for package in TEST_PACKAGES
     ]
@@ -616,7 +610,7 @@ def full_suite_payload() -> dict[str, Any]:
         "commands": commands,
         "pipeline_contract": pipeline_contract(),
         "notes": [
-            "github-pipelines owns schedules, workflow YAML, Dockerfiles, and job graphs.",
+            "gardusig/yaml owns schedules, workflow YAML, Dockerfiles, and job graphs.",
             "This repo owns the command contract and package mappings.",
             "Order: core gates → package unit/integration → optional live docker.",
         ],

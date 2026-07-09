@@ -4,7 +4,6 @@ import argparse
 import os
 from pathlib import Path
 
-from src.services.database_validator import validate_database_repo
 from src.services.notion_pairs import load_pairs, pair_file_warning, scan_task_root
 from src.services.repo_hygiene import check_repo_hygiene, load_hygiene_policy, policy_with_ignored_paths
 from src.services.toolkit.catalog import languages, specs_for_language
@@ -14,7 +13,6 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="python -m src.services.toolkit.script_api")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("structure-check")
-    sub.add_parser("validate-vault")
     sub.add_parser("validate-tasks")
     sub.add_parser("languages-list")
     show = sub.add_parser("languages-show")
@@ -23,8 +21,6 @@ def main() -> None:
     workspace = Path(os.environ.get("WORKSPACE", ".")).expanduser().resolve()
     if args.command == "structure-check":
         _structure_check(workspace)
-    elif args.command == "validate-vault":
-        _validate_vault(workspace)
     elif args.command == "validate-tasks":
         _validate_tasks(workspace)
     elif args.command == "languages-list":
@@ -63,19 +59,6 @@ def _structure_check(workspace: Path) -> None:
             print(f"  ERROR: {error}")
         raise SystemExit(1)
     print("structure ok")
-
-
-def _validate_vault(workspace: Path) -> None:
-    base = os.environ.get("BASE", "main")
-    errors, warnings = validate_database_repo(workspace, base=base)
-    for warning in warnings:
-        print(f"WARNING: {warning}")
-    if errors:
-        print("Validation failed:")
-        for error in errors:
-            print(f"  ERROR: {error}")
-        raise SystemExit(1)
-    print(f"OK: vault validation passed ({len(warnings)} warnings)")
 
 
 def _validate_tasks(workspace: Path) -> None:
@@ -136,4 +119,3 @@ def _env_bool(name: str) -> bool:
 
 if __name__ == "__main__":
     main()
-

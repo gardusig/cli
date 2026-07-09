@@ -1,6 +1,6 @@
 # Task Shortcuts
 
-Task data lives in `gardusig/database/tasks`. The CLI provides reusable shortcuts only; workflow policy lives in `gardusig/github-pipelines`.
+Task data lives in `gardusig/database/tasks`. The CLI provides reusable shortcuts only; workflow policy lives in `gardusig/yaml`.
 
 ## Pair validation
 
@@ -18,14 +18,17 @@ cli tasks ingest-pr --source github --yes
 
 The command only stages `tasks/`, commits to a sync branch, pushes, and opens a PR.
 
-## Pipeline dispatch
+## Hub workflow dispatch
 
 ```bash
-cli pipeline run tasks database --action github-deploy
-cli pipeline run repo-review python-cli --job version-check
+cli gh wf run dispatch.yml -R gardusig/yaml \
+  -f workflow=tasks -f repository=gardusig/database -f action=github-deploy
+
+cli gh wf run dispatch.yml -R gardusig/yaml \
+  -f workflow=repo-review -f repository=gardusig/cli -f job=version-check
 ```
 
-The dispatch target is always `gardusig/github-pipelines`; app repos do not contain workflows.
+The dispatch target is always `gardusig/yaml`; app repos do not contain workflows.
 
 ## Named CLI workflows
 
