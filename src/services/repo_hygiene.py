@@ -13,8 +13,11 @@ import yaml
 from src.services.toolkit.detect import repo_slug
 
 ALLOWED_WORKFLOWS = {
-    ".github/workflows/pull-request.yml",
-    ".github/workflows/release.yml",
+    ".github/workflows/pull-request.yaml",
+    ".github/workflows/release.yaml",
+}
+PIPELINE_WORKFLOW_CONFIGS = {
+    ".github/workflows/README.md",
 }
 EXEMPT_LAYOUT_REPOS = {"github-pipelines"}
 STANDARD_ROOT_DIRS = frozenset({"src", "docs", "tests", "test", ".github"})
@@ -279,8 +282,13 @@ def check_repo_hygiene(
             forbidden = policy.forbidden_message(path, rel)
             if forbidden:
                 errors.append(f"{forbidden}: {rel}" if rel not in forbidden else forbidden)
-        if slug != "github-pipelines" and rel.startswith(".github/workflows/") and rel not in ALLOWED_WORKFLOWS:
-            errors.append(f"workflow belongs in github-pipelines: {rel}")
+        if slug != "github-pipelines" and rel.startswith(".github/workflows/"):
+            if rel in PIPELINE_WORKFLOW_CONFIGS:
+                pass
+            elif rel.endswith(".yaml") and rel not in ALLOWED_WORKFLOWS:
+                errors.append(f"workflow belongs in github-pipelines: {rel}")
+            elif rel.endswith(".yml"):
+                errors.append(f"workflow belongs in github-pipelines: {rel}")
         elif any(rel.startswith(prefix) for prefix in forbidden_prefixes):
             if rel.startswith("docker/") and policy and (
                 "docker" in policy.allowed_root_dirs

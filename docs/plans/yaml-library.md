@@ -5,12 +5,12 @@
 | Layer | Location | Owns |
 | --- | --- | --- |
 | **Library** | `gardusig/yaml` (submodule: `index/devops/yaml/`) | Reusable `workflow_call` routers, `catalog.yaml`, hub images (`docker/operator`, `docker/cli-base`) |
-| **App repo** | `gardusig/cli`, language repos, … | `Dockerfile`, `.github/pull-request.yaml`, thin `.github/workflows/pull-request.yml` caller |
-| **App-specific automation** | Same app repo | `.github/workflows/test-nightly.yml`, `.github/release.yaml`, `.github/repo-review.yaml` |
+| **App repo** | `gardusig/cli`, language repos, … | `Dockerfile`, `.github/workflows/*.yaml`, thin `*.workflow.yaml` callers |
+| **App-specific automation** | Same app repo | `.github/workflows/release.yaml`, `.github/workflows/repo-review.yaml` |
 
 ## Triggers
 
-1. **PR checks** — app `.github/workflows/pull-request.yml` → `workflow_call` → `gardusig/yaml/.github/workflows/lib/pull-request-router.yml`
+1. **PR checks** — app `.github/workflows/pull-request.workflow.yaml` → `workflow_call` → `gardusig/yaml/.github/workflows/lib/pull-request-router.yml`
 2. **Manual** — `gh workflow run dispatch.yml -R gardusig/yaml -f workflow=…`
 3. **CLI** — `cli pipeline run pull-request …` → `repository_dispatch` on `gardusig/yaml`
 

@@ -32,9 +32,9 @@ def test_patch_readme_replaces_marked_section(tmp_path: Path) -> None:
     updated = patch_readme(
         readme,
         "gardusig",
-        [{"name": "database", "url": "https://github.com/gardusig/database", "description": ""}],
+        [{"name": "database", "url": "https://github.com/gardusig/private", "description": ""}],
     )
-    assert "- [database](https://github.com/gardusig/database)" in updated
+    assert "- [database](https://github.com/gardusig/private)" in updated
     assert "-old-" not in updated
 
 

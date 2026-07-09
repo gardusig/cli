@@ -1,0 +1,12 @@
+# Minimal config for consumer integration when config/ci is not copied.
+backup:
+  tags_dir: /tmp/cli-consumer-tags
+  repositories: []
+
+notion:
+  task_root: /tmp/cli-consumer-tasks
+  pairs_file: /tmp/cli-consumer-tasks/pairs.json
+
+chrome:
+  bookmarks_file: /tmp/cli-consumer-bookmarks.html
+  downloads_dir: /tmp/cli-consumer-downloads

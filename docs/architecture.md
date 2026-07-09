@@ -1,6 +1,6 @@
 # Architecture
 
-From [issue #3](https://github.com/gardusig/python-cli/issues/3):
+From [gardusig/cli](https://github.com/gardusig/cli) bootstrap spec:
 
 ```text
 CLI -> Command -> Workflow / Service -> Provider / Transport -> External API
@@ -22,7 +22,7 @@ The public CLI is intentionally registry-driven:
 
 - `src/integration/public_endpoints.py` lists top-level command and endpoint checks.
 - `src/integration/public_commands.py` verifies public command registry completeness.
-- `src/services/test_packages.py` maps changed paths to package-specific test commands for local use and for `github-pipelines` consumers.
+- `src/services/test_packages.py` maps changed paths to package-specific test commands for local use and hub consumers.
 - `src/utils/catalog.py` drives `cli links` discoverability.
 
 Hidden aliases and placeholders are allowed, but they should be intentional and documented when user-facing:
@@ -31,18 +31,18 @@ Hidden aliases and placeholders are allowed, but they should be intentional and 
 - `cli backup ...`, `cli bookmarks ...`, and `cli publish ...` are compatibility/legacy surfaces.
 - `cli restore` is a stable placeholder until restore workflow work lands.
 
-## External Ownership
+## CI ownership
 
-This repository owns Python application code, docs, fixtures, command registries, and deterministic test contracts. It does not own workflow YAML, Dockerfiles, compose files, schedules, or CI job graphs. Those remain in `gardusig/github-pipelines`.
+This repository owns Python application code, docs, fixtures, command registries, the `.github/Dockerfile`, `scripts/ci/*.sh`, and pull-request / release workflows under `.github/workflows/`. Broader monorepo routers and selective package matrices may live in [`gardusig/yaml`](https://github.com/gardusig/yaml).
 
 ## Verification
 
 | Layer | Owner | Entry |
 | --- | --- | --- |
-| Focused package tests | this repo contract, pipeline execution | `cli test packages run PACKAGE` |
-| Changed-path selection | this repo contract | `cli test packages resolve --base BASE --head HEAD` |
-| Full-suite safety net contract | this repo contract | `cli test packages suite` |
-| Unit / integration wrappers | Python handlers | `cli test python unit .`, `cli test python integration .` |
-| Docker images and workflow jobs | `github-pipelines` | pipeline-owned Docker stages |
+| Focused package tests | this repo | `cli test packages run PACKAGE` |
+| Changed-path selection | this repo | `cli test packages resolve --base BASE --head HEAD` |
+| Full-suite safety net | this repo | `cli test packages suite` |
+| Unit / integration wrappers | this repo | `cli test python unit .`, `cli test python integration .` |
+| PR / release Docker stages | this repo | `docker build -f .github/Dockerfile --target …` (see [ci-workflows.md](ci-workflows.md)) |
 
 The Docker harness copies the repo into an ephemeral workspace so git resets and fixtures never touch the host checkout. See [docker.md](docker.md).

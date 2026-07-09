@@ -540,6 +540,45 @@ def pr_create_cmd(
     _emit(data, _ctx_format(ctx))
 
 
+@pr_app.command("upsert")
+def pr_upsert_cmd(
+    ctx: typer.Context,
+    branch: str = typer.Option(..., "--branch", help="Fixed branch to push and reuse for the PR."),
+    title: str = typer.Option(..., "--title"),
+    body: str = typer.Option("", "--body"),
+    base: str = typer.Option("main", "--base"),
+    message: str = typer.Option(..., "--message", help="Commit message for staged changes."),
+    close_when_clean: bool = typer.Option(
+        False,
+        "--close-when-clean",
+        help="Close the existing branch PR when there are no local changes.",
+    ),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip interactive write gate."),
+) -> None:
+    shortcut = _pr_shortcut(_ctx_repo(ctx), _ctx_transport(ctx))
+    _write_gate(
+        "gh-pr-upsert",
+        shortcut.gh,
+        yes=yes,
+        question=f"Commit, push, and upsert PR for {branch!r}?",
+        extra_lines=[
+            f"branch: {branch}",
+            f"base: {base}",
+            f"title: {title}",
+            f"close_when_clean: {close_when_clean}",
+        ],
+    )
+    data = shortcut.upsert_branch_pr(
+        branch=branch,
+        title=title,
+        body=body,
+        base=base,
+        message=message,
+        close_when_clean=close_when_clean,
+    )
+    _emit(data, _ctx_format(ctx))
+
+
 @pr_app.command("edit")
 def pr_edit_cmd(
     ctx: typer.Context,

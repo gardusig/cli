@@ -27,7 +27,7 @@ def _task_root(tmp_path: Path) -> Path:
     return root
 
 
-def _config(tmp_path: Path, root: Path, repo: str = "gardusig/database") -> Path:
+def _config(tmp_path: Path, root: Path, repo: str = "gardusig/private") -> Path:
     cfg = tmp_path / "cfg"
     cfg.mkdir()
     (cfg / "config.yaml").write_text(

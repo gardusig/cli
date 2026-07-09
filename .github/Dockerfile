@@ -1,14 +1,16 @@
 # Multi-stage CI for gardusig/cli (app context = repo root).
-# Build: docker build --target <stage> -f Dockerfile .
+# Build: docker build -f .github/Dockerfile --target <stage> .
+# Stage entrypoints: scripts/ci/<stage>.sh (raw shell — independent from cli package).
 
 # -----------------------------------------------------------------------------
-# lint — markdown + mermaid validation (first stage)
+# lint — markdown + mermaid validation
 # -----------------------------------------------------------------------------
 FROM python:3.12-slim AS lint
 
 ENV PUPPETEER_SKIP_DOWNLOAD=true \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    CLI_LINT_MERMAID=0
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -28,8 +30,7 @@ RUN printf '%s\n' \
 
 WORKDIR /workspace
 COPY . .
-RUN pip install --no-cache-dir -e . \
-    && CLI_LINT_MERMAID=0 cli lint repo /workspace
+RUN bash scripts/ci/lint.sh
 
 # -----------------------------------------------------------------------------
 # base — Python runtime + dev dependencies
@@ -47,7 +48,7 @@ RUN apt-get update \
 WORKDIR /workspace
 
 # -----------------------------------------------------------------------------
-# integration — Docker CLI for socket tests (must precede stages that FROM integration)
+# integration — Docker CLI for socket tests
 # -----------------------------------------------------------------------------
 FROM base AS integration
 
@@ -66,7 +67,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # -----------------------------------------------------------------------------
-# core-gates — integration coverage + public command surface
+# core-gates
 # -----------------------------------------------------------------------------
 FROM integration AS core-gates
 
@@ -75,121 +76,102 @@ ENV CLI_DOCKER_INTEGRATION=1 \
     CLI_CONFIG_DIR=/workspace/config/ci
 
 COPY . .
-
-RUN pip install --no-cache-dir -r requirements-dev.txt \
-    && pip install --no-cache-dir -e ".[dev]" \
-    && python3 tests/integration/check_integration_coverage.py \
-    && python3 tests/integration/check_public_commands.py
+RUN bash scripts/ci/core-gates.sh
 
 # -----------------------------------------------------------------------------
-# package-unit — focused pytest for one CLI package
+# package-unit
 # -----------------------------------------------------------------------------
 FROM base AS package-unit
 
 ARG PACKAGE=cli
+ENV PACKAGE=${PACKAGE}
 
 COPY . .
-
-RUN pip install --no-cache-dir -r requirements-dev.txt \
-    && pip install --no-cache-dir -e ".[dev]" \
-    && cli test packages run "${PACKAGE}" --no-integration
+RUN bash scripts/ci/package-unit.sh
 
 # -----------------------------------------------------------------------------
-# package-integration — focused integration leg for one CLI package
+# package-integration
 # -----------------------------------------------------------------------------
 FROM integration AS package-integration
 
 ARG PACKAGE=cli
+ENV PACKAGE=${PACKAGE}
 
 ENV CLI_DOCKER_INTEGRATION=1 \
     CLI_ROOT=/workspace \
     CLI_CONFIG_DIR=/workspace/config/ci
 
 COPY . .
+RUN bash scripts/ci/package-integration.sh
 
-RUN pip install --no-cache-dir -r requirements-dev.txt \
-    && pip install --no-cache-dir -e ".[dev]" \
-    && cli test packages run "${PACKAGE}" --no-unit
-
-CMD ["python", "tests/integration/check_docker_commands.py", "--live"]
+CMD ["python3", "tests/integration/check_docker_commands.py", "--live"]
 
 # -----------------------------------------------------------------------------
-# selective-gate — no-op marker after selective package legs
+# selective-gate
 # -----------------------------------------------------------------------------
 FROM base AS selective-gate
 
-RUN echo "selective tests complete"
+COPY scripts/ci/selective-gate.sh scripts/ci/_common.sh /workspace/scripts/ci/
+RUN bash /workspace/scripts/ci/selective-gate.sh
 
 # -----------------------------------------------------------------------------
-# unit-test — pytest unit gate + coverage
+# unit-test
 # -----------------------------------------------------------------------------
 FROM base AS unit-test
 
 COPY . .
-
-RUN pip install --no-cache-dir -r requirements-dev.txt \
-    && pip install --no-cache-dir -e ".[dev]" \
-    && cli test python unit /workspace
+RUN bash scripts/ci/unit-test.sh
 
 # -----------------------------------------------------------------------------
-# repo-hygiene — repository layout and language allowlists
+# repo-hygiene
 # -----------------------------------------------------------------------------
 FROM base AS repo-hygiene
 
 ARG HYGIENE_POLICY_JSON=
+ENV HYGIENE_POLICY_JSON=${HYGIENE_POLICY_JSON}
 
 COPY . .
-
-RUN pip install --no-cache-dir -r requirements-dev.txt \
-    && pip install --no-cache-dir -e ".[dev]" \
-    && if [ -n "$HYGIENE_POLICY_JSON" ]; then \
-         printf '%s' "$HYGIENE_POLICY_JSON" > /tmp/hygiene-policy.json; \
-         cli structure check /workspace --require-structure --policy-file /tmp/hygiene-policy.json; \
-       else \
-         cli structure check /workspace --require-structure; \
-       fi
+RUN bash scripts/ci/repo-hygiene.sh
 
 # -----------------------------------------------------------------------------
-# version-check — fail if branch version is not greater than main
+# workspace-paths — reusable workspace manifest validator
+# -----------------------------------------------------------------------------
+FROM base AS workspace-paths
+
+COPY . .
+RUN pip install --no-cache-dir -e .
+
+ENTRYPOINT ["python3", "tests/meta/hygiene_gate.py"]
+
+# -----------------------------------------------------------------------------
+# version-check
 # -----------------------------------------------------------------------------
 FROM base AS version-check
 
 ARG BASE_VERSION=
-COPY . .
+ENV BASE_VERSION=${BASE_VERSION}
 
-RUN pip install --no-cache-dir -r requirements-dev.txt \
-    && pip install --no-cache-dir -e ".[dev]" \
-    && if [ -n "$BASE_VERSION" ]; then \
-         cli pypi version check --base-version "$BASE_VERSION"; \
-       else \
-         (git fetch origin main 2>/dev/null || true) \
-         && cli pypi version check --base origin/main; \
-       fi
+COPY . .
+RUN bash scripts/ci/version-check.sh
 
 # -----------------------------------------------------------------------------
-# version-suggest — print recommended next semver
+# version-suggest
 # -----------------------------------------------------------------------------
 FROM base AS version-suggest
 
 COPY . .
-
-RUN pip install --no-cache-dir -r requirements-dev.txt \
-    && pip install --no-cache-dir -e ".[dev]" \
-    && cli pypi version suggest
+RUN bash scripts/ci/version-suggest.sh
 
 # -----------------------------------------------------------------------------
-# command-surface — registered commands stay covered by public command checks
+# command-surface
 # -----------------------------------------------------------------------------
 FROM base AS command-surface
 
 COPY . .
-
-RUN pip install --no-cache-dir -r requirements-dev.txt \
-    && pip install --no-cache-dir -e ".[dev]" \
-    && cli test python command-surface /workspace
+RUN bash scripts/ci/command-surface.sh
 
 # -----------------------------------------------------------------------------
-# integration-test — full pytest + smoke (live docker via docker run + socket)
+# integration-test
 # -----------------------------------------------------------------------------
 FROM integration AS integration-test
 
@@ -198,62 +180,86 @@ ENV CLI_DOCKER_INTEGRATION=1 \
     CLI_CONFIG_DIR=/workspace/config/ci
 
 COPY . .
+RUN bash scripts/ci/integration-test.sh
 
-RUN pip install --no-cache-dir -r requirements-dev.txt \
-    && pip install --no-cache-dir -e ".[dev]" \
-    && cli test python integration /workspace \
-    && python -m src --help >/dev/null \
-    && python -m src --version >/dev/null
-
-# Live docker socket checks — workflow runs: docker run -v /var/run/docker.sock ...
-CMD ["python", "tests/integration/check_docker_commands.py", "--live"]
+CMD ["python3", "tests/integration/check_docker_commands.py", "--live"]
 
 # -----------------------------------------------------------------------------
 # pypi-test — build + optional TestPyPI upload
 # -----------------------------------------------------------------------------
 FROM base AS pypi-test
 
-ARG CLI_RELEASE_VERSION=1.0.0
+ARG CLI_RELEASE_VERSION=
 ARG TESTPYPI_API_TOKEN=
 
-COPY . .
+ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
+    TESTPYPI_API_TOKEN=${TESTPYPI_API_TOKEN}
 
-RUN pip install --no-cache-dir -r requirements-dev.txt \
-    && pip install --no-cache-dir -e ".[dev]" \
-    && cli pypi upload --yes --version "${CLI_RELEASE_VERSION}" --build-only \
-    && if [ -n "$TESTPYPI_API_TOKEN" ]; then \
-         cli pypi upload --yes --version "${CLI_RELEASE_VERSION}" --testpypi --skip-build --skip-existing; \
-       else \
-         echo "skip TestPyPI upload (TESTPYPI_API_TOKEN not set)"; \
-       fi
+COPY . .
+RUN bash scripts/ci/pypi-test.sh
 
 # -----------------------------------------------------------------------------
-# testpypi-consumer — install published candidate without source checkout
+# pr — version gate + unit (≥80%) + TestPyPI (single build)
+# -----------------------------------------------------------------------------
+FROM base AS pr
+
+ARG CLI_RELEASE_VERSION=
+ARG BASE_VERSION=
+ARG TESTPYPI_API_TOKEN=
+
+ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
+    BASE_VERSION=${BASE_VERSION} \
+    TESTPYPI_API_TOKEN=${TESTPYPI_API_TOKEN}
+
+COPY . .
+RUN bash scripts/ci/pr.sh
+
+# -----------------------------------------------------------------------------
+# testpypi-consumer — install from TestPyPI + consumer integration
 # -----------------------------------------------------------------------------
 FROM python:3.12-slim AS testpypi-consumer
 
-ARG CLI_RELEASE_VERSION=1.0.0
+ARG CLI_RELEASE_VERSION=
+ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
+    PYPI_INDEX=testpypi
 
-RUN pip install --no-cache-dir \
-      --index-url https://test.pypi.org/simple/ \
-      --extra-index-url https://pypi.org/simple/ \
-      "gardusig-cli==${CLI_RELEASE_VERSION}" \
-    && cli --help >/dev/null \
-    && cli languages list >/dev/null \
-    && cli lint --help >/dev/null
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bash git ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+COPY scripts/ci/testpypi-consumer.sh /workspace/scripts/ci/
+COPY scripts/ci/consumer /workspace/scripts/ci/consumer
+RUN CLI_RELEASE_VERSION="${CLI_RELEASE_VERSION}" bash scripts/ci/testpypi-consumer.sh
 
 # -----------------------------------------------------------------------------
-# release — PyPI publish
+# release — production PyPI publish
 # -----------------------------------------------------------------------------
 FROM base AS release
 
-ARG CLI_RELEASE_VERSION
-ARG PYPI_API_TOKEN
+ARG CLI_RELEASE_VERSION=
+ARG PYPI_API_TOKEN=
+
+ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
+    PYPI_API_TOKEN=${PYPI_API_TOKEN}
 
 COPY . .
+RUN bash scripts/ci/pypi-release.sh
 
-RUN pip install --no-cache-dir -r requirements-dev.txt \
-    && pip install --no-cache-dir -e ".[dev]" \
-    && test -n "$CLI_RELEASE_VERSION" \
-    && test -n "$PYPI_API_TOKEN" \
-    && cli pypi upload --yes --version "${CLI_RELEASE_VERSION}"
+# -----------------------------------------------------------------------------
+# pypi-consumer — install from PyPI + consumer integration
+# -----------------------------------------------------------------------------
+FROM python:3.12-slim AS pypi-consumer
+
+ARG CLI_RELEASE_VERSION=
+ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
+    PYPI_INDEX=pypi
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bash git ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+COPY scripts/ci/pypi-consumer.sh /workspace/scripts/ci/
+COPY scripts/ci/consumer /workspace/scripts/ci/consumer
+RUN CLI_RELEASE_VERSION="${CLI_RELEASE_VERSION}" bash scripts/ci/pypi-consumer.sh

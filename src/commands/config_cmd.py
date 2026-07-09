@@ -41,12 +41,12 @@ def init_cmd(
             {
                 "notion": {
                     "database_id": "your-notion-database-id",
-                    "task_root": "~/github/private/database/tasks",
+                    "task_root": "~/github/private/tasks",
                     "pairs_file": "tasks.pairs.json",
                 },
                 "gh": {
                     "issues": {
-                        "repo": "gardusig/database",
+                        "repo": "gardusig/private",
                         "labels_manifest": "labels.manifest.yaml",
                     }
                 },

@@ -1,3 +1,7 @@
+# Allowed tracked roots (do not add ignore patterns that hide these):
+#   config/ docs/ scripts/ src/ tests/ .github/
+#   .github/Dockerfile .dockerignore pyproject.toml uv.lock requirements*.txt coverage-unit.ini README.md LICENSE
+#
 # --- Cursor / IDE ---
 .cursor/
 .idea/
@@ -5,6 +9,7 @@
 
 # --- Python ---
 .venv/
+.uv/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -15,6 +20,9 @@ build/
 .mypy_cache/
 .ruff_cache/
 .tox/
+.hypothesis/
+pip-wheel-metadata/
+.eggs/
 
 # --- Tests / coverage ---
 .pytest_cache/

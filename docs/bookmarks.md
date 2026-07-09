@@ -2,7 +2,7 @@
 
 See **[chrome.md](chrome.md)** for the full Epic 02 command reference, workflow catalog, and pipeline boundary.
 
-Part of **`cli chrome bookmarks`** ([issue #24](https://github.com/gardusig/python-cli/issues/24)). Legacy shell scripts ([#1](https://github.com/gardusig/python-cli/issues/1)) are superseded by Python commands.
+Part of **`cli chrome bookmarks`** ([issue #24](https://github.com/gardusig/cli/issues/24)). Legacy shell scripts ([#1](https://github.com/gardusig/cli/issues/1)) are superseded by Python commands.
 
 Local-centric naming (aligned with **`cli drive`**): **ingest** = into the configured backup file; **deploy** = validate the backup for browser import.
 
@@ -29,9 +29,9 @@ chrome:
 | `CLI_BOOKMARKS_SOURCE` / `CLI_BOOKMARKS_FIXTURE` | Explicit ingest/merge source |
 | `CLI_SKIP_CHROME_AUTOMATION` | CI/headless: skip polling, use newest or fixture |
 
-Use `--profile NAME` when `chrome.profiles` defines multiple bookmark files ([#28](https://github.com/gardusig/python-cli/issues/28)).
+Use `--profile NAME` when `chrome.profiles` defines multiple bookmark files ([#28](https://github.com/gardusig/cli/issues/28)).
 
-Scheduled jobs and shell wrappers belong in **`gardusig/pipelines`**, not this repo ([#27](https://github.com/gardusig/python-cli/issues/27)).
+Scheduled jobs and shell wrappers belong in **`gardusig/pipelines`**, not this repo ([#27](https://github.com/gardusig/cli/issues/27)).
 
 ## Commands
 

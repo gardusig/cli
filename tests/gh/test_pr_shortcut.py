@@ -147,6 +147,78 @@ def test_pr_shortcut_remote_template_resolution() -> None:
     gh.repo_view.assert_called_once_with(fields="pullRequestTemplates")
 
 
+def test_pr_upsert_updates_existing_branch_pr(monkeypatch) -> None:
+    from src.services import gh_pr_shortcut
+
+    calls: list[list[str]] = []
+    monkeypatch.setattr(
+        gh_pr_shortcut,
+        "run_git",
+        lambda args, cwd=None: calls.append(args),
+    )
+    gh = MagicMock()
+    gh.pr_list.return_value = [
+        {
+            "number": 12,
+            "title": "Existing",
+            "url": "https://github.com/o/r/pull/12",
+            "headRefName": "automation/sync-submodules-main",
+        }
+    ]
+    gh.repo_view.return_value = {"nameWithOwner": "o/r", "owner": {"login": "o"}}
+    git = MagicMock()
+    git.top = "/repo"
+    git.is_dirty.return_value = True
+    git.commit.return_value = True
+    shortcut = GhPrShortcut(gh=gh, git=git, repo_root=Path("/repo"))
+
+    payload = shortcut.upsert_branch_pr(
+        branch="automation/sync-submodules-main",
+        title="chore: sync submodules to main",
+        body="body",
+        message="chore: sync submodules to main",
+    )
+
+    assert payload["action"] == "updated"
+    assert payload["number"] == 12
+    assert calls == [
+        ["checkout", "-B", "automation/sync-submodules-main"],
+        ["push", "--force-with-lease", "-u", "origin", "automation/sync-submodules-main"],
+    ]
+    git.commit.assert_called_once_with("chore: sync submodules to main")
+    gh.pr_edit.assert_called_once_with(12, title="chore: sync submodules to main", body="body")
+    gh.pr_create.assert_not_called()
+
+
+def test_pr_upsert_closes_existing_pr_when_clean() -> None:
+    gh = MagicMock()
+    gh.pr_list.return_value = [
+        {
+            "number": 12,
+            "title": "Existing",
+            "url": "https://github.com/o/r/pull/12",
+            "headRefName": "automation/sync-submodules-main",
+        }
+    ]
+    gh.repo_view.return_value = {"nameWithOwner": "o/r", "owner": {"login": "o"}}
+    git = MagicMock()
+    git.top = "/repo"
+    git.is_dirty.return_value = False
+    shortcut = GhPrShortcut(gh=gh, git=git, repo_root=Path("/repo"))
+
+    payload = shortcut.upsert_branch_pr(
+        branch="automation/sync-submodules-main",
+        title="chore: sync submodules to main",
+        body="body",
+        message="chore: sync submodules to main",
+        close_when_clean=True,
+    )
+
+    assert payload["action"] == "closed"
+    gh.pr_close.assert_called_once_with(12)
+    gh.pr_create.assert_not_called()
+
+
 class FakeShortcut:
     def __init__(self) -> None:
         self.gh = MagicMock()
@@ -179,6 +251,15 @@ class FakeShortcut:
             "branch": "feat-x",
         }
 
+    def upsert_branch_pr(self, **kwargs):
+        self.upsert_kwargs = kwargs
+        return {
+            "action": "updated",
+            "number": 12,
+            "branch": kwargs["branch"],
+            "changed": True,
+        }
+
 
 def test_cli_gh_pr_shortcut_default(monkeypatch) -> None:
     from src.commands import gh
@@ -193,6 +274,44 @@ def test_cli_gh_pr_shortcut_default(monkeypatch) -> None:
     assert payload["pushed"] is True
     assert payload["branch"] == "feat-x"
     assert fake.kwargs["title"] == "."
+
+
+def test_cli_gh_pr_upsert(monkeypatch) -> None:
+    from src.commands import gh
+
+    fake = FakeShortcut()
+    monkeypatch.setattr(gh, "_pr_shortcut", lambda repo=None, transport="cli": fake)
+
+    result = runner.invoke(
+        app,
+        [
+            "gh",
+            "pr",
+            "upsert",
+            "--branch",
+            "automation/sync-submodules-main",
+            "--title",
+            "chore: sync submodules to main",
+            "--body",
+            "body",
+            "--message",
+            "chore: sync submodules to main",
+            "--close-when-clean",
+            "--yes",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout[result.stdout.index("{") :])
+    assert payload["action"] == "updated"
+    assert fake.upsert_kwargs == {
+        "branch": "automation/sync-submodules-main",
+        "title": "chore: sync submodules to main",
+        "body": "body",
+        "base": "main",
+        "message": "chore: sync submodules to main",
+        "close_when_clean": True,
+    }
 
 
 def test_cli_gh_pr_subcommands_still_work(monkeypatch) -> None:

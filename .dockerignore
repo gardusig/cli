@@ -1,6 +1,8 @@
+# VCS metadata stays on the host (BASE_VERSION, etc.); never copy into the image.
 .git/
 .cursor/
 .venv/
+.uv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -12,6 +14,9 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+.hypothesis/
+pip-wheel-metadata/
+.eggs/
 src-*/
 *.whl
 cli-git-*/

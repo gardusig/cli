@@ -42,13 +42,9 @@ def test_merge_readiness_repo_rename_contract() -> None:
 
 
 def test_merge_readiness_app_local_pipeline_config() -> None:
-    pr_config = (ROOT / ".github" / "pull-request.yaml").read_text(encoding="utf-8")
-    assert "repo: gardusig/cli" in pr_config
-    assert "docker/python-cli.dockerfile" in pr_config
-    caller = (ROOT / ".github" / "workflows" / "pull-request.yml").read_text(encoding="utf-8")
-    assert "gardusig/yaml/.github/workflows/pull-request.yml@main" in caller
-    assert "repo_slug: cli" in caller
-    assert "repository: gardusig/cli" in caller
+    pr_workflow = (ROOT / ".github" / "workflows" / "pull-request.yaml").read_text(encoding="utf-8")
+    assert "CI_DOCKERFILE: .github/Dockerfile" in pr_workflow
+    assert (ROOT / ".github" / "Dockerfile").is_file()
 
 
 @requires_docs

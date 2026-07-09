@@ -15,8 +15,6 @@ Drive workflows are local-only in the merged workflow catalog. They can affect a
 | Cloud + USB | `drive deploy` | Deploy to all replicas (cloud drives and USB paths) |
 | **All-in-one** | `drive sync` | Ingest all `backup.repositories`, then deploy to replicas |
 
-Parent epic: [issue #4](https://github.com/gardusig/python-cli/issues/4). Download: [cloud download #29](https://github.com/gardusig/python-cli/issues/29). Sync hardening: [issue #30](https://github.com/gardusig/python-cli/issues/30).
-
 ## Local store
 
 Default on macOS:
@@ -70,7 +68,7 @@ cli drive upload
 
 `git zip` zips one tag from the current repo. `drive ingest` zips **all** local tags for every configured repository (create or replace).
 
-## Tag backup automation (#15)
+## Tag backup automation
 
 No shell scripts or launchd plists live in this repo — scheduled jobs belong in **`gardusig/pipelines`**. The supported end-of-day chain is:
 
@@ -121,7 +119,7 @@ cli drive sync                         # ingest all repos, deploy all replicas
 
 Use `--no-strict` to continue when one repository ingest fails but others succeed.
 
-`github-pipelines` is not a target workflow repo for Drive. If it appears in `backup.repositories`, it is only a local backup source.
+Hub workflow repos are not backup targets for Drive. If a hub repo appears in `backup.repositories`, it is only a local backup source.
 
 ## Configuration
 
@@ -174,9 +172,9 @@ drives:
 
 ## Proton Drive {#proton-drive}
 
-Proton Drive is **deferred** ([#14](https://github.com/gardusig/python-cli/issues/14)). Proton does not expose a stable, documented third-party upload API suitable for this CLI. Leave `drives.proton.enabled: false` (default in repo `drives.yaml`). Use Google Drive, OneDrive, or a USB replica instead.
+Proton Drive is **deferred**. Proton does not expose a stable, documented third-party upload API suitable for this CLI. Leave `drives.proton.enabled: false` (default in repo `drives.yaml`). Use Google Drive, OneDrive, or a USB replica instead.
 
-## Download semantics (#29)
+## Download semantics
 
 `cli drive download` is one-way restore: remote zips missing locally are fetched into `backup.tags_dir`. Existing local files are skipped unless `--force` is passed. Proton download is deferred with upload.
 

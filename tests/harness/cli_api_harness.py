@@ -99,7 +99,7 @@ def notion_cli_context(monkeypatch: Any, tmp_path: Path) -> Iterator[Path]:
         "  link_branch: main\n"
         "gh:\n"
         "  issues:\n"
-        "    repo: gardusig/database\n",
+        "    repo: gardusig/private\n",
         encoding="utf-8",
     )
     monkeypatch.setenv("NOTION_TOKEN", "integration-token")
@@ -296,7 +296,7 @@ def api_check_context(
         if check.failure == "gh_auth":
             with patch_run_gh(side_effect=gh_auth_error()):
                 yield env
-        elif check.label in {"gh pr shortcut", "gh pr shortcut api"}:
+        elif check.label in {"gh pr shortcut", "gh pr shortcut api", "gh pr upsert"}:
             from unittest.mock import MagicMock
 
             from src.services.gh_pr_shortcut import PrShortcutPlan
@@ -329,6 +329,12 @@ def api_check_context(
                 "branch": "feat-x",
                 "body_source": "empty",
                 "existing": False,
+            }
+            fake.upsert_branch_pr.return_value = {
+                "action": "updated",
+                "number": 12,
+                "branch": "automation/sync-submodules-main",
+                "changed": True,
             }
             with (
                 patch("src.commands.gh._pr_shortcut", return_value=fake),

@@ -1,27 +1,26 @@
 # Docker
 
-Docker orchestration routers live in `gardusig/pipelines`. This repo owns the root `Dockerfile` (multi-stage CI), the `cli docker` monitor/cleanup commands, and pipeline config under `.github/`.
+Workflow routers live in [`gardusig/yaml`](https://github.com/gardusig/yaml). This repo owns the `.github/Dockerfile` (multi-stage CI via `scripts/ci/*.sh`), the `cli docker` monitor/cleanup commands, and pipeline contracts under [`.github/workflows/`](../.github/workflows/).
 
 Run a gate from the repo root:
 
 ```bash
-docker build --target <target> -f Dockerfile .
+docker build -f .github/Dockerfile --target <stage> .
 ```
 
-## CLI Inside Docker
+Common targets: `lint`, `version-check`, `unit-test`, `integration-test`, `pypi-test`, `testpypi-consumer`, `release`, `pypi-consumer`.
 
-The repo `Dockerfile` installs the PR checkout with `pip install -e ".[dev]"` so unreleased CLI changes can be tested before publishing:
+## CI image layout
 
-```dockerfile
-RUN pip install --no-cache-dir -e ".[dev]" \
-    && cli structure check /workspace
+Each Dockerfile stage copies the repo (or consumer scripts only) and runs `bash scripts/ci/<stage>.sh`. Local verification:
+
+```bash
+docker build -f .github/Dockerfile --target unit-test .
 ```
 
-## CLI Base Image
+## CLI base image (hub)
 
-`gardusig/pipelines/docker/cli-base.dockerfile` is the lean hub image for workflow jobs that mostly run published `gardusig-cli` shortcuts.
-
-Language-focused checks use each repo's `Dockerfile` (Node, Java, Ubuntu, or other toolchain bases as needed).
+`gardusig/yaml` may publish a lean hub image for jobs that run pip-installed `gardusig-cli` shortcuts. Language repos use their own `Dockerfile` bases.
 
 ## Docker CLI Commands
 
@@ -29,7 +28,7 @@ Language-focused checks use each repo's `Dockerfile` (Node, Java, Ubuntu, or oth
 
 ### Command matrix
 
-Epic 12 ([#70](https://github.com/gardusig/python-cli/issues/70)) acceptance checklist. Integration gate exercises JSON and filter rows in `docker_integration.py`.
+Public `cli docker` acceptance checklist. Integration gate exercises JSON and filter rows in `docker_integration.py`.
 
 | Command | Read/Write | `--format json` | Filters | Write gate |
 | --- | --- | --- | --- | --- |
@@ -126,7 +125,7 @@ Filters affect monitoring output only. Cleanup commands still require explicit n
 
 ## Contest Runner Lifecycle
 
-`cli contest validate` uses the `cli-contest:runner` image for Docker-backed competitive programming checks. The image build recipe belongs to `github-pipelines`; `python-cli` documents and monitors it.
+`cli contest validate` uses the `cli-contest:runner` image for Docker-backed competitive programming checks. The image build recipe belongs to the CI hub; this repo documents and monitors it.
 
 Useful read-only checks:
 
@@ -141,21 +140,4 @@ Use cleanup commands only after reviewing the write-gate preview:
 ```bash
 cli docker container-delete cli-contest-runner --yes
 cli docker image-delete --yes
-```
-
-## Epic 12 closure (PR #88)
-
-Parent [#70](https://github.com/gardusig/python-cli/issues/70). Close when PR #88 merges and
-verification below is green.
-
-| Theme | Shipped evidence |
-| --- | --- |
-| Command matrix | § Command matrix above; read/write JSON + filters |
-| Contest linkage | § Contest Runner Lifecycle |
-| Integration gate | `docker_integration.py`; `tests/docker/` |
-| Hardening review | [#62](https://github.com/gardusig/python-cli/issues/62) Pass in `docs/public-cli-hardening.md` |
-
-```bash
-uv run pytest tests/docker/ tests/pack/test_docker_epic.py -q
-uv run python tests/integration/check_integration_coverage.py
 ```

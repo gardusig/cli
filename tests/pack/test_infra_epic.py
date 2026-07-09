@@ -30,10 +30,10 @@ INTEGRATION_SCRIPT_PACKAGES = (
 @requires_docs
 def test_infra_epic_ci_docs_exist() -> None:
     text = (ROOT / "docs" / "ci-workflows.md").read_text(encoding="utf-8")
-    assert "packages resolve" in text
-    assert "packages suite" in text
-    assert "full_suite" in text
-    assert "Epic 00 closure" in text
+    assert "pull-request.yaml" in text
+    assert "version-check" in text
+    assert "unit-test" in text
+    assert "CI_UNIT_TIMEOUT" in text
 
 
 def test_infra_epic_script_policy_docs() -> None:

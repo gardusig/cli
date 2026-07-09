@@ -25,15 +25,15 @@ See `docs/configure.md` and `docs/secrets.md`.
 
 ## Verification
 
-Local host test scripts are not supported. CI and maintainers use Docker stages from this repo's `Dockerfile`.
+Local host test scripts are not supported. CI and maintainers use Docker stages from `.github/Dockerfile`.
 
 From a `gardusig/cli` checkout:
 
 ```bash
-docker build --target unit-test -f Dockerfile .
+docker build -f .github/Dockerfile --target unit-test .
 ```
 
-This repo's `Dockerfile` installs from the source checkout with `pip install -e ".[dev]"`; other app repos install `gardusig-cli` from PyPI in their own `Dockerfile`.
+`.github/Dockerfile` installs from the source checkout with `pip install -e ".[dev]"`; other app repos install `gardusig-cli` from PyPI in their own Dockerfiles.
 
 ## Release
 
@@ -44,4 +44,4 @@ cli configure import-env
 cli release main --yes
 ```
 
-`cli pypi upload --yes` remains the lower-level upload command. Workflow routers, hub-only images (`operator`, `cli-base`), schedules, and secrets live in `gardusig/pipelines`.
+`cli pypi upload --yes` remains the lower-level upload command. Workflow routers, hub-only images (`operator`, `cli-base`), schedules, and secrets live in [`gardusig/yaml`](https://github.com/gardusig/yaml).

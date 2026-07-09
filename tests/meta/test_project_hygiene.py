@@ -15,12 +15,19 @@ import pytest
 
 GITIGNORE_REQUIRED_PATTERNS = (
     ".venv/",
+    ".uv/",
+    ".hypothesis/",
     ".integration-scratch/",
     "dist/",
     "src-*/",
     "cli-git-*/",
     "cli-public-*/",
     ".env",
+    "*.egg-info/",
+)
+
+DOCKERIGNORE_REQUIRED_PATTERNS = (
+    ".git/",
 )
 
 UNTRACKED_PREFIXES = (
@@ -54,6 +61,12 @@ def test_gitignore_covers_local_artifacts() -> None:
     text = (ROOT / ".gitignore").read_text()
     for pattern in GITIGNORE_REQUIRED_PATTERNS:
         assert pattern in text, f".gitignore missing {pattern!r}"
+
+
+def test_dockerignore_excludes_git() -> None:
+    text = (ROOT / ".dockerignore").read_text()
+    for pattern in DOCKERIGNORE_REQUIRED_PATTERNS:
+        assert pattern in text, f".dockerignore missing {pattern!r}"
 
 
 def test_requirements_match_pyproject() -> None:

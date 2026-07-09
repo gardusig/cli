@@ -8,6 +8,7 @@ from typing import Any
 
 from src.services.gh_service import GhService
 from src.services.git_shortcuts import GitPushPlan, GitPushResult, GitShortcuts
+from src.utils.process import run_git
 
 
 @dataclass(frozen=True)
@@ -160,6 +161,60 @@ class GhPrShortcut:
                     seen.add(number)
                     return row
         return None
+
+    def upsert_branch_pr(
+        self,
+        *,
+        branch: str,
+        title: str,
+        body: str,
+        base: str = "main",
+        message: str,
+        close_when_clean: bool = False,
+    ) -> dict[str, Any]:
+        """Commit dirty work to a fixed branch and create/update its single open PR."""
+        existing = self.find_open_pr_for_branch(branch)
+        if not self.git.is_dirty():
+            if close_when_clean and existing is not None:
+                self.gh.pr_close(int(existing["number"]))
+                return {
+                    "action": "closed",
+                    "number": existing["number"],
+                    "branch": branch,
+                    "changed": False,
+                }
+            return {
+                "action": "noop",
+                "number": existing.get("number") if existing else None,
+                "branch": branch,
+                "changed": False,
+            }
+
+        run_git(["checkout", "-B", branch], cwd=self.repo_root)
+        committed = self.git.commit(message)
+        run_git(["push", "--force-with-lease", "-u", "origin", branch], cwd=self.repo_root)
+
+        existing = self.find_open_pr_for_branch(branch)
+        if existing is not None:
+            number = int(existing["number"])
+            self.gh.pr_edit(number, title=title, body=body)
+            return {
+                "action": "updated",
+                "number": number,
+                "branch": branch,
+                "committed": committed,
+                "changed": True,
+            }
+
+        pr = self.gh.pr_create(title=title, body=body, base=base, head=branch)
+        return {
+            "action": "created",
+            "number": pr.get("number"),
+            "url": pr.get("url"),
+            "branch": branch,
+            "committed": committed,
+            "changed": True,
+        }
 
     def resolve_body(self, *, body: str, template: str | None) -> tuple[str, str]:
         if not template:

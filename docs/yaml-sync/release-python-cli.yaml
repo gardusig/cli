@@ -1,0 +1,16 @@
+repo: gardusig/cli
+dockerfile: .github/Dockerfile
+dockerignore: .dockerignore
+jobs:
+  - id: release
+    name: Publish to PyPI
+    target: release
+    build_args_from_ref: true
+    secrets:
+      PYPI_API_TOKEN: PYPI_API_TOKEN
+  - id: pypi-consumer
+    name: PyPI consumer integration
+    target: pypi-consumer
+    needs: release
+    build_args_from_ref: true
+    docker_socket: true

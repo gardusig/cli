@@ -1,6 +1,6 @@
 # GitHub Issues Sync
 
-`cli gh issues` syncs `gardusig/database/tasks` with GitHub Issues on `gardusig/database`.
+`cli gh issues` syncs `gardusig/private/tasks` with GitHub Issues on `gardusig/private`.
 
 ## Deploy
 
@@ -43,4 +43,4 @@ Blocked:
 - `cli gh issue batch` entries with `action: close`
 - Ad hoc `cli gh project ...` and Rulesets through CLI
 
-GitHub Project updates are allowed only through reviewed task-board workflows. Use top-level `cli project ...` for local command workflows; keep pipeline orchestration in `github-pipelines`.
+GitHub Project updates are allowed only through reviewed task-board workflows. Use top-level `cli project ...` for local command workflows; keep pipeline orchestration in `gardusig/yaml`.

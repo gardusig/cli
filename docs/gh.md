@@ -48,7 +48,7 @@ Configure via `GITHUB_TOKEN`, `GH_TOKEN`, or `auth.gh.token_file` in config.
 
 ### Transport parity
 
-Every **shipped** command below works on both transports unless noted. This table is the acceptance checklist for Epic 11 (#69); `tests/gh/test_transport.py` parametrizes the P0 issue/PR API rows.
+Every **shipped** command below works on both transports unless noted. This table is the acceptance checklist; `tests/gh/test_transport.py` parametrizes the P0 issue/PR API rows.
 
 #### Issues
 
@@ -366,29 +366,6 @@ renames:
   "roots": [{"number": 70, "title": "1 — Epic", "sequence": "1 —"}],
   "epics": {"epic:slug": [{"number": 71, "title": "1.1 — Child"}]}
 }
-```
-
-## Epic 11 closure (PR #88)
-
-Parent [#69](https://github.com/gardusig/python-cli/issues/69). Close when PR #88 merges and
-verification below is green.
-
-| Slice | Shipped evidence |
-| --- | --- |
-| Transport refactor | `GhTransport` CLI/API/auto — [`src/providers/gh_transport.py`](../src/providers/gh_transport.py); `--transport` on `cli gh` |
-| Issue/PR P0–P1 CRUD | `issue reopen`, `pr comment/reopen/checks/review/ready` — § Transport parity; `tests/gh/test_transport.py` |
-| `issue context` API | Composed REST — `tests/gh/test_issue_context.py`; `gh issue context api` in `cli_api_checks.py` |
-| Projects GraphQL | All `cli gh project` commands on API transport — `tests/gh/test_commands.py`; `gh project view api` / `item add api` checks |
-| `cli gh pr` shortcut | Push-first PR — `tests/gh/test_pr_shortcut.py`; `gh pr shortcut api` transport smoke |
-| Operator headless lane | `--transport api` in [hub-operator.md](hub-operator.md) ship lane |
-| Docs + integration | This § Transport parity table; API smoke in [`cli_api_checks.py`](../src/integration/cli_api_checks.py) |
-
-**CLI-only by design:** `issue batch`, `label sync`, `backlog *`, `issue status`, `pr status`, `repo readme-sync`.
-
-```bash
-uv run pytest tests/gh/test_transport.py tests/gh/test_issue_context.py tests/pack/test_gh_hub_epic.py -q
-uv run pytest tests/cli/test_api_integration.py -q
-uv run python tests/integration/check_integration_coverage.py
 ```
 
 ## Tests
