@@ -39,7 +39,7 @@ def test_release_epic_post_merge_release_docs() -> None:
     assert "Post-merge release" in text
     assert "pull-request.yaml" in text
     assert "version-check" in text
-    assert "testpypi-consumer" in text
+    assert "testpypi-verify" in text or "testpypi-consumer" in text
     assert "CI_INTEGRATION_TIMEOUT" in text
 
 

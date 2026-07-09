@@ -20,7 +20,8 @@ if [[ "$tag_version" != "$project_version" ]]; then
 fi
 
 rm -rf dist
+pip install --no-cache-dir 'setuptools>=61,<77' build twine
 python -m build --outdir dist
 export TWINE_USERNAME=__token__
 export TWINE_PASSWORD="$PYPI_API_TOKEN"
-twine upload dist/*
+twine upload dist/* --skip-existing

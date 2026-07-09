@@ -12,26 +12,36 @@ Example: `main` ships `1.0.3`; a release candidate PR bumps to **`1.1.0`** (or t
 
 ## PR pipeline (four sequential jobs)
 
-Linear publish path on every PR (selective package legs run in parallel on the hub but cannot replace unit coverage):
-
-| Job | Docker target(s) | Script |
+| Job | Docker target | Script |
 | --- | --- | --- |
-| 1 — Version | `version-check` | `scripts/ci/version-check.sh` |
+| 1 — Validate version | `version-check` | `scripts/ci/version-check.sh` |
 | 2 — Unit tests | `unit-test` | `scripts/ci/unit-test.sh` (≥80% via `coverage-unit.ini`) |
-| 3 — TestPyPI | `pypi-test` | `scripts/ci/pypi-test.sh` → TestPyPI |
-| 4 — Post-publish | `integration-test`, then `testpypi-consumer` | `scripts/ci/integration-test.sh` then `scripts/ci/testpypi-consumer.sh` → `scripts/ci/consumer/run.sh` |
+| 3 — Publish to TestPyPI | `pypi-test` | `scripts/ci/pypi-test.sh` |
+| 4 — TestPyPI install + integration | `testpypi-verify` | `scripts/ci/testpypi-verify.sh` (pip install → consumer → integration) |
 
 Unit and integration stages enforce hard limits of **5 minutes** and **10 minutes** respectively (`CI_UNIT_TIMEOUT`, `CI_INTEGRATION_TIMEOUT`; see [ci-workflows.md](ci-workflows.md)).
 
-Config: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml). Hub mirror: [`docs/yaml-sync/pull-request-python-cli.yaml`](yaml-sync/pull-request-python-cli.yaml).
+Config: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml).
 
-## Release pipeline (tag `v*` or manual)
+## Main pipeline (merge to `main`)
 
-On tag push matching `v*` or `workflow_dispatch`:
+On every push to `main`:
 
-1. Build sdist/wheel on the runner
-2. Publish to PyPI via trusted publishing (`pypa/gh-action-pypi-publish`), with optional `PYPI_API_TOKEN` twine fallback
-3. `pypi-consumer` Docker target installs `gardusig-cli==$CLI_RELEASE_VERSION` from PyPI and runs consumer integration
+| Job | Docker target | Script |
+| --- | --- | --- |
+| Publish to PyPI | `release` | `scripts/ci/pypi-release.sh` |
+| PyPI consumer | `pypi-consumer` | `scripts/ci/pypi-consumer.sh` |
+
+Config: [`.github/workflows/main.yaml`](../.github/workflows/main.yaml).
+
+## Release pipeline (tag `v*` only)
+
+On tag push matching `v*`:
+
+1. Build `.github/images/cli-runtime.Dockerfile` — `pip install gardusig-cli==$VERSION` from PyPI (no repo source)
+2. Push `binarylifter/gardusig-cli:$VERSION` and `:latest` to Docker Hub
+3. `docker pull` + `cli --version` smoke test
+4. Create GitHub release for the tag
 
 Config: [`.github/workflows/release.yaml`](../.github/workflows/release.yaml).
 
@@ -56,22 +66,20 @@ Configure on **`gardusig/cli`**:
 | Secret / setting | Purpose |
 | --- | --- |
 | `TESTPYPI_API_TOKEN` | PR TestPyPI upload (`pypi-test` job) |
-| `PYPI_API_TOKEN` | Optional twine fallback when OIDC is unavailable |
-| **Trusted publisher** (preferred) | PyPI → Publishing → Add → GitHub Actions |
+| `PYPI_API_TOKEN` | Main PyPI publish (`main.yaml` → `release` target) |
+| `DOCKERHUB_TOKEN` | Release Docker image push |
+| `DOCKERHUB_USERNAME` | Release Docker image push (`binaryLifter`) |
 
-Trusted publisher claims for this repo (from `release.yaml` on `main`):
-
-| Claim | Value |
-| --- | --- |
-| Owner | `gardusig` |
-| Repository | `cli` |
-| Workflow name | `release.yaml` |
-| Environment | *(leave empty unless using `release` environment)* |
-
-Manual re-publish:
+Re-publish to PyPI after merge:
 
 ```bash
-gh workflow run release.yaml -R gardusig/cli --ref main
+gh workflow run main.yaml -R gardusig/cli --ref main
+```
+
+Publish Docker image + GitHub release:
+
+```bash
+git tag v1.1.1 && git push origin v1.1.1
 ```
 
 ## Install contract
@@ -97,7 +105,9 @@ Confirm PR CI is green on GitHub Actions (see [ci-workflows.md](ci-workflows.md)
 
 ## Post-merge release (maintainer)
 
-After merge to `main`:
+After merge to `main`, GitHub Actions runs [`.github/workflows/main.yaml`](../.github/workflows/main.yaml) → PyPI publish → `pypi-consumer`.
+
+Then tag for the Docker image and GitHub release:
 
 ```bash
 git checkout main && git pull
@@ -106,7 +116,7 @@ git tag v1.1.1
 git push origin v1.1.1
 ```
 
-GitHub Actions runs [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) → `docker build -f .github/Dockerfile --target release` → `pypi-consumer`.
+Tag push runs [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) → Docker Hub image → GitHub release.
 
 Alternatively, local publish (maintainer only):
 
