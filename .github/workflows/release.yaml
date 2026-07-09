@@ -32,7 +32,7 @@ jobs:
           test "${{ steps.meta.outputs.version }}" = "$tag"
       - name: Build sdist/wheel
         run: |
-          pip install --no-cache-dir build
+          pip install --no-cache-dir 'setuptools>=61,<77' build
           python -m build
       - name: Publish to PyPI (trusted publishing)
         id: oidc
