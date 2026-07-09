@@ -32,6 +32,8 @@ cli --help >/dev/null
 cli --version >/dev/null
 cli languages list >/dev/null
 cli lint --help >/dev/null
+cli structure --help >/dev/null
+cli structure check "$tmpdir" >/dev/null
 cli git --help >/dev/null
 cli pypi --help >/dev/null
 
