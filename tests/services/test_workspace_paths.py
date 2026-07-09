@@ -14,7 +14,7 @@ def test_load_required_paths_ignores_comments_and_blank_lines(tmp_path: Path) ->
                 "",
                 "public/",
                 "public/index/README.md # inline comment",
-                " private/wiki/ ",
+                " private/ ",
             ]
         ),
         encoding="utf-8",
@@ -22,7 +22,7 @@ def test_load_required_paths_ignores_comments_and_blank_lines(tmp_path: Path) ->
 
     paths = load_required_paths(manifest)
 
-    assert [path.path for path in paths] == ["public", "public/index/README.md", "private/wiki"]
+    assert [path.path for path in paths] == ["public", "public/index/README.md", "private"]
     assert [path.line_number for path in paths] == [3, 4, 5]
 
 
@@ -31,13 +31,13 @@ def test_check_workspace_paths_reports_missing_paths(tmp_path: Path) -> None:
     (workspace / "public" / "index").mkdir(parents=True)
     (workspace / "public" / "index" / "README.md").write_text("# index\n", encoding="utf-8")
     manifest = tmp_path / "required-paths.txt"
-    manifest.write_text("public/index/README.md\nprivate/wiki\n", encoding="utf-8")
+    manifest.write_text("public/index/README.md\nprivate\n", encoding="utf-8")
 
     result = check_workspace_paths(manifest, workspace_root=workspace)
 
     assert result.checked == 2
     assert result.skipped == 0
-    assert [missing.path for missing in result.missing] == ["private/wiki"]
+    assert [missing.path for missing in result.missing] == ["private"]
 
 
 def test_check_workspace_paths_maps_base_to_repo_root(tmp_path: Path) -> None:
@@ -48,7 +48,7 @@ def test_check_workspace_paths_maps_base_to_repo_root(tmp_path: Path) -> None:
     manifest.write_text(
         "\n".join(
             [
-                "private/wiki",
+                "private",
                 "public/gardusig",
                 "public/index",
                 "public/index/README.md",

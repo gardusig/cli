@@ -5,13 +5,13 @@ Local setup:
 ```bash
 cli config init
 cli config secrets init
-cli config set notion.task_root ~/github/private/database/tasks
+cli config set notion.task_root ~/github/private/tasks
 cli config set notion.pairs_file tasks.pairs.json
-cli config set gh.issues.repo gardusig/database
+cli config set gh.issues.repo gardusig/private
 cli config check --tasks
 ```
 
-`tasks/board.yaml` in `gardusig/database` stores non-secret targets such as the Notion database id and GitHub repo.
+`tasks/board.yaml` in `gardusig/private` stores non-secret targets such as the Notion database id and GitHub repo.
 
 Secrets:
 

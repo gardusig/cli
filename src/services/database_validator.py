@@ -1,4 +1,4 @@
-"""Validation rules for gardusig/database."""
+"""Validation rules for gardusig/private."""
 
 from __future__ import annotations
 

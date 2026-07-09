@@ -261,5 +261,5 @@ def test_pull_request_configs_declare_inline_hygiene_policies() -> None:
         for key in ("allowed_root_dirs", "allowed_root_files", "allowed_extensions"):
             assert policy.get(key) is not None, f"{config} missing {key}"
         assert ".sh" in (policy.get("forbidden_extensions") or []), config
-        if data.get("repo") == "gardusig/database":
+        if data.get("repo") == "gardusig/private":
             assert ".md" not in (policy.get("allowed_extensions") or []), config

@@ -1,6 +1,6 @@
 # Task Shortcuts
 
-Task data lives in `gardusig/database/tasks`. The CLI provides reusable shortcuts only; workflow policy lives in `gardusig/gardusig/yaml`.
+Task data lives in `gardusig/private/tasks`. The CLI provides reusable shortcuts only; workflow policy lives in `gardusig/gardusig/yaml`.
 
 ## Pair validation
 

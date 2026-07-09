@@ -101,18 +101,10 @@ repositories:
     profile: true
     pr_pipeline: false
     description: Reusable GitHub Actions workflow library (index/devops/yaml submodule).
-  - slug: database
-    repository: gardusig/database
+  - slug: private
+    repository: gardusig/private
     visibility: private
     profile: false
     pr_pipeline: true
     wiki_inventory: true
-    description: Private vault — PDF, YAML, and markdown only.
-  - slug: wiki
-    repository: gardusig/wiki
-    visibility: private
-    profile: false
-    # Generated markdown inventory; no PR pipeline until it has an app-repo caller workflow.
-    pr_pipeline: false
-    wiki_inventory: false
-    description: Private ops hub, collections, and studied/watched catalogs.
+    description: Private vault — PDF, YAML, markdown, and life ops runbooks.

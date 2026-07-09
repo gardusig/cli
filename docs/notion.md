@@ -28,7 +28,7 @@ Full pair contract: [notion/task-pairs.md](./notion/task-pairs.md).
 ```yaml
 notion:
   database_id: your-notion-database-id
-  task_root: ~/git-local/private/database/tasks
+  task_root: ~/git-local/private/tasks
   pairs_file: config/notion/tasks.pairs.json
   link_branch: main
   cleanup_before_deploy: true
@@ -96,7 +96,7 @@ cli tasks run notion deploy --yes
 cli tasks ingest-pr --source notion --yes   # ingest → pairs build → PR (database repo)
 ```
 
-See [tasks.md](./tasks.md) and [gh-issues.md](./gh-issues.md) for the private **`gardusig/database`** task-data boundary.
+See [tasks.md](./tasks.md) and [gh-issues.md](./gh-issues.md) for the private **`gardusig/private`** task-data boundary.
 
 ## Task file format
 

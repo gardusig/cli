@@ -99,7 +99,7 @@ def notion_cli_context(monkeypatch: Any, tmp_path: Path) -> Iterator[Path]:
         "  link_branch: main\n"
         "gh:\n"
         "  issues:\n"
-        "    repo: gardusig/database\n",
+        "    repo: gardusig/private\n",
         encoding="utf-8",
     )
     monkeypatch.setenv("NOTION_TOKEN", "integration-token")

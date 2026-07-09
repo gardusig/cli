@@ -1,4 +1,4 @@
-"""Commands for gardusig/database validation."""
+"""Commands for gardusig/private validation."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import typer
 
 from src.commands._toolkit import dispatch
 
-database_app = typer.Typer(help="Validate gardusig/database data.", no_args_is_help=True)
+database_app = typer.Typer(help="Validate gardusig/private data.", no_args_is_help=True)
 
 
 @database_app.command("validate-pr")

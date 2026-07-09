@@ -15,7 +15,7 @@ wiki_app.add_typer(repos_app, name="repos")
 
 @repos_app.command("sync")
 def repos_sync_cmd(
-    wiki_dir: Path = typer.Option(Path("."), "--wiki-dir", help="Local gardusig/wiki checkout."),
+    wiki_dir: Path = typer.Option(Path("."), "--wiki-dir", help="Local gardusig/private checkout."),
     owner: str = typer.Option("gardusig", "--owner"),
     ref: str = typer.Option("main", "--ref"),
     depth: int = typer.Option(3, "--depth", min=1, max=6),

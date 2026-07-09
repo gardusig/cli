@@ -45,6 +45,6 @@ Use `--persist` with `import-env` only when you intentionally want to write toke
 | `pypi.token` | `PYPI_API_TOKEN` | `pypi-...` |
 | `notion.database_id` | `NOTION_DATABASE_ID` | Notion database id |
 | `notion.task_root` | `NOTION_TASK_ROOT` | `/workspace/tasks` |
-| `gh.issues.repo` | | `gardusig/database` |
+| `gh.issues.repo` | | `gardusig/private` |
 
 The full credential manifest lives at `config/secrets.manifest.yaml`.

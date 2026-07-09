@@ -60,7 +60,7 @@ CONFIG_KEYS: dict[str, dict[str, str]] = {
     "notion.database_id": {"env": "NOTION_DATABASE_ID", "example": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"},
     "notion.task_root": {"env": "NOTION_TASK_ROOT", "example": "/workspace/tasks"},
     "notion.pairs_file": {"env": "", "example": "tasks.pairs.json"},
-    "gh.issues.repo": {"env": "", "example": "gardusig/database"},
+    "gh.issues.repo": {"env": "", "example": "gardusig/private"},
     "gh.issues.labels_manifest": {"env": "", "example": "labels.manifest.yaml"},
 }
 

@@ -107,7 +107,7 @@ def test_import_tasks_deploys_enabled_pair(tmp_path: Path, monkeypatch) -> None:
     props = created[0]["properties"]
     assert props["Name"]["title"][0]["text"]["content"] == "🧪 sample task"
     assert props["link"]["url"] == (
-        "https://github.com/gardusig/database/blob/main/tasks/body/sample.md"
+        "https://github.com/gardusig/private/blob/main/tasks/body/sample.md"
     )
 
 
@@ -295,4 +295,4 @@ def test_export_tasks_writes_runbook_link_to_header(tmp_path: Path, monkeypatch)
         export_tasks(task_root, token="tok", config=cfg)
 
     meta_text = (task_root / "header/sample.yaml").read_text(encoding="utf-8")
-    assert "gardusig/database/blob/main/tasks/body/sample.md" in meta_text
+    assert "gardusig/private/blob/main/tasks/body/sample.md" in meta_text
