@@ -1,6 +1,6 @@
 # cli
 
-Linux-first CLI helper: **`cli git`** · **`cli lint`** · **`cli pipeline`** · **`cli release`**.
+Linux-first CLI helper: **`cli g`** · **`cli gh wf`** · **`cli lint`** · **`cli release`**.
 
 ## Status
 
@@ -218,7 +218,7 @@ Local Docker monitor and cleanup (requires `docker` on PATH; no container start)
 | **Full reset** | `cli docker reset --yes` |
 | Targeted cleanup | `cli docker clean containers --yes` · `clean images` · `clean all` |
 
-Docker cleanup is exposed through `cli docker ...`; CI Docker stages live in `github-pipelines`.
+Docker cleanup is exposed through `cli docker ...`; CI Docker stages live in `gardusig/yaml`.
 
 Destructive commands use the write gate; pass `--yes` in scripts.
 
@@ -232,8 +232,8 @@ CI and Docker run **outside this repository** (central DevOps). This repo has no
 
 | Trigger | What runs |
 | --- | --- |
-| **Pull request** | `github-pipelines` consumes `cli test packages resolve` for selective package gates, with full-suite fallback |
-| **Nightly / manual full** | `github-pipelines` consumes `cli test packages suite` for the full regression safety net |
+| **Pull request** | `gardusig/yaml` consumes `cli test packages resolve` for selective package gates, with full-suite fallback |
+| **Nightly / manual full** | `gardusig/yaml` consumes `cli test packages suite` for the full regression safety net |
 | **Tag** `v*` | Publish `gardusig-cli` to PyPI |
 
 Configure release secrets on the central CI system (`PYPI_API_TOKEN`, `TESTPYPI_API_TOKEN`). Tag pushes trigger release via `repository_dispatch`.
@@ -245,7 +245,7 @@ Details: [docs/release.md](docs/release.md) · [docs/setup.md](docs/setup.md) ·
 - [Setup](docs/setup.md)
 - [Release](docs/release.md)
 - [Git commands](docs/git.md)
-- [GitHub (`cli gh`)](docs/gh.md)
+- [GitHub (`cli gh`)](docs/gh.md) · [Workflows (`cli gh wf`)](docs/gh-workflows.md)
 - [Drive (local + cloud)](docs/drive.md)
 - [Chrome](docs/chrome.md) · [Notion](docs/notion.md)
 - [Docker integration](docs/docker.md)

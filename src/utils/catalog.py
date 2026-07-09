@@ -168,7 +168,6 @@ TOP_LEVEL_COMMANDS: tuple[tuple[str, str], ...] = (
     ("configure", "Import/list configuration keys"),
     ("config", "Inspect resolved configuration"),
     ("pypi", "Build/upload/version helpers for gardusig-cli"),
-    ("pipeline", "Pipeline config/docker/task wrappers"),
     ("puzzles", "Puzzle issue helpers"),
     ("repo", "Repository inventory and hygiene helpers"),
     ("tasks", "Task pair helpers"),

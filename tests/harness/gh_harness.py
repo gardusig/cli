@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import subprocess
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -170,9 +171,45 @@ def patch_gh_stateful(workspace: Path) -> Iterator[StatefulGhStore]:
             return ""
         raise RuntimeError(f"unmocked gh run: {cmd}")
 
+    def _run_gh_lowlevel(
+        args: list[str],
+        *,
+        cwd: str | None = None,
+        check: bool = True,
+        timeout: float | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        cmd = list(args)
+        stdout = ""
+        if cmd[:2] == ["workflow", "list"]:
+            stdout = "dispatch.yml\tDispatch\tactive\n"
+        elif cmd[:2] == ["workflow", "view"]:
+            stdout = "name: dispatch\n"
+        elif cmd[:2] in {("workflow", "enable"), ("workflow", "disable")}:
+            stdout = ""
+        elif cmd[:2] == ["workflow", "run"]:
+            stdout = "created workflow_dispatch event\n"
+        elif cmd[:2] == ["run", "list"]:
+            stdout = "29015588872\tcompleted\tdispatch.yml\n"
+        elif cmd[:2] == ["run", "view"]:
+            stdout = "ERROR: step failed\n" if "--log-failed" in cmd else "Run dispatch.yml\n"
+        elif cmd[:2] == ["run", "watch"]:
+            stdout = "completed\n"
+        elif cmd[:2] in {("run", "cancel"), ("run", "rerun"), ("run", "delete")}:
+            stdout = ""
+        else:
+            try:
+                out = _run(cmd, check=check)
+            except RuntimeError as exc:
+                if check:
+                    raise GhCommandError(["gh", *cmd], 1, str(exc)) from exc
+                return subprocess.CompletedProcess(["gh", *cmd], 1, "", str(exc))
+            return subprocess.CompletedProcess(["gh", *cmd], 0, out, "")
+        return subprocess.CompletedProcess(["gh", *cmd], 0, stdout, "")
+
     with (
         patch("src.providers.gh.GhProvider.run_json", _run_json),
         patch("src.providers.gh.GhProvider.run", _run),
+        patch("src.utils.process.run_gh", _run_gh_lowlevel),
     ):
         yield store
 
@@ -204,7 +241,10 @@ def patch_run_gh(
             return handler(list(args), cwd=cwd, check=check)
         raise RuntimeError("patch_run_gh: provide handler or side_effect")
 
-    with patch("src.providers.gh.run_gh", _run_gh):
+    with (
+        patch("src.providers.gh.run_gh", _run_gh),
+        patch("src.utils.process.run_gh", _run_gh),
+    ):
         yield
 
 

@@ -7,10 +7,10 @@ import json
 import typer
 
 from src.internal.write.gate import require_write_gate
-from src.services.pipeline_dispatch import dispatch_repository_event
+from src.services.gh_dispatch import dispatch_repository_event
 
 deploy_app = typer.Typer(
-    help="Dispatch hub CI and operator lanes (github-pipelines).",
+    help="Dispatch hub CI and operator lanes (gardusig/yaml).",
     no_args_is_help=True,
 )
 

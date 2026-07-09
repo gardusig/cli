@@ -7,7 +7,6 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from src.services.database_validator import validate_database_repo
 from src.services.notion_pairs import load_pairs, pair_file_warning, scan_task_root
 from src.services.repo_hygiene import check_repo_hygiene, load_hygiene_policy, policy_with_ignored_paths
 from src.services.toolkit.catalog import CommandSpec, languages, specs_for_language
@@ -34,7 +33,6 @@ def run_handler(spec: CommandSpec, workspace: Path, extra_env: dict[str, str] | 
         "test_cpp_smoke": _test_cpp_smoke,
         "test_java_unit": _test_java_unit,
         "structure_check": _structure_check,
-        "validate_vault": _validate_vault,
         "validate_tasks": _validate_tasks,
         "languages_list": _languages_list,
         "languages_show": _languages_show,
@@ -378,20 +376,6 @@ def _structure_check(spec: CommandSpec, workspace: Path, extra_env: dict[str, st
             print(f"  ERROR: {error}")
         return 1
     print("structure ok")
-    return 0
-
-
-def _validate_vault(spec: CommandSpec, workspace: Path, extra_env: dict[str, str]) -> int:
-    del spec
-    errors, warnings = validate_database_repo(workspace, base=extra_env.get("BASE", "main"))
-    for warning in warnings:
-        print(f"WARNING: {warning}")
-    if errors:
-        print("Validation failed:")
-        for error in errors:
-            print(f"  ERROR: {error}")
-        return 1
-    print(f"OK: vault validation passed ({len(warnings)} warnings)")
     return 0
 
 

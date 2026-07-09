@@ -20,7 +20,7 @@ def test_test_packages_resolve_outputs_json_contract() -> None:
     assert "gh" in payload["package_names"]
     assert payload["requires_ai"] is False
     assert any(path.startswith("tests/gh") for path in payload["unit_test_paths"])
-    assert payload["pipeline_contract"]["owner"] == "gardusig/github-pipelines"
+    assert payload["pipeline_contract"]["owner"] == "gardusig/yaml"
 
 
 def test_test_packages_resolve_table_output() -> None:
@@ -107,7 +107,7 @@ def test_test_packages_suite_outputs_full_contract() -> None:
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
     assert "gh" in payload["packages"]
-    assert payload["pipeline_contract"]["owner"] == "gardusig/github-pipelines"
+    assert payload["pipeline_contract"]["owner"] == "gardusig/yaml"
 
 
 def test_test_packages_resolve_can_use_git_range(monkeypatch) -> None:

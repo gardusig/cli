@@ -13,7 +13,7 @@ def test_merge_readiness_release_checklist() -> None:
     text = (ROOT / "docs" / "release.md").read_text(encoding="utf-8")
     assert "PR #96 merge" in text
     assert "Epic 06d" in text or "06d–06g" in text or "06d-06g" in text
-    assert "pipeline run pull-request python-cli" in text
+    assert "cli gh wf run" in text or "gh wf" in text
     assert "gardusig/cli" in text
     assert "pipelines #38" in text
     for issue in ("#50", "#27", "#28", "#31", "#30", "#29"):
@@ -38,8 +38,7 @@ def test_merge_readiness_repo_rename_contract() -> None:
     assert "repository: gardusig/cli" in repos
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert "https://github.com/gardusig/cli" in pyproject
-    runtime = (ROOT / "src" / "services" / "pipeline_runtime.py").read_text(encoding="utf-8")
-    assert '"gardusig/cli": "gardusig/python-cli"' in runtime
+    assert (ROOT / "src" / "commands" / "gh_wf.py").is_file()
 
 
 def test_merge_readiness_app_local_pipeline_config() -> None:
@@ -47,7 +46,7 @@ def test_merge_readiness_app_local_pipeline_config() -> None:
     assert "repo: gardusig/cli" in pr_config
     assert "docker/python-cli.dockerfile" in pr_config
     caller = (ROOT / ".github" / "workflows" / "pull-request.yml").read_text(encoding="utf-8")
-    assert "gardusig/pipelines/.github/workflows/pull-request.yml@main" in caller
+    assert "gardusig/yaml/.github/workflows/pull-request.yml@main" in caller
     assert "repo_slug: cli" in caller
     assert "repository: gardusig/cli" in caller
 
@@ -57,7 +56,7 @@ def test_merge_readiness_hub_operator_rename_note() -> None:
     hub = (ROOT / "docs" / "hub-operator.md").read_text(encoding="utf-8")
     assert "gardusig/cli" in hub
     assert "gardusig/python-cli" in hub
-    assert "pipeline_runtime" in hub or "resolve alias" in hub.lower()
+    assert "cli gh wf" in hub or "gh wf run" in hub
 
 
 def test_merge_readiness_pack_smokes_present() -> None:
