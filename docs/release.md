@@ -25,12 +25,13 @@ Unit and integration stages enforce hard limits of **5 minutes** and **10 minute
 
 Config: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml). Hub mirror: [`docs/yaml-sync/pull-request-python-cli.yaml`](yaml-sync/pull-request-python-cli.yaml).
 
-## Release pipeline (tag `v*`)
+## Release pipeline (tag `v*` or manual)
 
-On tag push matching `v*`:
+On tag push matching `v*` or `workflow_dispatch`:
 
-1. `release` target → `scripts/ci/pypi-release.sh` (production PyPI)
-2. `pypi-consumer` target → install `gardusig-cli==$CLI_RELEASE_VERSION` from PyPI and run consumer integration
+1. Build sdist/wheel on the runner
+2. Publish to PyPI via trusted publishing (`pypa/gh-action-pypi-publish`), with optional `PYPI_API_TOKEN` twine fallback
+3. `pypi-consumer` Docker target installs `gardusig-cli==$CLI_RELEASE_VERSION` from PyPI and runs consumer integration
 
 Config: [`.github/workflows/release.yaml`](../.github/workflows/release.yaml).
 
@@ -48,14 +49,30 @@ bash scripts/ci/unit-test.sh
 bash scripts/ci/pypi-test.sh
 ```
 
-## GitHub secrets
+## GitHub secrets and trusted publishing
 
-Configure on **`gardusig/cli`** (not in repo):
+Configure on **`gardusig/cli`**:
 
-| Secret | Purpose |
+| Secret / setting | Purpose |
 | --- | --- |
 | `TESTPYPI_API_TOKEN` | PR TestPyPI upload (`pypi-test` job) |
-| `PYPI_API_TOKEN` | Tag release publish (`release` job) |
+| `PYPI_API_TOKEN` | Optional twine fallback when OIDC is unavailable |
+| **Trusted publisher** (preferred) | PyPI → Publishing → Add → GitHub Actions |
+
+Trusted publisher claims for this repo (from `release.yaml` on `main`):
+
+| Claim | Value |
+| --- | --- |
+| Owner | `gardusig` |
+| Repository | `cli` |
+| Workflow name | `release.yaml` |
+| Environment | *(leave empty unless using `release` environment)* |
+
+Manual re-publish:
+
+```bash
+gh workflow run release.yaml -R gardusig/cli --ref main
+```
 
 ## Install contract
 
