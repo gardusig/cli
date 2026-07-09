@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import subprocess
 
 import typer
@@ -74,6 +75,13 @@ def release_main_cmd(
 
 
 def _ensure_release_tag(tag: str) -> None:
+    tag_env = {
+        **os.environ,
+        "GIT_AUTHOR_NAME": os.environ.get("GIT_AUTHOR_NAME", "gardusig-cli-release"),
+        "GIT_AUTHOR_EMAIL": os.environ.get("GIT_AUTHOR_EMAIL", "gardusig@users.noreply.github.com"),
+        "GIT_COMMITTER_NAME": os.environ.get("GIT_COMMITTER_NAME", "gardusig-cli-release"),
+        "GIT_COMMITTER_EMAIL": os.environ.get("GIT_COMMITTER_EMAIL", "gardusig@users.noreply.github.com"),
+    }
     existing = subprocess.run(
         ["git", "rev-parse", "-q", "--verify", f"refs/tags/{tag}"],
         cwd=_ROOT,
@@ -82,8 +90,23 @@ def _ensure_release_tag(tag: str) -> None:
         check=False,
     )
     if existing.returncode != 0:
-        subprocess.run(["git", "tag", "-a", tag, "-m", tag], cwd=_ROOT, check=True)
-    subprocess.run(["git", "push", "origin", tag], cwd=_ROOT, check=True)
+        subprocess.run(
+            ["git", "tag", "-a", tag, "-m", tag],
+            cwd=_ROOT,
+            check=True,
+            env=tag_env,
+        )
+    push = subprocess.run(["git", "push", "origin", tag], cwd=_ROOT, check=False)
+    if push.returncode != 0:
+        remote = subprocess.run(
+            ["git", "ls-remote", "--tags", "origin", tag],
+            cwd=_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if not remote.stdout.strip():
+            push.check_returncode()
 
 
 def _ensure_github_release(tag: str) -> None:
