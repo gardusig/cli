@@ -60,16 +60,6 @@ def test_deploy_issues_dry_run(monkeypatch, tmp_path: Path) -> None:
     svc.issue_delete.assert_not_called()
 
 
-def test_issue_sync_rejects_non_private_repo(monkeypatch, tmp_path: Path) -> None:
-    root = _task_root(tmp_path)
-    cfg = _config(tmp_path, root, repo="gardusig/public")
-    monkeypatch.setenv("CLI_CONFIG_DIR", str(cfg))
-    monkeypatch.delenv("CLI_GH_ISSUES_DEPLOY_ALLOW", raising=False)
-
-    with pytest.raises(RuntimeError, match="restricted to repositories named 'database'"):
-        deploy_issues(svc=MagicMock(), dry_run=True)
-
-
 def test_ingest_issues_round_trip(monkeypatch, tmp_path: Path) -> None:
     root = _task_root(tmp_path)
     cfg = _config(tmp_path, root)

@@ -77,7 +77,7 @@ def test_package_command_payload_uses_registry_paths() -> None:
         for command in payload["commands"]
         if command["kind"] == "integration"
     )
-    assert payload["pipeline_contract"]["owner"] == "gardusig/github-pipelines"
+    assert payload["pipeline_contract"]["owner"] == "gardusig/yaml"
 
 
 def test_full_suite_payload_includes_core_and_package_commands() -> None:
@@ -87,7 +87,7 @@ def test_full_suite_payload_includes_core_and_package_commands() -> None:
     assert any(command["kind"] == "core" for command in payload["core_commands"])
     assert any(command["package"] == "gh" for command in payload["commands"])
     assert any(command["kind"] == "live" for command in payload["live_commands"])
-    assert payload["pipeline_contract"]["owner"] == "gardusig/github-pipelines"
+    assert payload["pipeline_contract"]["owner"] == "gardusig/yaml"
 
 
 def test_many_packages_fall_back_to_full_suite() -> None:

@@ -33,34 +33,12 @@ COMMANDS: tuple[CommandSpec, ...] = (
     CommandSpec("test", "cpp", "smoke", "Run C++ smoke tests.", "test_cpp_smoke", ("*.cpp",), ("g++",), language="cpp"),
     CommandSpec("test", "java", "unit", "Run Java unit tests.", "test_java_unit", ("pom.xml", "build.gradle", "build.gradle.kts"), ("java", "javac"), ("mvn", "gradle"), "java"),
     CommandSpec("structure", "check", None, "Check repository structure policy.", "structure_check"),
-    CommandSpec("validate", "vault", None, "Validate vault/database data.", "validate_vault"),
     CommandSpec("validate", "tasks", None, "Validate task pair data.", "validate_tasks"),
     CommandSpec("languages", "list", None, "List supported toolkit languages.", "languages_list"),
     CommandSpec("languages", "show", None, "Show one language's commands and prerequisites.", "languages_show"),
 )
 
 _COMMAND_INDEX = {(spec.group, spec.subject, spec.suite): spec for spec in COMMANDS}
-
-REPO_LANGUAGE_PROFILES: dict[str, tuple[str, ...]] = {
-    "animated-games": ("markdown", "typescript"),
-    "chrome-extensions": ("markdown", "typescript"),
-    "go": ("go",),
-    "cpp": ("markdown", "cpp"),
-    "python": ("markdown", "python"),
-    "javascript": ("markdown",),
-    "typescript": ("markdown", "typescript"),
-    "java": ("markdown", "java"),
-    "csharp": ("markdown",),
-    "c": ("markdown",),
-    "rust": ("markdown",),
-    "assembly": ("markdown",),
-    "database": ("markdown",),
-    "gardusig": ("markdown",),
-    "github-pipelines": ("markdown", "python", "shell"),
-    "python-cli": ("markdown", "python", "shell"),
-    "static-puzzles": ("markdown", "typescript"),
-    "wiki": ("markdown",),
-}
 
 
 def command_spec(group: str, subject: str, suite: str | None = None) -> CommandSpec:

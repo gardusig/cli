@@ -43,7 +43,7 @@ def test_repo_languages_uses_pyproject_profile_without_git(tmp_path: Path, monke
     fixtures.mkdir(parents=True)
     (fixtures / "solution.cpp").write_text("int main() {}\n", encoding="utf-8")
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args, 1, "", ""))
-    assert repo_languages(root) == ("markdown", "python")
+    assert repo_languages(root) == ("markdown", "python", "cpp")
 
 
 def test_runner_invokes_related_python_handler(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

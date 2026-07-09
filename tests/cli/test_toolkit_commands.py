@@ -28,13 +28,12 @@ def test_structure_check_dispatches_policy_options(monkeypatch, tmp_path: Path) 
     assert calls[0][1]["extra_env"]["REQUIRE_STRUCTURE"] == "1"
 
 
-def test_validate_vault_dispatches_base(monkeypatch, tmp_path: Path) -> None:
+def test_validate_tasks_dispatches(monkeypatch, tmp_path: Path) -> None:
     calls = []
     monkeypatch.setattr("src.commands._toolkit.run_cli_command", lambda *args, **kwargs: calls.append((args, kwargs)) or 0)
-    result = runner.invoke(app, ["validate", "vault", str(tmp_path), "--base", "origin/main"])
+    result = runner.invoke(app, ["validate", "tasks", str(tmp_path)])
     assert result.exit_code == 0
-    assert calls[0][0][:3] == ("validate", "vault", tmp_path)
-    assert calls[0][1]["extra_env"]["BASE"] == "origin/main"
+    assert calls[0][0][:3] == ("validate", "tasks", tmp_path)
 
 
 def test_test_python_unit_dispatches_suite(monkeypatch, tmp_path: Path) -> None:

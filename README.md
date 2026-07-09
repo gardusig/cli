@@ -1,20 +1,20 @@
 # cli
 
-Linux-first CLI helper: **`cli git`** · **`cli lint`** · **`cli pipeline`** · **`cli release`**.
+Linux-first CLI helper: **`cli g`** · **`cli gh wf`** · **`cli lint`** · **`cli release`**.
 
 ## Status
 
 [![PyPI version](https://img.shields.io/pypi/v/gardusig-cli?label=PyPI)](https://pypi.org/project/gardusig-cli/)
 [![Python](https://img.shields.io/pypi/pyversions/gardusig-cli?label=Python)](https://pypi.org/project/gardusig-cli/)
-[![License: MIT](https://img.shields.io/pypi/l/gardusig-cli?label=License)](https://github.com/gardusig/cli/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/pypi/l/gardusig-cli?label=License)](https://github.com/gardusig/python-cli/blob/main/LICENSE)
 
 This README is the **long description on [PyPI](https://pypi.org/project/gardusig-cli/)** and the **GitHub project page** — badges link to the same sources of truth on both sites.
 
 | Where | What you get |
 | --- | --- |
-| **GitHub** ([gardusig/cli](https://github.com/gardusig/cli)) | Source and issues — **application code only** |
+| **GitHub** ([gardusig/python-cli](https://github.com/gardusig/python-cli)) | Source and issues — **application code only** |
 | **PyPI** (`pip install gardusig-cli`) | Installable package; console command is `cli` |
-| **CI / release** | In-repo [`.github/Dockerfile`](.github/Dockerfile) + [`.github/workflows/`](.github/workflows/) (TestPyPI on PR, PyPI on tag) |
+| **CI / release** | External Docker pipelines — not in this repo |
 | **Unit coverage** | [`coverage-unit.ini`](coverage-unit.ini) — `cli` package, ≥80% |
 
 Install from PyPI when you only need the tool; clone the repo when you want config and product scripts.
@@ -23,7 +23,7 @@ Install from PyPI when you only need the tool; clone the repo when you want conf
 
 | Context | Identifier |
 | --- | --- |
-| **GitHub repo** | [gardusig/cli](https://github.com/gardusig/cli) |
+| **GitHub repo** | [gardusig/python-cli](https://github.com/gardusig/python-cli) |
 | **PyPI package** | `gardusig-cli` — `pip install gardusig-cli` |
 | **Console command** | `cli` (unchanged after PyPI install) |
 | **Python import** | `src` |
@@ -77,7 +77,7 @@ backup:
 
 notion:
   database_id: your-notion-database-id
-  task_root: ~/git-local/private/tasks
+  task_root: ~/git-local/private/configured/tasks
   pairs_file: config/notion/tasks.pairs.json
 
 chrome:
@@ -165,11 +165,11 @@ cli drive status
 cli drive upload
 ```
 
-`git zip` is the quick path for the current repo; `drive ingest` iterates configured repositories (or one `PATH`). See [docs/drive.md](docs/drive.md).
+`git zip` is the quick path for the current repo; `drive ingest` iterates configured repositories (or one `PATH`). See [docs/drive.md](docs/drive.md) · [issue #4](https://github.com/gardusig/python-cli/issues/4).
 
 ## Chrome (`cli chrome`)
 
-Bookmark file ingest/deploy (manual browser export/import). See [docs/chrome.md](docs/chrome.md).
+Bookmark file ingest/deploy (manual browser export/import). See [docs/chrome.md](docs/chrome.md) · epic [#24](https://github.com/gardusig/python-cli/issues/24).
 
 | Task | Command |
 | --- | --- |
@@ -185,7 +185,7 @@ cli chrome bookmarks merge --dry-run
 cli chrome bookmarks deploy
 ```
 
-Google Photos: `cli chrome photos ingest` imports Google Takeout exports into a configured private `photos_dir`.
+Google Photos ([#50](https://github.com/gardusig/python-cli/issues/50)): `cli chrome photos ingest` imports Google Takeout exports into a configured private `photos_dir`.
 
 See also [docs/bookmarks.md](docs/bookmarks.md).
 
@@ -201,7 +201,7 @@ Local tasks: **`notion.task_root`** (private header/body) + **`notion.pairs_file
 | `cli notion sync --yes` | Ingest from Notion, then deploy local tasks |
 | `cli notion cleanup --yes` | Archive all database pages |
 
-See [docs/notion.md](docs/notion.md).
+See [docs/notion.md](docs/notion.md) · epic [#2](https://github.com/gardusig/python-cli/issues/2) · children [#20](https://github.com/gardusig/python-cli/issues/20)–[#23](https://github.com/gardusig/python-cli/issues/23).
 
 ## Docker
 
@@ -218,49 +218,34 @@ Local Docker monitor and cleanup (requires `docker` on PATH; no container start)
 | **Full reset** | `cli docker reset --yes` |
 | Targeted cleanup | `cli docker clean containers --yes` · `clean images` · `clean all` |
 
-Docker cleanup is exposed through `cli docker ...`; CI Docker stages live in [`.github/Dockerfile`](.github/Dockerfile) (`scripts/ci/*.sh` entrypoints).
+Docker cleanup is exposed through `cli docker ...`; CI Docker stages live in `gardusig/yaml`.
 
 Destructive commands use the write gate; pass `--yes` in scripts.
 
 ## Verify (Docker)
 
-Requires Docker Engine on Linux. Stages mirror central CI:
-
-```bash
-export BASE_VERSION="$(bash scripts/ci/host-base-version.sh origin/main)"
-docker build -f .github/Dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
-docker build -f .github/Dockerfile --target unit-test .
-```
+Requires Docker Engine on Linux. The Linux CI image is the supported test environment.
 
 ## CI and release
 
-Thin GitHub Actions workflows live in [`.github/workflows/`](.github/workflows/) (`pull-request.yaml`, `release.yaml`). Each job runs `docker build -f .github/Dockerfile --target …`; logic is in `.github/Dockerfile` and `scripts/ci/*.sh`.
+CI and Docker run **outside this repository** (central DevOps). This repo has no `.github/` workflows or `Dockerfile`.
 
 | Trigger | What runs |
 | --- | --- |
-| **Pull request** | `version-check` → `unit-test` → `pypi-test` → `integration-test` + `testpypi-consumer` |
-| **Tag** `v*` | `docker build --target release` then `pypi-consumer` |
+| **Pull request** | `gardusig/yaml` consumes `cli test packages resolve` for selective package gates, with full-suite fallback |
+| **Nightly / manual full** | `gardusig/yaml` consumes `cli test packages suite` for the full regression safety net |
+| **Tag** `v*` | Publish `gardusig-cli` to PyPI |
 
-Configure secrets on **`gardusig/cli`**: `TESTPYPI_API_TOKEN`, `PYPI_API_TOKEN`.
+Configure release secrets on the central CI system (`PYPI_API_TOKEN`, `TESTPYPI_API_TOKEN`). Tag pushes trigger release via `repository_dispatch`.
 
-Details: [docs/release.md](docs/release.md) · [docs/ci-workflows.md](docs/ci-workflows.md) · [docs/development.md](docs/development.md).
-
-## Development
-
-Clone **`gardusig/cli`** directly — you do not need the [`gardusig/gardusig`](https://github.com/gardusig/gardusig) profile monorepo to work on this package.
-
-```bash
-git clone git@github.com:gardusig/cli.git && cd cli
-uv sync
-.venv/bin/python -m pytest tests/meta/ -q
-```
+Details: [docs/release.md](docs/release.md) · [docs/setup.md](docs/setup.md) · [docs/ci-workflows.md](docs/ci-workflows.md).
 
 ## Docs
 
-- [Development](docs/development.md)
+- [Setup](docs/setup.md)
 - [Release](docs/release.md)
 - [Git commands](docs/git.md)
-- [GitHub (`cli gh`)](docs/gh.md)
+- [GitHub (`cli gh`)](docs/gh.md) · [Workflows (`cli gh wf`)](docs/gh-workflows.md)
 - [Drive (local + cloud)](docs/drive.md)
 - [Chrome](docs/chrome.md) · [Notion](docs/notion.md)
 - [Docker integration](docs/docker.md)
@@ -271,3 +256,7 @@ uv sync
 
 - [OpenCode](docs/opencode.md) — `cli opencode` AI entry point
 - [Hub operator](docs/hub-operator.md) — headless ship lane + CI runner
+- Cloud drive epic: [cli #4](https://github.com/gardusig/python-cli/issues/4)
+- Bootstrap spec: [cli #3](https://github.com/gardusig/python-cli/issues/3)
+- Chrome: [cli #24](https://github.com/gardusig/python-cli/issues/24) · bookmarks [#1](https://github.com/gardusig/python-cli/issues/1) superseded
+- Docker integration: [cli #9](https://github.com/gardusig/python-cli/issues/9)

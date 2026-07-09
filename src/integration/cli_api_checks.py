@@ -118,6 +118,77 @@ def registered_api_command_paths(api: ApiName) -> set[tuple[str, ...]]:
     return set()
 
 
+def _gh_wf_success_checks(fmt: tuple[str, ...]) -> list[CliApiCheck]:
+    checks: list[CliApiCheck] = []
+    for group in ("wf", "workflow"):
+        checks.extend(
+            [
+                CliApiCheck(f"gh {group} list", "gh", ("gh", *fmt, group, "list"), "dispatch.yml"),
+                CliApiCheck(
+                    f"gh {group} view",
+                    "gh",
+                    ("gh", *fmt, group, "view", "dispatch.yml"),
+                    "dispatch",
+                ),
+                CliApiCheck(
+                    f"gh {group} enable",
+                    "gh",
+                    ("gh", *fmt, group, "enable", "dispatch.yml"),
+                    None,
+                ),
+                CliApiCheck(
+                    f"gh {group} disable",
+                    "gh",
+                    ("gh", *fmt, group, "disable", "dispatch.yml"),
+                    None,
+                ),
+                CliApiCheck(
+                    f"gh {group} run list",
+                    "gh",
+                    ("gh", *fmt, group, "run", "list"),
+                    "29015588872",
+                ),
+                CliApiCheck(
+                    f"gh {group} run view",
+                    "gh",
+                    ("gh", *fmt, group, "run", "view", "29015588872"),
+                    "dispatch.yml",
+                ),
+                CliApiCheck(
+                    f"gh {group} run failed",
+                    "gh",
+                    ("gh", *fmt, group, "run", "failed", "29015588872"),
+                    "ERROR",
+                ),
+                CliApiCheck(
+                    f"gh {group} run watch",
+                    "gh",
+                    ("gh", *fmt, group, "run", "watch", "29015588872"),
+                    "completed",
+                ),
+                CliApiCheck(
+                    f"gh {group} run cancel",
+                    "gh",
+                    ("gh", *fmt, group, "run", "cancel", "29015588872"),
+                    None,
+                ),
+                CliApiCheck(
+                    f"gh {group} run rerun",
+                    "gh",
+                    ("gh", *fmt, group, "run", "rerun", "29015588872"),
+                    None,
+                ),
+                CliApiCheck(
+                    f"gh {group} run delete",
+                    "gh",
+                    ("gh", *fmt, group, "run", "delete", "29015588872", "--yes"),
+                    None,
+                ),
+            ]
+        )
+    return checks
+
+
 def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
     fmt = ("--format", "json")
     manifest = workspace / "labels.manifest.yaml"
@@ -458,6 +529,7 @@ def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
             ("gh", "repo", "readme-sync", "--readme", str(workspace / "README.md"), "--dry-run"),
             "README",
         ),
+        *_gh_wf_success_checks(fmt),
     ]
 
 

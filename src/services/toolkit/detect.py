@@ -3,13 +3,9 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from src.services.toolkit.catalog import REPO_LANGUAGE_PROFILES, lint_languages
+from src.services.toolkit.catalog import lint_languages
 
 IGNORED_DIRS = {".git", ".venv", "__pycache__", "node_modules", ".pytest_cache", "dist", "build"}
-
-PACKAGE_REPO_PROFILES: dict[str, str] = {
-    "gardusig-cli": "python-cli",
-}
 
 
 class ToolkitDetectionError(RuntimeError):
@@ -30,10 +26,6 @@ def confirm_markers(workspace: Path, markers: tuple[str, ...]) -> None:
 
 def repo_languages(workspace: Path) -> tuple[str, ...]:
     root = workspace.expanduser().resolve()
-    profile = _repo_profile(root)
-    if profile:
-        present = tuple(language for language in profile if _language_present(root, language))
-        return present or profile
     detected = tuple(language for language in lint_languages() if _language_present(root, language))
     return detected or ("markdown",)
 
@@ -44,19 +36,10 @@ def repo_slug(workspace: Path) -> str:
     remote = _origin_repo_name(root)
     if remote:
         return remote
-    if root.name in REPO_LANGUAGE_PROFILES:
-        return root.name
     package_name = _pyproject_name(root)
     if package_name:
-        return PACKAGE_REPO_PROFILES.get(package_name, package_name)
+        return package_name
     return root.name
-
-
-def _repo_profile(root: Path) -> tuple[str, ...] | None:
-    slug = repo_slug(root)
-    if slug in REPO_LANGUAGE_PROFILES:
-        return REPO_LANGUAGE_PROFILES[slug]
-    return None
 
 
 def _pyproject_name(root: Path) -> str | None:
@@ -121,4 +104,3 @@ def _iter_glob(root: Path, pattern: str):
         if any(part in IGNORED_DIRS for part in rel_parts):
             continue
         yield path
-

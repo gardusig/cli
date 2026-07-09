@@ -19,6 +19,7 @@ from src.services.gh_pr_shortcut import GhPrShortcut
 from src.services.gh_service import GhService
 from src.services.gh_topo import load_priority_levels
 from src.services.project_service import ProjectService
+from src.commands.gh_wf import wf_app
 from src.utils.config import project_auto_link
 
 gh_app = typer.Typer(help="GitHub via gh — issues, labels, PRs, backlog.", no_args_is_help=True)
@@ -46,6 +47,8 @@ gh_app.add_typer(project_app, name="project")
 project_app.add_typer(project_item_app, name="item")
 gh_app.add_typer(ruleset_app, name="ruleset")
 gh_app.add_typer(policy_app, name="policy")
+gh_app.add_typer(wf_app, name="wf")
+gh_app.add_typer(wf_app, name="workflow")
 
 
 def _svc(repo: str | None, transport: GhTransportMode = "cli") -> GhService:

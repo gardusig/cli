@@ -73,11 +73,9 @@ TOP_LEVEL_COMMANDS = (
     "configure",
     "config",
     "pypi",
-    "pipeline",
     "puzzles",
     "repo",
     "tasks",
-    "wiki",
 )
 
 # Every public `cli git …` command path (space-separated nested groups).
@@ -151,14 +149,12 @@ def endpoint_checks() -> list[EndpointCheck]:
                 "configure",
                 "languages",
                 "lint",
-                "pipeline",
                 "project",
                 "puzzles",
                 "repo",
                 "structure",
                 "tasks",
                 "validate",
-                "wiki",
             )
         ],
         EndpointCheck("drive status", ("drive", "status"), needle="Repository:"),
@@ -225,7 +221,7 @@ def endpoint_checks() -> list[EndpointCheck]:
             needle="packages:",
         ),
         EndpointCheck("structure help", ("structure", "--help"), needle="check"),
-        EndpointCheck("validate help", ("validate", "--help"), needle="vault"),
+        EndpointCheck("validate help", ("validate", "--help"), needle="tasks"),
         EndpointCheck("languages help", ("languages", "--help"), needle="show"),
         EndpointCheck("languages list", ("languages", "list"), needle="markdown"),
         EndpointCheck(
@@ -272,14 +268,11 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck("contest help", ("contest", "--help"), needle="validate"),
         EndpointCheck("configure help", ("configure", "--help"), needle="check"),
         EndpointCheck("config help", ("config", "--help"), needle="check"),
-        EndpointCheck("pipeline help", ("pipeline", "--help"), needle="run"),
-        EndpointCheck("pipeline config help", ("pipeline", "config", "--help"), needle="resolve"),
-        EndpointCheck("pipeline docker help", ("pipeline", "docker", "--help"), needle="run"),
-        EndpointCheck("pipeline task help", ("pipeline", "task", "--help"), needle="run"),
+        EndpointCheck("gh wf help", ("gh", "wf", "--help"), needle="run"),
+        EndpointCheck("gh wf run help", ("gh", "wf", "run", "--help"), needle="list"),
         EndpointCheck("puzzles help", ("puzzles", "--help"), needle="issues"),
         EndpointCheck("repo help", ("repo", "--help"), needle="inventory"),
         EndpointCheck("tasks help", ("tasks", "--help"), needle="pairs"),
-        EndpointCheck("wiki help", ("wiki", "--help"), needle="repos"),
         EndpointCheck("pypi help", ("pypi", "--help"), needle="upload"),
         EndpointCheck(
             "pypi build",

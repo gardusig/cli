@@ -1,4 +1,4 @@
-"""Dispatch gardusig/yaml repository_dispatch events."""
+"""Dispatch repository_dispatch events to the gardusig/yaml workflow hub."""
 
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ def dispatch_repository_event(
     force: bool = False,
     hub_repository: str = HUB_REPOSITORY,
 ) -> dict[str, Any]:
-    """POST a repository_dispatch event to the hub pipelines repo."""
+    """POST a repository_dispatch event to the yaml workflow hub."""
     envelope = {"event_type": event_type, "client_payload": client_payload}
     if dry_run:
         return envelope

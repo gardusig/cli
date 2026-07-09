@@ -71,6 +71,6 @@ def test_infra_epic_suite_contract() -> None:
 
 
 def test_infra_epic_force_full_suite_flag() -> None:
-    result = RUNNER.invoke(app, ["pipeline", "config", "resolve", "--help"])
+    result = RUNNER.invoke(app, ["gh", "wf", "--help"])
     assert result.exit_code == 0
-    assert "force-full-suite" in result.stdout
+    assert "run" in result.stdout

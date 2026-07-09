@@ -1,4 +1,4 @@
-"""Pack tests — mega-PR merge readiness."""
+"""Pack tests — mega-PR merge readiness (Epic 06c)."""
 
 from __future__ import annotations
 
@@ -11,11 +11,11 @@ from tests.pack.conftest import requires_docs
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_merge_epic_version_matches_pyproject() -> None:
+def test_merge_epic_version_is_1_0_4() -> None:
     data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    version = data["project"]["version"]
+    assert data["project"]["version"] == "1.0.4"
     init = (ROOT / "src" / "__init__.py").read_text(encoding="utf-8")
-    assert f'__version__ = "{version}"' in init
+    assert '__version__ = "1.0.4"' in init
 
 
 def test_merge_epic_wheel_has_no_removed_script_data_files() -> None:
@@ -28,15 +28,16 @@ def test_merge_epic_wheel_has_no_removed_script_data_files() -> None:
 def test_merge_epic_release_docs() -> None:
     text = (ROOT / "docs" / "release.md").read_text(encoding="utf-8")
     assert "Pre-merge checklist" in text
-    assert "pull-request.yaml" in text
-    assert "release.yaml" in text
+    assert "cli release main --yes" in text
+    assert "PR #20" in text or "pipelines PR #20" in text
 
 
 @requires_docs
 def test_merge_epic_hardening_pointer() -> None:
     text = (ROOT / "docs" / "public-cli-hardening.md").read_text(encoding="utf-8")
-    assert "Registry contracts" in text
-    assert "Verification" in text
+    assert "Merge readiness" in text
+    assert "Epic 06c" in text or "merge & release" in text
+    assert "PR #88" in text
 
 
 @requires_docs
@@ -49,6 +50,10 @@ def test_merge_epic_closure_docs_exist() -> None:
         "docs/hub-operator.md",
     ):
         assert (ROOT / path).is_file()
+    gh = (ROOT / "docs" / "gh.md").read_text(encoding="utf-8")
+    assert "Epic 11 closure" in gh
+    project = (ROOT / "docs" / "project.md").read_text(encoding="utf-8")
+    assert "Epic 08 closure" in project
 
 
 def test_merge_epic_pack_smokes_present() -> None:
