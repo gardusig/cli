@@ -54,9 +54,16 @@ SECRET_KEYS: dict[str, dict[str, str]] = {
         "example": "pypi-...",
         "ci": "github-pipelines/release/PYPI_API_TOKEN",
     },
+    "docker.token": {
+        "auth": "docker",
+        "env": "DOCKERHUB_TOKEN",
+        "example": "dckr_pat_...",
+        "ci": "gardusig/cli/DOCKERHUB_TOKEN",
+    },
 }
 
 CONFIG_KEYS: dict[str, dict[str, str]] = {
+    "docker.username": {"env": "DOCKERHUB_USERNAME", "example": "binaryLifter"},
     "notion.database_id": {"env": "NOTION_DATABASE_ID", "example": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"},
     "notion.task_root": {"env": "NOTION_TASK_ROOT", "example": "/workspace/tasks"},
     "notion.pairs_file": {"env": "", "example": "tasks.pairs.json"},

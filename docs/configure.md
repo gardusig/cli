@@ -43,6 +43,8 @@ Use `--persist` with `import-env` only when you intentionally want to write toke
 | `notion.token` | `NOTION_TOKEN` | `secret_...` |
 | `gh.token` | `GH_TOKEN` | `ghp_...` |
 | `pypi.token` | `PYPI_API_TOKEN` | `pypi-...` |
+| `docker.token` | `DOCKERHUB_TOKEN` | `dckr_pat_...` |
+| `docker.username` | `DOCKERHUB_USERNAME` | `binaryLifter` |
 | `notion.database_id` | `NOTION_DATABASE_ID` | Notion database id |
 | `notion.task_root` | `NOTION_TASK_ROOT` | `/workspace/tasks` |
 | `gh.issues.repo` | | `gardusig/private` |

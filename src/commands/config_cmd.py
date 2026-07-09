@@ -95,6 +95,7 @@ def secrets_init_cmd(config_dir: Path = typer.Option(default_config_dir(), "--co
             },
             "deepseek": {"env": "DEEPSEEK_API_KEY", "token_file": str(secret_dir / "deepseek.token")},
             "pypi": {"env": "PYPI_API_TOKEN", "token_file": str(secret_dir / "pypi.token")},
+            "docker": {"env": "DOCKERHUB_TOKEN", "token_file": str(secret_dir / "docker.token")},
         }
     }
     for item in auth["auth"].values():

@@ -9,4 +9,4 @@ Two files — each is a GitHub Actions workflow that only runs `docker build -f 
 
 PR stage `pr` chains `version-check.sh`, `unit-test.sh`, and `pypi-test.sh` in one image build.
 
-Secrets on `gardusig/cli`: `TESTPYPI_API_TOKEN` (PR), `PYPI_API_TOKEN` (release).
+Secrets on `gardusig/cli`: `TESTPYPI_API_TOKEN` (PR), `PYPI_API_TOKEN` (release), `DOCKERHUB_TOKEN` + `DOCKERHUB_USERNAME` (registry push).
