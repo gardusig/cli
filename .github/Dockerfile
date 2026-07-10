@@ -247,7 +247,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
-COPY requirements-dev.txt pyproject.toml ./
+COPY requirements.txt requirements-dev.txt pyproject.toml ./
 COPY tests ./tests
 COPY config/ci ./config/ci
 COPY scripts/ci/testpypi-verify.sh scripts/ci/testpypi-integration.sh \
