@@ -21,14 +21,14 @@ repositories:
     pipelines:
       - test
     description: Public Go library and teaching examples.
-  - slug: cpp
-    repository: gardusig/cpp
+  - slug: problem-solving
+    repository: gardusig/problem-solving
     visibility: public
     profile: true
     pr_pipeline: true
     pipelines:
       - compile
-    description: Public C++17 reference snippets for competitive programming.
+    description: C++17 competitive programming reference and solved contest submissions.
   - slug: python
     repository: gardusig/python
     visibility: public
