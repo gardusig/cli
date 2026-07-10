@@ -242,6 +242,10 @@ ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
     PYPI_INDEX=testpypi \
     CLI_DOCKER_INTEGRATION=1
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /workspace
 COPY requirements-dev.txt pyproject.toml ./
 COPY tests ./tests
