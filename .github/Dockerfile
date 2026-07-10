@@ -233,6 +233,31 @@ COPY scripts/ci/consumer /workspace/scripts/ci/consumer
 RUN CLI_RELEASE_VERSION="${CLI_RELEASE_VERSION}" bash scripts/ci/testpypi-consumer.sh
 
 # -----------------------------------------------------------------------------
+# testpypi-verify — install from TestPyPI → consumer smoke → integration
+# -----------------------------------------------------------------------------
+FROM integration AS testpypi-verify
+
+ARG CLI_RELEASE_VERSION=
+ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
+    PYPI_INDEX=testpypi \
+    CLI_DOCKER_INTEGRATION=1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+COPY requirements.txt requirements-dev.txt pyproject.toml ./
+COPY src ./src
+COPY tests ./tests
+COPY config/ci ./config/ci
+COPY scripts/ci/testpypi-verify.sh scripts/ci/testpypi-integration.sh \
+  scripts/ci/_common.sh \
+  ./scripts/ci/
+COPY scripts/ci/consumer ./scripts/ci/consumer
+RUN CLI_RELEASE_VERSION="${CLI_RELEASE_VERSION}" bash scripts/ci/testpypi-verify.sh
+
+# -----------------------------------------------------------------------------
 # release — production PyPI publish
 # -----------------------------------------------------------------------------
 FROM base AS release

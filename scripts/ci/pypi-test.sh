@@ -8,6 +8,7 @@ root="$(ci_repo_root)"
 version="${CLI_RELEASE_VERSION:-$(ci_read_project_version "$root")}"
 
 rm -rf dist
+pip install --no-cache-dir 'setuptools>=61,<77' build twine
 python -m build --outdir dist
 versioned="$(ci_read_project_version "$root")"
 if [[ "$version" != "$versioned" ]]; then

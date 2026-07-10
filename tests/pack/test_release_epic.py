@@ -11,11 +11,11 @@ from tests.pack.conftest import requires_docs
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_release_epic_version_is_1_0_5() -> None:
+def test_release_epic_version_is_1_0_6() -> None:
     data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    assert data["project"]["version"] == "1.0.5"
+    assert data["project"]["version"] == "1.0.6"
     init = (ROOT / "src" / "__init__.py").read_text(encoding="utf-8")
-    assert '__version__ = "1.0.5"' in init
+    assert '__version__ = "1.0.6"' in init
 
 
 @requires_docs
@@ -39,7 +39,7 @@ def test_release_epic_post_merge_release_docs() -> None:
     assert "Post-merge release" in text
     assert "pull-request.yaml" in text
     assert "version-check" in text
-    assert "testpypi-consumer" in text
+    assert "testpypi-verify" in text or "testpypi-consumer" in text
     assert "CI_INTEGRATION_TIMEOUT" in text
 
 

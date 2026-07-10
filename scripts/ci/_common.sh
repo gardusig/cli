@@ -15,6 +15,14 @@ ci_ensure_dev() {
   pip install --no-cache-dir -e ".[dev]"
 }
 
+ci_ensure_test_deps() {
+  local root
+  root="$(ci_repo_root)"
+  export CLI_CONFIG_DIR="${CLI_CONFIG_DIR:-${root}/config/ci}"
+  cd "$root"
+  pip install --no-cache-dir -r requirements-dev.txt
+}
+
 ci_read_project_version() {
   local root="${1:-$(ci_repo_root)}"
   python3 - <<'PY' "$root/pyproject.toml"
