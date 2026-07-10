@@ -44,4 +44,4 @@ cli configure import-env
 cli release main --yes
 ```
 
-`cli pypi upload --yes` remains the lower-level upload command. Workflow routers, hub-only images (`operator`, `cli-base`), schedules, and secrets live in [`gardusig/yaml`](https://github.com/gardusig/yaml).
+`cli pypi upload --yes` remains the lower-level upload command. Workflow routers, hub-only images (`operator`, `cli-base`), schedules, and secrets live in [`gardusig/cli`](https://github.com/gardusig/cli).

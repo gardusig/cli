@@ -24,7 +24,7 @@ def test_release_epic_hardening_pointer() -> None:
     assert "Registry contracts" in text
     assert "public_endpoints.py" in text
     assert "integration_coverage.py" in text
-    assert "gardusig/yaml" in text
+    assert "gardusig/cli" in text
 
 
 @requires_docs

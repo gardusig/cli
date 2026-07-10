@@ -1,4 +1,4 @@
-"""Dispatch repository_dispatch events to the gardusig/yaml workflow hub."""
+"""Dispatch repository_dispatch events to the gardusig/cli workflow hub."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import json
 import subprocess
 from typing import Any
 
-HUB_REPOSITORY = "gardusig/yaml"
+HUB_REPOSITORY = "gardusig/cli"
 _ACTIVE_RUN_STATUSES = frozenset({"in_progress", "queued", "pending", "waiting"})
 
 

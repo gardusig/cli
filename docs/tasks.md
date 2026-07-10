@@ -1,6 +1,6 @@
 # Task Shortcuts
 
-Task data lives in `gardusig/database/tasks`. The CLI provides reusable shortcuts only; workflow policy lives in `gardusig/yaml`.
+Task data lives in `gardusig/database/tasks`. The CLI provides reusable shortcuts only; workflow policy lives in `gardusig/cli`.
 
 ## Pair validation
 
@@ -21,14 +21,14 @@ The command only stages `tasks/`, commits to a sync branch, pushes, and opens a 
 ## Hub workflow dispatch
 
 ```bash
-cli gh wf run dispatch.yml -R gardusig/yaml \
+cli gh wf run dispatch.yml -R gardusig/cli \
   -f workflow=tasks -f repository=gardusig/database -f action=github-deploy
 
-cli gh wf run dispatch.yml -R gardusig/yaml \
+cli gh wf run dispatch.yml -R gardusig/cli \
   -f workflow=repo-review -f repository=gardusig/cli -f job=version-check
 ```
 
-The dispatch target is always `gardusig/yaml`; app repos do not contain workflows.
+The dispatch target is always `gardusig/cli`; app repos do not contain workflows.
 
 ## Named CLI workflows
 

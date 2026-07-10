@@ -47,7 +47,7 @@ GitHub Actions entrypoints: same files — see [`.github/workflows/README.md`](.
 | --- | --- | --- |
 | CI shell | `scripts/ci/` | `pytest`, `pip`, `twine`, `git` |
 | Product | `src/` | installable `gardusig-cli` package |
-| Hub routers | `gardusig/yaml` | `workflow_call` orchestration |
+| Hub routers | `gardusig/cli` | `workflow_call` orchestration |
 | Consumer smoke | `scripts/ci/consumer/` | pip-installed `cli` binary only |
 
 ## Release (maintainer)

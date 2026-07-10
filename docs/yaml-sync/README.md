@@ -1,6 +1,6 @@
-# gardusig/yaml sync artifacts
+# gardusig/cli sync artifacts
 
-These files mirror updates required on [`gardusig/yaml`](https://github.com/gardusig/yaml) for the
+These files mirror updates required on [`gardusig/cli`](https://github.com/gardusig/cli) for the
 PyPI PR/release pipeline. Copy or merge into the yaml repo when hub access is available.
 
 | File | Purpose |

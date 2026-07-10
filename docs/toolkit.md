@@ -6,7 +6,7 @@
   prerequisite checks, environment setup, and command handlers.
 - Python handlers run terminal commands (`npm`, `pytest`, `mvn`, `clang-format`,
   `markdownlint-cli2`, etc.).
-- Dockerfiles and workflow YAML stay in `gardusig/yaml`.
+- Dockerfiles and workflow YAML stay in `gardusig/cli`.
 
 ## Commands
 
@@ -32,7 +32,7 @@ check only Java/Maven/Gradle prerequisites and do not require Node or pytest.
 
 ## Hub CI
 
-`gardusig/yaml` workflow YAML calls yaml-local scripts for resolver and Docker
+`gardusig/cli` workflow YAML calls yaml-local scripts for resolver and Docker
 orchestration. Consumer Dockerfiles install `gardusig-cli` for `cli lint` and
 `cli structure check`. See [gh-workflows.md](gh-workflows.md) for dispatching hub
 workflows with `cli gh wf run`.

@@ -16,6 +16,6 @@ cli config check --tasks
 Secrets:
 
 - local: `.env` or `~/.config/cli/secrets/*`
-- CI: `gardusig/gardusig/yaml` secrets only
+- CI: `gardusig/cli` secrets only
 
 Do not put CI secrets in app repos.

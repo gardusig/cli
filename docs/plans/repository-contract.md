@@ -5,7 +5,7 @@ This is the canonical repository contract for the gardusig repositories.
 ## Active Decisions
 
 - `gardusig/cli` owns validation logic, developer commands, root `Dockerfile`, and `scripts/ci/`.
-- `gardusig/yaml` owns reusable GitHub Actions routers.
+- `gardusig/cli` owns reusable GitHub Actions routers.
 - App repositories keep application code plus [`.github/workflows/`](../.github/workflows/README.md):
   - `pull-request.workflow.yaml` / `release.workflow.yaml` — thin callers
   - `pull-request.yaml` / `release.yaml` — per-repo Docker job graphs
@@ -40,7 +40,7 @@ docker build --target unit-test -f Dockerfile .
 
 Each repo also owns pipeline config YAML under `.github/workflows/` (for example `pull-request.yaml`).
 
-Hub orchestration (extra workflows, shared hub images) stays in `gardusig/yaml`.
+Hub orchestration (extra workflows, shared hub images) stays in `gardusig/cli`.
 
 `repo-hygiene` jobs declare `hygiene_policy` in `.github/workflows/pull-request.yaml`.
 

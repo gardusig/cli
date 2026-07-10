@@ -117,4 +117,4 @@ pip install --upgrade gardusig-cli
 cli --version
 ```
 
-Hub sync for `gardusig/yaml`: see [`docs/yaml-sync/README.md`](yaml-sync/README.md).
+Hub sync for `gardusig/cli`: see [`docs/yaml-sync/README.md`](yaml-sync/README.md).

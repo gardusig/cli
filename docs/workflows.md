@@ -4,7 +4,7 @@ Visual maps for everyday `cli` workflows. Command details live in [git.md](git.m
 
 ## Merged CLI workflow catalog
 
-The central workflow catalog lives in `gardusig/gardusig/yaml/docs/workflows/cli.md`. `gardusig/yaml` hosts pipeline-backed workflows, but it is not a target app repo for CLI workflows.
+The central workflow catalog lives in `gardusig/cli/docs/workflows/cli.md`. `gardusig/cli` hosts pipeline-backed workflows, but it is not a target app repo for CLI workflows.
 
 | Workflow | Type | Systems |
 | --- | --- | --- |
@@ -112,7 +112,7 @@ Epic issue work is refined before it is executed. Run `cli craft epic --number N
 
 Subissue work is the PR unit. Run `cli craft pr-plan --number N` to render the branch name, implementation guidance, and PR body without mutating anything. Run `cli craft pr --number N --repo-root . --yes` only after an implementation step has produced a real diff; epic issues are rejected.
 
-Pipeline-backed equivalents live in `gardusig/yaml`:
+Pipeline-backed equivalents live in `gardusig/cli`:
 
 | Workflow | Dispatch type | CLI command |
 | --- | --- | --- |
@@ -134,7 +134,7 @@ cli git reset --yes --delete-merged
 
 Ad hoc `cli gh project ...` and Rulesets remain blocked. Supported board writes go through
 `cli project ...` (pairs deploy/ingest/sync) or named task-board workflows in
-`gardusig/yaml`; otherwise use `cli gh backlog organize` and `priority:N` labels.
+`gardusig/cli`; otherwise use `cli gh backlog organize` and `priority:N` labels.
 See [project.md](project.md).
 
 ## Feature work (start → publish)

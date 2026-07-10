@@ -505,9 +505,9 @@ def full_suite_reasons_for_matches(
 
 
 def pipeline_contract() -> dict[str, Any]:
-    """Describe the stable contract consumed by gardusig/yaml hub CI."""
+    """Describe the stable contract consumed by gardusig/cli hub CI."""
     return {
-        "owner": "gardusig/yaml",
+        "owner": "gardusig/cli",
         "repo_local_commands": {
             "resolve_paths": "cli test packages resolve --changed-path PATH",
             "resolve_range": "cli test packages resolve --base BASE --head HEAD",
@@ -594,7 +594,7 @@ def live_suite_commands() -> list[TestCommand]:
 
 
 def full_suite_payload() -> dict[str, Any]:
-    """Describe the repo-local full-suite composition for gardusig/yaml."""
+    """Describe the repo-local full-suite composition for gardusig/cli."""
     package_payloads = [
         package_command_payload(package.name) for package in TEST_PACKAGES
     ]
@@ -610,7 +610,7 @@ def full_suite_payload() -> dict[str, Any]:
         "commands": commands,
         "pipeline_contract": pipeline_contract(),
         "notes": [
-            "gardusig/yaml owns schedules, workflow YAML, Dockerfiles, and job graphs.",
+            "gardusig/cli owns schedules, workflow YAML, Dockerfiles, and job graphs.",
             "This repo owns the command contract and package mappings.",
             "Order: core gates → package unit/integration → optional live docker.",
         ],

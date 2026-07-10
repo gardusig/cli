@@ -20,7 +20,7 @@ cli chrome bookmarks deploy
 # In Chrome: ⋮ → Import bookmarks → select backup file
 ```
 
-Scheduled or headless export jobs belong in the **CI hub** ([`gardusig/yaml`](https://github.com/gardusig/yaml)), not this repo.
+Scheduled or headless export jobs belong in the **CI hub** ([`gardusig/cli`](https://github.com/gardusig/cli)), not this repo.
 
 ## Configuration
 
