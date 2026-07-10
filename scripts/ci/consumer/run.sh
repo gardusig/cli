@@ -33,7 +33,6 @@ cli --version >/dev/null
 cli languages list >/dev/null
 cli lint --help >/dev/null
 cli structure --help >/dev/null
-cli structure check "$tmpdir" >/dev/null
 cli git --help >/dev/null
 cli pypi --help >/dev/null
 
@@ -45,6 +44,7 @@ git -C "$tmpdir" config user.name "Consumer"
 touch "$tmpdir/README.md"
 git -C "$tmpdir" add README.md
 git -C "$tmpdir" commit -q -m "init"
+cli structure check "$tmpdir" >/dev/null
 cli git --help >/dev/null
 
 if (( live_docker )); then
