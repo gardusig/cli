@@ -1,0 +1,40 @@
+repo: gardusig/yaml
+jobs:
+- id: lint
+  name: Repo lint
+  target: lint
+- id: repo-hygiene
+  name: Repo structure
+  target: repo-hygiene
+  needs: lint
+  hygiene_policy:
+    max_depth: 3
+    allowed_root_dirs:
+    - .github
+    - docker
+    - docs
+    - tools
+    allowed_root_files:
+    - .gitignore
+    - Dockerfile
+    - README.md
+    - .markdownlint.json
+    allowed_extensions:
+    - .dockerfile
+    - .dockerignore
+    - .json
+    - .md
+    - .mjs
+    - .yaml
+    - .yml
+    allowed_filenames:
+    - .gitignore
+    - README.md
+    forbidden_extensions:
+    - .sh
+    forbidden_messages:
+      .sh: Shell scripts belong in gardusig/python-cli. Move this script there and
+        expose it through a cli command.
+    forbid_direct_cli_references: false
+    allowed_paths:
+    - .github/pull-request.yaml
