@@ -1,0 +1,54 @@
+name: Markdown validation
+
+on:
+  repository_dispatch:
+    types: [markdown]
+  workflow_dispatch:
+    inputs:
+      repo_slug:
+        description: Repo slug (e.g. python-cli)
+        required: true
+        type: string
+      repository:
+        description: Full repo (e.g. gardusig/python-cli)
+        required: true
+        type: string
+      ref:
+        description: Git ref to validate
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  markdown:
+    name: ${{ github.event.client_payload.repo_slug || inputs.repo_slug }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout yaml repo
+        uses: actions/checkout@v4
+        with:
+          path: pipeline-src
+
+      - name: Checkout application repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repository || github.event.client_payload.repository }}
+          ref: ${{ inputs.ref || github.event.client_payload.ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install cli
+        run: pip install --no-cache-dir gardusig-cli
+
+      - name: Validate Markdown and Mermaid
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '{"job":{"id":"markdown","name":"Markdown","target":"lint"}}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix markdown

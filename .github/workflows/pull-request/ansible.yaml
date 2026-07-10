@@ -1,0 +1,35 @@
+repo: gardusig/ansible
+jobs:
+- id: lint
+  name: Repo lint
+  target: lint
+- id: repo-hygiene
+  name: Repo structure
+  target: repo-hygiene
+  needs: lint
+  hygiene_policy:
+    max_depth: 5
+    allowed_root_dirs:
+    - .github
+    - .workflows
+    - scripts
+    - src
+    - test
+    allowed_root_files:
+    - .gitignore
+    - Dockerfile
+    - LICENSE
+    - Makefile
+    - README.md
+    allowed_extensions:
+    - .md
+    - .sh
+    - .yaml
+    - .yml
+    allowed_filenames:
+    - .gitignore
+    - Dockerfile
+    - LICENSE
+    - Makefile
+    allowed_paths:
+    - .github/pull-request.yaml

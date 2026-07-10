@@ -1,0 +1,37 @@
+repo: gardusig/wiki
+jobs:
+  - id: lint
+    name: Repo lint
+    target: lint
+  - id: repo-hygiene
+    name: Repo structure
+    target: repo-hygiene
+    needs: lint
+    hygiene_policy:
+      max_depth: 5
+      allowed_root_dirs:
+        - .github
+        - built
+        - configured
+        - filed
+        - interviewing
+        - played
+        - repos
+        - studied
+        - watched
+      allowed_root_files:
+        - .gitignore
+        - .gitmodules
+        - LICENSE
+        - README.md
+      allowed_extensions:
+        - .md
+        - .yml
+      allowed_filenames:
+        - .gitignore
+        - .gitmodules
+        - LICENSE
+        - README.md
+      ignored_prefixes:
+        - repos/public/
+        - repos/private/

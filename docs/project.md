@@ -142,11 +142,11 @@ The command creates a fresh issue from the local pair, sets the next deadline
 from `interval` (default 7 days), and records the previous issue number in the
 header. Re-copying the issue is preferred over reopening a closed card.
 
-Hub polling: [`gardusig/yaml`](https://github.com/gardusig/yaml) → `.github/workflows/project-recurrence.yml`
+Hub polling: [`gardusig/cli`](https://github.com/gardusig/cli) → `.github/workflows/project-recurrence.yml`
 (Mondays 09:00 UTC or manual `workflow_dispatch`).
 
 ```bash
-gh workflow run project-recurrence.yml -R gardusig/yaml \
+gh workflow run project-recurrence.yml -R gardusig/cli \
   -f repository=gardusig/cli \
   -f ref=main
 ```

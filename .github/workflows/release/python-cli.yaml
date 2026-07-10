@@ -1,0 +1,8 @@
+repo: gardusig/cli
+jobs:
+  - id: release
+    name: Publish to PyPI
+    target: release
+    build_args_from_ref: true
+    secrets:
+      PYPI_API_TOKEN: PYPI_API_TOKEN

@@ -1,0 +1,187 @@
+name: Operator dispatch
+
+on:
+  repository_dispatch:
+    types: [operator]
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: Operator lane
+        required: true
+        type: choice
+        options:
+          - test
+          - plan
+          - execute
+          - review
+      repository:
+        description: Full repository (e.g. gardusig/python-cli)
+        required: true
+        type: string
+      ref:
+        description: Git branch ref
+        required: true
+        type: string
+      sha:
+        description: Commit SHA (preferred checkout)
+        required: false
+        type: string
+      issue:
+        description: Issue number (plan/execute)
+        required: false
+        type: string
+      pr:
+        description: Pull request number (review)
+        required: false
+        type: string
+      base:
+        description: Base ref for selective resolve (test lane)
+        required: false
+        default: main
+        type: string
+      package_limit:
+        description: Selective package cap (test lane)
+        required: false
+        default: "4"
+        type: string
+      pipeline:
+        description: Pipeline name for full-suite fallback
+        required: false
+        type: string
+      yes:
+        description: Confirm execute lane (must be true)
+        required: false
+        default: "false"
+        type: string
+      handoff_pr:
+        description: Hand off execute to craft PR
+        required: false
+        default: "false"
+        type: string
+      comment:
+        description: Post plan/review/execute comments
+        required: false
+        default: "true"
+        type: string
+      comment_yes:
+        description: Confirm GitHub write for comments
+        required: false
+        default: "false"
+        type: string
+
+permissions:
+  contents: read
+  actions: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  route:
+    runs-on: ubuntu-latest
+    outputs:
+      lane: ${{ steps.meta.outputs.lane }}
+      repository: ${{ steps.meta.outputs.repository }}
+      ref: ${{ steps.meta.outputs.ref }}
+      checkout_ref: ${{ steps.meta.outputs.checkout_ref }}
+      issue: ${{ steps.meta.outputs.issue }}
+      pr: ${{ steps.meta.outputs.pr }}
+      base: ${{ steps.meta.outputs.base }}
+      package_limit: ${{ steps.meta.outputs.package_limit }}
+      pipeline: ${{ steps.meta.outputs.pipeline }}
+      yes: ${{ steps.meta.outputs.yes }}
+      handoff_pr: ${{ steps.meta.outputs.handoff_pr }}
+      comment: ${{ steps.meta.outputs.comment }}
+      comment_yes: ${{ steps.meta.outputs.comment_yes }}
+    steps:
+      - name: Resolve operator payload
+        id: meta
+        env:
+          IN_LANE: ${{ inputs.lane || github.event.client_payload.lane }}
+          IN_REPOSITORY: ${{ inputs.repository || github.event.client_payload.repository }}
+          IN_REF: ${{ inputs.ref || github.event.client_payload.ref }}
+          IN_SHA: ${{ inputs.sha || github.event.client_payload.sha }}
+          IN_ISSUE: ${{ inputs.issue || github.event.client_payload.issue }}
+          IN_PR: ${{ inputs.pr || github.event.client_payload.pr }}
+          IN_BASE: ${{ inputs.base || github.event.client_payload.base || 'main' }}
+          IN_PACKAGE_LIMIT: ${{ inputs.package_limit || github.event.client_payload.package_limit || '4' }}
+          IN_PIPELINE: ${{ inputs.pipeline || github.event.client_payload.pipeline }}
+          IN_YES: ${{ inputs.yes || github.event.client_payload.yes || 'false' }}
+          IN_HANDOFF_PR: ${{ inputs.handoff_pr || github.event.client_payload.handoff_pr || 'false' }}
+          IN_COMMENT: ${{ inputs.comment || github.event.client_payload.comment || 'true' }}
+          IN_COMMENT_YES: ${{ inputs.comment_yes || github.event.client_payload.comment_yes || 'false' }}
+        run: |
+          set -euo pipefail
+          CHECKOUT="${IN_SHA:-$IN_REF}"
+          {
+            echo "lane=$IN_LANE"
+            echo "repository=$IN_REPOSITORY"
+            echo "ref=$IN_REF"
+            echo "checkout_ref=$CHECKOUT"
+            echo "issue=$IN_ISSUE"
+            echo "pr=$IN_PR"
+            echo "base=$IN_BASE"
+            echo "package_limit=$IN_PACKAGE_LIMIT"
+            echo "pipeline=$IN_PIPELINE"
+            echo "yes=$IN_YES"
+            echo "handoff_pr=$IN_HANDOFF_PR"
+            echo "comment=$IN_COMMENT"
+            echo "comment_yes=$IN_COMMENT_YES"
+          } >> "$GITHUB_OUTPUT"
+
+  operator-test:
+    name: Operator test
+    needs: route
+    if: needs.route.outputs.lane == 'test'
+    uses: ./.github/workflows/operator-test.yml
+    with:
+      repository: ${{ needs.route.outputs.repository }}
+      ref: ${{ needs.route.outputs.ref }}
+      sha: ${{ needs.route.outputs.checkout_ref }}
+      base: ${{ needs.route.outputs.base }}
+      package_limit: ${{ needs.route.outputs.package_limit }}
+      pipeline: ${{ needs.route.outputs.pipeline }}
+    secrets: inherit
+
+  operator-plan:
+    name: Operator craft plan
+    needs: route
+    if: needs.route.outputs.lane == 'plan'
+    uses: ./.github/workflows/operator-craft-plan.yml
+    with:
+      repository: ${{ needs.route.outputs.repository }}
+      issue: ${{ needs.route.outputs.issue }}
+      ref: ${{ needs.route.outputs.ref }}
+      sha: ${{ needs.route.outputs.checkout_ref }}
+      comment: ${{ needs.route.outputs.comment }}
+      comment_yes: ${{ needs.route.outputs.comment_yes }}
+    secrets: inherit
+
+  operator-execute:
+    name: Operator craft execute
+    needs: route
+    if: needs.route.outputs.lane == 'execute' && needs.route.outputs.yes == 'true'
+    uses: ./.github/workflows/operator-craft-execute.yml
+    with:
+      repository: ${{ needs.route.outputs.repository }}
+      issue: ${{ needs.route.outputs.issue }}
+      ref: ${{ needs.route.outputs.ref }}
+      sha: ${{ needs.route.outputs.checkout_ref }}
+      yes: ${{ needs.route.outputs.yes }}
+      handoff_pr: ${{ needs.route.outputs.handoff_pr }}
+      comment: ${{ needs.route.outputs.comment }}
+    secrets: inherit
+
+  operator-review:
+    name: Operator review
+    needs: route
+    if: needs.route.outputs.lane == 'review'
+    uses: ./.github/workflows/operator-review.yml
+    with:
+      repository: ${{ needs.route.outputs.repository }}
+      pr: ${{ needs.route.outputs.pr }}
+      issue: ${{ needs.route.outputs.issue }}
+      ref: ${{ needs.route.outputs.ref }}
+      sha: ${{ needs.route.outputs.checkout_ref }}
+      comment: ${{ needs.route.outputs.comment }}
+      comment_yes: ${{ needs.route.outputs.comment_yes }}
+    secrets: inherit

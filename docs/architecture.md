@@ -33,7 +33,7 @@ Hidden aliases and placeholders are allowed, but they should be intentional and 
 
 ## CI ownership
 
-This repository owns Python application code, docs, fixtures, command registries, the `.github/Dockerfile`, `scripts/ci/*.sh`, and pull-request / release workflows under `.github/workflows/`. Broader monorepo routers and selective package matrices may live in [`gardusig/yaml`](https://github.com/gardusig/yaml).
+This repository owns Python application code, docs, fixtures, command registries, the `.github/Dockerfile`, `scripts/ci/*.sh`, and pull-request / release workflows under `.github/workflows/`. Broader monorepo routers and selective package matrices may live in [`gardusig/cli`](https://github.com/gardusig/cli).
 
 ## Verification
 

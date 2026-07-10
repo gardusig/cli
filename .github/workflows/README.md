@@ -1,12 +1,12 @@
-# CI workflows
+# Workflow library
 
-Two files — each is a GitHub Actions workflow that only runs `docker build -f .github/Dockerfile --target …`. All commands live in [`.github/Dockerfile`](../Dockerfile) → `scripts/ci/*.sh`.
+Reusable GitHub Actions workflows (formerly `gardusig/yaml`).
 
-| File | Trigger | Docker targets |
-| --- | --- | --- |
-| `pull-request.yaml` | PR to `main` | `pr` → `testpypi-consumer` |
-| `release.yaml` | Tag `v*` | `release` → `pypi-consumer` |
+| Path | Purpose |
+| --- | --- |
+| `lib/` | `workflow_call` routers and shared lanes |
+| `pull-request/` | Per-language PR gate configs |
+| `dispatch.yml` | Manual router across catalog entries |
+| `../config/ci/catalog.yaml` | Workflow registry |
 
-PR stage `pr` chains `version-check.sh`, `unit-test.sh`, and `pypi-test.sh` in one image build.
-
-Secrets on `gardusig/cli`: `TESTPYPI_API_TOKEN` (PR), `PYPI_API_TOKEN` (release), `DOCKERHUB_TOKEN` + `DOCKERHUB_USERNAME` (registry push).
+App repos call `gardusig/cli/.github/workflows/lib/pull-request-router.yml@main`.

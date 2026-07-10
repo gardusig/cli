@@ -1,0 +1,186 @@
+name: Repo review
+
+on:
+  repository_dispatch:
+    types: [repo-review]
+  workflow_dispatch:
+    inputs:
+      repo_slug:
+        description: Repo slug
+        required: true
+        type: choice
+        options: [python-cli, database, chrome-extensions, tex]
+      repository:
+        description: Full repo
+        required: false
+        default: ""
+        type: string
+      ref:
+        description: Git ref
+        required: false
+        default: main
+        type: string
+      job:
+        description: Optional single job
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      repository: ${{ steps.cfg.outputs.repository }}
+      ref: ${{ steps.cfg.outputs.ref }}
+      has_stage_0: ${{ steps.cfg.outputs.has_stage_0 }}
+      has_stage_1: ${{ steps.cfg.outputs.has_stage_1 }}
+      has_stage_2: ${{ steps.cfg.outputs.has_stage_2 }}
+      has_stage_3: ${{ steps.cfg.outputs.has_stage_3 }}
+      stage_0: ${{ steps.cfg.outputs.stage_0 }}
+      stage_1: ${{ steps.cfg.outputs.stage_1 }}
+      stage_2: ${{ steps.cfg.outputs.stage_2 }}
+      stage_3: ${{ steps.cfg.outputs.stage_3 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+
+      - name: Install ci-runtime dependencies
+        run: pip install --no-cache-dir pyyaml
+
+      - name: Resolve inputs
+        id: cfg
+        env:
+          CLIENT: ${{ toJson(github.event.client_payload || fromJSON('{}')) }}
+          IN_REPO_SLUG: ${{ inputs.repo_slug }}
+          IN_REPOSITORY: ${{ inputs.repository }}
+          IN_REF: ${{ inputs.ref }}
+          IN_JOB: ${{ inputs.job }}
+        run: |
+          python3 pipeline-src/scripts/ci-resolve.py \
+            --family repo-review \
+            --pipeline-src pipeline-src \
+            --repo-slug "$IN_REPO_SLUG" \
+            --repository "$IN_REPOSITORY" \
+            --ref "$IN_REF" \
+            --job "$IN_JOB"
+
+  review-stage-0:
+    name: Review ${{ matrix.job.name }}
+    needs: resolve
+    if: needs.resolve.outputs.has_stage_0 == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_0) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - name: Run review check
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix repo-review
+
+  review-stage-1:
+    name: Review ${{ matrix.job.name }}
+    needs: [resolve, review-stage-0]
+    if: always() && needs.resolve.outputs.has_stage_1 == 'true' && needs.review-stage-0.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_1) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - name: Run review check
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix repo-review
+
+  review-stage-2:
+    name: Review ${{ matrix.job.name }}
+    needs: [resolve, review-stage-1]
+    if: always() && needs.resolve.outputs.has_stage_2 == 'true' && needs.review-stage-1.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_2) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - name: Run review check
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix repo-review
+
+  review-stage-3:
+    name: Review ${{ matrix.job.name }}
+    needs: [resolve, review-stage-2]
+    if: always() && needs.resolve.outputs.has_stage_3 == 'true' && needs.review-stage-2.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_3) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - name: Run review check
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix repo-review

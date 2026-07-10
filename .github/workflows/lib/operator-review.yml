@@ -1,0 +1,132 @@
+name: Operator review
+
+on:
+  workflow_call:
+    inputs:
+      repository:
+        description: Full repository (e.g. gardusig/python-cli)
+        required: true
+        type: string
+      pr:
+        description: Pull request number to review
+        required: true
+        type: string
+      issue:
+        description: Primary linked issue number (optional)
+        required: false
+        type: string
+      ref:
+        description: Git branch ref for app checkout
+        required: true
+        type: string
+      sha:
+        description: Commit SHA (preferred over ref when set)
+        required: false
+        type: string
+      comment:
+        description: Post review summary as PR comment
+        required: false
+        default: "true"
+        type: string
+      comment_yes:
+        description: Confirm GitHub write for PR comment
+        required: false
+        default: "true"
+        type: string
+    secrets:
+      CENTRAL_PIPELINE_PAT:
+        required: false
+      DEEPSEEK_API_KEY:
+        required: false
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Full repository (e.g. gardusig/python-cli)
+        required: true
+        type: string
+      pr:
+        description: Pull request number to review
+        required: true
+        type: string
+      issue:
+        description: Primary linked issue number (optional)
+        required: false
+        type: string
+      ref:
+        description: Git branch ref for app checkout
+        required: true
+        type: string
+      sha:
+        description: Commit SHA (preferred over ref when set)
+        required: false
+        type: string
+      comment:
+        description: Post review summary as PR comment
+        required: false
+        default: "true"
+        type: string
+      comment_yes:
+        description: Confirm GitHub write for PR comment
+        required: false
+        default: "true"
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/gardusig/operator-runner:latest
+    steps:
+      - name: Checkout yaml repo
+        uses: actions/checkout@v4
+        with:
+          path: pipeline-src
+
+      - name: Checkout app repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.sha || inputs.ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+
+      - name: Install app dev dependencies
+        run: |
+          if [[ -f app-src/pyproject.toml ]] && grep -q '^name = "gardusig-cli"' app-src/pyproject.toml; then
+            pip install --no-cache-dir -e "app-src[dev]"
+          else
+            pip install --no-cache-dir gardusig-cli
+          fi
+
+      - name: AI PR review
+        id: review
+        env:
+          REPOSITORY: ${{ inputs.repository }}
+          PR: ${{ inputs.pr }}
+          ISSUE: ${{ inputs.issue }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          set -euo pipefail
+          cd app-src
+          ARGS=(opencode gh --repo "$REPOSITORY" review "$PR")
+          if [[ -n "${ISSUE:-}" ]]; then
+            ARGS+=(--issue "$ISSUE")
+          fi
+          if [[ "${{ inputs.comment }}" == "true" && "${{ inputs.comment_yes }}" == "true" ]]; then
+            ARGS+=(--comment --yes)
+          else
+            ARGS+=(--no-comment)
+          fi
+          cli "${ARGS[@]}" | tee /tmp/pr-review.json
+
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: operator-review-${{ inputs.pr }}
+          path: /tmp/pr-review.json
+          if-no-files-found: error

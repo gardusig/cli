@@ -2,7 +2,7 @@
 
 Headless operator lane for [`gardusig/cli`](https://github.com/gardusig/cli): deterministic **`cli gh`** / **`cli git`** /
 **`cli test`**, optional token spend on **`cli opencode`**, and CI images/workflows owned by
-**`gardusig/yaml`**.
+**`gardusig/cli`**.
 
 Parent tracking: **`epic:hub-operator`** (`config/gh/phase5/cli.batch.yaml`).
 
@@ -11,7 +11,7 @@ Parent tracking: **`epic:hub-operator`** (`config/gh/phase5/cli.batch.yaml`).
 | Layer | Owns |
 | --- | --- |
 | `gardusig/cli` | Application code, in-repo PR/release `.github/Dockerfile`, `scripts/ci/`, command contracts |
-| `gardusig/yaml` | Hub workflow routers, operator images, schedules, shared secrets |
+| `gardusig/cli` | Hub workflow routers, operator images, schedules, shared secrets |
 
 ## Cost boundary
 
@@ -78,7 +78,7 @@ Canonical GitHub repo: **`gardusig/cli`**. `cli pipeline config resolve` maps `g
 `gardusig/cli` for hub YAML keys (`src/services/pipeline_runtime.py`). Legacy slug
 `gardusig/cli` still dispatches successfully.
 
-Hub workflow: `gardusig/yaml` → **Pull request** (`repository_dispatch`).
+Hub workflow: `gardusig/cli` → **Pull request** (`repository_dispatch`).
 
 Equivalent deploy aliases:
 
@@ -117,7 +117,7 @@ cli deploy operator plan \
 
 Slim image for workflow jobs that only need `cli`, `git`, `gh`, and optional Docker socket:
 
-- Dockerfile: `gardusig/yaml/docker/operator.dockerfile`
+- Dockerfile: `gardusig/cli/docker/operator.dockerfile`
 - Target: `operator-runner`
 - Publish: `ghcr.io/gardusig/operator-runner` (workflow `operator-runner-publish.yml`)
 
@@ -125,7 +125,7 @@ Pin `CLI_VERSION` at build time after PyPI releases; local dev may use editable 
 
 ### Reusable workflows
 
-`workflow_call` entrypoints in `gardusig/yaml`:
+`workflow_call` entrypoints in `gardusig/cli`:
 
 | Workflow | Status |
 |----------|--------|
@@ -135,28 +135,28 @@ Pin `CLI_VERSION` at build time after PyPI releases; local dev may use editable 
 | `operator-review.yml` | **Shipped** — `cli opencode gh review` (no merge) |
 | `operator-dispatch.yml` | **Shipped** — routes `lane` → test/plan/execute/review reusables |
 
-Docs: `gardusig/yaml/docs/workflows/operator.md`.
+Docs: `gardusig/cli/docs/workflows/operator.md`.
 
 Dispatch examples:
 
 ```bash
-gh workflow run operator-dispatch.yml -R gardusig/gardusig/yaml \
+gh workflow run operator-dispatch.yml -R gardusig/cli \
   -f lane=test \
   -f repository=gardusig/cli \
   -f ref=feat/language-first-cli-and-structure \
   -f sha="$(git rev-parse HEAD)"
 
-gh workflow run operator-test.yml -R gardusig/gardusig/yaml \
+gh workflow run operator-test.yml -R gardusig/cli \
   -f repository=gardusig/cli \
   -f ref=feat/language-first-cli-and-structure \
   -f sha="$(git rev-parse HEAD)"
 
-gh workflow run operator-craft-plan.yml -R gardusig/gardusig/yaml \
+gh workflow run operator-craft-plan.yml -R gardusig/cli \
   -f repository=gardusig/cli \
   -f issue=81 \
   -f ref=main
 
-gh workflow run operator-review.yml -R gardusig/gardusig/yaml \
+gh workflow run operator-review.yml -R gardusig/cli \
   -f repository=gardusig/cli \
   -f pr=88 \
   -f issue=81 \

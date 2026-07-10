@@ -218,7 +218,7 @@ Local Docker monitor and cleanup (requires `docker` on PATH; no container start)
 | **Full reset** | `cli docker reset --yes` |
 | Targeted cleanup | `cli docker clean containers --yes` · `clean images` · `clean all` |
 
-Docker cleanup is exposed through `cli docker ...`; CI Docker stages live in `gardusig/yaml`.
+Docker cleanup is exposed through `cli docker ...`; CI Docker stages live in this repo under `.github/workflows/`.
 
 Destructive commands use the write gate; pass `--yes` in scripts.
 
@@ -232,8 +232,8 @@ CI and Docker run **outside this repository** (central DevOps). This repo has no
 
 | Trigger | What runs |
 | --- | --- |
-| **Pull request** | `gardusig/yaml` consumes `cli test packages resolve` for selective package gates, with full-suite fallback |
-| **Nightly / manual full** | `gardusig/yaml` consumes `cli test packages suite` for the full regression safety net |
+| **Pull request** | `gardusig/cli` workflow library consumes `cli test packages resolve` for selective package gates, with full-suite fallback |
+| **Nightly / manual full** | `gardusig/cli` workflow library consumes `cli test packages suite` for the full regression safety net |
 | **Tag** `v*` | Publish `gardusig-cli` to PyPI |
 
 Configure release secrets on the central CI system (`PYPI_API_TOKEN`, `TESTPYPI_API_TOKEN`). Tag pushes trigger release via `repository_dispatch`.

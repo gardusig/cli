@@ -10,7 +10,7 @@ from src.internal.write.gate import require_write_gate
 from src.services.gh_dispatch import dispatch_repository_event
 
 deploy_app = typer.Typer(
-    help="Dispatch hub CI and operator lanes (gardusig/yaml).",
+    help="Dispatch hub CI and operator lanes (gardusig/cli).",
     no_args_is_help=True,
 )
 

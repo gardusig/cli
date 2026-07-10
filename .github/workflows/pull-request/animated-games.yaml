@@ -1,0 +1,39 @@
+repo: gardusig/animated-games
+jobs:
+  - id: lint
+    name: Repo lint
+    target: lint
+  - id: repo-hygiene
+    name: Repo structure
+    target: repo-hygiene
+    needs: lint
+    hygiene_policy:
+      allowed_root_dirs:
+        - .github
+        - docs
+        - src
+        - tests
+      allowed_root_files:
+        - README.md
+        - games.yaml
+      allowed_extensions:
+        - .conf
+        - .css
+        - .csv
+        - .html
+        - .jar
+        - .java
+        - .js
+        - .json
+        - .jsx
+        - .kts
+        - .md
+        - .png
+        - .properties
+        - .sql
+        - .yaml
+        - .yml
+      allowed_filenames:
+        - .gitignore
+        - gradlew
+        - LICENSE

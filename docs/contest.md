@@ -21,9 +21,9 @@ Templates: [`config/contest/templates/`](../config/contest/templates/)
 
 ## Setup
 
-Build or pull the contest runner image through the central pipeline assets in `gardusig/gardusig/yaml`.
+Build or pull the contest runner image through the central pipeline assets in `gardusig/cli`.
 
-Requires Docker on the host. The runner image is `cli-contest:runner`; its Dockerfile and build workflow live in `gardusig/gardusig/yaml`, not in this repo.
+Requires Docker on the host. The runner image is `cli-contest:runner`; its Dockerfile and build workflow live in `gardusig/cli`, not in this repo.
 
 Monitor the image and any leftover containers with `cli docker`:
 

@@ -16,7 +16,7 @@ cli gh wf  (= cli gh workflow)
 
 ```bash
 # Start hub PR checks
-cli gh wf run dispatch.yml -R gardusig/yaml \
+cli gh wf run dispatch.yml -R gardusig/cli \
   -f workflow=pull-request -f repository=gardusig/database -f ref=main -f repo_slug=database
 
 # Debug a failed PR run

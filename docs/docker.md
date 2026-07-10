@@ -1,6 +1,6 @@
 # Docker
 
-Workflow routers live in [`gardusig/yaml`](https://github.com/gardusig/yaml). This repo owns the `.github/Dockerfile` (multi-stage CI via `scripts/ci/*.sh`), the `cli docker` monitor/cleanup commands, and pipeline contracts under [`.github/workflows/`](../.github/workflows/).
+Workflow routers live in [`gardusig/cli`](https://github.com/gardusig/cli). This repo owns the `.github/Dockerfile` (multi-stage CI via `scripts/ci/*.sh`), the `cli docker` monitor/cleanup commands, and pipeline contracts under [`.github/workflows/`](../.github/workflows/).
 
 Run a gate from the repo root:
 
@@ -20,7 +20,7 @@ docker build -f .github/Dockerfile --target unit-test .
 
 ## CLI base image (hub)
 
-`gardusig/yaml` may publish a lean hub image for jobs that run pip-installed `gardusig-cli` shortcuts. Language repos use their own `Dockerfile` bases.
+`gardusig/cli` may publish a lean hub image for jobs that run pip-installed `gardusig-cli` shortcuts. Language repos use their own `Dockerfile` bases.
 
 ## Docker CLI Commands
 

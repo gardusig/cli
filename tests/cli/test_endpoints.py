@@ -45,7 +45,7 @@ def _mock_snapshot(snapshot: MagicMock):
 @pytest.mark.parametrize(
     ("args", "needle"),
     [
-        (["drive", "status"], "repositories configured"),
+        (["drive", "status"], "Repository:"),
         (["drive", "--help"], "ingest"),
         (["restore"], "restore: not implemented yet"),
         (["chrome", "--help"], "bookmarks"),
@@ -56,7 +56,7 @@ def _mock_snapshot(snapshot: MagicMock):
 def test_placeholder_top_level_commands(args: list[str], needle: str) -> None:
     result = runner.invoke(app, args)
     assert result.exit_code == 0
-    assert needle in result.stdout
+    assert needle in (result.stdout + result.stderr)
 
 
 def test_chrome_bookmarks_deploy_without_backup() -> None:

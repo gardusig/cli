@@ -44,4 +44,4 @@ python tests/integration/check_api_integration.py
 
 ## CI ownership
 
-This repository owns application code, docs, [`.github/Dockerfile`](../.github/Dockerfile), `scripts/ci/*.sh`, and [`.github/workflows/`](../.github/workflows/) for pull-request and tag release pipelines. Optional hub routers live in [`gardusig/yaml`](https://github.com/gardusig/yaml) for broader monorepo CI.
+This repository owns application code, docs, [`.github/Dockerfile`](../.github/Dockerfile), `scripts/ci/*.sh`, and [`.github/workflows/`](../.github/workflows/) for pull-request and tag release pipelines. Optional hub routers live in [`gardusig/cli`](https://github.com/gardusig/cli) for broader monorepo CI.
