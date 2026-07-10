@@ -1,0 +1,51 @@
+name: Project recurrence
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Full repository (e.g. gardusig/python-cli)
+        required: true
+        type: string
+      ref:
+        description: Git branch ref
+        required: false
+        default: main
+        type: string
+      sha:
+        description: Commit SHA (preferred over ref when set)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  advance:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/gardusig/operator-runner:latest
+    steps:
+      - name: Checkout app repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repository || 'gardusig/cli' }}
+          ref: ${{ inputs.sha || inputs.ref || 'main' }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Install app dev dependencies
+        run: |
+          if [[ -f pyproject.toml ]] && grep -q '^name = "gardusig-cli"' pyproject.toml; then
+            pip install --no-cache-dir -e ".[dev]"
+          else
+            pip install --no-cache-dir gardusig-cli
+          fi
+
+      - name: Advance recurrent maintenance issues
+        env:
+          CLI_CONFIG_DIR: config/ci
+        run: cli project recurrence check --yes

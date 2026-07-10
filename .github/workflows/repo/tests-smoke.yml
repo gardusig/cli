@@ -1,0 +1,20 @@
+name: tests-smoke
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build test image
+        run: docker build -f tests/Dockerfile -t github-pipelines-tests .
+
+      - name: Run smoke + happy + failure scenarios
+        run: docker run --rm github-pipelines-tests all

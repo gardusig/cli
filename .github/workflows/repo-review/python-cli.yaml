@@ -1,0 +1,10 @@
+repo_slug: python-cli
+repository: gardusig/cli
+description: CLI shortcut package review.
+jobs:
+  - id: version-check
+    target: version-check
+  - id: version-suggest
+    target: version-suggest
+  - id: command-surface
+    target: command-surface

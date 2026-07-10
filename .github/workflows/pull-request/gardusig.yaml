@@ -1,0 +1,24 @@
+repo: gardusig/gardusig
+jobs:
+  - id: lint
+    name: Repo lint
+    target: lint
+  - id: repo-hygiene
+    name: Repo structure
+    target: repo-hygiene
+    needs: lint
+    hygiene_policy:
+      max_depth: 3
+      allowed_root_dirs:
+        - .github
+        - docs
+        - src
+        - tests
+      allowed_root_files:
+        - LICENSE
+        - README.md
+      allowed_extensions:
+        - .md
+        - .yml
+      allowed_filenames:
+        - LICENSE

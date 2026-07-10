@@ -1,0 +1,34 @@
+repo: gardusig/javascript
+jobs:
+  - id: lint
+    name: Repo lint
+    target: lint
+  - id: repo-hygiene
+    name: Repo structure
+    target: repo-hygiene
+    needs: lint
+    hygiene_policy:
+      max_depth: 4
+      allowed_root_dirs:
+        - .github
+        - lib
+        - examples
+      allowed_root_files:
+        - .gitignore
+        - LICENSE
+        - README.md
+        - package-lock.json
+        - package.json
+      allowed_extensions:
+        - .cjs
+        - .js
+        - .json
+        - .md
+        - .mjs
+        - .yaml
+        - .yml
+      allowed_filenames:
+        - .gitignore
+        - LICENSE
+        - package-lock.json
+        - package.json

@@ -1,0 +1,141 @@
+name: Tasks
+
+on:
+  repository_dispatch:
+    types: [tasks]
+  workflow_dispatch:
+    inputs:
+      repo_slug:
+        description: Repo slug
+        required: true
+        type: choice
+        options: [database]
+      action:
+        description: Task action
+        required: true
+        type: choice
+        options: [notion-deploy, github-deploy, notion-ingest-pr, github-ingest-pr, github-prune-closed]
+      repository:
+        description: Full repo
+        required: false
+        default: gardusig/database
+        type: string
+      ref:
+        description: Git ref
+        required: false
+        default: main
+        type: string
+      dry_run:
+        description: Dry run
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      repo_slug: ${{ steps.cfg.outputs.repo_slug }}
+      repository: ${{ steps.cfg.outputs.repository }}
+      ref: ${{ steps.cfg.outputs.ref }}
+      action: ${{ steps.cfg.outputs.action }}
+      dry_run: ${{ steps.cfg.outputs.dry_run }}
+      preflight: ${{ steps.cfg.outputs.preflight }}
+      task_command: ${{ steps.cfg.outputs.task_command }}
+      task_env: ${{ steps.cfg.outputs.task_env }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+
+      - name: Install ci-runtime dependencies
+        run: pip install --no-cache-dir pyyaml
+
+      - name: Resolve inputs
+        id: cfg
+        env:
+          CLIENT: ${{ toJson(github.event.client_payload || fromJSON('{}')) }}
+          IN_REPO_SLUG: ${{ inputs.repo_slug }}
+          IN_ACTION: ${{ inputs.action }}
+          IN_REPOSITORY: ${{ inputs.repository }}
+          IN_REF: ${{ inputs.ref }}
+          IN_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          python3 pipeline-src/scripts/ci-resolve.py \
+            --family tasks \
+            --pipeline-src pipeline-src \
+            --repo-slug "$IN_REPO_SLUG" \
+            --action "$IN_ACTION" \
+            --repository "$IN_REPOSITORY" \
+            --ref "$IN_REF" \
+            --dry-run "$IN_DRY_RUN"
+
+  preflight:
+    name: Task preflight
+    needs: resolve
+    if: needs.resolve.outputs.preflight == 'true'
+    runs-on: ubuntu-latest
+    environment: tasks
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+          path: database-src
+
+      - name: Install cli
+        run: pip install --no-cache-dir gardusig-cli
+
+      - name: Preflight task pairs
+        env:
+          CLI_BOARD_FILE: ${{ github.workspace }}/database-src/tasks/board.yaml
+          NOTION_TASK_ROOT: ${{ github.workspace }}/database-src/tasks
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          GH_TOKEN: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+        run: |
+          cli configure import-env
+          cli configure check --tasks
+          cli validate tasks database-src
+
+  action:
+    name: Task ${{ needs.resolve.outputs.action }}
+    needs: [resolve, preflight]
+    if: always() && (needs.resolve.outputs.preflight != 'true' || needs.preflight.result == 'success')
+    runs-on: ubuntu-latest
+    environment: tasks
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+          path: database-src
+      - name: Install cli
+        run: pip install --no-cache-dir gardusig-cli
+
+      - name: Run selected task action
+        env:
+          CLI_BOARD_FILE: ${{ github.workspace }}/database-src/tasks/board.yaml
+          NOTION_TASK_ROOT: ${{ github.workspace }}/database-src/tasks
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          GH_TOKEN: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+          CENTRAL_PIPELINE_PAT: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+        run: |
+          cli configure import-env
+          python3 pipeline-src/scripts/ci-task-run.py \
+            --command-json '${{ needs.resolve.outputs.task_command }}' \
+            --env-json '${{ needs.resolve.outputs.task_env }}' \
+            --repo-dir database-src

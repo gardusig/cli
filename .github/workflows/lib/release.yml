@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  repository_dispatch:
+    types: [release]
+  workflow_dispatch:
+    inputs:
+      repo_slug:
+        description: Repo slug (e.g. python-cli)
+        required: true
+        type: string
+      repository:
+        description: Full repo (e.g. gardusig/python-cli)
+        required: true
+        type: string
+      ref:
+        description: Git tag ref (e.g. v1.0.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      repo_slug: ${{ steps.dispatch.outputs.repo_slug }}
+      repository: ${{ steps.dispatch.outputs.repository }}
+      ref: ${{ steps.dispatch.outputs.ref }}
+      checkout_ref: ${{ steps.dispatch.outputs.checkout_ref }}
+      version: ${{ steps.dispatch.outputs.version }}
+      has_stage_0: ${{ steps.dispatch.outputs.has_stage_0 }}
+      stage_0: ${{ steps.dispatch.outputs.stage_0 }}
+    steps:
+      - name: Checkout yaml repo
+        uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+
+      - name: Install ci-runtime dependencies
+        run: pip install --no-cache-dir pyyaml
+
+      - name: Resolve dispatch payload
+        id: dispatch
+        env:
+          CLIENT: ${{ toJson(github.event.client_payload || fromJSON('{}')) }}
+          IN_REPO_SLUG: ${{ inputs.repo_slug }}
+          IN_REPOSITORY: ${{ inputs.repository }}
+          IN_REF: ${{ inputs.ref }}
+        run: |
+          python3 pipeline-src/scripts/ci-resolve.py \
+            --family release \
+            --pipeline-src pipeline-src \
+            --repo-slug "$IN_REPO_SLUG" \
+            --repository "$IN_REPOSITORY" \
+            --ref "$IN_REF"
+
+  pipeline:
+    name: Release ${{ matrix.job.name }}
+    needs: resolve
+    if: needs.resolve.outputs.has_stage_0 == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_0) }}
+    steps:
+      - name: Checkout yaml repo
+        uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - name: Checkout application repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.checkout_ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run release pipeline
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix release \
+            --release-version '${{ needs.resolve.outputs.version }}'

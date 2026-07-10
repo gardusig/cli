@@ -1,0 +1,10 @@
+repo_slug: database
+repository: gardusig/database
+description: Private vault review checks.
+jobs:
+  - id: repo-hygiene
+    name: Vault layout and language allowlists
+    target: repo-hygiene
+  - id: validate-tasks
+    name: Task pair contract
+    target: validate-tasks

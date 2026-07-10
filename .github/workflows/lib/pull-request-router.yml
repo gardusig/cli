@@ -1,0 +1,451 @@
+name: Pull request
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+    inputs:
+      repo_slug:
+        description: Repo slug (e.g. python-cli)
+        required: true
+        type: string
+      pipeline:
+        description: Pipeline name for multi-pipeline repos (optional)
+        required: false
+        type: string
+      repository:
+        description: Full repo (e.g. gardusig/python-cli)
+        required: true
+        type: string
+      ref:
+        description: Git branch ref for the PR head
+        required: true
+        type: string
+      sha:
+        description: Commit SHA to build (preferred over ref when set)
+        required: false
+        type: string
+      pr_number:
+        description: Pull request number (optional metadata)
+        required: false
+        type: string
+    secrets:
+      CENTRAL_PIPELINE_PAT:
+        required: false
+      TESTPYPI_API_TOKEN:
+        required: false
+      PYPI_API_TOKEN:
+        required: false
+  repository_dispatch:
+    types: [pull-request]
+  workflow_dispatch:
+    inputs:
+      repo_slug:
+        description: Repo slug (e.g. python-cli)
+        required: true
+        type: string
+      pipeline:
+        description: Pipeline name for multi-pipeline repos (optional)
+        required: false
+        type: string
+      repository:
+        description: Full repo (e.g. gardusig/python-cli)
+        required: true
+        type: string
+      ref:
+        description: Git ref to build
+        required: true
+        type: string
+      sha:
+        description: Commit SHA to build (optional)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      repo_slug: ${{ steps.dispatch.outputs.repo_slug }}
+      pipeline: ${{ steps.dispatch.outputs.pipeline }}
+      repository: ${{ steps.dispatch.outputs.repository }}
+      ref: ${{ steps.dispatch.outputs.ref }}
+      checkout_ref: ${{ steps.dispatch.outputs.checkout_ref }}
+      pages_enabled: ${{ steps.dispatch.outputs.pages_enabled }}
+      has_stage_0: ${{ steps.dispatch.outputs.has_stage_0 }}
+      has_stage_1: ${{ steps.dispatch.outputs.has_stage_1 }}
+      has_stage_2: ${{ steps.dispatch.outputs.has_stage_2 }}
+      has_stage_3: ${{ steps.dispatch.outputs.has_stage_3 }}
+      has_stage_4: ${{ steps.dispatch.outputs.has_stage_4 }}
+      has_stage_5: ${{ steps.dispatch.outputs.has_stage_5 }}
+      has_stage_6: ${{ steps.dispatch.outputs.has_stage_6 }}
+      has_stage_7: ${{ steps.dispatch.outputs.has_stage_7 }}
+      stage_0: ${{ steps.dispatch.outputs.stage_0 }}
+      stage_1: ${{ steps.dispatch.outputs.stage_1 }}
+      stage_2: ${{ steps.dispatch.outputs.stage_2 }}
+      stage_3: ${{ steps.dispatch.outputs.stage_3 }}
+      stage_4: ${{ steps.dispatch.outputs.stage_4 }}
+      stage_5: ${{ steps.dispatch.outputs.stage_5 }}
+      stage_6: ${{ steps.dispatch.outputs.stage_6 }}
+      stage_7: ${{ steps.dispatch.outputs.stage_7 }}
+    steps:
+      - name: Checkout yaml repo
+        uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+
+      - name: Checkout app repo for selective resolve
+        if: >-
+          ${{ (inputs.repository || github.event.client_payload.repository || github.event.pull_request.head.repo.full_name) == 'gardusig/python-cli' || (inputs.repository || github.event.client_payload.repository || github.event.pull_request.head.repo.full_name) == 'gardusig/cli' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repository || github.event.client_payload.repository || github.event.pull_request.head.repo.full_name }}
+          ref: ${{ inputs.sha || github.event.client_payload.sha || github.event.pull_request.head.sha || inputs.ref || github.event.client_payload.ref || github.head_ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+
+      - name: Install ci-runtime dependencies
+        run: pip install --no-cache-dir pyyaml
+
+      - name: Install cli
+        run: |
+          if [[ -f app-src/pyproject.toml ]] && grep -q '^name = "gardusig-cli"' app-src/pyproject.toml; then
+            pip install --no-cache-dir -e "app-src[dev]"
+          else
+            pip install --no-cache-dir "gardusig-cli @ git+https://github.com/gardusig/cli@main"
+          fi
+
+      - name: Resolve dispatch payload
+        id: dispatch
+        env:
+          CLIENT: ${{ toJson(github.event.client_payload || fromJSON('{}')) }}
+          IN_REPO_SLUG: ${{ inputs.repo_slug || github.event.client_payload.repo_slug || (github.event_name == 'pull_request' && 'yaml') }}
+          IN_PIPELINE: ${{ inputs.pipeline || github.event.client_payload.pipeline }}
+          IN_REPOSITORY: ${{ inputs.repository || github.event.client_payload.repository || github.event.pull_request.head.repo.full_name }}
+          IN_REF: ${{ inputs.ref || github.event.client_payload.ref || github.head_ref }}
+          IN_SHA: ${{ inputs.sha || github.event.client_payload.sha || github.event.pull_request.head.sha }}
+          FORCE_FULL_SUITE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci:full') && '1' || '0' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${IN_REPO_SLUG:-}" ] || [ "$IN_REPO_SLUG" = "false" ]; then
+            IN_REPO_SLUG="${IN_REPOSITORY##*/}"
+          fi
+          extra_args=()
+          if [ -d app-src/.git ]; then
+            extra_args+=(--app-src app-src --selective-base origin/main --selective-head "${IN_SHA:-$IN_REF}")
+          fi
+          if [ "${FORCE_FULL_SUITE:-0}" = "1" ]; then
+            extra_args+=(--force-full-suite)
+          fi
+          python3 pipeline-src/scripts/ci-resolve.py \
+            --family pull-request \
+            --pipeline-src pipeline-src \
+            --repo-slug "$IN_REPO_SLUG" \
+            --pipeline "$IN_PIPELINE" \
+            --repository "$IN_REPOSITORY" \
+            --ref "$IN_REF" \
+            --sha "$IN_SHA" \
+            "${extra_args[@]}"
+
+  pr-stage-0:
+    name: PR ${{ matrix.job.name }}
+    needs: resolve
+    if: needs.resolve.outputs.has_stage_0 == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_0) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.checkout_ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - name: Run pipeline job
+        env:
+          TESTPYPI_API_TOKEN: ${{ secrets.TESTPYPI_API_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          CENTRAL_PIPELINE_PAT: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix pipeline
+      - name: Upload Pages artifact
+        if: needs.resolve.outputs.pages_enabled == 'true' && matrix.job.id == 'latex'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: publish-pages
+
+  pr-stage-1:
+    name: PR ${{ matrix.job.name }}
+    needs: [resolve, pr-stage-0]
+    if: always() && needs.resolve.outputs.has_stage_1 == 'true' && needs.pr-stage-0.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_1) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.checkout_ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - name: Run pipeline job
+        env:
+          TESTPYPI_API_TOKEN: ${{ secrets.TESTPYPI_API_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          CENTRAL_PIPELINE_PAT: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix pipeline
+      - name: Upload Pages artifact
+        if: needs.resolve.outputs.pages_enabled == 'true' && matrix.job.id == 'latex'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: publish-pages
+
+  pr-stage-2:
+    name: PR ${{ matrix.job.name }}
+    needs: [resolve, pr-stage-1]
+    if: always() && needs.resolve.outputs.has_stage_2 == 'true' && needs.pr-stage-1.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_2) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.checkout_ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - name: Run pipeline job
+        env:
+          TESTPYPI_API_TOKEN: ${{ secrets.TESTPYPI_API_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          CENTRAL_PIPELINE_PAT: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix pipeline
+      - name: Upload Pages artifact
+        if: needs.resolve.outputs.pages_enabled == 'true' && matrix.job.id == 'latex'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: publish-pages
+
+  pr-stage-3:
+    name: PR ${{ matrix.job.name }}
+    needs: [resolve, pr-stage-2]
+    if: always() && needs.resolve.outputs.has_stage_3 == 'true' && needs.pr-stage-2.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_3) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.checkout_ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - name: Run pipeline job
+        env:
+          TESTPYPI_API_TOKEN: ${{ secrets.TESTPYPI_API_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          CENTRAL_PIPELINE_PAT: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix pipeline
+      - name: Upload Pages artifact
+        if: needs.resolve.outputs.pages_enabled == 'true' && matrix.job.id == 'latex'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: publish-pages
+
+  pr-stage-4:
+    name: PR ${{ matrix.job.name }}
+    needs: [resolve, pr-stage-3]
+    if: always() && needs.resolve.outputs.has_stage_4 == 'true' && needs.pr-stage-3.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_4) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.checkout_ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - name: Run pipeline job
+        env:
+          TESTPYPI_API_TOKEN: ${{ secrets.TESTPYPI_API_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          CENTRAL_PIPELINE_PAT: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix pipeline
+      - name: Upload Pages artifact
+        if: needs.resolve.outputs.pages_enabled == 'true' && matrix.job.id == 'latex'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: publish-pages
+
+  pr-stage-5:
+    name: PR ${{ matrix.job.name }}
+    needs: [resolve, pr-stage-4]
+    if: always() && needs.resolve.outputs.has_stage_5 == 'true' && needs.pr-stage-4.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_5) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.checkout_ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - name: Run pipeline job
+        env:
+          TESTPYPI_API_TOKEN: ${{ secrets.TESTPYPI_API_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          CENTRAL_PIPELINE_PAT: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix pipeline
+
+  pr-stage-6:
+    name: PR ${{ matrix.job.name }}
+    needs: [resolve, pr-stage-5]
+    if: always() && needs.resolve.outputs.has_stage_6 == 'true' && needs.pr-stage-5.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_6) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.checkout_ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - name: Run pipeline job
+        env:
+          TESTPYPI_API_TOKEN: ${{ secrets.TESTPYPI_API_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          CENTRAL_PIPELINE_PAT: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix pipeline
+
+  pr-stage-7:
+    name: PR ${{ matrix.job.name }}
+    needs: [resolve, pr-stage-6]
+    if: always() && needs.resolve.outputs.has_stage_7 == 'true' && needs.pr-stage-6.result == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve.outputs.stage_7) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: gardusig/cli
+          path: pipeline-src
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.checkout_ref }}
+          token: ${{ secrets.CENTRAL_PIPELINE_PAT || secrets.GITHUB_TOKEN }}
+          path: app-src
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v3
+      - name: Run pipeline job
+        env:
+          TESTPYPI_API_TOKEN: ${{ secrets.TESTPYPI_API_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          CENTRAL_PIPELINE_PAT: ${{ secrets.CENTRAL_PIPELINE_PAT }}
+        run: |
+          python3 pipeline-src/scripts/ci-docker-run.py \
+            --job-json '${{ toJson(matrix.job) }}' \
+            --pipeline-src pipeline-src \
+            --app-src app-src \
+            --tag-prefix pipeline
+
+  deploy-pages:
+    name: Deploy GitHub Pages
+    needs: [resolve, pr-stage-0, pr-stage-1, pr-stage-2, pr-stage-3, pr-stage-4, pr-stage-5, pr-stage-6, pr-stage-7]
+    if: always() && needs.resolve.outputs.pages_enabled == 'true' && !contains(join(needs.*.result, ','), 'failure') && !contains(join(needs.*.result, ','), 'cancelled')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/deploy-pages@v4
