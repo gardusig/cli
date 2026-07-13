@@ -110,7 +110,7 @@ class ChromeConfig(BaseModel):
     snapshot_retention: int = 0
 
 
-class ChromeConfig(BaseModel):
+class AuthCredentialConfig(BaseModel):
     env: str = ""
     token_file: str = ""
 
