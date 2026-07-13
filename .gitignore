@@ -37,7 +37,7 @@ src-*/
 src.egg-info/
 *.whl
 
-# --- Docker build context (generated from docker/.dockerignore before docker build) ---
+# --- Docker build context (ephemeral root copy must not be committed; use docker/.dockerignore) ---
 /.dockerignore
 
 # --- Integration temp dirs (host leaks outside Docker scratch) ---

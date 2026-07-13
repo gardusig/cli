@@ -31,21 +31,18 @@ gh_write_output() {
   fi
 }
 
-gh_sync_dockerignore() {
-  local root
-  root="$(gh_repo_root)"
-  local src="${root}/docker/.dockerignore"
-  if [[ -f "$src" ]]; then
-    cp "$src" "${root}/.dockerignore"
-  fi
-}
-
 gh_docker_build() {
   local dockerfile="$1"
   local target="$2"
   shift 2
-  gh_sync_dockerignore
-  docker build -f "$dockerfile" --target "$target" "$@" .
+  local root
+  root="$(gh_repo_root)"
+  local ignorefile="${root}/docker/.dockerignore"
+  local ignore_args=()
+  if [[ -f "$ignorefile" ]]; then
+    ignore_args=(--ignorefile "$ignorefile")
+  fi
+  docker build -f "$dockerfile" --target "$target" "${ignore_args[@]}" "$@" .
 }
 
 stage_ensure_dev() {
