@@ -18,7 +18,7 @@ Manual `repo-review.yml` jobs:
 - `version-suggest`
 - `command-surface`
 
-All jobs run as Docker targets from `docker/pull-request.dockerfile` or `docker/release.dockerfile`.
+All jobs run as Docker targets from the root `Dockerfile`.
 
 ## CLI workflows
 
@@ -42,7 +42,7 @@ Separate CLI workflow definitions should live under `.github/workflows/cli/pytho
 
 1. Check out `gardusig/python-cli` at `main` or the requested ref.
 2. Run `cli release main --yes` to tag, publish PyPI, verify, and create the GitHub release.
-3. Build `docker/release.dockerfile` target `runtime` with `gardusig-cli==<released-version>`.
+3. Build `Dockerfile` target `runtime` with `gardusig-cli==<released-version>`.
 
 ## Command contract lane
 

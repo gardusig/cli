@@ -101,7 +101,7 @@ cli --version
 
 ```bash
 export BASE_VERSION="$(bash scripts/pull-request/host-last-published-version.sh)"
-docker build -f docker/pull-request.dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
 bash scripts/pull-request/unit-test.sh
 uv run pytest tests/meta/ tests/services/test_pipeline_selective.py \
   tests/services/test_pipeline_runtime.py -q

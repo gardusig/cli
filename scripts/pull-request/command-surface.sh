@@ -4,6 +4,4 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"
 
 stage_ensure_dev
-export CLI_DOCKER_INTEGRATION=1
-export CLI_ROOT="$(gh_repo_root)"
-python3 tests/integration/check_public_commands.py
+stage_run_with_timeout "${CI_INTEGRATION_TIMEOUT}" bash "$(dirname "${BASH_SOURCE[0]}")/integration-smoke.sh"

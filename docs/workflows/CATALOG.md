@@ -7,7 +7,7 @@
 | `pull-request.yaml` | PR Docker pipeline: version-check → unit-test → testpypi → consumer |
 | `release.yaml` | Tag on `main`: PyPI publish + runtime Docker image |
 
-Dockerfiles: `docker/pull-request.dockerfile`, `docker/release.dockerfile`.
+Dockerfile: root `Dockerfile` (PR + release stages).
 
 Scripts: `scripts/pull-request/`, `scripts/release/`.
 

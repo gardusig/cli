@@ -2,12 +2,23 @@
 # Shared helpers for workflow wrappers and Docker stage scripts.
 set -euo pipefail
 
+# Stage timeouts — override via env (e.g. in workflow `env:` blocks).
+: "${CI_UNIT_TIMEOUT:=5m}"
+: "${CI_INTEGRATION_TIMEOUT:=3m}"
+: "${CI_DOCKER_BUILD_TIMEOUT:=10m}"
+: "${CI_VERSION_CHECK_TIMEOUT:=2m}"
+: "${CI_TESTPYPI_TIMEOUT:=8m}"
+: "${CI_CONSUMER_TIMEOUT:=5m}"
+: "${CI_RESOLVE_TIMEOUT:=2m}"
+: "${CI_LINT_TIMEOUT:=5m}"
+: "${CI_RELEASE_SMOKE_TIMEOUT:=3m}"
+: "${CI_DOCKER_PUSH_TIMEOUT:=5m}"
+
 gh_repo_root() {
   cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd
 }
 
-PR_DOCKERFILE="${PR_DOCKERFILE:-docker/pull-request.dockerfile}"
-RELEASE_DOCKERFILE="${RELEASE_DOCKERFILE:-docker/release.dockerfile}"
+DOCKERFILE="${DOCKERFILE:-Dockerfile}"
 RUNTIME_IMAGE="${RUNTIME_IMAGE:-binarylifter/gardusig-cli}"
 
 gh_read_project_version() {
@@ -32,34 +43,49 @@ gh_write_output() {
 }
 
 gh_docker_build() {
-  local dockerfile="$1"
-  local target="$2"
-  shift 2
+  local target="$1"
+  shift
   local root
   root="$(gh_repo_root)"
-  local ignorefile="${root}/docker/.dockerignore"
-  local ignore_args=()
-  if [[ -f "$ignorefile" ]]; then
-    ignore_args=(--ignorefile "$ignorefile")
-  fi
-  docker build -f "$dockerfile" --target "$target" "${ignore_args[@]}" "$@" .
+  docker build -f "${root}/${DOCKERFILE}" --target "$target" "$@" "${root}"
+}
+
+export_cli_test_profile() {
+  export CLI_PROFILE="${CLI_PROFILE:-test}"
 }
 
 stage_ensure_dev() {
   local root
   root="$(gh_repo_root)"
-  export CLI_CONFIG_DIR="${CLI_CONFIG_DIR:-${root}/config/ci}"
+  export_cli_test_profile
   cd "$root"
-  pip install --no-cache-dir -r requirements-dev.txt
-  pip install --no-cache-dir -e ".[dev]"
+  if command -v uv >/dev/null 2>&1; then
+    uv pip install -r requirements-dev.txt
+    uv pip install -e ".[dev]"
+    return
+  fi
+  local pip=(pip)
+  if ! command -v pip >/dev/null 2>&1; then
+    pip=(python3 -m pip)
+  fi
+  "${pip[@]}" install --no-cache-dir -r requirements-dev.txt
+  "${pip[@]}" install --no-cache-dir -e ".[dev]"
 }
 
 stage_ensure_test_deps() {
   local root
   root="$(gh_repo_root)"
-  export CLI_CONFIG_DIR="${CLI_CONFIG_DIR:-${root}/config/ci}"
+  export_cli_test_profile
   cd "$root"
-  pip install --no-cache-dir -r requirements-dev.txt
+  if command -v uv >/dev/null 2>&1; then
+    uv pip install -r requirements-dev.txt
+    return
+  fi
+  local pip=(pip)
+  if ! command -v pip >/dev/null 2>&1; then
+    pip=(python3 -m pip)
+  fi
+  "${pip[@]}" install --no-cache-dir -r requirements-dev.txt
 }
 
 stage_compare_versions() {
@@ -97,5 +123,28 @@ stage_run_with_timeout() {
     echo "timeout command not found (install coreutils)" >&2
     exit 1
   fi
-  timeout --signal=TERM --kill-after=30s "$limit" "$@"
+  local runner=("$@")
+  if ((${#runner[@]} >= 1)) && declare -F "${runner[0]}" >/dev/null 2>&1; then
+    local fn="${runner[0]}"
+    local args=()
+    if ((${#runner[@]} > 1)); then
+      args=("${runner[@]:1}")
+    fi
+    local quoted=""
+    if ((${#args[@]} > 0)); then
+      quoted="$(printf ' %q' "${args[@]}")"
+    fi
+    local common_sh
+    common_sh="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
+    if timeout --signal=TERM --kill-after=30s "$limit" bash -c "source $(printf '%q' "$common_sh"); $(declare -f "$fn"); $fn${quoted}"; then
+      return 0
+    fi
+  elif timeout --signal=TERM --kill-after=30s "$limit" "${runner[@]}"; then
+    return 0
+  fi
+  local code=$?
+  if [[ "$code" -eq 124 ]]; then
+    echo "timed out after ${limit}: ${runner[*]}" >&2
+  fi
+  return "$code"
 }

@@ -4,12 +4,12 @@ Each app repository owns a multi-stage `Dockerfile` at the repo root. Stages are
 
 ## `gardusig/cli` (this repo)
 
-`docker/` contains exactly two pipeline Dockerfiles:
+Root `Dockerfile` stages:
 
-| File | Purpose |
+| Target | Purpose |
 | --- | --- |
-| `docker/pull-request.dockerfile` | Version gate → unit tests → TestPyPI → consumer integration |
-| `docker/release.dockerfile` | PyPI publish → lean runtime image (`pip install gardusig-cli`) |
+| `version-check`, `unit-test`, `testpypi`, `testpypi-consumer` | PR pipeline |
+| `pypi`, `runtime` | Release (PyPI publish + lean runtime image) |
 
 ## Exceptions (other repos)
 
@@ -27,10 +27,9 @@ Each app repository owns a multi-stage `Dockerfile` at the repo root. Stages are
 ## Local example (`gardusig/cli`)
 
 ```bash
-cp docker/.dockerignore .dockerignore
 export BASE_VERSION="$(bash scripts/pull-request/host-last-published-version.sh)"
-docker build -f docker/pull-request.dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
-docker build -f docker/pull-request.dockerfile --target unit-test .
+docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build --target unit-test .
 ```
 
 ## PR publish stages (`gardusig/cli`)

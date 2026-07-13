@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# docker build --target for pull-request.dockerfile
+# docker build --target for root Dockerfile
 set -euo pipefail
 # shellcheck source=scripts/_common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"
@@ -10,4 +10,4 @@ shift
 root="$(gh_repo_root)"
 cd "$root"
 
-gh_docker_build "$PR_DOCKERFILE" "$target" "$@"
+stage_run_with_timeout "${CI_DOCKER_BUILD_TIMEOUT}" gh_docker_build "$target" "$@"

@@ -50,7 +50,7 @@ def test_merge_epic_pack_smokes_present() -> None:
 
 
 def test_merge_epic_integration_gate_script() -> None:
-    script = ROOT / "tests" / "integration" / "check_integration_coverage.py"
+    script = ROOT / "scripts" / "pull-request" / "integration-smoke.sh"
     assert script.is_file()
     text = script.read_text(encoding="utf-8")
-    assert "integration_coverage" in text
+    assert "smoke_run_all" in text

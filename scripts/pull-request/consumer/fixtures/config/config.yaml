@@ -1,4 +1,4 @@
-# Minimal config for consumer integration when config/ci is not copied.
+# Minimal fallback when repo config/ is unavailable (pip-only consumer image).
 backup:
   tags_dir: /tmp/cli-consumer-tags
   repositories: []

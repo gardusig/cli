@@ -35,6 +35,9 @@ def test_infra_epic_pipeline_scripts_exist() -> None:
     assert (ROOT / "scripts" / "pull-request" / "version-check.sh").is_file()
     assert (ROOT / "scripts" / "pull-request" / "set-version.sh").is_file()
     assert (ROOT / "scripts" / "release" / "pypi-release.sh").is_file()
+    common = (ROOT / "scripts" / "_common.sh").read_text(encoding="utf-8")
+    assert "CI_UNIT_TIMEOUT" in common
+    assert "stage_run_with_timeout" in common
 
 
 def test_infra_epic_resolve_help() -> None:
@@ -47,7 +50,7 @@ def test_infra_epic_resolve_help() -> None:
 def test_infra_epic_suite_contract() -> None:
     result = RUNNER.invoke(app, ["test", "packages", "suite", "--format", "json"])
     assert result.exit_code == 0
-    assert "check_integration_coverage" in result.stdout
+    assert "integration-smoke" in result.stdout
 
 
 def test_infra_epic_git_deploy_help() -> None:

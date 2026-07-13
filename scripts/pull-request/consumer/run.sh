@@ -2,7 +2,9 @@
 # Post-install integration for pip-published gardusig-cli (artifact under test).
 set -euo pipefail
 # shellcheck source=scripts/pull-request/consumer/_common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/_common.sh"
+# shellcheck source=scripts/pull-request/_smoke.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../_smoke.sh"
 
 live_docker=0
 while [[ $# -gt 0 ]]; do
@@ -18,31 +20,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if ! command -v cli >/dev/null 2>&1; then
-  echo "cli binary not found on PATH after pip install" >&2
-  exit 1
-fi
-
-export CLI_CONFIG_DIR="${CLI_CONFIG_DIR:-$(consumer_root)/fixtures/config}"
-
-cli --help >/dev/null
-cli --version >/dev/null
-cli languages list >/dev/null
-cli lint --help >/dev/null
-cli structure --help >/dev/null
-cli git --help >/dev/null
-cli pypi --help >/dev/null
-
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "$tmpdir"' EXIT
-git -C "$tmpdir" init -q
-git -C "$tmpdir" config user.email "consumer@test"
-git -C "$tmpdir" config user.name "Consumer"
-touch "$tmpdir/README.md"
-git -C "$tmpdir" add README.md
-git -C "$tmpdir" commit -q -m "init"
-cli structure check "$tmpdir" >/dev/null
-cli git --help >/dev/null
+smoke_run_all
 
 if (( live_docker )); then
   if ! command -v docker >/dev/null 2>&1; then

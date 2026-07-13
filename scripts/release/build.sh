@@ -9,4 +9,4 @@ shift
 root="$(gh_repo_root)"
 cd "$root"
 
-gh_docker_build "$RELEASE_DOCKERFILE" "$target" "$@"
+stage_run_with_timeout "${CI_DOCKER_BUILD_TIMEOUT}" gh_docker_build "$target" "$@"

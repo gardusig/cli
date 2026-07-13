@@ -14,21 +14,29 @@ permissions:
   contents: write
 
 env:
-  RELEASE_DOCKERFILE: docker/release.dockerfile
   RUNTIME_IMAGE: binarylifter/gardusig-cli
+  CI_DOCKER_BUILD_TIMEOUT: 10m
+  CI_TESTPYPI_TIMEOUT: 8m
+  CI_RESOLVE_TIMEOUT: 2m
+  CI_RELEASE_SMOKE_TIMEOUT: 3m
+  CI_DOCKER_PUSH_TIMEOUT: 5m
 
 jobs:
   publish-pypi:
     name: Publish to PyPI
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
+        timeout-minutes: 3
       - name: Resolve package version
+        timeout-minutes: 3
         id: meta
         run: bash scripts/release/resolve-version.sh
       - name: docker build — pypi
+        timeout-minutes: 12
         env:
           CLI_RELEASE_VERSION: ${{ steps.meta.outputs.version }}
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
@@ -39,26 +47,33 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs: publish-pypi
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
+        timeout-minutes: 3
       - name: Resolve package version
+        timeout-minutes: 3
         id: meta
         run: bash scripts/release/resolve-version.sh
       - name: docker build — runtime
+        timeout-minutes: 10
         env:
           CLI_VERSION: ${{ steps.meta.outputs.version }}
         run: bash scripts/release/build-runtime-image.sh
       - name: Log in to Docker Hub
+        timeout-minutes: 3
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Push image tags
+        timeout-minutes: 5
         env:
           CLI_VERSION: ${{ steps.meta.outputs.version }}
         run: bash scripts/release/push-runtime-image.sh
       - name: Pull and smoke-test published image
+        timeout-minutes: 5
         env:
           CLI_VERSION: ${{ steps.meta.outputs.version }}
         run: bash scripts/release/smoke-runtime-image.sh
@@ -67,14 +82,17 @@ jobs:
     name: GitHub release
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Resolve release version
+        timeout-minutes: 3
         id: meta
         run: bash scripts/release/resolve-tag-version.sh
       - name: Create GitHub release
+        timeout-minutes: 3
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.meta.outputs.tag }}

@@ -35,12 +35,13 @@ def test_release_epic_cli_repo_urls() -> None:
 
 @requires_docs
 def test_release_epic_post_merge_release_docs() -> None:
-    text = (ROOT / "docs" / "release.md").read_text(encoding="utf-8")
-    assert "Post-merge release" in text
-    assert "pull-request.yaml" in text
-    assert "version-check" in text
-    assert "testpypi-verify" in text or "testpypi-consumer" in text
-    assert "CI_INTEGRATION_TIMEOUT" in text
+    release = (ROOT / "docs" / "release.md").read_text(encoding="utf-8")
+    assert "Post-merge release" in release
+    assert "pull-request.yaml" in release
+    assert "version-check" in release
+    assert "testpypi-verify" in release or "testpypi-consumer" in release
+    ci = (ROOT / "docs" / "ci-workflows.md").read_text(encoding="utf-8")
+    assert "CI_INTEGRATION_TIMEOUT" in ci
 
 
 def test_release_epic_pack_smokes_present() -> None:
