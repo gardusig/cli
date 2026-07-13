@@ -54,6 +54,7 @@ class EndpointCheck:
 TOP_LEVEL_COMMANDS = (
     "links",
     "git",
+    "gh",
     "opencode",
     "lint",
     "test",
@@ -121,6 +122,48 @@ PYPI_SUBCOMMANDS = (
     "version tag-suggest",
 )
 
+# Every public `cli gh …` command path (space-separated nested groups).
+GH_SUBCOMMANDS = (
+    "issue list",
+    "issue view",
+    "issue context",
+    "issue search",
+    "issue status",
+    "issue create",
+    "issue edit",
+    "issue comment",
+    "issue reopen",
+    "issue delete",
+    "issue close",
+    "issue batch",
+    "branch list",
+    "branch view",
+    "branch delete",
+    "branch pr",
+    "pr list",
+    "pr view",
+    "pr diff",
+    "pr status",
+    "pr create",
+    "pr upsert",
+    "pr edit",
+    "pr comment",
+    "pr close",
+    "pr reopen",
+    "pr checks",
+    "pr review",
+    "pr ready",
+    "pr merge",
+    "policy list",
+    "ruleset list",
+    "ruleset view",
+    "ruleset create",
+    "ruleset edit",
+    "ruleset delete",
+)
+
+_GH_BATCH_FILE = "tests/fixtures/gh/issue-batch.yaml"
+
 _GIT_SUBCOMMAND_PATHS: frozenset[tuple[str, ...]] = frozenset(
     ("git", *sub.split()) for sub in GIT_SUBCOMMANDS
 )
@@ -163,7 +206,7 @@ def endpoint_checks() -> list[EndpointCheck]:
             accept_exit_codes=(1,),
             failure="missing_notion_token",
         ),
-        EndpointCheck("chrome help", ("chrome", "--help"), needle="merge"),
+        EndpointCheck("chrome help", ("chrome", "--help"), needle="bookmarks"),
         EndpointCheck(
             "chrome bookmarks deploy missing",
             ("chrome", "bookmarks", "deploy"),
@@ -234,6 +277,334 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck("docker ps help", ("docker", "ps", "--help"), needle="format"),
         EndpointCheck("docker images help", ("docker", "images", "--help"), needle="repository"),
         EndpointCheck("contest help", ("contest", "--help"), needle="validate"),
+        EndpointCheck("gh help", ("gh", "--help"), needle="issue"),
+        EndpointCheck(
+            "gh issue list",
+            ("gh", "--format", "json", "issue", "list"),
+            needle='"number"',
+        ),
+        EndpointCheck(
+            "gh issue view",
+            ("gh", "--format", "json", "issue", "view", "1"),
+            needle='"title"',
+        ),
+        EndpointCheck(
+            "gh issue context",
+            ("gh", "--format", "json", "issue", "context", "1"),
+            needle='"issue"',
+        ),
+        EndpointCheck(
+            "gh issue search",
+            ("gh", "--format", "json", "issue", "search", "is:open"),
+            needle='"number"',
+        ),
+        EndpointCheck(
+            "gh issue status",
+            ("gh", "--format", "json", "issue", "status"),
+            needle="open_issues",
+        ),
+        EndpointCheck(
+            "gh issue create refuse",
+            ("gh", "issue", "create", "--title", "T"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh issue create yes",
+            ("gh", "issue", "create", "--title", "T", "--yes"),
+            needle='"number"',
+        ),
+        EndpointCheck(
+            "gh issue edit refuse",
+            ("gh", "issue", "edit", "1", "--title", "New"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh issue edit yes",
+            ("gh", "issue", "edit", "1", "--title", "New", "--yes"),
+            needle='"action"',
+        ),
+        EndpointCheck(
+            "gh issue comment refuse",
+            ("gh", "issue", "comment", "1", "--body", "note"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh issue comment yes",
+            ("gh", "issue", "comment", "1", "--body", "note", "--yes"),
+            needle='"action"',
+        ),
+        EndpointCheck(
+            "gh issue reopen refuse",
+            ("gh", "issue", "reopen", "1"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh issue reopen yes",
+            ("gh", "issue", "reopen", "1", "--yes"),
+            needle='"state"',
+        ),
+        EndpointCheck(
+            "gh issue delete refuse",
+            ("gh", "issue", "delete", "1"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh issue delete yes",
+            ("gh", "issue", "delete", "1", "--yes"),
+            needle='"action"',
+        ),
+        EndpointCheck(
+            "gh issue close blocked",
+            ("gh", "issue", "close", "1", "--yes"),
+            kind="refuse",
+            needle="issue close blocked",
+            accept_exit_codes=(1,),
+            failure="issue_close_blocked",
+        ),
+        EndpointCheck(
+            "gh issue batch refuse",
+            ("gh", "issue", "batch", "--file", _GH_BATCH_FILE),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh issue batch yes",
+            ("gh", "issue", "batch", "--file", _GH_BATCH_FILE, "--yes"),
+            needle='"number"',
+        ),
+        EndpointCheck(
+            "gh branch list",
+            ("gh", "--format", "json", "branch", "list"),
+            needle='"name"',
+        ),
+        EndpointCheck(
+            "gh branch view",
+            ("gh", "--format", "json", "branch", "view", "main"),
+            needle='"name"',
+        ),
+        EndpointCheck(
+            "gh branch delete refuse",
+            ("gh", "branch", "delete", "wip"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh branch delete yes",
+            ("gh", "branch", "delete", "wip", "--yes"),
+            needle='"action"',
+        ),
+        EndpointCheck(
+            "gh branch pr",
+            ("gh", "--format", "json", "branch", "pr", "feature"),
+            needle='"pull_request"',
+        ),
+        EndpointCheck(
+            "gh pr list",
+            ("gh", "--format", "json", "pr", "list"),
+            needle='"number"',
+        ),
+        EndpointCheck(
+            "gh pr view",
+            ("gh", "--format", "json", "pr", "view", "5"),
+            needle='"title"',
+        ),
+        EndpointCheck(
+            "gh pr diff",
+            ("gh", "--format", "json", "pr", "diff", "5"),
+            needle='"stat"',
+        ),
+        EndpointCheck(
+            "gh pr status",
+            ("gh", "--format", "json", "pr", "status"),
+            needle="open_prs",
+        ),
+        EndpointCheck(
+            "gh pr create refuse",
+            ("gh", "pr", "create", "--title", "T"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh pr create yes",
+            ("gh", "pr", "create", "--title", "T", "--yes"),
+            needle='"number"',
+        ),
+        EndpointCheck(
+            "gh pr upsert refuse",
+            (
+                "gh",
+                "pr",
+                "upsert",
+                "--branch",
+                "feat",
+                "--title",
+                "T",
+                "--message",
+                "msg",
+            ),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh pr upsert yes",
+            (
+                "gh",
+                "pr",
+                "upsert",
+                "--branch",
+                "feat",
+                "--title",
+                "T",
+                "--message",
+                "msg",
+                "--yes",
+            ),
+            needle='"number"',
+        ),
+        EndpointCheck(
+            "gh pr edit refuse",
+            ("gh", "pr", "edit", "5", "--title", "New"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh pr edit yes",
+            ("gh", "pr", "edit", "5", "--title", "New", "--yes"),
+            needle='"action"',
+        ),
+        EndpointCheck(
+            "gh pr comment refuse",
+            ("gh", "pr", "comment", "5", "--body", "note"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh pr comment yes",
+            ("gh", "pr", "comment", "5", "--body", "note", "--yes"),
+            needle='"action"',
+        ),
+        EndpointCheck(
+            "gh pr close refuse",
+            ("gh", "pr", "close", "5"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh pr close yes",
+            ("gh", "pr", "close", "5", "--yes"),
+            needle='"action"',
+        ),
+        EndpointCheck(
+            "gh pr reopen refuse",
+            ("gh", "pr", "reopen", "5"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh pr reopen yes",
+            ("gh", "pr", "reopen", "5", "--yes"),
+            needle='"state"',
+        ),
+        EndpointCheck(
+            "gh pr checks",
+            ("gh", "--format", "json", "pr", "checks", "5"),
+            needle='"name"',
+        ),
+        EndpointCheck(
+            "gh pr review refuse",
+            ("gh", "pr", "review", "5", "--approve", "--body", "ok"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh pr review yes",
+            ("gh", "pr", "review", "5", "--approve", "--body", "ok", "--yes"),
+            needle='"id"',
+        ),
+        EndpointCheck(
+            "gh pr ready refuse",
+            ("gh", "pr", "ready", "5"),
+            kind="refuse",
+            needle=refuse,
+            accept_exit_codes=(1,),
+        ),
+        EndpointCheck(
+            "gh pr ready yes",
+            ("gh", "pr", "ready", "5", "--yes"),
+            needle="isDraft",
+        ),
+        EndpointCheck(
+            "gh pr merge blocked",
+            ("gh", "pr", "merge", "1", "--yes"),
+            kind="refuse",
+            needle="merge blocked",
+            accept_exit_codes=(1,),
+            failure="pr_merge_blocked",
+        ),
+        EndpointCheck(
+            "gh policy list",
+            ("gh", "policy", "list"),
+            needle="pr-merge",
+        ),
+        EndpointCheck(
+            "gh ruleset list blocked",
+            ("gh", "ruleset", "list"),
+            kind="refuse",
+            needle="Rulesets blocked",
+            accept_exit_codes=(1,),
+            failure="ruleset_blocked",
+        ),
+        EndpointCheck(
+            "gh ruleset view blocked",
+            ("gh", "ruleset", "view"),
+            kind="refuse",
+            needle="Rulesets blocked",
+            accept_exit_codes=(1,),
+            failure="ruleset_blocked",
+        ),
+        EndpointCheck(
+            "gh ruleset create blocked",
+            ("gh", "ruleset", "create"),
+            kind="refuse",
+            needle="Rulesets blocked",
+            accept_exit_codes=(1,),
+            failure="ruleset_blocked",
+        ),
+        EndpointCheck(
+            "gh ruleset edit blocked",
+            ("gh", "ruleset", "edit"),
+            kind="refuse",
+            needle="Rulesets blocked",
+            accept_exit_codes=(1,),
+            failure="ruleset_blocked",
+        ),
+        EndpointCheck(
+            "gh ruleset delete blocked",
+            ("gh", "ruleset", "delete"),
+            kind="refuse",
+            needle="Rulesets blocked",
+            accept_exit_codes=(1,),
+            failure="ruleset_blocked",
+        ),
         EndpointCheck("configure help", ("configure", "--help"), needle="check"),
         EndpointCheck("config help", ("config", "--help"), needle="check"),
         EndpointCheck("puzzles help", ("puzzles", "--help"), needle="validate"),
@@ -306,7 +677,7 @@ def endpoint_checks() -> list[EndpointCheck]:
             "pypi version tag-suggest missing project",
             ("pypi", "version", "tag-suggest"),
             outside_git=True,
-            needle="pyproject",
+            needle="no existing tags",
             accept_exit_codes=(1,),
             failure="missing_pyproject",
         ),
@@ -344,7 +715,7 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck("git --help", ("git", "--help"), needle="branch"),
         EndpointCheck("hidden alias g commit", ("g", "commit"), needle="nothing to commit", needs_git=True, reset_git=True),
         EndpointCheck("git docs", ("git", "docs"), needle="Documentation"),
-        EndpointCheck("git large files", ("git", "large", "files", "-n", "1"), needle="src/"),
+        EndpointCheck("git large files", ("git", "large", "files", "-n", "1"), needle="pyproject.toml", needs_git=True, reset_git=True),
         EndpointCheck(
             "git branch current",
             ("git", "branch", "current"),
@@ -696,7 +1067,7 @@ def endpoint_checks() -> list[EndpointCheck]:
         # Write gates — must refuse without --yes in non-interactive mode.
         EndpointCheck(
             "git push refuse main",
-            ("git", "push"),
+            ("git", "push", "--branch"),
             kind="refuse",
             needle=refuse,
             extra_needles=("from_branch: main", "target_branch: wip-"),
@@ -801,7 +1172,7 @@ def endpoint_checks() -> list[EndpointCheck]:
         # Gated writes with --yes (remote fetch/push/ls-remote mocked in run_all_endpoint_checks).
         EndpointCheck(
             "git push yes from main",
-            ("git", "push", "--yes"),
+            ("git", "push", "--branch", "--yes"),
             needle="pushed",
             extra_needles=("from_branch: main", "target_branch: wip-"),
             needs_git=True,
@@ -1025,6 +1396,47 @@ def _git_command_path_from_check_args(args: tuple[str, ...]) -> str | None:
         if candidate in GIT_SUBCOMMANDS:
             return candidate
     return None
+
+
+def _gh_command_path_from_check_args(args: tuple[str, ...]) -> str | None:
+    if not args or args[0] != "gh":
+        return None
+    rest = list(args[1:])
+    index = 0
+    while index < len(rest):
+        token = rest[index]
+        if not token.startswith("--"):
+            break
+        if token in ("--format", "--repo", "--transport") and index + 1 < len(rest):
+            index += 2
+            continue
+        index += 1
+    sub = rest[index:]
+    if not sub:
+        return None
+    if sub[0] == "policy" and len(sub) >= 2:
+        return "policy list"
+    if sub[0] == "ruleset" and len(sub) >= 2:
+        return f"ruleset {sub[1]}"
+    if sub[0] in {"issue", "branch", "pr"} and len(sub) >= 2 and not sub[1].startswith("--"):
+        return f"{sub[0]} {sub[1]}"
+    return None
+
+
+def registered_gh_subcommands() -> set[str]:
+    for group in app.registered_groups:
+        if group.name == "gh":
+            return _collect_typer_command_paths(group.typer_instance)
+    return set()
+
+
+def assert_registry_covers_gh_commands() -> None:
+    registered = registered_gh_subcommands()
+    expected = set(GH_SUBCOMMANDS)
+    missing = expected - registered
+    extra = registered - expected
+    if missing or extra:
+        raise AssertionError(f"gh registry drift: missing={sorted(missing)} extra={sorted(extra)}")
 
 
 def registered_git_subcommands() -> set[str]:
@@ -1289,13 +1701,94 @@ def assert_every_git_subcommand_has_ok_and_failure_check() -> None:
     assert_every_git_subcommand_has_failure_check()
 
 
+def gh_subcommands_covered_by_checks() -> set[str]:
+    covered: set[str] = set()
+    for check in endpoint_checks():
+        path = _gh_command_path_from_check_args(check.args)
+        if path:
+            covered.add(path)
+    return covered
+
+
+def assert_every_gh_subcommand_checked() -> None:
+    missing = set(GH_SUBCOMMANDS) - gh_subcommands_covered_by_checks()
+    if missing:
+        raise AssertionError(f"integration checks missing gh subcommands: {sorted(missing)}")
+
+
+def gh_subcommands_with_ok_check() -> set[str]:
+    ok: set[str] = set()
+    for check in endpoint_checks():
+        if not _endpoint_check_is_success(check):
+            continue
+        path = _gh_command_path_from_check_args(check.args)
+        if path:
+            ok.add(path)
+    return ok
+
+
+def gh_subcommands_with_failure_check() -> set[str]:
+    failed: set[str] = set()
+    for check in endpoint_checks():
+        if not _endpoint_check_is_failure(check):
+            continue
+        path = _gh_command_path_from_check_args(check.args)
+        if path:
+            failed.add(path)
+    return failed
+
+
+_GH_SUBCOMMANDS_OK_EXEMPT = frozenset(
+    {"issue close", "pr merge", "ruleset list", "ruleset view", "ruleset create", "ruleset edit", "ruleset delete"}
+)
+_GH_SUBCOMMANDS_FAIL_EXEMPT = frozenset(
+    {
+        "policy list",
+        "issue list",
+        "issue view",
+        "issue context",
+        "issue search",
+        "issue status",
+        "branch list",
+        "branch view",
+        "branch pr",
+        "pr list",
+        "pr view",
+        "pr diff",
+        "pr status",
+        "pr checks",
+    }
+)
+
+
+def assert_every_gh_subcommand_has_ok_check() -> None:
+    missing = set(GH_SUBCOMMANDS) - gh_subcommands_with_ok_check() - _GH_SUBCOMMANDS_OK_EXEMPT
+    if missing:
+        raise AssertionError(f"gh subcommands without ok integration check: {sorted(missing)}")
+
+
+def assert_every_gh_subcommand_has_failure_check() -> None:
+    missing = (
+        set(GH_SUBCOMMANDS) - gh_subcommands_with_failure_check() - _GH_SUBCOMMANDS_FAIL_EXEMPT
+    )
+    if missing:
+        raise AssertionError(f"gh subcommands without failure integration check: {sorted(missing)}")
+
+
+def assert_every_gh_subcommand_has_ok_and_failure_check() -> None:
+    assert_every_gh_subcommand_has_ok_check()
+    assert_every_gh_subcommand_has_failure_check()
+
+
 def assert_every_top_level_command_checked() -> None:
     for name in TOP_LEVEL_COMMANDS:
-        if name in {"git", "pypi"}:
+        if name in {"git", "pypi", "gh"}:
             if name == "git" and not any(c.label == "git group help" for c in endpoint_checks()):
                 raise AssertionError("missing integration check for git group help")
             if name == "pypi" and not any(c.label == "pypi help" for c in endpoint_checks()):
                 raise AssertionError("missing integration check for pypi help")
+            if name == "gh" and not any(c.label == "gh help" for c in endpoint_checks()):
+                raise AssertionError("missing integration check for gh help")
             continue
         if not any(c.args and c.args[0] == name for c in endpoint_checks()):
             raise AssertionError(f"missing integration check for top-level command: {name}")
@@ -1335,6 +1828,8 @@ def run_endpoint_check(
     from unittest.mock import patch
 
     env.update(check.extra_env)
+    if check.label == "pypi upload refuse":
+        env.setdefault("PYPI_API_TOKEN", "test-token")
     token_patch = nullcontext()
     if check.failure == "missing_notion_token":
         env.pop("NOTION_TOKEN", None)
@@ -1345,15 +1840,37 @@ def run_endpoint_check(
     if check.failure == "missing_pypi_token":
         env.pop("PYPI_API_TOKEN", None)
     project_patch = nullcontext()
+    read_project_patch = nullcontext()
     version_patch = nullcontext()
     if check.failure == "missing_pyproject" and outside_git_root is not None:
+        from src.services.pypi_publish import PyPiPublishError
+
         project_patch = patch("src.commands.pypi.project_root", return_value=outside_git_root)
+        read_project_patch = patch(
+            "src.services.pypi_publish.read_project_version",
+            side_effect=PyPiPublishError("pyproject.toml not found in project root"),
+        )
+        version_patch = patch(
+            "src.services.pypi_publish.fetch_latest_published_version",
+            side_effect=PyPiPublishError("pyproject.toml not found in project root"),
+        )
     if check.label == "pypi version check":
         version_patch = patch(
             "src.commands.pypi.assert_version_increased_vs_ref",
             return_value="0.1.1",
         )
-    with _push_cwd(cwd), token_patch, project_patch, version_patch:
+    from src.integration.gh_mocks import gh_endpoint_patches
+    from src.integration.pypi_mocks import pypi_endpoint_patches
+
+    with (
+        _push_cwd(cwd),
+        token_patch,
+        project_patch,
+        read_project_patch,
+        version_patch,
+        gh_endpoint_patches(check),
+        pypi_endpoint_patches(check),
+    ):
         result = _CLI_RUNNER.invoke(app, list(check.args), env=env)
     output = result.stdout + (result.stderr or "")
     if result.exception is not None:
@@ -1418,6 +1935,12 @@ def execute_endpoint_integration_check(
         setup_cherry_pick(git_root)
     elif git_root is not None and check.feature_branch != "none":
         setup_feature_branch(git_root, check.feature_branch)
+        if check.label == "git reset delete-merged yes":
+            subprocess.run(
+                ["git", "-C", str(git_root), "update-ref", "refs/remotes/origin/main", "main"],
+                check=True,
+                capture_output=True,
+            )
     elif check.ensure_second_commit and git_root is not None:
         add_second_commit(git_root, on_feature=False)
     if check.dirty_git and git_root is not None:
@@ -1480,6 +2003,9 @@ def run_all_endpoint_checks(repo_root: Path, git_root: Path | None = None) -> li
     assert_registry_covers_git_commands()
     assert_every_git_subcommand_checked()
     assert_every_git_subcommand_has_ok_and_failure_check()
+    assert_registry_covers_gh_commands()
+    assert_every_gh_subcommand_checked()
+    assert_every_gh_subcommand_has_ok_and_failure_check()
     assert_every_pypi_subcommand_has_ok_and_failure_check()
     assert_every_top_level_command_checked()
     outside_git_root = integration_temp_dir("cli-outside-git-")

@@ -140,11 +140,7 @@ def _test_python_unit(spec: CommandSpec, workspace: Path, extra_env: dict[str, s
 def _test_python_integration(spec: CommandSpec, workspace: Path, extra_env: dict[str, str]) -> int:
     del spec, extra_env
     for cmd in (
-        ["python3", "tests/integration/check_integration_coverage.py"],
-        ["python3", "tests/integration/check_public_commands.py"],
-        ["python3", "tests/integration/check_workflow_integration.py"],
-        ["python3", "tests/integration/check_api_integration.py"],
-        ["python3", "-m", "pytest", "-q", "-m", "integration"],
+        ["bash", "scripts/pull-request/integration-test.sh"],
     ):
         code = _run(cmd, workspace)
         if code != 0:
@@ -154,7 +150,7 @@ def _test_python_integration(spec: CommandSpec, workspace: Path, extra_env: dict
 
 def _test_python_command_surface(spec: CommandSpec, workspace: Path, extra_env: dict[str, str]) -> int:
     del spec, extra_env
-    return _run(["python3", "tests/integration/check_public_commands.py"], workspace)
+    return _run(["bash", "scripts/pull-request/integration-smoke.sh"], workspace)
 
 
 def _lint_typescript(spec: CommandSpec, workspace: Path, extra_env: dict[str, str]) -> int:

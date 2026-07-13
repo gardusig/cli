@@ -328,7 +328,7 @@ def _chrome_success_checks() -> list[CliApiCheck]:
         CliApiCheck(
             "chrome photos list",
             "chrome",
-            ("chrome", "photos", "list"),
+            ("chrome", "photos", "list", "--format", "json"),
             '"albums"',
         ),
         CliApiCheck(

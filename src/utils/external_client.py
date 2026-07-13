@@ -65,6 +65,12 @@ def failure_hint(service: str, operation: str, exc: Exception) -> str:
         return "Verify the Notion integration, database id, and network connectivity."
     if service == "drive":
         return "Check drive provider credentials, remote root path, and network connectivity."
+    if service == "gh":
+        if "auth" in str(exc).lower() or "401" in str(exc):
+            return "Run `gh auth login` and confirm `gh auth status`."
+        if "executable file not found" in str(exc).lower() or "No such file" in str(exc):
+            return "Install GitHub CLI (`gh`) and ensure it is on PATH."
+        return "Check `gh auth status`, repository access, and network connectivity."
     return f"Verify {service} configuration and network connectivity."
 
 

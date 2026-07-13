@@ -133,30 +133,37 @@ def run_contest_check(check: ContestCheck, *, repo_root: Path) -> tuple[int, str
     return result.exit_code, output
 
 
+def execute_contest_integration_check(check: ContestCheck, *, repo_root: Path) -> list[str]:
+    """Run one contest check with mocked runner; return error messages."""
+    errors: list[str] = []
+    if check.failure == "missing_paths":
+        code, output = run_contest_check(check, repo_root=repo_root)
+    elif check.failure == "validate_fail":
+        mock_result = ContestValidateResult(passed=False, error="small tier outputs differ")
+        with patch("src.commands.contest.validate_contest", return_value=mock_result):
+            code, output = run_contest_check(check, repo_root=repo_root)
+    else:
+        mock_result = ContestValidateResult(passed=True)
+        with patch("src.commands.contest.validate_contest", return_value=mock_result):
+            code, output = run_contest_check(check, repo_root=repo_root)
+
+    if check.kind == "ok":
+        if code != 0:
+            errors.append(f"{check.label}: exit {code}\n{output}")
+            return errors
+    else:
+        if code == 0:
+            errors.append(f"{check.label}: expected refusal, got exit 0\n{output}")
+            return errors
+    if check.needle and check.needle not in output:
+        errors.append(f"{check.label}: missing needle {check.needle!r}\n{output}")
+    return errors
+
+
 def run_all_contest_checks(repo_root: Path) -> list[str]:
     assert_contest_registry_complete()
     assert_every_contest_subcommand_has_ok_and_failure_check()
     errors: list[str] = []
     for check in contest_checks():
-        if check.failure == "missing_paths":
-            code, output = run_contest_check(check, repo_root=repo_root)
-        elif check.failure == "validate_fail":
-            mock_result = ContestValidateResult(passed=False, error="small tier outputs differ")
-            with patch("src.commands.contest.validate_contest", return_value=mock_result):
-                code, output = run_contest_check(check, repo_root=repo_root)
-        else:
-            mock_result = ContestValidateResult(passed=True)
-            with patch("src.commands.contest.validate_contest", return_value=mock_result):
-                code, output = run_contest_check(check, repo_root=repo_root)
-
-        if check.kind == "ok":
-            if code != 0:
-                errors.append(f"{check.label}: exit {code}\n{output}")
-                continue
-        else:
-            if code == 0:
-                errors.append(f"{check.label}: expected refusal, got exit 0\n{output}")
-                continue
-        if check.needle and check.needle not in output:
-            errors.append(f"{check.label}: missing needle {check.needle!r}\n{output}")
+        errors.extend(execute_contest_integration_check(check, repo_root=repo_root))
     return errors

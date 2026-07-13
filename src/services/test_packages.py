@@ -16,7 +16,7 @@ from typing import Any
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _DEFAULT_PACKAGE_LIMIT = 4
-_COMMON_ENV = {"CLI_CONFIG_DIR": "config/ci"}
+_COMMON_ENV = {"CLI_PROFILE": "test"}
 _CORE_INTEGRATION_CHECKS = (
     "tests/integration/check_integration_coverage.py",
     "tests/integration/check_public_commands.py",
@@ -116,6 +116,17 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
         source=("src/commands/git.py", "src/services/git_*.py", "src/services/tag_policy.py"),
         tests=("tests/git/",),
         checks=(_PACKAGE_INTEGRATION,),
+    ),
+    _pkg(
+        "gh",
+        source=(
+            "src/commands/gh.py",
+            "src/providers/gh*.py",
+            "src/services/gh_*.py",
+            "docs/gh.md",
+        ),
+        tests=("tests/gh/",),
+        checks=("gh --help", "gh policy list"),
     ),
     _pkg(
         "opencode",
@@ -309,7 +320,7 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
         "internal",
         source=("src/internal/**",),
         tests=("tests/internal/", "tests/cli/"),
-        checks=("tests/integration/check_public_commands.py",),
+        checks=("scripts/pull-request/integration-smoke.sh",),
         notes=("Read/write gate internals affect many commands.",),
         broad=True,
     ),

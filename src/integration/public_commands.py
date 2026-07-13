@@ -25,10 +25,13 @@ from src.integration.docker_integration import (
 )
 from src.integration.public_endpoints import (
     TOP_LEVEL_COMMANDS,
+    assert_every_gh_subcommand_has_ok_and_failure_check,
     assert_every_git_subcommand_checked,
     assert_every_git_subcommand_has_ok_and_failure_check,
+    assert_every_gh_subcommand_checked,
     assert_every_pypi_subcommand_has_ok_and_failure_check,
     assert_every_top_level_command_checked,
+    assert_registry_covers_gh_commands,
     assert_registry_covers_git_commands,
     endpoint_checks,
     run_all_endpoint_checks,
@@ -57,6 +60,9 @@ def assert_public_command_registry_complete() -> None:
     assert_registry_covers_git_commands()
     assert_every_git_subcommand_checked()
     assert_every_git_subcommand_has_ok_and_failure_check()
+    assert_registry_covers_gh_commands()
+    assert_every_gh_subcommand_checked()
+    assert_every_gh_subcommand_has_ok_and_failure_check()
     assert_every_pypi_subcommand_has_ok_and_failure_check()
     assert_every_top_level_command_checked()
     assert_docker_registry_covers_commands()

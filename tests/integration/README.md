@@ -1,19 +1,28 @@
 # Integration tests
 
-Dockerized checks validate every public command surface with mocked external APIs where needed.
+Integration is a **read-only smoke script** against the installed `cli` binary.
 
-## Layout
-
-- `check_integration_coverage.py` — ok/fail inventory gate
-- `check_public_commands.py` — full public command runner
-- `check_package_integration.py` — per-package legs (`git`, `notion`, `drive`, `chrome`, …)
-
-## Config
-
-Default `CLI_CONFIG_DIR=config/ci` (see `tests/conftest.py`). Workflow E2E uses disposable git repos under `.integration-scratch/`.
-
-## Run
+## Run locally
 
 ```bash
-cli test python integration .
+pip install -e .
+export CLI_PROFILE=test
+bash scripts/pull-request/integration-smoke.sh
 ```
+
+Or the full dev integration leg (install + smoke):
+
+```bash
+bash scripts/pull-request/integration-test.sh
+```
+
+## What it checks
+
+- `cli --help`, `cli --version`, basic help surfaces
+- Disposable git repo via `CLI_GIT_ROOT`: `cli git branch`, `cli git log`, `cli git diff`
+- Read-only GitHub policy: `cli gh policy list`, blocked `cli gh issue close`
+
+## Legacy entry points
+
+- `tests/integration/check_integration_coverage.py` — stub gate (smoke is source of truth)
+- `tests/integration/check_public_commands.py` — runs `integration-smoke.sh`

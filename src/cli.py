@@ -10,6 +10,7 @@ from src.commands.chrome import chrome_app
 from src.commands.contest import contest_app
 from src.commands.config_cmd import config_app
 from src.commands.configure_cmd import configure_app
+from src.commands.gh import gh_app
 from src.commands.docker import docker_app
 from src.commands.drive import drive_app
 from src.commands.git import git_app, ship_cmd
@@ -38,6 +39,7 @@ app = typer.Typer(
 app.add_typer(links_app, name="links")
 app.command("ship", help="Stage, commit ('.'), and push main — personal backup flow.")(ship_cmd)
 app.add_typer(git_app, name="git")
+app.add_typer(gh_app, name="gh")
 app.add_typer(hygiene_app, name="hygiene", hidden=True)
 app.add_typer(opencode_app, name="opencode")
 app.add_typer(test_app, name="test")

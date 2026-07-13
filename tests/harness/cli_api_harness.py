@@ -94,6 +94,7 @@ def notion_cli_context(monkeypatch: Any, tmp_path: Path) -> Iterator[Path]:
         "notion:\n"
         "  database_id: db-integration\n"
         "  cleanup_before_deploy: false\n"
+        "  link_repo: gardusig/private\n"
         "  link_branch: main\n"
         "  issues:\n"
         "    repo: gardusig/private\n",
@@ -228,10 +229,13 @@ def chrome_cli_context(
     photos.mkdir(parents=True, exist_ok=True)
     fixture_html = workspace / "Downloads" / "bookmarks.html"
     takeout_zip = _write_takeout_zip(workspace / "Downloads")
+    empty_downloads = tmp_path / "empty-downloads"
+    empty_downloads.mkdir(exist_ok=True)
+    downloads_dir = workspace / "Downloads" if use_fixture else empty_downloads
     env = {
         **os.environ,
         "CLI_SKIP_CHROME_AUTOMATION": "1",
-        "CLI_DOWNLOADS_DIR": str(workspace / "Downloads"),
+        "CLI_DOWNLOADS_DIR": str(downloads_dir),
         "CLI_BOOKMARKS_FILE": str(bookmarks),
         "CLI_PHOTOS_DIR": str(photos),
         "CLI_ROOT": str(ROOT),
@@ -239,9 +243,6 @@ def chrome_cli_context(
     if use_fixture:
         env["CLI_BOOKMARKS_FIXTURE"] = str(fixture_html)
     else:
-        empty_downloads = tmp_path / "empty-downloads"
-        empty_downloads.mkdir(exist_ok=True)
-        env["CLI_DOWNLOADS_DIR"] = str(empty_downloads)
         env["CLI_DOWNLOAD_TIMEOUT"] = "1"
 
     def _bookmarks_env() -> dict[str, str]:
@@ -250,17 +251,24 @@ def chrome_cli_context(
     with (
         patch("src.commands.chrome._bookmarks_env", _bookmarks_env),
         patch("src.commands.chrome.bookmarks_file_path", lambda config_dir=None, profile=None: bookmarks),
-        patch("src.commands.chrome.chrome_downloads_dir", lambda config_dir=None: workspace / "Downloads"),
+        patch("src.commands.chrome.chrome_downloads_dir", lambda config_dir=None: downloads_dir),
         patch("src.commands.chrome.chrome_snapshots_dir", lambda config_dir=None: snapshots),
         patch("src.commands.chrome.chrome_snapshot_retention", lambda config_dir=None: 30),
         patch("src.commands.chrome.photos_dir_path", lambda config_dir=None: photos),
-        patch("src.commands.chrome.photos_takeout_dir", lambda config_dir=None: workspace / "Downloads"),
+        patch("src.commands.chrome.photos_takeout_dir", lambda config_dir=None: downloads_dir),
+        patch("src.services.photos_sync.wait_for_takeout_archive", return_value=takeout_zip),
     ):
         if skip_export and bookmarks.is_file():
             bookmarks.unlink()
         if use_fixture and not skip_export:
             subprocess.run(
                 ["python", "-m", "src", "chrome", "bookmarks", "ingest"],
+                env=env,
+                check=True,
+                cwd=ROOT,
+            )
+            subprocess.run(
+                ["python", "-m", "src", "chrome", "photos", "ingest", "--yes"],
                 env=env,
                 check=True,
                 cwd=ROOT,
@@ -348,7 +356,13 @@ def api_check_context(
             if check.failure == "chrome_photos_no_takeout":
                 empty = tmp_path / "empty-takeout"
                 empty.mkdir(exist_ok=True)
-                with patch("src.commands.chrome.photos_takeout_dir", lambda config_dir=None: empty):
+                with (
+                    patch("src.commands.chrome.photos_takeout_dir", lambda config_dir=None: empty),
+                    patch(
+                        "src.services.photos_sync.wait_for_takeout_archive",
+                        side_effect=TimeoutError("no takeout"),
+                    ),
+                ):
                     yield chrome_env
                 return
             if check.failure == "chrome_photos_no_dir":

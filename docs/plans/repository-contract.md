@@ -4,7 +4,7 @@ This is the canonical repository contract for the gardusig repositories.
 
 ## Active Decisions
 
-- `gardusig/cli` owns validation logic, developer commands, `docker/pull-request.dockerfile`, `docker/release.dockerfile`, `scripts/pull-request/`, and `scripts/release/`.
+- `gardusig/cli` owns validation logic, developer commands, root `Dockerfile`, `scripts/pull-request/`, and `scripts/release/`.
 - `gardusig/cli` owns reusable GitHub Actions routers.
 - App repositories keep application code plus [`.github/workflows/`](../.github/workflows/README.md):
   - `pull-request.workflow.yaml` / `release.workflow.yaml` — thin callers

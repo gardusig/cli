@@ -26,16 +26,8 @@ def run_unit(root: Path) -> None:
 
 
 def run_integration(root: Path) -> None:
-    checks = [
-        ["python", "tests/integration/check_integration_coverage.py"],
-        ["python", "tests/integration/check_public_commands.py"],
-        ["python", "tests/integration/check_workflow_integration.py"],
-        ["python", "tests/integration/check_api_integration.py"],
-    ]
-    for cmd in checks:
-        subprocess.run(cmd, cwd=root, check=True)
-    subprocess.run(["python", "-m", "pytest", "-q", "-m", "integration"], cwd=root, check=True)
+    subprocess.run(["bash", "scripts/pull-request/integration-test.sh"], cwd=root, check=True)
 
 
 def run_command_surface(root: Path) -> None:
-    subprocess.run(["python", "tests/integration/check_public_commands.py"], cwd=root, check=True)
+    subprocess.run(["bash", "scripts/pull-request/integration-smoke.sh"], cwd=root, check=True)

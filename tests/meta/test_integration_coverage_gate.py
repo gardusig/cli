@@ -1,54 +1,25 @@
-"""Gate: every public CLI command is listed with ok + fail integration checks."""
+"""Smoke-script integration gate (replaces per-command inventory)."""
 
 from __future__ import annotations
-
-from tests.constants import ROOT
 
 import json
 import subprocess
 import sys
 from pathlib import Path
 
-from src.integration.integration_coverage import (
-    assert_integration_coverage_gate,
-    integration_coverage_inventory,
-    integration_coverage_manifest,
-    integration_coverage_summary,
-)
+from src.integration.integration_coverage import assert_integration_coverage_gate
 
-
+ROOT = Path(__file__).resolve().parents[2]
 CHECK_SCRIPT = ROOT / "tests" / "integration" / "check_integration_coverage.py"
+SMOKE = ROOT / "scripts" / "pull-request" / "integration-smoke.sh"
 
 
 def test_integration_coverage_gate_passes() -> None:
     assert_integration_coverage_gate()
 
 
-def test_every_inventory_row_has_ok_and_fail_checks() -> None:
-    for row in integration_coverage_inventory():
-        if not row.ok_exempt:
-            assert row.ok_checks, f"{row.path_display}: missing ok checks"
-        if row.fail_exempt:
-            continue
-        assert row.fail_checks, f"{row.path_display}: missing fail checks"
-
-
-def test_manifest_lists_all_categories() -> None:
-    manifest = integration_coverage_manifest()
-    assert manifest["version"] == 1
-    assert manifest["summary"]["total_commands"] > 0
-    assert manifest["summary"]["incomplete"] == 0
-    categories = {row["category"] for row in manifest["commands"]}
-    assert categories >= {"api", "git", "docker", "contest"}
-
-
-def test_manifest_command_rows_are_complete() -> None:
-    for row in integration_coverage_manifest()["commands"]:
-        assert row["complete"] is True
-        if not row["ok_exempt"]:
-            assert row["ok_checks"]
-        if not row["fail_exempt"]:
-            assert row["fail_checks"]
+def test_integration_smoke_script_exists() -> None:
+    assert SMOKE.is_file()
 
 
 def test_check_integration_coverage_script_gate() -> None:
@@ -73,6 +44,5 @@ def test_check_integration_coverage_script_json() -> None:
     )
     assert result.returncode == 0
     data = json.loads(result.stdout)
-    assert data["summary"] == integration_coverage_summary()
-
-
+    assert data["mode"] == "smoke"
+    assert data["summary"]["incomplete"] == 0

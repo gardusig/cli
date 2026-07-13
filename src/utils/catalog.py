@@ -46,12 +46,15 @@ QUICK_DEFAULTS = (
     ("pypi version check", "PR gate: branch version must be greater than origin/main"),
     ("pypi upload --testpypi", "TestPyPI dry-run publish; production uses release main"),
     ("release main", "guarded production release: tag, PyPI publish, verify, GitHub release"),
+    ("gh pr", "push if needed, then create PR with quick defaults"),
+    ("gh pr upsert --branch", "commit, push, and reuse one open PR per branch"),
 )
 
 WORKFLOW_SHORTCUTS: tuple[tuple[str, str, str], ...] = (
     ("git reset", "docs/workflows.md", "return to synced main + prune branches"),
     ("git start", "docs/workflows.md", "issue start: align main + named branch"),
     ("git push", "docs/workflows.md", "push current branch; start on main"),
+    ("gh pr", "docs/gh.md", "push if needed, then open a PR"),
 )
 
 GIT_COMMANDS: tuple[tuple[str, str], ...] = (
@@ -98,8 +101,31 @@ CHROME_COMMANDS: tuple[tuple[str, str], ...] = (
     ("bookmarks import", "legacy alias for bookmarks deploy"),
 )
 
+GH_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("issue list", "gh issue list"),
+    ("issue view", "gh issue view"),
+    ("issue context", "gh issue context"),
+    ("issue create", "gh issue create"),
+    ("issue edit", "gh issue edit"),
+    ("issue comment", "gh issue comment"),
+    ("issue status", "gh issue status"),
+    ("branch list", "gh branch list"),
+    ("branch view", "gh branch view"),
+    ("branch delete", "gh branch delete"),
+    ("branch pr", "gh branch pr"),
+    ("pr list", "gh pr list"),
+    ("pr view", "gh pr view"),
+    ("pr create", "gh pr create"),
+    ("pr upsert", "gh pr upsert"),
+    ("pr status", "gh pr status"),
+    ("pr checks", "gh pr checks"),
+    ("pr review", "gh pr review"),
+    ("policy list", "gh policy list"),
+)
+
 TOP_LEVEL_COMMANDS: tuple[tuple[str, str], ...] = (
     ("git / g", "git shortcuts (see cli git --help)"),
+    ("gh", "GitHub via gh — issues, branches, PRs (see docs/gh.md)"),
     ("opencode", "AI entry point — chat and raw prompts (see docs/opencode.md)"),
     ("lint", "Repository lint wrapper"),
     ("test", "Run repo test pipeline and package selection contracts"),
@@ -177,6 +203,20 @@ def chrome_command_entries(root: Path | None = None) -> list[CatalogEntry]:
                 cli=f"cli chrome {label}",
                 doc="docs/bookmarks.md",
                 note=note,
+            )
+        )
+    return entries
+
+
+def gh_command_entries(root: Path | None = None) -> list[CatalogEntry]:
+    _ = root or project_root()
+    entries: list[CatalogEntry] = []
+    for label, cli_cmd in GH_COMMANDS:
+        entries.append(
+            CatalogEntry(
+                label,
+                cli=f"cli {cli_cmd}",
+                doc="docs/gh.md",
             )
         )
     return entries

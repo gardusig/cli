@@ -9,6 +9,7 @@ from src.utils.catalog import (
     WORKFLOW_SHORTCUTS,
     chrome_command_entries,
     doc_entries,
+    gh_command_entries,
     git_command_entries,
 )
 from src.utils.config import project_root
@@ -46,6 +47,10 @@ def links_root() -> None:
         if entry.label == "large files":
             line += " — [dim]docs/large-files.md[/dim]"
         rprint(line)
+
+    rprint("\n[bold]GitHub commands[/bold] (see docs/gh.md)")
+    for entry in gh_command_entries(root):
+        rprint(f"  {entry.cli}")
 
     rprint("\n[bold]Chrome commands[/bold] (see docs/bookmarks.md)")
     for entry in chrome_command_entries(root):

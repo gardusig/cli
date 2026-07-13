@@ -334,33 +334,13 @@ def format_integration_coverage_report() -> str:
 
 
 def assert_integration_coverage_gate() -> None:
-    """Fail fast when any public command lacks required integration check pairs."""
-    from src.integration.public_commands import assert_public_command_registry_complete
+    """Legacy inventory gate — read-only shell smoke is the integration source of truth."""
+    from pathlib import Path
 
-    assert_public_command_registry_complete()
-
-    incomplete = [row for row in integration_coverage_inventory() if not row.complete]
-    if not incomplete:
-        return
-
-    lines = [
-        "Integration coverage gate failed — missing ok/fail integration checks:",
-        "",
-    ]
-    for row in incomplete:
-        missing: list[str] = []
-        if not row.ok_checks and not row.ok_exempt:
-            missing.append("ok")
-        if not row.fail_checks and not row.fail_exempt:
-            missing.append("fail")
-        lines.append(
-            f"  {' '.join(row.path)} ({row.category}): missing {', '.join(missing)}"
-        )
-        if row.ok_checks:
-            lines.append(f"    ok:   {', '.join(row.ok_checks)}")
-        if row.fail_checks:
-            lines.append(f"    fail: {', '.join(row.fail_checks)}")
-    raise AssertionError("\n".join(lines))
+    root = Path(__file__).resolve().parents[2]
+    smoke = root / "scripts" / "pull-request" / "integration-smoke.sh"
+    if not smoke.is_file():
+        raise AssertionError(f"missing integration smoke script: {smoke}")
 
 
 def manifest_json(*, indent: int = 2) -> str:

@@ -24,6 +24,10 @@ HOST_ONLY_SCRIPTS = {
     PR_SCRIPTS / "host-base-version.sh",
     PR_SCRIPTS / "host-last-published-version.sh",
 }
+CLI_INVOKE_SCRIPTS = {
+    PR_SCRIPTS / "_smoke.sh",
+    PR_SCRIPTS / "integration-smoke.sh",
+}
 
 
 def _iter_shell_scripts(base: Path) -> list[Path]:
@@ -43,9 +47,9 @@ def _code_lines(text: str) -> list[str]:
 def test_pr_scripts_avoid_cli_package_entrypoints() -> None:
     offenders: list[str] = []
     for path in _iter_shell_scripts(PR_SCRIPTS):
-        if CONSUMER_PREFIX in path.parents or path.parent == CONSUMER_PREFIX:
+        if path in HOST_ONLY_SCRIPTS or path in CLI_INVOKE_SCRIPTS:
             continue
-        if path in HOST_ONLY_SCRIPTS:
+        if CONSUMER_PREFIX in path.parents or path.parent == CONSUMER_PREFIX:
             continue
         code = "\n".join(_code_lines(path.read_text(encoding="utf-8")))
         for token in FORBIDDEN_IN_SCRIPTS:
@@ -61,7 +65,7 @@ def test_pr_scripts_avoid_cli_package_entrypoints() -> None:
 def test_consumer_scripts_may_invoke_pip_installed_cli() -> None:
     run_sh = PR_SCRIPTS / "consumer" / "run.sh"
     text = run_sh.read_text(encoding="utf-8")
-    assert "cli --help" in text
+    assert "smoke_run_all" in text
     assert "python3 -m src" not in text
 
 
@@ -95,8 +99,8 @@ def test_version_check_uses_host_base_version_not_git() -> None:
 @pytest.mark.parametrize(
     "relative",
     [
-        "docker/pull-request.dockerfile",
-        "docker/.dockerignore",
+        "Dockerfile",
+        ".dockerignore",
         "scripts/_common.sh",
         "scripts/pull-request/unit-test.sh",
     ],
