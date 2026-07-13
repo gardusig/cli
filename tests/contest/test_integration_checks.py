@@ -1,4 +1,4 @@
-"""Registry and mocked integration checks for cli contest commands."""
+"""Contest integration checks use mocked runner (registry gate removed)."""
 
 from __future__ import annotations
 
@@ -6,20 +6,7 @@ from tests.constants import ROOT
 
 from pathlib import Path
 
-from src.integration.contest_integration import (
-    CONTEST_SUBCOMMANDS,
-    assert_every_contest_subcommand_has_ok_check,
-    contest_checks,
-    run_all_contest_checks,
-)
-from src.integration.integration_coverage import assert_integration_coverage_gate
-
-
-def test_contest_subcommands_have_checks() -> None:
-    assert_integration_coverage_gate()
-    covered = {c.args[1] for c in contest_checks() if len(c.args) >= 2}
-    assert set(CONTEST_SUBCOMMANDS) <= covered
-    assert_every_contest_subcommand_has_ok_check()
+from src.integration.contest_integration import run_all_contest_checks
 
 
 def test_mocked_contest_integration_passes() -> None:

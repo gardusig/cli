@@ -45,7 +45,7 @@ def release_main_cmd(
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip write gate."),
     version: str | None = typer.Option(None, "--version", help="Release version (defaults to pyproject)."),
 ) -> None:
-    """Tag main, publish gardusig-cli to PyPI, and create a GitHub release."""
+    """Tag main, publish gardusig-cli to PyPI, and push the release tag."""
     try:
         release_version = resolve_release_version(version, root=_ROOT) or read_project_version(_ROOT)
         tag = format_release_tag(release_version)
@@ -67,7 +67,6 @@ def release_main_cmd(
             repository_url=DEFAULT_REPOSITORY_URL,
         )
         verify_package_version_on_index(PACKAGE_NAME, release_version)
-        _ensure_github_release(tag)
         typer.echo(f"Released {PACKAGE_NAME}=={release_version}: {', '.join(uploaded)}")
     except PyPiPublishError as exc:
         typer.echo(str(exc), err=True)
@@ -108,15 +107,3 @@ def _ensure_release_tag(tag: str) -> None:
         if not remote.stdout.strip():
             push.check_returncode()
 
-
-def _ensure_github_release(tag: str) -> None:
-    view = subprocess.run(
-        ["gh", "release", "view", tag],
-        cwd=_ROOT,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=False,
-    )
-    if view.returncode == 0:
-        return
-    subprocess.run(["gh", "release", "create", tag, "--generate-notes"], cwd=_ROOT, check=True)

@@ -299,27 +299,34 @@ def run_docker_check(check: DockerCheck, *, repo_root: Path) -> tuple[int, str]:
     return result.exit_code, output
 
 
+def execute_docker_integration_check(check: DockerCheck, *, repo_root: Path) -> list[str]:
+    """Run one docker check with mocked daemon; return error messages."""
+    errors: list[str] = []
+    with patch_docker_cli():
+        if check.failure == "docker_unavailable":
+            with patch.object(runtime_mod.shutil, "which", return_value=None):
+                code, output = run_docker_check(check, repo_root=repo_root)
+        else:
+            code, output = run_docker_check(check, repo_root=repo_root)
+    if check.kind == "ok":
+        if code != 0:
+            errors.append(f"{check.label}: exit {code}\n{output}")
+            return errors
+    else:
+        if code == 0:
+            errors.append(f"{check.label}: expected refusal, got exit 0\n{output}")
+            return errors
+    if check.needle and check.needle not in output:
+        errors.append(f"{check.label}: missing needle {check.needle!r}\n{output}")
+    return errors
+
+
 def run_all_docker_checks(repo_root: Path) -> list[str]:
     assert_docker_registry_complete()
     assert_every_docker_subcommand_has_ok_and_failure_check()
     errors: list[str] = []
-    with patch_docker_cli():
-        for check in docker_checks():
-            if check.failure == "docker_unavailable":
-                with patch.object(runtime_mod.shutil, "which", return_value=None):
-                    code, output = run_docker_check(check, repo_root=repo_root)
-            else:
-                code, output = run_docker_check(check, repo_root=repo_root)
-            if check.kind == "ok":
-                if code != 0:
-                    errors.append(f"{check.label}: exit {code}\n{output}")
-                    continue
-            else:
-                if code == 0:
-                    errors.append(f"{check.label}: expected refusal, got exit 0\n{output}")
-                    continue
-            if check.needle and check.needle not in output:
-                errors.append(f"{check.label}: missing needle {check.needle!r}\n{output}")
+    for check in docker_checks():
+        errors.extend(execute_docker_integration_check(check, repo_root=repo_root))
     return errors
 
 

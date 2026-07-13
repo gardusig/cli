@@ -9,7 +9,7 @@ from typing import Literal
 from src.cli import app
 from src.integration.public_endpoints import REFUSE_NEEDLE
 
-ApiName = Literal["gh", "notion", "drive", "chrome"]
+ApiName = Literal["notion", "drive", "chrome"]
 CheckKind = Literal["ok", "fail"]
 
 _OPTION_TAKES_VALUE = frozenset(
@@ -66,7 +66,7 @@ def command_tokens(args: tuple[str, ...]) -> tuple[str, ...]:
 
 
 def command_path(args: tuple[str, ...]) -> tuple[str, ...]:
-    """Normalized command path (e.g. gh, issue, list)."""
+    """Normalized command path (e.g. notion, ingest)."""
     return command_tokens(args)
 
 
@@ -111,470 +111,11 @@ def _visible_commands(typer_app, prefix: tuple[str, ...]) -> set[tuple[str, ...]
 
 
 def registered_api_command_paths(api: ApiName) -> set[tuple[str, ...]]:
-    """Visible Typer command paths for gh, notion, drive, or chrome."""
+    """Visible Typer command paths for notion, drive, or chrome."""
     for group in app.registered_groups:
         if group.name == api:
             return _visible_commands(group.typer_instance, (api,))
     return set()
-
-
-def _gh_wf_success_checks(fmt: tuple[str, ...]) -> list[CliApiCheck]:
-    checks: list[CliApiCheck] = []
-    for group in ("wf", "workflow"):
-        checks.extend(
-            [
-                CliApiCheck(f"gh {group} list", "gh", ("gh", *fmt, group, "list"), "dispatch.yml"),
-                CliApiCheck(
-                    f"gh {group} view",
-                    "gh",
-                    ("gh", *fmt, group, "view", "dispatch.yml"),
-                    "dispatch",
-                ),
-                CliApiCheck(
-                    f"gh {group} enable",
-                    "gh",
-                    ("gh", *fmt, group, "enable", "dispatch.yml"),
-                    None,
-                ),
-                CliApiCheck(
-                    f"gh {group} disable",
-                    "gh",
-                    ("gh", *fmt, group, "disable", "dispatch.yml"),
-                    None,
-                ),
-                CliApiCheck(
-                    f"gh {group} run list",
-                    "gh",
-                    ("gh", *fmt, group, "run", "list"),
-                    "29015588872",
-                ),
-                CliApiCheck(
-                    f"gh {group} run view",
-                    "gh",
-                    ("gh", *fmt, group, "run", "view", "29015588872"),
-                    "dispatch.yml",
-                ),
-                CliApiCheck(
-                    f"gh {group} run failed",
-                    "gh",
-                    ("gh", *fmt, group, "run", "failed", "29015588872"),
-                    "ERROR",
-                ),
-                CliApiCheck(
-                    f"gh {group} run watch",
-                    "gh",
-                    ("gh", *fmt, group, "run", "watch", "29015588872"),
-                    "completed",
-                ),
-                CliApiCheck(
-                    f"gh {group} run cancel",
-                    "gh",
-                    ("gh", *fmt, group, "run", "cancel", "29015588872"),
-                    None,
-                ),
-                CliApiCheck(
-                    f"gh {group} run rerun",
-                    "gh",
-                    ("gh", *fmt, group, "run", "rerun", "29015588872"),
-                    None,
-                ),
-                CliApiCheck(
-                    f"gh {group} run delete",
-                    "gh",
-                    ("gh", *fmt, group, "run", "delete", "29015588872", "--yes"),
-                    None,
-                ),
-            ]
-        )
-    return checks
-
-
-def _gh_success_checks(workspace: Path) -> list[CliApiCheck]:
-    fmt = ("--format", "json")
-    manifest = workspace / "labels.manifest.yaml"
-    batch = workspace / "issue-batch.yaml"
-    plan = workspace / "resequence.yaml"
-    return [
-        CliApiCheck("gh issue list", "gh", ("gh", *fmt, "issue", "list"), "Integration issue"),
-        CliApiCheck(
-            "gh issue list api",
-            "gh",
-            ("gh", "--transport", "api", "--repo", "example/repo", *fmt, "issue", "list"),
-            '"number"',
-        ),
-        CliApiCheck(
-            "gh pr checks api",
-            "gh",
-            ("gh", "--transport", "api", "--repo", "example/repo", *fmt, "pr", "checks", "7"),
-            "ci",
-        ),
-        CliApiCheck(
-            "gh issue context api",
-            "gh",
-            (
-                "gh",
-                "--transport",
-                "api",
-                "--repo",
-                "example/repo",
-                *fmt,
-                "issue",
-                "context",
-                "2",
-            ),
-            "epic:wf-test",
-        ),
-        CliApiCheck(
-            "gh project view api",
-            "gh",
-            ("gh", "--transport", "api", "project", "view", "1", "--owner", "owner"),
-            "graphql",
-        ),
-        CliApiCheck(
-            "gh project item add api",
-            "gh",
-            (
-                "gh",
-                "--transport",
-                "api",
-                "--yes",
-                "project",
-                "item",
-                "add",
-                "--project",
-                "1",
-                "--owner",
-                "owner",
-                "--issue",
-                "42",
-            ),
-            "ITEM_1",
-        ),
-        CliApiCheck(
-            "gh transport refuse",
-            "gh",
-            ("gh", "--transport", "api", *fmt, "issue", "list"),
-            kind="fail",
-            needle="GitHub API transport needs",
-            accept_exit_codes=(1,),
-            failure="gh_transport",
-        ),
-        CliApiCheck("gh issue view", "gh", ("gh", *fmt, "issue", "view", "42"), "fixture body"),
-        CliApiCheck(
-            "gh issue context",
-            "gh",
-            ("gh", *fmt, "issue", "context", "2"),
-            "epic:wf-test",
-        ),
-        CliApiCheck("gh issue search", "gh", ("gh", *fmt, "issue", "search", "is:open"), "["),
-        CliApiCheck(
-            "gh issue create",
-            "gh",
-            ("gh", *fmt, "issue", "create", "--title", "New", "--body", "b", "--yes"),
-            "example/repo/issues/",
-        ),
-        CliApiCheck(
-            "gh issue edit",
-            "gh",
-            ("gh", *fmt, "issue", "edit", "42", "--title", "Edited", "--yes"),
-            "edit",
-        ),
-        CliApiCheck(
-            "gh issue reopen",
-            "gh",
-            ("gh", *fmt, "issue", "reopen", "42", "--yes"),
-            "open",
-        ),
-        CliApiCheck("gh issue status", "gh", ("gh", *fmt, "issue", "status"), "open_issues"),
-        CliApiCheck(
-            "gh issue close",
-            "gh",
-            ("gh", *fmt, "issue", "close", "42", "--yes"),
-            "close",
-        ),
-        CliApiCheck(
-            "gh issue comment",
-            "gh",
-            ("gh", *fmt, "issue", "comment", "42", "--body", "hi", "--yes"),
-            "comment",
-        ),
-        CliApiCheck(
-            "gh issue delete",
-            "gh",
-            ("gh", *fmt, "issue", "delete", "42", "--yes"),
-            "delete",
-        ),
-        CliApiCheck(
-            "gh issue batch",
-            "gh",
-            ("gh", *fmt, "issue", "batch", "--file", str(batch), "--yes"),
-            "Batch create",
-        ),
-        CliApiCheck(
-            "gh issues deploy",
-            "gh",
-            ("gh", *fmt, "issues", "deploy", "--yes"),
-            "deploy",
-        ),
-        CliApiCheck("gh issues ingest", "gh", ("gh", *fmt, "issues", "ingest"), "ingest"),
-        CliApiCheck(
-            "gh issues prune",
-            "gh",
-            ("gh", *fmt, "issues", "prune", "--yes"),
-            "prune",
-        ),
-        CliApiCheck("gh label list", "gh", ("gh", *fmt, "label", "list"), "test"),
-        CliApiCheck(
-            "gh label create",
-            "gh",
-            ("gh", *fmt, "label", "create", "integration", "--yes"),
-            "create",
-        ),
-        CliApiCheck(
-            "gh label delete",
-            "gh",
-            ("gh", *fmt, "label", "delete", "integration", "--yes"),
-            "delete",
-        ),
-        CliApiCheck(
-            "gh label sync",
-            "gh",
-            ("gh", *fmt, "label", "sync", "--manifest", str(manifest), "--yes"),
-            "created",
-        ),
-        CliApiCheck("gh pr list", "gh", ("gh", *fmt, "pr", "list"), "7"),
-        CliApiCheck(
-            "gh pr shortcut",
-            "gh",
-            ("gh", *fmt, "pr", "--yes"),
-            '"existing"',
-        ),
-        CliApiCheck(
-            "gh pr shortcut api",
-            "gh",
-            ("gh", "--transport", "api", "--repo", "example/repo", *fmt, "pr", "--yes"),
-            '"existing"',
-        ),
-        CliApiCheck("gh pr view", "gh", ("gh", *fmt, "pr", "view", "7"), "Integration PR"),
-        CliApiCheck("gh pr diff", "gh", ("gh", *fmt, "pr", "diff", "7"), "file changed"),
-        CliApiCheck(
-            "gh pr create",
-            "gh",
-            ("gh", *fmt, "pr", "create", "--title", "PR", "--body", "b", "--yes"),
-            "8",
-        ),
-        CliApiCheck(
-            "gh pr upsert",
-            "gh",
-            (
-                "gh",
-                *fmt,
-                "pr",
-                "upsert",
-                "--branch",
-                "automation/sync-submodules-main",
-                "--title",
-                "chore: sync submodules to main",
-                "--body",
-                "body",
-                "--message",
-                "chore: sync submodules to main",
-                "--yes",
-            ),
-            '"action"',
-        ),
-        CliApiCheck(
-            "gh pr edit",
-            "gh",
-            ("gh", *fmt, "pr", "edit", "7", "--title", "Edited PR", "--yes"),
-            "edit",
-        ),
-        CliApiCheck(
-            "gh pr comment",
-            "gh",
-            ("gh", *fmt, "pr", "comment", "7", "--body", "hi", "--yes"),
-            "comment",
-        ),
-        CliApiCheck(
-            "gh pr reopen",
-            "gh",
-            ("gh", *fmt, "pr", "reopen", "7", "--yes"),
-            "open",
-        ),
-        CliApiCheck("gh pr checks", "gh", ("gh", *fmt, "pr", "checks", "7"), "ci"),
-        CliApiCheck(
-            "gh pr review",
-            "gh",
-            ("gh", *fmt, "pr", "review", "7", "--approve", "--body", "ok", "--yes"),
-            "review",
-        ),
-        CliApiCheck(
-            "gh pr ready",
-            "gh",
-            ("gh", *fmt, "pr", "ready", "7", "--yes"),
-            "ready",
-        ),
-        CliApiCheck("gh pr status", "gh", ("gh", *fmt, "pr", "status"), "open_prs"),
-        CliApiCheck(
-            "gh pr close",
-            "gh",
-            ("gh", *fmt, "pr", "close", "7", "--yes"),
-            "close",
-        ),
-        CliApiCheck(
-            "gh pr merge",
-            "gh",
-            ("gh", *fmt, "pr", "merge", "7", "--yes"),
-            "merge blocked",
-            accept_exit_codes=(1,),
-        ),
-        CliApiCheck("gh backlog tree", "gh", ("gh", *fmt, "backlog", "tree"), "parents"),
-        CliApiCheck("gh backlog next", "gh", ("gh", *fmt, "backlog", "next"), '"number":'),
-        CliApiCheck("gh backlog levels", "gh", ("gh", *fmt, "backlog", "levels"), "levels"),
-        CliApiCheck("gh backlog organize", "gh", ("gh", *fmt, "backlog", "organize"), "priority"),
-        CliApiCheck(
-            "gh backlog resequence",
-            "gh",
-            ("gh", *fmt, "backlog", "resequence", "--file", str(plan), "--yes"),
-            "Resequenced",
-        ),
-        CliApiCheck("gh policy list", "gh", ("gh", *fmt, "policy", "list"), "pr-merge"),
-        CliApiCheck("gh project list", "gh", ("gh", *fmt, "project", "list"), "Roadmap"),
-        CliApiCheck("gh project view", "gh", ("gh", *fmt, "project", "view", "1"), "Roadmap"),
-        CliApiCheck(
-            "gh project create",
-            "gh",
-            ("gh", *fmt, "project", "create", "--title", "Roadmap", "--yes"),
-            "Roadmap",
-        ),
-        CliApiCheck(
-            "gh project edit",
-            "gh",
-            ("gh", *fmt, "project", "edit", "1", "--title", "Roadmap v2", "--yes"),
-            "Roadmap",
-        ),
-        CliApiCheck(
-            "gh project delete",
-            "gh",
-            ("gh", *fmt, "project", "delete", "1", "--yes"),
-            "deleted",
-        ),
-        CliApiCheck(
-            "gh project item list",
-            "gh",
-            ("gh", *fmt, "project", "item", "list", "1"),
-            "ITEM",
-        ),
-        CliApiCheck(
-            "gh project item view",
-            "gh",
-            ("gh", *fmt, "project", "item", "view", "--id", "ITEM_1", "--project", "1"),
-            "ITEM",
-        ),
-        CliApiCheck(
-            "gh project item add",
-            "gh",
-            ("gh", *fmt, "project", "item", "add", "--project", "1", "--issue", "42", "--yes"),
-            "ITEM",
-        ),
-        CliApiCheck(
-            "gh project item edit",
-            "gh",
-            (
-                "gh",
-                *fmt,
-                "project",
-                "item",
-                "edit",
-                "--project",
-                "1",
-                "--id",
-                "ITEM_1",
-                "--field",
-                "Status",
-                "--value",
-                "Done",
-                "--kind",
-                "single-select",
-                "--yes",
-            ),
-            "Done",
-        ),
-        CliApiCheck(
-            "gh project item delete",
-            "gh",
-            ("gh", *fmt, "project", "item", "delete", "--project", "1", "--id", "ITEM_1", "--yes"),
-            "deleted",
-        ),
-        *[
-            CliApiCheck(
-                f"gh ruleset {sub}",
-                "gh",
-                ("gh", *fmt, "ruleset", sub),
-                "Rulesets blocked",
-                accept_exit_codes=(1,),
-            )
-            for sub in ("list", "view", "create", "edit", "delete")
-        ],
-        CliApiCheck(
-            "gh repo view",
-            "gh",
-            ("gh", *fmt, "repo", "view"),
-            "example/repo",
-        ),
-        CliApiCheck("gh repo list", "gh", ("gh", *fmt, "repo", "list"), "example"),
-        CliApiCheck(
-            "gh repo readme-sync",
-            "gh",
-            ("gh", "repo", "readme-sync", "--readme", str(workspace / "README.md"), "--dry-run"),
-            "README",
-        ),
-        *_gh_wf_success_checks(fmt),
-    ]
-
-
-def _gh_failure_checks(workspace: Path) -> list[CliApiCheck]:
-    failures: list[CliApiCheck] = []
-    for ok in _gh_success_checks(workspace):
-        if ok.accept_exit_codes != (0,):
-            failures.append(
-                CliApiCheck(
-                    f"{ok.label} fail",
-                    ok.api,
-                    _without_yes(ok.args) if "--yes" in ok.args else ok.args,
-                    kind="fail",
-                    needle=ok.needle,
-                    accept_exit_codes=ok.accept_exit_codes,
-                    failure="policy_block",
-                )
-            )
-            continue
-        if "--yes" in ok.args:
-            failures.append(
-                CliApiCheck(
-                    label=f"{ok.label} refuse",
-                    api="gh",
-                    args=_without_yes(ok.args),
-                    kind="fail",
-                    needle=REFUSE_NEEDLE,
-                    accept_exit_codes=(1,),
-                    failure="refuse_gate",
-                )
-            )
-        else:
-            failures.append(
-                CliApiCheck(
-                    label=f"{ok.label} fail",
-                    api="gh",
-                    args=ok.args,
-                    kind="fail",
-                    accept_exit_codes=(1,),
-                    failure="gh_auth",
-                    needle="gh",
-                )
-            )
-    return failures
-
 
 def _notion_success_checks() -> list[CliApiCheck]:
     return [
@@ -787,7 +328,7 @@ def _chrome_success_checks() -> list[CliApiCheck]:
         CliApiCheck(
             "chrome photos list",
             "chrome",
-            ("chrome", "photos", "list"),
+            ("chrome", "photos", "list", "--format", "json"),
             '"albums"',
         ),
         CliApiCheck(
@@ -873,28 +414,26 @@ def _chrome_failure_checks() -> list[CliApiCheck]:
     ]
 
 
-def cli_api_success_checks(*, gh_workspace: Path, drive_repo: str) -> list[CliApiCheck]:
+def cli_api_success_checks(*, drive_repo: str) -> list[CliApiCheck]:
     return [
-        *_gh_success_checks(gh_workspace),
         *_notion_success_checks(),
         *_drive_success_checks(drive_repo),
         *_chrome_success_checks(),
     ]
 
 
-def cli_api_failure_checks(*, gh_workspace: Path, drive_repo: str) -> list[CliApiCheck]:
+def cli_api_failure_checks(*, drive_repo: str) -> list[CliApiCheck]:
     return [
-        *_gh_failure_checks(gh_workspace),
         *_notion_failure_checks(),
         *_drive_failure_checks(drive_repo),
         *_chrome_failure_checks(),
     ]
 
 
-def cli_api_checks(*, gh_workspace: Path, drive_repo: str) -> list[CliApiCheck]:
+def cli_api_checks(*, drive_repo: str) -> list[CliApiCheck]:
     return [
-        *cli_api_success_checks(gh_workspace=gh_workspace, drive_repo=drive_repo),
-        *cli_api_failure_checks(gh_workspace=gh_workspace, drive_repo=drive_repo),
+        *cli_api_success_checks(drive_repo=drive_repo),
+        *cli_api_failure_checks(drive_repo=drive_repo),
     ]
 
 
@@ -914,7 +453,7 @@ def checks_for_path(
 def assert_cli_api_registry_covers_commands(
     checks: list[CliApiCheck],
     *,
-    apis: tuple[ApiName, ...] = ("gh", "notion", "drive", "chrome"),
+    apis: tuple[ApiName, ...] = ("notion", "drive", "chrome"),
 ) -> None:
     """Every visible API subcommand must have a mocked CLI integration check."""
     for api in apis:
@@ -934,15 +473,10 @@ def assert_cli_api_registry_covers_commands(
 def assert_every_api_command_has_ok_and_fail_check(
     checks: list[CliApiCheck],
     *,
-    apis: tuple[ApiName, ...] = ("gh", "notion", "drive", "chrome"),
+    apis: tuple[ApiName, ...] = ("notion", "drive", "chrome"),
 ) -> None:
     """Each API command path needs one success and one failure integration check."""
-    local_ok_only: dict[ApiName, set[tuple[str, ...]]] = {
-        "gh": {
-            ("gh", "backlog", "levels"),
-            ("gh", "policy", "list"),
-        },
-    }
+    local_ok_only: dict[ApiName, set[tuple[str, ...]]] = {}
     local_fail_only: dict[ApiName, set[tuple[str, ...]]] = {
         "chrome": set(),
     }

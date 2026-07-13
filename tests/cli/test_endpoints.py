@@ -72,7 +72,7 @@ def test_chrome_bookmarks_deploy_without_backup() -> None:
 def test_root_lists_all_top_level_groups() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
-    for name in ("links", "git", "restore", "drive", "notion", "chrome", "project", "tasks", "contest"):
+    for name in ("links", "git", "restore", "drive", "notion", "chrome", "tasks", "contest"):
         assert name in result.stdout
     for hidden in ("│ backup", "│ bookmarks", "│ publish", "│ g "):
         assert hidden not in result.stdout

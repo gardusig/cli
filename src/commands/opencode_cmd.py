@@ -1,20 +1,18 @@
-"""OpenCode — AI entry point (DeepSeek roles + domain commands)."""
+"""OpenCode — AI entry point (DeepSeek roles + chat)."""
 
 from __future__ import annotations
 
 import typer
 
 from src.commands.chat import chat_app
-from src.commands.craft import gh_domain_app
 from src.providers.opencode import OpenCodeProvider
 
 opencode_app = typer.Typer(
-    help="AI via OpenCode — raw prompts, chat, and domain flows (gh).",
+    help="AI via OpenCode — raw prompts and planning chat.",
     no_args_is_help=True,
 )
 
 opencode_app.add_typer(chat_app, name="chat")
-opencode_app.add_typer(gh_domain_app, name="gh")
 
 
 @opencode_app.command("plan")
@@ -43,5 +41,5 @@ def opencode_categorize_cmd(prompt: str = typer.Argument(..., help="Categorizati
 
 @opencode_app.callback()
 def opencode_root(ctx: typer.Context) -> None:
-    """Domains: `chat` (planning), `gh` (issues/PRs/review), or raw tier prompts."""
+    """Domains: `chat` (planning) or raw tier prompts."""
     ctx.ensure_object(dict)

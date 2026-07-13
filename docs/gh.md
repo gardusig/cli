@@ -4,6 +4,8 @@ Deterministic GitHub operations for agents and humans. Uses authenticated **`gh`
 
 **AI orchestration:** [opencode.md](opencode.md) — `cli opencode gh` for AI-assisted issues/PRs; `cli gh` for deterministic GitHub I/O.
 
+**Shipped surface:** `cli gh issue`, `cli gh branch`, `cli gh pr`, and `cli gh policy` (blocked-operation catalog). Hub-only commands (projects, backlog, labels, workflows) are not registered on the standalone CLI.
+
 ## Prerequisites
 
 - `gh` installed and authenticated (`gh auth status`), or `GITHUB_TOKEN` / `GH_TOKEN` for API transport

@@ -1,3 +1,0 @@
-backup:
-  tags_dir: .integration-scratch/ci-tags
-  repositories: []

@@ -10,8 +10,6 @@ from typing import TypeVar
 
 import httpx
 
-from src.utils.process import GhCommandError
-
 T = TypeVar("T")
 
 _RETRYABLE_HTTP = frozenset({408, 429, 500, 502, 503, 504})
@@ -46,12 +44,6 @@ def is_retryable_exception(exc: Exception) -> bool:
     status_code = getattr(exc, "status_code", None)
     if exc.__class__.__name__ == "NotionError" and isinstance(status_code, int):
         return is_retryable_http_status(status_code)
-    if isinstance(exc, GhCommandError):
-        text = exc.stderr.casefold()
-        return any(
-            token in text
-            for token in ("rate limit", "timed out", "timeout", "502", "503", "504")
-        )
     if exc.__class__.__name__ == "DriveApiError" and getattr(exc, "retryable", False):
         return True
     return False
@@ -71,14 +63,14 @@ def failure_hint(service: str, operation: str, exc: Exception) -> str:
         if status and status >= 500:
             return "Notion returned a server error; retry later."
         return "Verify the Notion integration, database id, and network connectivity."
-    if isinstance(exc, GhCommandError):
-        if "not logged" in exc.stderr.casefold() or "auth" in exc.stderr.casefold():
-            return "Run `gh auth login` and confirm `gh auth status`."
-        if exc.returncode == 127:
-            return "Install GitHub CLI (`gh`) and ensure it is on PATH."
-        return "Check `gh auth status`, repository access, and network connectivity."
     if service == "drive":
         return "Check drive provider credentials, remote root path, and network connectivity."
+    if service == "gh":
+        if "auth" in str(exc).lower() or "401" in str(exc):
+            return "Run `gh auth login` and confirm `gh auth status`."
+        if "executable file not found" in str(exc).lower() or "No such file" in str(exc):
+            return "Install GitHub CLI (`gh`) and ensure it is on PATH."
+        return "Check `gh auth status`, repository access, and network connectivity."
     return f"Verify {service} configuration and network connectivity."
 
 

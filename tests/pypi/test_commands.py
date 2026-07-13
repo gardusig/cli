@@ -141,12 +141,28 @@ def test_pypi_version_check_fails(_assert: MagicMock) -> None:
     assert "0.1.1" in (result.stdout + (result.stderr or ""))
 
 
-@patch("src.commands.pypi.read_project_version", return_value="0.1.0")
-@patch("src.services.tag_policy.bump_semver", return_value="0.1.1")
-def test_pypi_version_suggest(_bump: MagicMock, _read: MagicMock) -> None:
+@patch("src.commands.pypi.suggest_next_release_version", return_value="1.0.7")
+def test_pypi_version_suggest(_suggest: MagicMock) -> None:
     result = runner.invoke(app, ["pypi", "version", "suggest"])
     assert result.exit_code == 0
-    assert result.stdout.strip() == "0.1.1"
+    assert result.stdout.strip() == "1.0.7"
+    _suggest.assert_called_once()
+
+
+@patch("src.commands.pypi.suggest_next_release_version", return_value="1.0.7")
+def test_pypi_version_set_dry_run(_suggest: MagicMock) -> None:
+    result = runner.invoke(app, ["pypi", "version", "set", "--dry-run"])
+    assert result.exit_code == 0
+    assert result.stdout.strip() == "1.0.7"
+    _suggest.assert_called_once()
+
+
+@patch("src.commands.pypi.apply_next_release_version", return_value="1.0.7")
+def test_pypi_version_set_writes(_apply: MagicMock) -> None:
+    result = runner.invoke(app, ["pypi", "version", "set"])
+    assert result.exit_code == 0
+    assert result.stdout.strip() == "1.0.7"
+    _apply.assert_called_once()
 
 
 @patch("src.commands.pypi.suggest_next_tag", return_value="v0.1.1")

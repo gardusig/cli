@@ -1,4 +1,4 @@
-"""Deploy readiness — main vs latest tag and open PR gate."""
+"""Deploy readiness — main vs latest tag."""
 
 from __future__ import annotations
 
@@ -16,7 +16,6 @@ runner = CliRunner()
 def _assessment(
     *,
     needs_tag: bool = True,
-    open_prs: tuple[dict[str, object], ...] = (),
     suggested: str = "v0.1.1",
     latest: str | None = "v0.1.0",
 ) -> DeployAssessment:
@@ -27,7 +26,7 @@ def _assessment(
         tag_sha="b" * 40 if latest else None,
         needs_tag=needs_tag,
         suggested_tag=suggested if needs_tag else None,
-        open_prs=open_prs,
+        open_prs=(),
     )
 
 
@@ -37,16 +36,6 @@ def test_git_deploy_status_read_only(mock_assess: MagicMock) -> None:
     result = runner.invoke(app, ["git", "deploy", "--status"])
     assert result.exit_code == 0
     assert "needs_tag: yes" in result.stdout
-
-
-@patch("src.commands.git.assess_deploy_readiness")
-def test_git_deploy_blocked_by_open_pr(mock_assess: MagicMock) -> None:
-    mock_assess.return_value = _assessment(
-        open_prs=({"number": 86, "title": "WIP"},),
-    )
-    result = runner.invoke(app, ["git", "deploy", "--yes"])
-    assert result.exit_code == 1
-    assert "blocked" in result.stdout
 
 
 @patch("src.commands.git._tag_create")
@@ -85,11 +74,8 @@ def test_assess_deploy_readiness_needs_tag_when_main_ahead(tmp_path: Path) -> No
         "pattern: semver-v\nbump: patch\nrequire_increase: true\n",
         encoding="utf-8",
     )
-    gh = MagicMock()
-    gh.repo_display.return_value = "gardusig/cli"
-    gh.pr_list.return_value = []
 
-    assessment = assess_deploy_readiness(svc, repo_root=tmp_path, gh_svc=gh, fetch=False)
+    assessment = assess_deploy_readiness(svc, repo_root=tmp_path, fetch=False)
     assert assessment.needs_tag is True
     assert assessment.suggested_tag == "v0.1.1"
     assert assessment.open_pr_count == 0
@@ -105,7 +91,7 @@ def test_assess_deploy_readiness_skip_when_main_matches_tag(tmp_path: Path) -> N
     (tmp_path / "config").mkdir()
     (tmp_path / "config" / "tag.yaml").write_text("pattern: semver-v\n", encoding="utf-8")
 
-    assessment = assess_deploy_readiness(svc, repo_root=tmp_path, gh_svc=None, fetch=False)
+    assessment = assess_deploy_readiness(svc, repo_root=tmp_path, fetch=False)
     assert assessment.needs_tag is False
 
 
@@ -117,7 +103,7 @@ def test_assess_deploy_readiness_plain_pattern_first_tag(tmp_path: Path) -> None
     (tmp_path / "config").mkdir()
     (tmp_path / "config" / "tag.yaml").write_text("pattern: date\n", encoding="utf-8")
 
-    assessment = assess_deploy_readiness(svc, repo_root=tmp_path, gh_svc=None, fetch=False)
+    assessment = assess_deploy_readiness(svc, repo_root=tmp_path, fetch=False)
     assert assessment.needs_tag is True
     assert assessment.suggested_tag is not None
     assert len(assessment.suggested_tag) == 10

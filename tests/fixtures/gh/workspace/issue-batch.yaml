@@ -1,4 +1,0 @@
-operations:
-  - action: create
-    title: Batch create
-    body: from fixture

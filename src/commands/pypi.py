@@ -12,6 +12,7 @@ from src.services.pypi_publish import (
     PACKAGE_NAME,
     TEST_REPOSITORY_URL,
     PyPiPublishError,
+    apply_next_release_version,
     assert_version_increased_vs_ref,
     assert_version_increased_vs_version,
     build_distributions,
@@ -20,6 +21,7 @@ from src.services.pypi_publish import (
     resolve_pypi_token,
     resolve_release_version,
     resolve_testpypi_token,
+    suggest_next_release_version,
     verify_package_version_on_index,
 )
 from src.services.tag_policy import resolve_tag_policy, suggest_next_tag
@@ -59,14 +61,57 @@ def pypi_version_check_cmd(
 
 
 @version_app.command("suggest")
-def pypi_version_suggest_cmd() -> None:
-    """Print suggested next package version (patch bump from pyproject.toml)."""
-    from src.services.tag_policy import bump_semver
-
+def pypi_version_suggest_cmd(
+    base_version: str = typer.Option(
+        "",
+        "--base-version",
+        help="Explicit published version to bump (default: latest on PyPI).",
+    ),
+    level: str = typer.Option("patch", "--level", help="Semver bump when a base exists: patch, minor, major."),
+) -> None:
+    """Print suggested next package version (patch bump over last PyPI release)."""
     root = project_root()
     try:
-        current = read_project_version(root)
-        typer.echo(bump_semver(current, level="patch"))
+        published = base_version.strip() or None
+        typer.echo(
+            suggest_next_release_version(
+                published=published,
+                level=level,
+                root=root,
+            )
+        )
+    except PyPiPublishError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+
+
+@version_app.command("set")
+def pypi_version_set_cmd(
+    base_version: str = typer.Option(
+        "",
+        "--base-version",
+        help="Explicit published version to bump (default: latest on PyPI).",
+    ),
+    level: str = typer.Option("patch", "--level", help="Semver bump when a base exists: patch, minor, major."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Print the version without writing files."),
+) -> None:
+    """Set pyproject.toml and src/__init__.py to the next PyPI-compatible version."""
+    root = project_root()
+    try:
+        published = base_version.strip() or None
+        if dry_run:
+            version = suggest_next_release_version(
+                published=published,
+                level=level,
+                root=root,
+            )
+        else:
+            version = apply_next_release_version(
+                published=published,
+                level=level,
+                root=root,
+            )
+        typer.echo(version)
     except PyPiPublishError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(1) from exc

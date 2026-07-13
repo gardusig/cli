@@ -169,3 +169,76 @@ def test_sync_main_resets_to_best_main(mock_run: MagicMock) -> None:
     ):
         svc.sync_main(yes=True, keep_ignored=True)
     assert ["reset", "--hard", "origin/main"] in [c.args[0] for c in mock_run.call_args_list]
+
+
+@patch("src.commands.backup.status_cmd")
+def test_backup_status_alias_calls_drive(mock_status: MagicMock) -> None:
+    result = runner.invoke(app, ["backup", "status"])
+    assert result.exit_code == 0
+    mock_status.assert_called_once()
+
+
+@patch("src.commands.backup.ingest_cmd")
+def test_backup_repository_sync_alias(mock_ingest: MagicMock) -> None:
+    result = runner.invoke(app, ["backup", "repository", "sync", "/tmp/repo"])
+    assert result.exit_code == 0
+    mock_ingest.assert_called_once_with("/tmp/repo")
+
+
+@patch("src.commands.backup.list_cmd")
+def test_backup_repository_list_alias(mock_list: MagicMock) -> None:
+    result = runner.invoke(app, ["backup", "repository", "list"])
+    assert result.exit_code == 0
+    mock_list.assert_called_once_with(None)
+
+
+@patch("src.commands.backup.delete_cmd")
+def test_backup_repository_delete_alias(mock_delete: MagicMock) -> None:
+    result = runner.invoke(app, ["backup", "repository", "delete", "/tmp/repo", "v1", "--yes"])
+    assert result.exit_code == 0
+    mock_delete.assert_called_once_with("/tmp/repo", "v1", yes=True)
+
+
+def test_hygiene_check_dispatches_structure(monkeypatch, tmp_path: Path) -> None:
+    policy = tmp_path / "policy.yaml"
+    policy.write_text("allowed_extensions: [.md]\n", encoding="utf-8")
+    calls: list[tuple] = []
+    monkeypatch.setattr(
+        "src.commands._toolkit.run_cli_command",
+        lambda *args, **kwargs: calls.append((args, kwargs)) or 0,
+    )
+    result = runner.invoke(
+        app,
+        ["hygiene", "check", str(tmp_path), "--require-layout", "--policy-file", str(policy)],
+    )
+    assert result.exit_code == 0
+    assert calls[0][0][:3] == ("structure", "check", tmp_path)
+    assert calls[0][1]["extra_env"]["REQUIRE_LAYOUT"] == "1"
+    assert calls[0][1]["extra_env"]["POLICY_FILE"] == str(policy.resolve())
+
+
+@patch("src.commands.publish.pypi_upload_cmd")
+def test_publish_pypi_upload_deprecated_alias(mock_upload: MagicMock) -> None:
+    result = runner.invoke(app, ["publish", "pypi", "--yes", "--testpypi"])
+    assert result.exit_code == 0
+    mock_upload.assert_called_once()
+    _, kwargs = mock_upload.call_args
+    assert kwargs["testpypi"] is True
+
+
+def test_cli_run_surfaces_external_call_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    import typer
+    from src.cli import run
+    from src.utils.external_client import ExternalCallError
+
+    def _boom() -> None:
+        raise ExternalCallError(
+            service="net",
+            operation="call",
+            user_message="network down",
+        )
+
+    monkeypatch.setattr("src.cli.app", _boom)
+    with pytest.raises(typer.Exit) as exc_info:
+        run()
+    assert exc_info.value.exit_code == 1

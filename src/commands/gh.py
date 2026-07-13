@@ -10,26 +10,17 @@ import typer
 from src.commands.git import _interactive_allow_main
 from src.internal.write.gate import require_write_gate
 from src.providers.gh_transport import GhTransportMode
-from src.services.gh_issues_sync import deploy_issues, ingest_issues, prune_issues
 from src.services.gh_policy import (
     blocked_operations_catalog,
     policy_for_cli_command,
 )
 from src.services.gh_pr_shortcut import GhPrShortcut
 from src.services.gh_service import GhService
-from src.services.gh_topo import load_priority_levels
-from src.services.project_service import ProjectService
-from src.commands.gh_wf import wf_app
-from src.utils.config import project_auto_link
 
-gh_app = typer.Typer(help="GitHub via gh — issues, labels, PRs, backlog.", no_args_is_help=True)
+gh_app = typer.Typer(help="GitHub via gh — issues, branches, PRs.", no_args_is_help=True)
 issue_app = typer.Typer(help="Issue read/write.", no_args_is_help=True)
-issues_app = typer.Typer(help="Issue sync/deploy helpers.", no_args_is_help=True)
-label_app = typer.Typer(help="Label read/write.", no_args_is_help=True)
+branch_app = typer.Typer(help="Remote branch read/write.", no_args_is_help=True)
 pr_app = typer.Typer(help="Pull request read/write.", no_args_is_help=False)
-backlog_app = typer.Typer(help="Backlog tree, next, resequence.", no_args_is_help=True)
-project_app = typer.Typer(help="GitHub Projects read/write.", no_args_is_help=True)
-project_item_app = typer.Typer(help="GitHub Project item read/write.", no_args_is_help=True)
 ruleset_app = typer.Typer(
     help="GitHub Rulesets (blocked — use GitHub UI).",
     no_args_is_help=True,
@@ -37,26 +28,14 @@ ruleset_app = typer.Typer(
 policy_app = typer.Typer(help="CLI GitHub policy.", no_args_is_help=True)
 
 gh_app.add_typer(issue_app, name="issue")
-gh_app.add_typer(issues_app, name="issues")
-gh_app.add_typer(label_app, name="label")
+gh_app.add_typer(branch_app, name="branch")
 gh_app.add_typer(pr_app, name="pr")
-repo_app = typer.Typer(help="Repository metadata.", no_args_is_help=True)
-gh_app.add_typer(repo_app, name="repo")
-gh_app.add_typer(backlog_app, name="backlog")
-gh_app.add_typer(project_app, name="project")
-project_app.add_typer(project_item_app, name="item")
 gh_app.add_typer(ruleset_app, name="ruleset")
 gh_app.add_typer(policy_app, name="policy")
-gh_app.add_typer(wf_app, name="wf")
-gh_app.add_typer(wf_app, name="workflow")
 
 
 def _svc(repo: str | None, transport: GhTransportMode = "cli") -> GhService:
     return GhService(repo=repo, transport=transport)
-
-
-def _project_svc(repo: str | None, transport: GhTransportMode = "cli") -> ProjectService:
-    return ProjectService(gh_service=_svc(repo, transport))
 
 
 def _pr_shortcut(repo: str | None, transport: GhTransportMode = "cli") -> GhPrShortcut:
@@ -70,7 +49,12 @@ def _emit(data: object, fmt: str) -> None:
         if isinstance(data, list):
             for row in data:
                 if isinstance(row, dict):
-                    typer.echo(f"#{row.get('number', '?')} {row.get('title', row)}")
+                    if "number" in row or "title" in row:
+                        typer.echo(f"#{row.get('number', '?')} {row.get('title', row)}")
+                    elif "name" in row:
+                        typer.echo(str(row["name"]))
+                    else:
+                        typer.echo(str(row))
                 else:
                     typer.echo(str(row))
         elif isinstance(data, dict):
@@ -193,42 +177,19 @@ def issue_create_cmd(
     body_file: Path | None = typer.Option(None, "--body-file"),
     body: str | None = typer.Option(None, "--body"),
     label: list[str] = typer.Option(None, "--label"),
-    lane: str | None = typer.Option(None, "--lane", help="Add issue to default project lane."),
-    no_project: bool = typer.Option(False, "--no-project", help="Skip project auto-linking."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip interactive write gate."),
 ) -> None:
     svc = _svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    auto_link = project_auto_link()
-    should_link_project = (not no_project) and (
-        lane is not None or (auto_link.enabled and auto_link.on_issue_create)
-    )
-    extra_lines = [f"title: {title}", f"labels: {label or []}"]
-    if should_link_project:
-        extra_lines.append(f"project lane: {lane or auto_link.default_lane or '(none)'}")
     _write_gate(
         "gh-issue-create",
         svc,
         yes=yes,
         question=f"Create issue {title!r}?",
-        extra_lines=extra_lines,
+        extra_lines=[f"title: {title}", f"labels: {label or []}"],
     )
     data = svc.issue_create(title=title, body_file=body_file, body=body, labels=label)
-    if should_link_project:
-        project_svc = ProjectService(repo=_ctx_repo(ctx))
-        ref = project_svc.default_ref()
-        added = project_svc.item_add_url(str(data["url"]), ref)
-        item_id = str(added.get("id") or added.get("item", {}).get("id") or added.get("item_id") or "")
-        selected_lane = lane or auto_link.default_lane
-        if selected_lane and item_id:
-            project_svc.item_status(ref, item_id=item_id, status=selected_lane)
-        data["project"] = {
-            "owner": ref.owner,
-            "number": ref.number,
-            "project_id": ref.project_id,
-            "item_id": item_id,
-            "lane": selected_lane,
-        }
     _emit(data, _ctx_format(ctx))
+
 
 
 @issue_app.command("edit")
@@ -331,112 +292,45 @@ def issue_batch_cmd(
     _emit(data, _ctx_format(ctx))
 
 
-@issues_app.command("deploy")
-def gh_issues_deploy_cmd(
-    dry_run: bool = typer.Option(False, "--dry-run"),
-    yes: bool = typer.Option(False, "--yes", "-y", help="Skip interactive write gate."),
-) -> None:
-    require_write_gate(
-        "gh-issues-deploy",
-        ["target: configured gh.issues.repo", "operation: delete all + recreate"],
-        yes=yes or dry_run,
-        question="Delete all GitHub issues in configured private repo and recreate from tasks?",
-        extra_lines=[f"dry_run: {dry_run}"],
-    )
-    result = deploy_issues(dry_run=dry_run)
-    _emit(result.__dict__, "json")
+
+# --- Branch ---
 
 
-@issues_app.command("ingest")
-def gh_issues_ingest_cmd(
-    yes: bool = typer.Option(False, "--yes", "-y", help="Skip interactive write gate."),
-) -> None:
-    require_write_gate(
-        "gh-issues-ingest",
-        ["scope: configured task_root", "source: GitHub Issues"],
-        question="Ingest GitHub Issues into local task pairs?",
-        yes=yes,
-    )
-    result = ingest_issues()
-    _emit(result.__dict__, "json")
-
-
-@issues_app.command("prune")
-def gh_issues_prune_cmd(
-    closed_older_than: str = typer.Option("7d", "--closed-older-than"),
-    label: list[str] = typer.Option(None, "--label"),
-    exclude_label: list[str] = typer.Option(None, "--exclude-label"),
-    dry_run: bool = typer.Option(False, "--dry-run"),
-    yes: bool = typer.Option(False, "--yes", "-y", help="Skip interactive write gate."),
-) -> None:
-    require_write_gate(
-        "gh-issues-prune",
-        ["target: configured gh.issues.repo", "operation: filtered issue delete"],
-        yes=yes or dry_run,
-        question=f"Delete closed issues older than {closed_older_than}?",
-        extra_lines=[f"dry_run: {dry_run}", f"labels: {label or []}"],
-    )
-    result = prune_issues(
-        closed_older_than=closed_older_than,
-        include_labels=label or [],
-        exclude_labels=exclude_label or [],
-        dry_run=dry_run,
-    )
-    _emit(result.__dict__, "json")
-
-
-# --- Label ---
-
-
-@label_app.command("list")
-def label_list_cmd(ctx: typer.Context) -> None:
-    svc = _svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    _emit(svc.label_list(), _ctx_format(ctx))
-
-
-@label_app.command("create")
-def label_create_cmd(
+@branch_app.command("list")
+def branch_list_cmd(
     ctx: typer.Context,
-    name: str,
-    color: str = typer.Option("ededed", "--color"),
-    description: str = typer.Option("", "--description"),
-    yes: bool = typer.Option(False, "--yes", "-y", help="Skip interactive write gate."),
+    limit: int = typer.Option(100, "--limit"),
 ) -> None:
     svc = _svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    _write_gate("gh-label-create", svc, yes=yes, question=f"Create label {name!r}?")
-    svc.label_create(name, color=color, description=description)
-    _emit({"name": name, "action": "create"}, _ctx_format(ctx))
+    _emit(svc.branch_list(limit=limit), _ctx_format(ctx))
 
 
-@label_app.command("delete")
-def label_delete_cmd(
+@branch_app.command("view")
+def branch_view_cmd(ctx: typer.Context, name: str) -> None:
+    svc = _svc(_ctx_repo(ctx), _ctx_transport(ctx))
+    _emit(svc.branch_view(name), _ctx_format(ctx))
+
+
+@branch_app.command("delete")
+def branch_delete_cmd(
     ctx: typer.Context,
     name: str,
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip interactive write gate."),
 ) -> None:
     svc = _svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    _write_gate("gh-label-delete", svc, yes=yes, question=f"Delete label {name!r}?")
-    svc.label_delete(name)
-    _emit({"name": name, "action": "delete"}, _ctx_format(ctx))
+    _write_gate("gh-branch-delete", svc, yes=yes, question=f"Delete remote branch {name!r}?")
+    svc.branch_delete(name)
+    _emit({"branch": name, "action": "delete"}, _ctx_format(ctx))
 
 
-@label_app.command("sync")
-def label_sync_cmd(
-    ctx: typer.Context,
-    manifest: Path = typer.Option(..., "--manifest"),
-    prune_orphans: bool = typer.Option(False, "--prune-orphans"),
-    yes: bool = typer.Option(False, "--yes", "-y", help="Skip interactive write gate."),
-) -> None:
-    svc = _svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    _write_gate(
-        "gh-label-sync",
-        svc,
-        yes=yes,
-        question=f"Sync labels from {manifest}?",
-        extra_lines=[f"prune_orphans: {prune_orphans}"],
-    )
-    data = svc.label_sync(manifest, prune_orphans=prune_orphans)
-    _emit(data, _ctx_format(ctx))
+@branch_app.command("pr")
+def branch_pr_cmd(ctx: typer.Context, name: str) -> None:
+    shortcut = _pr_shortcut(_ctx_repo(ctx), _ctx_transport(ctx))
+    pr = shortcut.find_open_pr_for_branch(name)
+    if pr is None:
+        _emit({"branch": name, "pull_request": None}, _ctx_format(ctx))
+        return
+    _emit({"branch": name, "pull_request": pr}, _ctx_format(ctx))
 
 
 # --- PR ---
@@ -684,292 +578,6 @@ def pr_merge_cmd(
     """Merge PR (blocked — use GitHub UI or auto-merge)."""
     _ = (ctx, number, merge_method, delete_branch, yes)
     _policy_block("pr", "merge")
-
-
-# --- Backlog ---
-
-
-@backlog_app.command("tree")
-def backlog_tree_cmd(ctx: typer.Context) -> None:
-    svc = _svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    _emit(svc.backlog_tree(), _ctx_format(ctx))
-
-
-@backlog_app.command("organize")
-def backlog_organize_cmd(ctx: typer.Context) -> None:
-    """Epic issues, sorted subissues (step 1..N), priority explanations, readiness."""
-    svc = _svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    _emit(svc.backlog_organize(), _ctx_format(ctx))
-
-
-@backlog_app.command("levels")
-def backlog_levels_cmd(ctx: typer.Context) -> None:
-    """Show priority:1..N label scale with explanations (no GitHub Projects)."""
-    data = {"levels": load_priority_levels()}
-    _emit(data, _ctx_format(ctx))
-
-
-@backlog_app.command("next")
-def backlog_next_cmd(ctx: typer.Context) -> None:
-    svc = _svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    data = svc.backlog_next()
-    if data is None:
-        if _ctx_format(ctx) == "json":
-            _emit({"next": None}, "json")
-        else:
-            typer.echo("No open subissue found.")
-        raise typer.Exit(0)
-    _emit(data, _ctx_format(ctx))
-
-
-@backlog_app.command("resequence")
-def backlog_resequence_cmd(
-    ctx: typer.Context,
-    file: Path = typer.Option(..., "--file"),
-    yes: bool = typer.Option(False, "--yes", "-y", help="Skip interactive write gate."),
-) -> None:
-    svc = _svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    _write_gate(
-        "gh-backlog-resequence",
-        svc,
-        yes=yes,
-        question=f"Resequence titles from {file}?",
-    )
-    data = svc.backlog_resequence(file)
-    _emit(data, _ctx_format(ctx))
-
-
-@repo_app.command("list")
-def repo_list_cmd(
-    ctx: typer.Context,
-    owner: str = typer.Option("gardusig", "--owner", help="GitHub user or org"),
-    limit: int = typer.Option(100, "--limit"),
-    visibility: str = typer.Option("public", "--visibility", help="public, private, or all"),
-) -> None:
-    """List repositories for an owner (default: gardusig public repos)."""
-    vis = None if visibility == "all" else visibility
-    svc = _svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    _emit(svc.repo_list(owner=owner, limit=limit, visibility=vis), _ctx_format(ctx))
-
-
-@repo_app.command("view")
-def repo_view_cmd(
-    ctx: typer.Context,
-    fields: str = typer.Option(
-        "nameWithOwner,owner,issueTemplates,pullRequestTemplates",
-        "--json-fields",
-        help="Comma-separated gh repo view --json fields",
-    ),
-) -> None:
-    svc = _svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    _emit(svc.repo_view(fields=fields), _ctx_format(ctx))
-
-
-@repo_app.command("readme-sync")
-def repo_readme_sync_cmd(
-    readme: Path = typer.Option(..., "--readme", help="Profile README path to update"),
-    owner: str = typer.Option("gardusig", "--owner"),
-    limit: int = typer.Option(100, "--limit"),
-    dry_run: bool = typer.Option(False, "--dry-run"),
-) -> None:
-    """Refresh auto-sync repo list markers in gardusig/gardusig README.md."""
-    from src.services.gh_repo_readme import sync_profile_readme
-
-    updated, repos = sync_profile_readme(readme, owner=owner, limit=limit)
-    current = readme.read_text(encoding="utf-8")
-    if updated == current:
-        typer.echo(f"readme ok ({len(repos)} repos)")
-        return
-    if dry_run:
-        typer.echo(updated)
-        return
-    readme.write_text(updated, encoding="utf-8")
-    typer.echo(f"updated {readme} ({len(repos)} repos)")
-
-
-# --- GitHub Projects ---
-
-
-@project_app.command("list")
-def project_list_cmd(
-    ctx: typer.Context,
-    owner: str = typer.Option("gardusig", "--owner"),
-    limit: int = typer.Option(30, "--limit"),
-) -> None:
-    svc = _project_svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    _emit(svc.project_list(owner=owner, limit=limit), _ctx_format(ctx))
-
-
-@project_app.command("view")
-def project_view_cmd(
-    ctx: typer.Context,
-    number: int | None = typer.Argument(None),
-    owner: str | None = typer.Option(None, "--owner"),
-) -> None:
-    svc = _project_svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    ref = svc.ref(owner=owner, number=number)
-    _emit(svc.project_view(ref.require_number(), owner=ref.owner), _ctx_format(ctx))
-
-
-@project_app.command("create")
-def project_create_cmd(
-    ctx: typer.Context,
-    title: str = typer.Option(..., "--title"),
-    owner: str | None = typer.Option(None, "--owner"),
-    yes: bool = typer.Option(False, "--yes", "-y"),
-) -> None:
-    svc = _project_svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    ref = svc.ref(owner=owner)
-    require_write_gate(
-        "gh-project-create",
-        svc.snapshot_summary(ref),
-        yes=yes,
-        question=f"Create GitHub Project {title!r}?",
-    )
-    _emit(svc.project_create(owner=ref.owner, title=title), _ctx_format(ctx))
-
-
-@project_app.command("edit")
-def project_edit_cmd(
-    ctx: typer.Context,
-    number: int | None = typer.Argument(None),
-    owner: str | None = typer.Option(None, "--owner"),
-    title: str | None = typer.Option(None, "--title"),
-    readme: str | None = typer.Option(None, "--readme"),
-    visibility: str | None = typer.Option(None, "--visibility"),
-    yes: bool = typer.Option(False, "--yes", "-y"),
-) -> None:
-    svc = _project_svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    ref = svc.ref(owner=owner, number=number)
-    require_write_gate(
-        "gh-project-edit",
-        svc.snapshot_summary(ref),
-        yes=yes,
-        question=f"Edit GitHub Project {ref.require_number()}?",
-        extra_lines=[f"title: {title}", f"visibility: {visibility}"],
-    )
-    data = svc.project_edit(
-        ref.require_number(),
-        owner=ref.owner,
-        title=title,
-        readme=readme,
-        visibility=visibility,
-    )
-    _emit(data, _ctx_format(ctx))
-
-
-@project_app.command("delete")
-def project_delete_cmd(
-    ctx: typer.Context,
-    number: int | None = typer.Argument(None),
-    owner: str | None = typer.Option(None, "--owner"),
-    yes: bool = typer.Option(False, "--yes", "-y"),
-) -> None:
-    svc = _project_svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    ref = svc.ref(owner=owner, number=number)
-    require_write_gate(
-        "gh-project-delete",
-        svc.snapshot_summary(ref),
-        yes=yes,
-        question=f"Delete GitHub Project {ref.require_number()}?",
-    )
-    _emit(svc.project_delete(ref.require_number(), owner=ref.owner), _ctx_format(ctx))
-
-
-@project_item_app.command("list")
-def project_item_list_cmd(
-    ctx: typer.Context,
-    number: int | None = typer.Argument(None),
-    owner: str | None = typer.Option(None, "--owner"),
-    limit: int = typer.Option(100, "--limit"),
-) -> None:
-    svc = _project_svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    _emit(svc.item_list(svc.ref(owner=owner, number=number), limit=limit), _ctx_format(ctx))
-
-
-@project_item_app.command("view")
-def project_item_view_cmd(
-    ctx: typer.Context,
-    id: str = typer.Option(..., "--id"),
-    number: int | None = typer.Option(None, "--project"),
-    owner: str | None = typer.Option(None, "--owner"),
-) -> None:
-    svc = _project_svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    _emit(svc.item_view(id, svc.ref(owner=owner, number=number)), _ctx_format(ctx))
-
-
-@project_item_app.command("add")
-def project_item_add_cmd(
-    ctx: typer.Context,
-    url: str | None = typer.Option(None, "--url"),
-    issue: int | None = typer.Option(None, "--issue"),
-    pr: int | None = typer.Option(None, "--pr"),
-    lane: str | None = typer.Option(None, "--lane"),
-    number: int | None = typer.Option(None, "--project"),
-    owner: str | None = typer.Option(None, "--owner"),
-    yes: bool = typer.Option(False, "--yes", "-y"),
-) -> None:
-    svc = _project_svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    ref = svc.ref(owner=owner, number=number)
-    target = url or (f"issue #{issue}" if issue is not None else f"pr #{pr}" if pr is not None else "item")
-    require_write_gate("gh-project-item-add", svc.snapshot_summary(ref), yes=yes, question=f"Add {target} to project?")
-    if url:
-        data = svc.item_add_url(url, ref)
-    elif issue is not None:
-        data = svc.item_add_issue(issue, ref)
-    elif pr is not None:
-        data = svc.item_add_pr(pr, ref)
-    else:
-        raise typer.Exit("Provide --url, --issue, or --pr.")
-    item_id = str(data.get("id") or data.get("item", {}).get("id") or data.get("item_id") or "")
-    if lane and item_id:
-        svc.item_status(ref, item_id=item_id, status=lane)
-        data["lane"] = lane
-    _emit(data, _ctx_format(ctx))
-
-
-@project_item_app.command("edit")
-def project_item_edit_cmd(
-    ctx: typer.Context,
-    field: str = typer.Option(..., "--field"),
-    value: str = typer.Option(..., "--value"),
-    id: str | None = typer.Option(None, "--id"),
-    issue: int | None = typer.Option(None, "--issue"),
-    pr: int | None = typer.Option(None, "--pr"),
-    value_kind: str = typer.Option("text", "--kind", help="text, date, or single-select"),
-    number: int | None = typer.Option(None, "--project"),
-    owner: str | None = typer.Option(None, "--owner"),
-    yes: bool = typer.Option(False, "--yes", "-y"),
-) -> None:
-    svc = _project_svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    ref = svc.ref(owner=owner, number=number)
-    item = svc.find_item(ref, item_id=id, issue=issue, pr=pr)
-    item_id = str(item.get("id") or id)
-    require_write_gate("gh-project-item-edit", svc.snapshot_summary(ref), yes=yes, question=f"Edit project item {item_id}?")
-    _emit(
-        svc.item_set(ref, item_id=item_id, field=field, value=value, value_kind=value_kind),
-        _ctx_format(ctx),
-    )
-
-
-@project_item_app.command("delete")
-def project_item_delete_cmd(
-    ctx: typer.Context,
-    id: str | None = typer.Option(None, "--id"),
-    issue: int | None = typer.Option(None, "--issue"),
-    pr: int | None = typer.Option(None, "--pr"),
-    archive: bool = typer.Option(False, "--archive", help="Archive instead of delete."),
-    number: int | None = typer.Option(None, "--project"),
-    owner: str | None = typer.Option(None, "--owner"),
-    yes: bool = typer.Option(False, "--yes", "-y"),
-) -> None:
-    svc = _project_svc(_ctx_repo(ctx), _ctx_transport(ctx))
-    ref = svc.ref(owner=owner, number=number)
-    item = svc.find_item(ref, item_id=id, issue=issue, pr=pr)
-    item_id = str(item.get("id") or id)
-    require_write_gate("gh-project-item-delete", svc.snapshot_summary(ref), yes=yes, question=f"Remove project item {item_id}?")
-    data = svc.item_archive(ref, item_id=item_id) if archive else svc.item_delete(ref, item_id=item_id)
-    _emit(data, _ctx_format(ctx))
 
 
 # --- Blocked GitHub surfaces (exist in CLI, always error) ---

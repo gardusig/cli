@@ -16,29 +16,20 @@ ALLOWED_WORKFLOWS = {
     ".github/workflows/pull-request.yaml",
     ".github/workflows/release.yaml",
 }
-PIPELINE_WORKFLOW_CONFIGS = {
-    ".github/workflows/README.md",
-}
+PIPELINE_WORKFLOW_CONFIGS: set[str] = set()
 EXEMPT_LAYOUT_REPOS = {"github-pipelines"}
 STANDARD_ROOT_DIRS = frozenset({"src", "docs", "tests", "test", ".github"})
 STANDARD_ROOT_FILES = frozenset({"README.md", "LICENSE", "CONTRIBUTING.md"})
 ORCHESTRATION_PREFIXES = (
     ".github/actions/",
-    "docker/",
     ".cli/",
 )
 PYTHON_CLI_ORCHESTRATION_PREFIXES = (
     ".github/actions/",
-    "docker/",
 )
-APP_SCRIPT_PREFIXES = ("scripts/",)
+APP_SCRIPT_PREFIXES: tuple[str, ...] = ()
 CLI_REFERENCE_RE = re.compile(r"(^|[\s`\"'])cli(\s|$)|gardusig-cli")
-PYTHON_CLI_FORBIDDEN_SCRIPT_PREFIXES = (
-    "scripts/docker/",
-    "scripts/test/",
-    "scripts/deploy/",
-    "scripts/release/",
-)
+PYTHON_CLI_FORBIDDEN_SCRIPT_PREFIXES: tuple[str, ...] = ()
 DEFAULT_IGNORED_PREFIXES = (
     ".git/",
     ".venv/",

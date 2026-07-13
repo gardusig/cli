@@ -1,4 +1,4 @@
-"""scripts/ and src/ must remain independent (no cross-links)."""
+"""`scripts/` and `src/` must remain independent (no cross-links)."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import pytest
 
 from tests.constants import ROOT
 
+PR_SCRIPTS = ROOT / "scripts" / "pull-request"
 FORBIDDEN_IN_SCRIPTS = (
     "python3 -m src",
     "python -m src",
@@ -18,9 +19,14 @@ FORBIDDEN_IN_SRC = (
     "Path(\"scripts/",
     "Path('scripts/",
 )
-CONSUMER_PREFIX = ROOT / "scripts" / "ci" / "consumer"
+CONSUMER_PREFIX = PR_SCRIPTS / "consumer"
 HOST_ONLY_SCRIPTS = {
-    ROOT / "scripts" / "ci" / "host-base-version.sh",
+    PR_SCRIPTS / "host-base-version.sh",
+    PR_SCRIPTS / "host-last-published-version.sh",
+}
+CLI_INVOKE_SCRIPTS = {
+    PR_SCRIPTS / "_smoke.sh",
+    PR_SCRIPTS / "integration-smoke.sh",
 }
 
 
@@ -38,12 +44,12 @@ def _code_lines(text: str) -> list[str]:
     return lines
 
 
-def test_scripts_avoid_cli_package_entrypoints() -> None:
+def test_pr_scripts_avoid_cli_package_entrypoints() -> None:
     offenders: list[str] = []
-    for path in _iter_shell_scripts(ROOT / "scripts"):
-        if CONSUMER_PREFIX in path.parents or path.parent == CONSUMER_PREFIX:
+    for path in _iter_shell_scripts(PR_SCRIPTS):
+        if path in HOST_ONLY_SCRIPTS or path in CLI_INVOKE_SCRIPTS:
             continue
-        if path in HOST_ONLY_SCRIPTS:
+        if CONSUMER_PREFIX in path.parents or path.parent == CONSUMER_PREFIX:
             continue
         code = "\n".join(_code_lines(path.read_text(encoding="utf-8")))
         for token in FORBIDDEN_IN_SCRIPTS:
@@ -57,9 +63,9 @@ def test_scripts_avoid_cli_package_entrypoints() -> None:
 
 
 def test_consumer_scripts_may_invoke_pip_installed_cli() -> None:
-    run_sh = ROOT / "scripts" / "ci" / "consumer" / "run.sh"
+    run_sh = PR_SCRIPTS / "consumer" / "run.sh"
     text = run_sh.read_text(encoding="utf-8")
-    assert "cli --help" in text
+    assert "smoke_run_all" in text
     assert "python3 -m src" not in text
 
 
@@ -73,8 +79,8 @@ def test_src_does_not_reference_scripts_tree() -> None:
     assert not offenders, "\n".join(offenders)
 
 
-def test_ci_unit_script_enforces_coverage_gate() -> None:
-    script = ROOT / "scripts" / "ci" / "unit-test.sh"
+def test_pr_unit_script_enforces_coverage_gate() -> None:
+    script = PR_SCRIPTS / "unit-test.sh"
     code = "\n".join(_code_lines(script.read_text(encoding="utf-8")))
     assert "coverage-unit.ini" in code
     assert "--cov-fail-under=80" in code
@@ -83,7 +89,7 @@ def test_ci_unit_script_enforces_coverage_gate() -> None:
 
 
 def test_version_check_uses_host_base_version_not_git() -> None:
-    script = ROOT / "scripts" / "ci" / "version-check.sh"
+    script = PR_SCRIPTS / "version-check.sh"
     code = "\n".join(_code_lines(script.read_text(encoding="utf-8")))
     assert "BASE_VERSION" in code
     assert "git show" not in code
@@ -93,9 +99,10 @@ def test_version_check_uses_host_base_version_not_git() -> None:
 @pytest.mark.parametrize(
     "relative",
     [
-        ".github/Dockerfile",
-        "scripts/ci/_common.sh",
-        "scripts/ci/unit-test.sh",
+        "Dockerfile",
+        ".dockerignore",
+        "scripts/_common.sh",
+        "scripts/pull-request/unit-test.sh",
     ],
 )
 def test_allowed_paths_are_not_gitignored(relative: str) -> None:

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from tests.constants import ROOT
 
-CI_CONFIG = ROOT / "config" / "ci"
+CONFIG_DIR = ROOT / "config"
+TEST_CONFIG_ENV = {"CLI_CONFIG_DIR": str(CONFIG_DIR), "CLI_PROFILE": "test"}
 
 import os
 from pathlib import Path
@@ -80,7 +81,7 @@ def test_cli_pypi_build_command(pypi_workspace: Path) -> None:
         result = runner.invoke(
             app,
             ["pypi", "build", "--version", TEST_VERSION],
-            env={"CLI_CONFIG_DIR": str(CI_CONFIG)},
+            env=TEST_CONFIG_ENV,
         )
     assert result.exit_code == 0, result.stdout + (result.stderr or "")
     assert "Built:" in result.stdout
@@ -121,7 +122,7 @@ def test_release_publish_verifies_testpypi_project_page(pypi_workspace: Path) ->
                 env={
                     "TESTPYPI_API_TOKEN": token,
                     "CLI_RELEASE_VERSION": TEST_VERSION,
-                    "CLI_CONFIG_DIR": str(CI_CONFIG),
+                    **TEST_CONFIG_ENV,
                 },
             )
         output = result.stdout + (result.stderr or "")
@@ -152,7 +153,7 @@ def test_release_publish_verifies_testpypi_project_page(pypi_workspace: Path) ->
             env={
                 "PYPI_API_TOKEN": "pypi-test-token",
                 "CLI_RELEASE_VERSION": TEST_VERSION,
-                "CLI_CONFIG_DIR": str(CI_CONFIG),
+                **TEST_CONFIG_ENV,
             },
         )
     output = result.stdout + (result.stderr or "")

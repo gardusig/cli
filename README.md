@@ -1,6 +1,6 @@
 # cli
 
-Linux-first CLI helper: **`cli g`** · **`cli gh wf`** · **`cli lint`** · **`cli release`**.
+Linux-first CLI helper: **`cli g`** · **`cli git`** · **`cli lint`** · **`cli release`**.
 
 ## Status
 
@@ -46,18 +46,26 @@ Install Python and git with your Linux package manager:
 sudo apt-get install python3 git
 ```
 
-Optional: `gh` (GitHub CLI) for `cli gh` and `cli opencode gh` workflows.
-
 ## Configuration (global)
 
-Cli reads **`config/config.yaml`** in the clone, or **`~/.config/cli/`** after install. Override the directory with `CLI_CONFIG_DIR`.
+Fresh install uses **code defaults only**. Bootstrap with:
 
-Copy the bundled `config/` tree and edit paths for your machine before daily use:
+```bash
+cli configure init
+cli configure set notion.task_root ~/your/tasks
+```
+
+User config path (`cli configure path`):
+
+- Linux: `~/.config/cli` (or `$XDG_CONFIG_HOME/cli`)
+- macOS: `~/Library/Application Support/cli`
+
+Contributors and CI: `CLI_CONFIG_DIR=config` + `CLI_PROFILE=test` (repo overlay, not your home dir).
 
 | Setting | Config key | Purpose |
 | --- | --- | --- |
 | **Git repositories** | `backup.repositories[].path` | Repos for `cli drive ingest` / `drive status` |
-| **Tag zip folder** | `backup.tags_dir` | Local store (default: iCloud `git-tags/`) — source for `drive upload` |
+| **Tag zip folder** | `backup.tags_dir` | Local zip store — set via `cli configure set backup.tags_dir` |
 | **Cloud upload roots** | `drives.yaml` → `google` / `onedrive` / `proton` | Remote folder names per provider |
 | **Notion task root** | `notion.task_root` | Private `header/` + `body/` task files |
 | **Notion pairs manifest** | `notion.pairs_file` | `config/notion/tasks.pairs.json` in this repo |
@@ -90,7 +98,7 @@ Test fixtures (not for production) live under `tests/fixtures/notion/tasks` and 
 
 Cloud providers: `config/drives.yaml`. Notion token: **`export NOTION_TOKEN=...`** (never commit).
 
-Environment overrides (optional): `CLI_BOOKMARKS_FILE`, `CLI_DOWNLOADS_DIR`, `CLI_CONFIG_DIR`, `NOTION_TOKEN`.
+Environment overrides (optional): `CLI_BOOKMARKS_FILE`, `CLI_DOWNLOADS_DIR`, `CLI_CONFIG_DIR`, `CLI_PROFILE`, `NOTION_TOKEN`. Secrets and local paths: **`.env`** in the repo root (see `.env.example`).
 
 ## Install
 
@@ -245,7 +253,6 @@ Details: [docs/release.md](docs/release.md) · [docs/setup.md](docs/setup.md) ·
 - [Setup](docs/setup.md)
 - [Release](docs/release.md)
 - [Git commands](docs/git.md)
-- [GitHub (`cli gh`)](docs/gh.md) · [Workflows (`cli gh wf`)](docs/gh-workflows.md)
 - [Drive (local + cloud)](docs/drive.md)
 - [Chrome](docs/chrome.md) · [Notion](docs/notion.md)
 - [Docker integration](docs/docker.md)
@@ -255,7 +262,6 @@ Details: [docs/release.md](docs/release.md) · [docs/setup.md](docs/setup.md) ·
 ## Related
 
 - [OpenCode](docs/opencode.md) — `cli opencode` AI entry point
-- [Hub operator](docs/hub-operator.md) — headless ship lane + CI runner
 - Cloud drive epic: [cli #4](https://github.com/gardusig/python-cli/issues/4)
 - Bootstrap spec: [cli #3](https://github.com/gardusig/python-cli/issues/3)
 - Chrome: [cli #24](https://github.com/gardusig/python-cli/issues/24) · bookmarks [#1](https://github.com/gardusig/python-cli/issues/1) superseded

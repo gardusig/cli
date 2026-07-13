@@ -15,7 +15,7 @@ def test_tasks_list_json() -> None:
     result = runner.invoke(app, ["tasks", "list"])
     assert result.exit_code == 0
     assert "notion" in result.stdout
-    assert "github" in result.stdout
+    assert "pairs" in result.stdout
 
 
 def test_tasks_run_notion_ingest(monkeypatch) -> None:

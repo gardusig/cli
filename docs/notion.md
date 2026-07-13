@@ -65,7 +65,7 @@ Hidden legacy: `download` / `upload`, and older `export` / `import`.
 
 1. Archive all active pages in the database (unless `--no-cleanup`)
 2. Upload each manifest entry; skip rows with `enabled: false` in header yaml
-3. Set Notion **`link`** to the GitHub runbook URL from `gh.issues.repo` + `body_filepath` (see [properties/link.md](./notion/properties/link.md))
+3. Set Notion **`link`** to the GitHub runbook URL from `notion.link_repo` + `body_filepath` (see [properties/link.md](./notion/properties/link.md))
 
 Per-task API failures are reported and the command exits non-zero if any deploy failed (successful pages are kept).
 
@@ -96,7 +96,7 @@ cli tasks run notion deploy --yes
 cli tasks ingest-pr --source notion --yes   # ingest → pairs build → PR (database repo)
 ```
 
-See [tasks.md](./tasks.md) and [gh-issues.md](./gh-issues.md) for the private **`gardusig/private`** task-data boundary.
+See [tasks.md](./tasks.md) for the private task-data workflow.
 
 ## Task file format
 

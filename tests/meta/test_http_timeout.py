@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from tests.constants import ROOT
-
 import subprocess
 from unittest.mock import MagicMock, patch
 
 from src.providers.notion import NotionClient
 from src.utils.config import NotionConfig
 from src.utils.http import DEFAULT_HTTP_TIMEOUT_SECONDS, default_http_timeout
-from src.utils.process import run_gh
+from src.utils.process import run_git
 
 
 def test_default_http_timeout_is_30_seconds() -> None:
@@ -26,7 +24,7 @@ def test_notion_client_uses_global_http_timeout() -> None:
 
 
 @patch("src.utils.process.subprocess.run")
-def test_run_gh_uses_default_timeout(mock_run: MagicMock) -> None:
-    mock_run.return_value = subprocess.CompletedProcess(["gh"], 0, "", "")
-    run_gh(["auth", "status"])
-    assert mock_run.call_args.kwargs["timeout"] == 30.0
+def test_run_git_invokes_subprocess(mock_run: MagicMock) -> None:
+    mock_run.return_value = subprocess.CompletedProcess(["git", "status"], 0, "", "")
+    run_git(["status"])
+    assert mock_run.call_args.args[0] == ["git", "status"]

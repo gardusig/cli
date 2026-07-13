@@ -3,6 +3,7 @@ from __future__ import annotations
 import subprocess
 from collections.abc import Sequence
 
+
 from src.utils.http import default_http_timeout
 
 

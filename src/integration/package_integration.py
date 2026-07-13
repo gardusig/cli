@@ -11,12 +11,12 @@ from typing import Literal
 from src.integration.cli_api_checks import ApiName, CliApiCheck, cli_api_checks
 from src.integration.workspaces import API_WORKSPACES, fixture_dir
 
-ApiPackage = Literal["gh", "notion", "drive", "chrome"]
-RunnerPackage = ApiPackage | Literal["git", "docker", "contest", "project", "pypi", "cli"]
+ApiPackage = Literal["notion", "drive", "chrome"]
+RunnerPackage = ApiPackage | Literal["git", "docker", "contest", "pypi", "cli"]
 
-_API_PACKAGES: frozenset[str] = frozenset({"gh", "notion", "drive", "chrome"})
+_API_PACKAGES: frozenset[str] = frozenset({"notion", "drive", "chrome"})
 _RUNNER_PACKAGES: frozenset[str] = frozenset(
-    {"gh", "notion", "drive", "chrome", "git", "docker", "contest", "project", "pypi", "cli"}
+    {"notion", "drive", "chrome", "git", "docker", "contest", "pypi", "cli"}
 )
 
 _PACKAGE_PYTEST_MODULES: dict[str, tuple[str, ...]] = {
@@ -57,10 +57,6 @@ def run_package_integration(package: str, repo_root: Path) -> list[str]:
         from src.integration.contest_integration import run_all_contest_checks
 
         errors.extend(run_all_contest_checks(repo_root))
-    elif package == "project":
-        from src.integration.project_integration import run_all_project_checks
-
-        errors.extend(run_all_project_checks(repo_root))
     elif package == "cli":
         errors.extend(_run_public_command_checks(repo_root))
     return errors
@@ -82,13 +78,12 @@ def _run_pytest_modules(package: str, repo_root: Path) -> list[str]:
 def _run_api_cli_checks(api: ApiPackage, repo_root: Path) -> list[str]:
     from typer.testing import CliRunner
 
-    from tests.harness.cli_api_harness import GH_WS, run_cli_api_checks
+    from tests.harness.cli_api_harness import run_cli_api_checks
 
-    gh_workspace = fixture_dir(GH_WS)
     with tempfile.TemporaryDirectory(prefix="cli-api-package-") as tmp:
         drive_repo = Path(tmp) / "drive-repo"
         drive_repo.mkdir()
-        checks = [check for check in cli_api_checks(gh_workspace=gh_workspace, drive_repo=str(drive_repo)) if check.api == api]
+        checks = [check for check in cli_api_checks(drive_repo=str(drive_repo)) if check.api == api]
         if not checks:
             return [f"{api}: no API integration checks registered"]
         import pytest
@@ -101,7 +96,6 @@ def _run_api_cli_checks(api: ApiPackage, repo_root: Path) -> list[str]:
                 runner,
                 monkeypatch,
                 Path(tmp),
-                gh_workspace=gh_workspace,
             )
         finally:
             monkeypatch.undo()

@@ -15,7 +15,6 @@ from src.cli import app
 runner = CliRunner()
 
 PROVIDER_MODULES = [
-    "src.providers.github",
     "src.providers.notion",
     "src.providers.chrome",
     "src.providers.google_drive",
@@ -56,17 +55,16 @@ INTERNAL_MODULES = [
 ]
 
 DOCKER_VERIFY_PATHS = [
-    "tests/integration/check_workflows.py",
+    "scripts/pull-request/integration-smoke.sh",
 ]
 
 REQUIRED_PATHS = [
     "config/config.yaml",
-    "config/gh/labels.manifest.yaml",
     "config/release/config.yaml",
     "config/notion/tasks.pairs.json",
     "config/notion/templates/body.md",
     "config/notion/templates/header.yaml",
-    "config/ci/config.yaml",
+    "config/config.test.yaml",
     "config/drives.yaml",
     "coverage-unit.ini",
     "tests/fixtures/bookmarks.html",
@@ -106,5 +104,6 @@ def test_config_loader() -> None:
 
     cfg = load_config(ROOT / "config")
     assert cfg.backup.repositories
+    assert cfg.backup.tags_dir == ".integration-scratch/ci-tags"
     assert cfg.drives.google.enabled is True
     assert cfg.chrome.profile == "Default"

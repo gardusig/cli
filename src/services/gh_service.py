@@ -434,6 +434,38 @@ class GhService:
     ) -> None:
         raise MergeForbiddenError()
 
+    # --- Branch ---
+
+    def _repo_parts(self) -> tuple[str, str]:
+        owner, name = self.repo_display().split("/", 1)
+        return owner, name
+
+    def branch_list(self, *, limit: int = 100) -> list[dict[str, Any]]:
+        owner, name = self._repo_parts()
+        rows = self.provider.run_json(["api", f"repos/{owner}/{name}/branches"])
+        if not isinstance(rows, list):
+            return []
+        trimmed = rows[:limit]
+        return [
+            {
+                "name": row.get("name"),
+                "sha": (row.get("commit") or {}).get("sha"),
+                "protected": row.get("protected", False),
+            }
+            for row in trimmed
+            if isinstance(row, dict)
+        ]
+
+    def branch_view(self, branch: str) -> dict[str, Any]:
+        owner, name = self._repo_parts()
+        return self.provider.run_json(["api", f"repos/{owner}/{name}/branches/{branch}"])
+
+    def branch_delete(self, branch: str) -> None:
+        owner, name = self._repo_parts()
+        self.provider.run(
+            ["api", "-X", "DELETE", f"repos/{owner}/{name}/git/refs/heads/{branch}"]
+        )
+
     # --- Backlog ---
 
     def backlog_tree(self) -> dict[str, Any]:

@@ -121,6 +121,13 @@ def test_default_config_dir_env_override(tmp_path: Path, monkeypatch: pytest.Mon
     assert default_config_dir() == tmp_path
 
 
+def test_default_config_dir_uses_user_dir_when_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    from src.utils.config import user_cli_config_dir
+
+    monkeypatch.delenv("CLI_CONFIG_DIR", raising=False)
+    assert default_config_dir() == user_cli_config_dir()
+
+
 def test_load_yaml_missing_returns_empty(tmp_path: Path) -> None:
     assert load_yaml(tmp_path / "missing.yaml") == {}
 

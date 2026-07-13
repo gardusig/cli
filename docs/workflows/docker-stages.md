@@ -2,40 +2,46 @@
 
 Each app repository owns a multi-stage `Dockerfile` at the repo root. Stages are run with `docker build --target <stage> -f Dockerfile .` from that repository.
 
-Hub-only images remain under `gardusig/cli/docker/`:
+## `gardusig/cli` (this repo)
 
-| Image | Path | Purpose |
-| --- | --- | --- |
-| Operator runner | `docker/operator.dockerfile` | `ghcr.io/gardusig/operator-runner` |
-| CLI base | `docker/cli-base.dockerfile` | Lean jobs that run published `gardusig-cli` |
+Root `Dockerfile` stages:
 
-## Exceptions
+| Target | Purpose |
+| --- | --- |
+| `version-check`, `unit-test`, `testpypi`, `testpypi-consumer` | PR pipeline |
+| `pypi`, `runtime` | Release (PyPI publish + lean runtime image) |
+
+## Exceptions (other repos)
 
 | Repo | Dockerfile path | Notes |
 | --- | --- | --- |
 | `gardusig/tex` | `docker/Dockerfile` | LaTeX + Pages publish layout |
 | `gardusig/wiki` | `Dockerfile` + `docker/mermaid.Dockerfile` | Separate Mermaid validation image |
 
-## Common stage order
+## Common stage order (app repos)
 
 1. `lint` — `cli lint repo /workspace`
 2. `repo-hygiene` — `cli structure check` with optional `HYGIENE_POLICY_JSON`
 3. Repo-specific gates (`unit-test`, `integration-test`, `build`, `latex`, …)
 
-## `gardusig/cli` example
+## Local example (`gardusig/cli`)
 
 ```bash
-docker build --target lint -f Dockerfile .
-docker build --target repo-hygiene -f Dockerfile .
-docker build --target unit-test -f Dockerfile .
+export BASE_VERSION="$(bash scripts/pull-request/host-last-published-version.sh)"
+docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build --target unit-test .
 ```
+
+## PR publish stages (`gardusig/cli`)
 
 | Stage | Purpose |
 | --- | --- |
-| `lint` | Markdown + mermaid validation |
-| `repo-hygiene` | Layout policy from `.github/pull-request.yaml` |
-| `version-check` | `cli pypi version check` |
-| `core-gates` | Integration coverage + public command surface |
-| `package-unit` / `package-integration` | Selective package legs |
-| `unit-test` / `integration-test` | Full suite |
-| `pypi-test` / `release` | TestPyPI / PyPI publish |
+| `version-check` / `unit-test` | PR gate |
+| `testpypi` / `testpypi-consumer` | TestPyPI publish + install smoke |
+
+## Release stages (`gardusig/cli`)
+
+| Stage | Purpose |
+| --- | --- |
+| `pypi` | Production PyPI publish |
+| `runtime` | Lean image from PyPI (`gardusig-cli==$VERSION`) |

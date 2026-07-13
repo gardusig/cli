@@ -50,11 +50,26 @@ def simulate_host_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("CLI_INTEGRATION_SCRATCH", raising=False)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _load_local_env() -> None:
+    from src.utils.config import load_local_env
+
+    load_local_env()
+
+
 @pytest.fixture(autouse=True)
-def ci_config_dir(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Use config/ci in Docker so tests never touch dev iCloud paths."""
-    if in_docker_integration():
-        monkeypatch.setenv("CLI_CONFIG_DIR", str(ROOT / "config" / "ci"))
+def test_config_profile(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Repo config + test profile overlay (never the developer home dir)."""
+
+    def _test_default_config_dir() -> Path:
+        env = os.environ.get("CLI_CONFIG_DIR", "").strip()
+        if env:
+            return Path(env).expanduser()
+        return ROOT / "config"
+
+    monkeypatch.delenv("CLI_CONFIG_DIR", raising=False)
+    monkeypatch.setenv("CLI_PROFILE", "test")
+    monkeypatch.setattr("src.utils.config.default_config_dir", _test_default_config_dir)
 
 
 def _docs_available() -> bool:

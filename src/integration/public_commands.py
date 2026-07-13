@@ -15,11 +15,6 @@ from src.integration.contest_integration import (
     contest_checks,
     run_all_contest_checks,
 )
-from src.integration.project_integration import (
-    assert_every_project_path_has_ok_and_failure_check,
-    project_checks,
-    run_all_project_checks,
-)
 from src.integration.docker_integration import (
     DOCKER_SUBCOMMANDS,
     assert_docker_registry_complete,
@@ -30,15 +25,17 @@ from src.integration.docker_integration import (
 )
 from src.integration.public_endpoints import (
     TOP_LEVEL_COMMANDS,
+    assert_every_gh_subcommand_has_ok_and_failure_check,
     assert_every_git_subcommand_checked,
     assert_every_git_subcommand_has_ok_and_failure_check,
+    assert_every_gh_subcommand_checked,
     assert_every_pypi_subcommand_has_ok_and_failure_check,
     assert_every_top_level_command_checked,
+    assert_registry_covers_gh_commands,
     assert_registry_covers_git_commands,
     endpoint_checks,
     run_all_endpoint_checks,
 )
-from src.integration.workspaces import API_WORKSPACES, fixture_dir
 
 
 def registered_top_level_commands() -> set[str]:
@@ -63,6 +60,9 @@ def assert_public_command_registry_complete() -> None:
     assert_registry_covers_git_commands()
     assert_every_git_subcommand_checked()
     assert_every_git_subcommand_has_ok_and_failure_check()
+    assert_registry_covers_gh_commands()
+    assert_every_gh_subcommand_checked()
+    assert_every_gh_subcommand_has_ok_and_failure_check()
     assert_every_pypi_subcommand_has_ok_and_failure_check()
     assert_every_top_level_command_checked()
     assert_docker_registry_covers_commands()
@@ -70,15 +70,11 @@ def assert_public_command_registry_complete() -> None:
     assert_every_docker_subcommand_has_ok_and_failure_check()
     assert_contest_registry_complete()
     assert_every_contest_subcommand_has_ok_and_failure_check()
-    assert_every_project_path_has_ok_and_failure_check()
-    gh_ws = fixture_dir(next(w for w in API_WORKSPACES if w.name == "gh"))
-    assert_every_api_command_has_ok_and_fail_check(
-        cli_api_checks(gh_workspace=gh_ws, drive_repo="."),
-    )
+    assert_every_api_command_has_ok_and_fail_check(cli_api_checks(drive_repo="."))
 
 
 def public_command_check_count() -> int:
-    return len(endpoint_checks()) + len(docker_checks()) + len(contest_checks()) + len(project_checks())
+    return len(endpoint_checks()) + len(docker_checks()) + len(contest_checks())
 
 
 def run_all_public_command_checks(repo_root: Path, git_root: Path | None = None) -> list[str]:
@@ -90,5 +86,4 @@ def run_all_public_command_checks(repo_root: Path, git_root: Path | None = None)
     errors = run_all_endpoint_checks(repo_root, git_root=git_root)
     errors.extend(run_all_docker_checks(repo_root))
     errors.extend(run_all_contest_checks(repo_root))
-    errors.extend(run_all_project_checks(repo_root))
     return errors

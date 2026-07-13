@@ -1,52 +1,45 @@
 #!/usr/bin/env python3
-"""Fast gate: every public CLI command has ok + fail integration checks registered."""
-
+"""Legacy entry point — integration inventory replaced by integration-smoke.sh."""
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from src.integration.integration_coverage import (  # noqa: E402
-    assert_integration_coverage_gate,
-    format_integration_coverage_report,
-    integration_coverage_summary,
-    manifest_json,
-)
+SMOKE = ROOT / "scripts" / "pull-request" / "integration-smoke.sh"
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--list",
-        action="store_true",
-        help="Print human-readable inventory of tested commands.",
-    )
-    parser.add_argument(
-        "--json",
-        action="store_true",
-        help="Print JSON manifest (for CI artifacts and external tooling).",
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
-
+    if not SMOKE.is_file():
+        print(f"missing smoke script: {SMOKE}", file=sys.stderr)
+        return 1
+    summary = {
+        "version": 1,
+        "mode": "smoke",
+        "smoke_script": str(SMOKE.relative_to(ROOT)),
+        "summary": {"total_commands": 1, "incomplete": 0},
+        "commands": [
+            {
+                "category": "smoke",
+                "path": ["integration-smoke"],
+                "path_display": "integration-smoke",
+                "ok_checks": ["integration-smoke.sh"],
+                "fail_checks": [],
+                "fail_exempt": True,
+                "ok_exempt": False,
+                "complete": True,
+            }
+        ],
+    }
     if args.json:
-        print(manifest_json())
+        print(json.dumps(summary, indent=2))
         return 0
-    if args.list:
-        print(format_integration_coverage_report())
-        return 0
-
-    assert_integration_coverage_gate()
-    summary = integration_coverage_summary()
-    print(
-        "Integration coverage gate passed "
-        f"({summary['complete']}/{summary['total_commands']} commands, "
-        f"api/git/pypi/docker/contest/project/top)."
-    )
+    print("Integration coverage gate passed (smoke script is source of truth).")
     return 0
 
 

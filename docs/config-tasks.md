@@ -1,21 +1,14 @@
-# Task Configuration
-
-Local setup:
+# Task configuration
 
 ```bash
-cli config init
-cli config secrets init
 cli config set notion.task_root ~/github/private/tasks
+cli config set notion.link_repo gardusig/private
 cli config set notion.pairs_file tasks.pairs.json
-cli config set gh.issues.repo gardusig/private
-cli config check --tasks
 ```
 
-`tasks/board.yaml` in `gardusig/private` stores non-secret targets such as the Notion database id and GitHub repo.
+Validate:
 
-Secrets:
-
-- local: `.env` or `~/.config/cli/secrets/*`
-- CI: `gardusig/cli` secrets only
-
-Do not put CI secrets in app repos.
+```bash
+cli configure check --tasks
+cli tasks pairs validate
+```

@@ -24,7 +24,7 @@ QUICK_DEFAULTS = (
     ("git reset", "return to synced main; optional --delete-merged or interactive branch cleanup — --yes"),
     ("git stash push", "message defaults to '.'"),
     ("git tag", "sync main, tag with per-repo pattern (config/tag.yaml)"),
-    ("git deploy", "tag main when ahead of latest tag and no open PRs block release"),
+    ("git deploy", "tag main when ahead of latest policy tag"),
     ("git zip", "zip a vX.Y.Z tag into iCloud git-tags/REPO/"),
     ("drive status", "git tags vs zips in backup.tags_dir (iCloud)"),
     ("drive ingest", "zip all tags for configured repos into git-tags/"),
@@ -40,29 +40,21 @@ QUICK_DEFAULTS = (
     ("notion ingest", "Notion → local task pairs"),
     ("notion deploy", "local task pairs → Notion board"),
     ("notion sync", "ingest from Notion, then deploy local tasks"),
-    ("project list", "inspect GitHub Projects v2 boards"),
-    ("project spawn", "batch-create issues from YAML seed file"),
-    ("project pairs build", "scan local recurrence pairs manifest"),
-    ("project deploy", "push local pairs to GitHub Project + issues"),
-    ("project ingest", "pull board/issue state into local headers"),
-    ("project sync", "ingest then deploy project pairs"),
     ("tasks run notion deploy", "shortcut for notion deploy --yes"),
-    ("tasks ingest-pr", "ingest tasks and open a database PR"),
+    ("tasks ingest-pr", "ingest tasks, commit, and push a branch"),
     ("contest validate", "two-tier Docker validation for fast/brute/gen"),
     ("pypi version check", "PR gate: branch version must be greater than origin/main"),
     ("pypi upload --testpypi", "TestPyPI dry-run publish; production uses release main"),
     ("release main", "guarded production release: tag, PyPI publish, verify, GitHub release"),
+    ("gh pr", "push if needed, then create PR with quick defaults"),
+    ("gh pr upsert --branch", "commit, push, and reuse one open PR per branch"),
 )
 
-# Lifecycle shortcuts: command + doc (see docs/workflows.md).
 WORKFLOW_SHORTCUTS: tuple[tuple[str, str, str], ...] = (
     ("git reset", "docs/workflows.md", "return to synced main + prune branches"),
     ("git start", "docs/workflows.md", "issue start: align main + named branch"),
     ("git push", "docs/workflows.md", "push current branch; start on main"),
-)
-
-WORKFLOW_CHAIN = (
-    "backlog next → reset → start → push → review → pr create → [UI merge] → issue close → reset"
+    ("gh pr", "docs/gh.md", "push if needed, then open a PR"),
 )
 
 GIT_COMMANDS: tuple[tuple[str, str], ...] = (
@@ -97,43 +89,6 @@ GIT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("zip", "git zip"),
 )
 
-GH_COMMANDS: tuple[tuple[str, str], ...] = (
-    ("backlog next", "gh backlog next"),
-    ("backlog tree", "gh backlog tree"),
-    ("backlog resequence", "gh backlog resequence"),
-    ("issue list", "gh issue list"),
-    ("issue view", "gh issue view"),
-    ("issue context", "gh issue context"),
-    ("issue search", "gh issue search"),
-    ("issue create", "gh issue create"),
-    ("issue edit", "gh issue edit"),
-    ("issue close", "gh issue close"),
-    ("issue reopen", "gh issue reopen"),
-    ("issue comment", "gh issue comment"),
-    ("issue status", "gh issue status"),
-    ("issue batch", "gh issue batch"),
-    ("label list", "gh label list"),
-    ("label sync", "gh label sync"),
-    ("labelize backlog", "gh issue batch"),
-    ("pr list", "gh pr list"),
-    ("pr view", "gh pr view"),
-    ("pr diff", "gh pr diff"),
-    ("pr shortcut", "gh pr"),
-    ("pr create", "gh pr create"),
-    ("pr edit", "gh pr edit"),
-    ("pr comment", "gh pr comment"),
-    ("pr reopen", "gh pr reopen"),
-    ("pr checks", "gh pr checks"),
-    ("pr review", "gh pr review"),
-    ("pr ready", "gh pr ready"),
-    ("pr status", "gh pr status"),
-    ("pr close", "gh pr close"),
-    ("pr merge", "gh pr merge (blocked — policy)"),
-    ("project", "gh project"),
-    ("ruleset", "gh ruleset (blocked — policy)"),
-    ("repo view", "gh repo view"),
-)
-
 CHROME_COMMANDS: tuple[tuple[str, str], ...] = (
     ("bookmarks ingest", "exported HTML → configured local file"),
     ("bookmarks merge", "merge new URLs from export into backup"),
@@ -146,30 +101,49 @@ CHROME_COMMANDS: tuple[tuple[str, str], ...] = (
     ("bookmarks import", "legacy alias for bookmarks deploy"),
 )
 
+GH_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("issue list", "gh issue list"),
+    ("issue view", "gh issue view"),
+    ("issue context", "gh issue context"),
+    ("issue create", "gh issue create"),
+    ("issue edit", "gh issue edit"),
+    ("issue comment", "gh issue comment"),
+    ("issue status", "gh issue status"),
+    ("branch list", "gh branch list"),
+    ("branch view", "gh branch view"),
+    ("branch delete", "gh branch delete"),
+    ("branch pr", "gh branch pr"),
+    ("pr list", "gh pr list"),
+    ("pr view", "gh pr view"),
+    ("pr create", "gh pr create"),
+    ("pr upsert", "gh pr upsert"),
+    ("pr status", "gh pr status"),
+    ("pr checks", "gh pr checks"),
+    ("pr review", "gh pr review"),
+    ("policy list", "gh policy list"),
+)
+
 TOP_LEVEL_COMMANDS: tuple[tuple[str, str], ...] = (
     ("git / g", "git shortcuts (see cli git --help)"),
-    ("gh", "GitHub via gh/API — issues, labels, PRs, backlog, low-level Projects (see docs/gh.md)"),
-    ("opencode", "AI entry point — chat, gh flows, raw prompts (see docs/opencode.md)"),
+    ("gh", "GitHub via gh — issues, branches, PRs (see docs/gh.md)"),
+    ("opencode", "AI entry point — chat and raw prompts (see docs/opencode.md)"),
     ("lint", "Repository lint wrapper"),
     ("test", "Run repo test pipeline and package selection contracts"),
     ("structure", "Repository structure checks"),
     ("validate", "Data/config validation helpers"),
     ("languages", "Language inventory and metadata"),
-    ("deploy", "Deploy pipeline wrapper"),
     ("release", "Release build pipeline wrapper"),
     ("restore", "restore workflows (placeholder)"),
     ("drive", "git-tags local store (iCloud) + cloud upload/download — status, ingest, deploy, sync"),
     ("chrome", "Chrome browser — bookmarks ingest, merge, snapshot, deploy"),
     ("notion", "Notion task board — pairs build / ingest / deploy / sync / cleanup"),
-    ("project", "GitHub Projects — board reads, writes, pairs, recurrence"),
     ("links", "this index — docs, commands, defaults"),
     ("docker", "monitor + cleanup — stats, top, stop, delete, reset (see cli docker --help)"),
     ("contest", "Competitive programming validation harness"),
     ("configure", "Import/list configuration keys"),
     ("config", "Inspect resolved configuration"),
     ("pypi", "Build/upload/version helpers for gardusig-cli"),
-    ("puzzles", "Puzzle issue helpers"),
-    ("repo", "Repository inventory and hygiene helpers"),
+    ("puzzles", "Validate static puzzle manifests"),
     ("tasks", "Task pair helpers"),
     ("wiki", "Wiki repository helpers"),
 )
@@ -219,20 +193,6 @@ def git_command_entries(root: Path | None = None) -> list[CatalogEntry]:
     return entries
 
 
-def gh_command_entries(root: Path | None = None) -> list[CatalogEntry]:
-    _ = root or project_root()
-    entries: list[CatalogEntry] = []
-    for label, cli_cmd in GH_COMMANDS:
-        entries.append(
-            CatalogEntry(
-                label,
-                cli=f"cli {cli_cmd}",
-                doc="docs/gh.md",
-            )
-        )
-    return entries
-
-
 def chrome_command_entries(root: Path | None = None) -> list[CatalogEntry]:
     _ = root or project_root()
     entries: list[CatalogEntry] = []
@@ -243,6 +203,20 @@ def chrome_command_entries(root: Path | None = None) -> list[CatalogEntry]:
                 cli=f"cli chrome {label}",
                 doc="docs/bookmarks.md",
                 note=note,
+            )
+        )
+    return entries
+
+
+def gh_command_entries(root: Path | None = None) -> list[CatalogEntry]:
+    _ = root or project_root()
+    entries: list[CatalogEntry] = []
+    for label, cli_cmd in GH_COMMANDS:
+        entries.append(
+            CatalogEntry(
+                label,
+                cli=f"cli {cli_cmd}",
+                doc="docs/gh.md",
             )
         )
     return entries

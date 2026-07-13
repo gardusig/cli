@@ -1,52 +1,53 @@
-# Configure
+# Configure (`cli configure`)
 
-`cli configure` is the single configuration entry point. It works like `aws configure` or `git config`: install the package, then set values by key.
+AWS / git-style configuration: bootstrap once, then set keys individually.
 
-## Install
-
-```bash
-pip install gardusig-cli
-```
-
-## Common Commands
+## First run
 
 ```bash
+cli configure init
 cli configure list
-cli configure set notion.token secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-cli configure set gh.token --stdin
-cli configure get notion.token
-cli configure import-env
+cli configure set notion.task_root ~/github/private/tasks
+cli configure set notion.token --stdin
 cli configure check --tasks
 ```
 
-Secret values are masked by default. Use `--show` only when you intentionally need to inspect a local value.
+`cli configure` with no subcommand runs `init` (creates `auth.yaml` + `secrets/`).
 
-## Resolution Order
+`cli configure path` prints the active config directory (XDG on Linux, Application Support on macOS).
 
-1. Environment variable, such as `NOTION_TOKEN`
-2. Value previously stored with `cli configure set`
-3. Clear error with the key and environment variable to set
-
-CI and Docker should inject GitHub secrets as environment variables, then run:
+Optional starter paths file:
 
 ```bash
-cli configure import-env
-cli configure check --tasks
+cli configure init --example   # copies config.example.yaml → config.yaml
 ```
 
-Use `--persist` with `import-env` only when you intentionally want to write token files in the current config directory.
+## Commands
 
-## Keys
+| Command | Purpose |
+| --- | --- |
+| `init` | Create config dir, `auth.yaml`, `secrets/` |
+| `set <key> [value]` | Write `config.yaml` or a token file (`--stdin` for secrets) |
+| `get <key>` | Read a key (`--show` for secret values) |
+| `unset <key>` | Remove a key or token file |
+| `list` | Show which keys are set (`--json`) |
+| `import-env [--persist]` | Import credentials from environment |
+| `check --tasks` / `--pypi` | Validate a feature area |
+| `path` | Print config directory |
 
-| Key | Environment | Example |
-|-----|-------------|---------|
-| `notion.token` | `NOTION_TOKEN` | `secret_...` |
-| `gh.token` | `GH_TOKEN` | `ghp_...` |
-| `pypi.token` | `PYPI_API_TOKEN` | `pypi-...` |
-| `docker.token` | `DOCKERHUB_TOKEN` | `dckr_pat_...` |
-| `docker.username` | `DOCKERHUB_USERNAME` | `binaryLifter` |
-| `notion.database_id` | `NOTION_DATABASE_ID` | Notion database id |
-| `notion.task_root` | `NOTION_TASK_ROOT` | `/workspace/tasks` |
-| `gh.issues.repo` | | `gardusig/private` |
+## Common keys
 
-The full credential manifest lives at `config/secrets.manifest.yaml`.
+| Key | Purpose |
+| --- | --- |
+| `backup.tags_dir` | Local git-tag zip folder |
+| `notion.database_id` | Notion board |
+| `notion.task_root` | Local `header/` + `body/` tree |
+| `notion.link_repo` | `owner/repo` for runbook URLs |
+| `chrome.bookmarks_file` | Bookmarks HTML backup |
+| `notion.token` | Notion integration token (secret) |
+
+See [configuration.md](configuration.md) and [secrets.md](secrets.md).
+
+## Contributors
+
+Tests and CI use `CLI_CONFIG_DIR=config` + `CLI_PROFILE=test` — not your home directory.

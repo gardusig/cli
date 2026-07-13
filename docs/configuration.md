@@ -1,18 +1,46 @@
 # Configuration
 
-Config loads from (first match):
+## Resolution order
 
-1. `$CLI_CONFIG_DIR` if set
-2. Repo `config/` directory (development)
-3. `~/.config/cli/`
+1. **Environment variables** (highest — Docker, CI, shell exports)
+2. **User config directory** from `platformdirs` (`cli configure path`), unless `CLI_CONFIG_DIR` is set
+3. **Pydantic code defaults** when no file value exists
+
+Load order inside the config directory:
+
+1. `config.yaml`
+2. `config.<profile>.yaml` when `CLI_PROFILE` is set (unless `CLI_CONFIG_DIR` disables profiles)
+3. `drives.yaml`, `auth.yaml`
+
+Repo-root **`.env`** is loaded for local dev convenience (never overrides existing env vars).
+
+## First-time setup
+
+```bash
+cli configure init
+cli configure list
+cli configure set backup.tags_dir ~/git-tags
+cli configure set notion.token --stdin
+```
+
+## Config directory
+
+| Platform | Default path |
+| --- | --- |
+| Linux | `$XDG_CONFIG_HOME/cli` → `~/.config/cli` |
+| macOS | `~/Library/Application Support/cli` |
+
+Override: `CLI_CONFIG_DIR=/path` (profile merge disabled).
+
+Contributors / CI: `CLI_CONFIG_DIR=config` and `CLI_PROFILE=test`.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
 | `config.yaml` | Backup repos, local git-tags path, Notion, Chrome |
+| `config.test.yaml` | Test/CI overlay (`CLI_PROFILE=test`); fixture paths for pytest and Docker |
 | `drives.yaml` | Google / OneDrive / Proton upload targets |
-| `ci/config.yaml` | Docker unit/integration overrides (fixture paths); set via `CLI_CONFIG_DIR` |
 | `contest/defaults.yaml` | `cli contest validate` timeout, memory, image defaults |
 | `contest/templates/` | Generator and brute scaffolds for competitive programming |
 
@@ -119,7 +147,9 @@ Proton Drive is disabled by default — no stable public upload API (see `docs/d
 
 | Variable | Purpose |
 | --- | --- |
-| `CLI_CONFIG_DIR` | Override config directory |
+| `CLI_CONFIG_DIR` | Override config directory (disables profile merge when set) |
+| `CLI_PROFILE` | Merge `config.<profile>.yaml` (e.g. `test` → `config.test.yaml`) |
+| `CLI_ENV` | `test` selects the test profile (alias for `CLI_PROFILE=test`) |
 | `CLI_GIT_ROOT` | Test override for git repo root |
 | `NOTION_TOKEN` | Notion integration token (required for `cli notion`) |
 | `BACKUP_ZIP_PASSWORD` | Zip password for `encrypted: true` backup repositories |

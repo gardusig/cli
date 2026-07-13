@@ -18,7 +18,13 @@ def test_coverage_unit_ini_requires_eighty_percent() -> None:
     omit = cfg["run"].get("omit", "")
     assert "src/integration" in omit
     assert "src/commands/chat.py" in omit
-    assert "src/commands/craft.py" in omit
+    for hidden in (
+        "src/commands/backup.py",
+        "src/commands/bookmarks.py",
+        "src/commands/hygiene.py",
+        "src/commands/publish.py",
+    ):
+        assert hidden in omit
 
 
 def test_coverage_unit_ini_scopes_cli_package() -> None:

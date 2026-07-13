@@ -4,17 +4,22 @@ from __future__ import annotations
 
 from tests.constants import ROOT
 
+import json
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.services.pypi_publish import (
     PyPiPublishError,
+    apply_next_release_version,
     default_release_tag_name,
+    fetch_latest_published_version,
     format_release_tag,
     normalize_release_version,
     read_project_version,
     resolve_release_version,
+    suggest_next_release_version,
     sync_version_files,
     validate_release_tag_name,
 )
@@ -65,6 +70,56 @@ def test_sync_version_files_updates_pyproject_and_init(tmp_path: Path) -> None:
     sync_version_files(tmp_path, "1.0.0")
     assert read_project_version(tmp_path) == "1.0.0"
     assert '__version__ = "1.0.0"' in init_py.read_text(encoding="utf-8")
+
+
+def test_suggest_next_release_version_bumps_published() -> None:
+    assert suggest_next_release_version(published="1.0.3") == "1.0.4"
+
+
+@patch("src.services.pypi_publish.fetch_latest_published_version", return_value=None)
+def test_suggest_next_release_version_keeps_pyproject_on_first_release(
+    _fetch: MagicMock,
+    tmp_path: Path,
+) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text('[project]\nname = "x"\nversion = "1.0.6"\n', encoding="utf-8")
+    assert suggest_next_release_version(published=None, root=tmp_path) == "1.0.6"
+
+
+@patch("src.services.pypi_publish.fetch_latest_published_version", return_value=None)
+def test_suggest_next_release_version_defaults_when_missing_pyproject(
+    _fetch: MagicMock,
+    tmp_path: Path,
+) -> None:
+    assert suggest_next_release_version(published=None, root=tmp_path) == "0.1.0"
+
+
+def test_apply_next_release_version_writes_files(tmp_path: Path) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text('[project]\nname = "x"\nversion = "0.1.0"\n', encoding="utf-8")
+    init_dir = tmp_path / "src"
+    init_dir.mkdir()
+    init_py = init_dir / "__init__.py"
+    init_py.write_text('__version__ = "0.1.0"\n', encoding="utf-8")
+
+    version = apply_next_release_version(published="1.0.0", root=tmp_path)
+    assert version == "1.0.1"
+    assert read_project_version(tmp_path) == "1.0.1"
+    assert '__version__ = "1.0.1"' in init_py.read_text(encoding="utf-8")
+
+
+@patch("src.services.pypi_publish.urllib.request.urlopen")
+def test_fetch_latest_published_version_picks_highest(mock_urlopen: MagicMock) -> None:
+    payload = {
+        "releases": {
+            "1.0.0": [{"url": "x"}],
+            "1.0.2": [{"url": "x"}],
+            "1.0.1": [{"url": "x"}],
+        }
+    }
+    mock_urlopen.return_value.__enter__.return_value.read.return_value = json.dumps(payload).encode()
+
+    assert fetch_latest_published_version() == "1.0.2"
 
 
 """PyPI package metadata vs repo naming."""

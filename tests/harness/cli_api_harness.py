@@ -17,7 +17,6 @@ from src.integration.cli_api_checks import CliApiCheck, validate_cli_api_check
 from src.integration.workspaces import API_WORKSPACES, fixture_dir
 from src.services.backup_repository import RepoBackupStatus, SyncResult
 from src.services.drive_sync import DownloadResult, UploadResult
-from tests.harness.gh_harness import gh_auth_error, patch_run_gh
 from tests.harness.integration_harness import copy_fixture_workspace
 from tests.harness.notion_harness import notion_cli_handler, notion_page, patch_notion_http
 
@@ -26,7 +25,6 @@ NOTION_WS = next(w for w in API_WORKSPACES if w.name == "notion")
 NOTION_CLI_WS = ROOT / "tests" / "fixtures" / "notion" / "cli-workspace"
 CHROME_WS = next(w for w in API_WORKSPACES if w.name == "chrome")
 DRIVE_WS = next(w for w in API_WORKSPACES if w.name == "drive")
-GH_WS = next(w for w in API_WORKSPACES if w.name == "gh")
 
 
 def _write_takeout_zip(downloads: Path) -> Path:
@@ -96,8 +94,8 @@ def notion_cli_context(monkeypatch: Any, tmp_path: Path) -> Iterator[Path]:
         "notion:\n"
         "  database_id: db-integration\n"
         "  cleanup_before_deploy: false\n"
+        "  link_repo: gardusig/private\n"
         "  link_branch: main\n"
-        "gh:\n"
         "  issues:\n"
         "    repo: gardusig/private\n",
         encoding="utf-8",
@@ -231,10 +229,13 @@ def chrome_cli_context(
     photos.mkdir(parents=True, exist_ok=True)
     fixture_html = workspace / "Downloads" / "bookmarks.html"
     takeout_zip = _write_takeout_zip(workspace / "Downloads")
+    empty_downloads = tmp_path / "empty-downloads"
+    empty_downloads.mkdir(exist_ok=True)
+    downloads_dir = workspace / "Downloads" if use_fixture else empty_downloads
     env = {
         **os.environ,
         "CLI_SKIP_CHROME_AUTOMATION": "1",
-        "CLI_DOWNLOADS_DIR": str(workspace / "Downloads"),
+        "CLI_DOWNLOADS_DIR": str(downloads_dir),
         "CLI_BOOKMARKS_FILE": str(bookmarks),
         "CLI_PHOTOS_DIR": str(photos),
         "CLI_ROOT": str(ROOT),
@@ -242,9 +243,6 @@ def chrome_cli_context(
     if use_fixture:
         env["CLI_BOOKMARKS_FIXTURE"] = str(fixture_html)
     else:
-        empty_downloads = tmp_path / "empty-downloads"
-        empty_downloads.mkdir(exist_ok=True)
-        env["CLI_DOWNLOADS_DIR"] = str(empty_downloads)
         env["CLI_DOWNLOAD_TIMEOUT"] = "1"
 
     def _bookmarks_env() -> dict[str, str]:
@@ -253,17 +251,24 @@ def chrome_cli_context(
     with (
         patch("src.commands.chrome._bookmarks_env", _bookmarks_env),
         patch("src.commands.chrome.bookmarks_file_path", lambda config_dir=None, profile=None: bookmarks),
-        patch("src.commands.chrome.chrome_downloads_dir", lambda config_dir=None: workspace / "Downloads"),
+        patch("src.commands.chrome.chrome_downloads_dir", lambda config_dir=None: downloads_dir),
         patch("src.commands.chrome.chrome_snapshots_dir", lambda config_dir=None: snapshots),
         patch("src.commands.chrome.chrome_snapshot_retention", lambda config_dir=None: 30),
         patch("src.commands.chrome.photos_dir_path", lambda config_dir=None: photos),
-        patch("src.commands.chrome.photos_takeout_dir", lambda config_dir=None: workspace / "Downloads"),
+        patch("src.commands.chrome.photos_takeout_dir", lambda config_dir=None: downloads_dir),
+        patch("src.services.photos_sync.wait_for_takeout_archive", return_value=takeout_zip),
     ):
         if skip_export and bookmarks.is_file():
             bookmarks.unlink()
         if use_fixture and not skip_export:
             subprocess.run(
                 ["python", "-m", "src", "chrome", "bookmarks", "ingest"],
+                env=env,
+                check=True,
+                cwd=ROOT,
+            )
+            subprocess.run(
+                ["python", "-m", "src", "chrome", "photos", "ingest", "--yes"],
                 env=env,
                 check=True,
                 cwd=ROOT,
@@ -287,103 +292,9 @@ def api_check_context(
     check: CliApiCheck,
     monkeypatch: Any,
     tmp_path: Path,
-    *,
-    gh_workspace: Path,
 ) -> Iterator[dict[str, str] | None]:
     """Apply mocks/env needed for one CliApiCheck (success or failure)."""
     env: dict[str, str] | None = None
-    if check.api == "gh":
-        if check.failure == "gh_auth":
-            with patch_run_gh(side_effect=gh_auth_error()):
-                yield env
-        elif check.label in {"gh pr shortcut", "gh pr shortcut api", "gh pr upsert"}:
-            from unittest.mock import MagicMock
-
-            from src.services.gh_pr_shortcut import PrShortcutPlan
-            from src.services.git_shortcuts import GitPushPlan
-
-            fake = MagicMock()
-            fake.gh.snapshot_summary.return_value = ["repo: example/repo"]
-            fake.plan.return_value = PrShortcutPlan(
-                title=".",
-                body="",
-                body_source="empty",
-                template=None,
-                no_push=False,
-                allow_main=False,
-                push_plan=GitPushPlan(
-                    source_branch="feat-x",
-                    target_branch="feat-x",
-                    remote="origin",
-                    dirty=False,
-                    message=".",
-                ),
-                needs_push=False,
-                branch="feat-x",
-            )
-            fake.create.return_value = {
-                "url": "https://github.com/example/repo/pull/9",
-                "number": 9,
-                "title": ".",
-                "pushed": False,
-                "branch": "feat-x",
-                "body_source": "empty",
-                "existing": False,
-            }
-            fake.upsert_branch_pr.return_value = {
-                "action": "updated",
-                "number": 12,
-                "branch": "automation/sync-submodules-main",
-                "changed": True,
-            }
-            with (
-                patch("src.commands.gh._pr_shortcut", return_value=fake),
-                patch("src.commands.git._interactive_allow_main", return_value=False),
-            ):
-                yield env
-        elif check.label in {"gh issue list api", "gh pr checks api", "gh issue context api"}:
-            from tests.gh.test_issue_context import api_issue_context_responses
-            from tests.gh.test_transport import FakeClient
-
-            monkeypatch.setenv("GITHUB_TOKEN", "token")
-            if check.label == "gh issue list api":
-                FakeClient.responses = [[{"number": 1, "title": "issue"}]]
-            elif check.label == "gh issue context api":
-                FakeClient.responses = api_issue_context_responses()
-            else:
-                FakeClient.responses = [
-                    {"number": 7, "head": {"sha": "abc"}},
-                    {"check_runs": [{"name": "ci", "status": "completed"}]},
-                ]
-            with patch("src.providers.gh_transport.httpx.Client", FakeClient):
-                yield env
-        elif check.label == "gh project view api":
-            from tests.gh.test_commands import FakeProjectService
-
-            monkeypatch.setenv("GITHUB_TOKEN", "token")
-            with patch("src.commands.gh._project_svc", return_value=FakeProjectService()):
-                yield env
-        elif check.label == "gh project item add api":
-            from tests.gh.test_commands import FakeProjectService
-
-            monkeypatch.setenv("GITHUB_TOKEN", "token")
-            with patch("src.commands.gh._project_svc", return_value=FakeProjectService()):
-                yield env
-        elif check.failure == "gh_transport":
-            monkeypatch.delenv("GITHUB_TOKEN", raising=False)
-            monkeypatch.delenv("GH_TOKEN", raising=False)
-            with (
-                patch("src.providers.gh_transport.GhCliTransport.is_authenticated", return_value=False),
-                patch("src.providers.gh_transport.github_token", return_value=None),
-            ):
-                yield env
-        else:
-            from tests.harness.gh_harness import patch_gh_all
-
-            with patch_gh_all(gh_workspace):
-                yield env
-        return
-
     if check.api == "notion":
         if check.failure == "missing_token":
             monkeypatch.delenv("NOTION_TOKEN", raising=False)
@@ -445,7 +356,13 @@ def api_check_context(
             if check.failure == "chrome_photos_no_takeout":
                 empty = tmp_path / "empty-takeout"
                 empty.mkdir(exist_ok=True)
-                with patch("src.commands.chrome.photos_takeout_dir", lambda config_dir=None: empty):
+                with (
+                    patch("src.commands.chrome.photos_takeout_dir", lambda config_dir=None: empty),
+                    patch(
+                        "src.services.photos_sync.wait_for_takeout_archive",
+                        side_effect=TimeoutError("no takeout"),
+                    ),
+                ):
                     yield chrome_env
                 return
             if check.failure == "chrome_photos_no_dir":
@@ -466,11 +383,9 @@ def run_cli_api_check(
     check: CliApiCheck,
     monkeypatch: Any,
     tmp_path: Path,
-    *,
-    gh_workspace: Path,
 ) -> str | None:
     """Run one check; return error text or None when it passed."""
-    with api_check_context(check, monkeypatch, tmp_path, gh_workspace=gh_workspace) as env:
+    with api_check_context(check, monkeypatch, tmp_path) as env:
         result = run_check_invoke(runner, check, env=env)
     output = result.stdout + (result.stderr or "")
     if result.exception is not None:
@@ -483,12 +398,10 @@ def run_cli_api_checks(
     runner,
     monkeypatch: Any,
     tmp_path: Path,
-    *,
-    gh_workspace: Path,
 ) -> list[str]:
     errors: list[str] = []
     for check in checks:
-        err = run_cli_api_check(runner, check, monkeypatch, tmp_path, gh_workspace=gh_workspace)
+        err = run_cli_api_check(runner, check, monkeypatch, tmp_path)
         if err:
             errors.append(f"{check.label}: {err}")
     return errors

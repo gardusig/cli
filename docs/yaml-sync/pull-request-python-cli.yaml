@@ -1,102 +1,24 @@
 repo: gardusig/cli
 selective: true
-dockerfile: .github/Dockerfile
+dockerfile: Dockerfile
 dockerignore: .dockerignore
 jobs:
-- id: lint
-  name: Repo lint
-  target: lint
-- id: repo-hygiene
-  name: Repo structure
-  target: repo-hygiene
-  needs: lint
-  hygiene_policy:
-    allowed_root_dirs:
-    - config
-    - docs
-    - scripts
-    - src
-    - tests
-    allowed_root_files:
-    - .dockerignore
-    - .env.example
-    - .gitignore
-    - .markdownlint.json
-    - LICENSE
-    - README.md
-    - coverage-unit.ini
-    - pyproject.toml
-    - requirements-dev.txt
-    - requirements.txt
-    - uv.lock
-    allowed_extensions:
-    - .cpp
-    - .example
-    - .html
-    - .ini
-    - .json
-    - .lock
-    - .md
-    - .py
-    - .sh
-    - .toml
-    - .txt
-    - .yaml
-    - .yml
-    - .zip
-    allowed_filenames:
-    - .dockerignore
-    - .gitignore
-    - LICENSE
-    - uv.lock
-    ignored_prefixes:
-    - gardusig_cli.egg-info/
-    - scripts/test/
-    forbid_direct_cli_references: false
-    allowed_paths:
-    - .github/workflows/pull-request.yaml
-    - .github/workflows/release.yaml
-    - .github/workflows/repo-review.yaml
-    - .github/workflows/pull-request.workflow.yaml
-    - .github/workflows/release.workflow.yaml
 - id: version-check
   name: Version gate
   target: version-check
-  needs: repo-hygiene
-- id: core-gates
-  name: Core integration gates
-  target: core-gates
-  needs: version-check
-- id: package-unit
-  name: Unit
-  target: package-unit
-  matrix: unit
-  needs: core-gates
-- id: package-integration
-  name: Integration
-  target: package-integration
-  matrix: integration
-  needs: core-gates
-- id: unit
-  name: Unit tests (full suite)
+- id: unit-test
+  name: Unit tests
   target: unit-test
   needs: version-check
-- id: pypi
-  name: TestPyPI publish (Docker)
-  target: pypi-test
-  needs: unit
+- id: testpypi
+  name: TestPyPI publish
+  target: testpypi
+  needs: unit-test
   build_args_from_ref: true
   secrets:
     TESTPYPI_API_TOKEN: TESTPYPI_API_TOKEN
-- id: integration
-  name: Integration tests (full suite)
-  target: integration-test
-  when_full_suite: true
-  docker_socket: true
-  needs: pypi
 - id: testpypi-consumer
-  name: TestPyPI consumer install
+  name: TestPyPI consumer integration
   target: testpypi-consumer
-  needs: integration
+  needs: testpypi
   build_args_from_ref: true
-  docker_socket: true

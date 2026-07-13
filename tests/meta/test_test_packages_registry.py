@@ -28,7 +28,7 @@ def test_package_names_are_unique() -> None:
 
 
 def test_registry_includes_public_packages() -> None:
-    for name in ("git", "gh", "docker", "notion", "drive", "chrome", "contest", "project"):
+    for name in ("git", "docker", "notion", "drive", "chrome", "contest"):
         assert name in package_names()
 
 

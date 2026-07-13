@@ -5,7 +5,7 @@ owner: gardusig
 
 repos:
   - name: cli
-    description: Headless operator hub — craft, gh, Docker workflows, PyPI package
+    description: Standalone CLI — git, integrations, Docker CI, PyPI package
   - name: chrome-extensions
     description: Browser extensions maintenance
   - name: go

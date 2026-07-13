@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import yaml
+from platformdirs import user_config_dir
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -23,10 +24,8 @@ class BackupReplica(BaseModel):
     name: str = ""  # optional display label
 
 
-# Default local tag storage: iCloud Drive git-tags folder (macOS).
-DEFAULT_TAGS_DIR = (
-    "~/Library/Mobile Documents/com~apple~CloudDocs/git-tags"
-)
+# Empty until `cli configure set backup.tags_dir` (no baked-in home paths).
+DEFAULT_TAGS_DIR = ""
 
 
 class BackupConfig(BaseModel):
@@ -70,6 +69,8 @@ class NotionConfig(BaseModel):
     task_directory: str = ""  # deprecated alias for task_root
     pairs_file: str = "tasks.pairs.json"
     link_branch: str = "main"
+    link_repo: str = ""  # owner/repo for runbook URLs in Notion (git-hosted tasks/)
+    labels_manifest: str = "labels.manifest.yaml"
     cleanup_before_deploy: bool = True
     cleanup_before_upload: bool | None = None  # deprecated alias
     cleanup_before_import: bool | None = None  # deprecated alias
@@ -97,17 +98,6 @@ class ChromeProfileConfig(BaseModel):
     bookmarks_file: str = ""
 
 
-class ChromeConfig(BaseModel):
-    profile: str = "Default"
-    bookmarks_file: str = ""
-    downloads_dir: str = ""
-    photos_dir: str = ""
-    photos_takeout_dir: str = ""
-    profiles: dict[str, ChromeProfileConfig] = Field(default_factory=dict)
-    snapshots_dir: str = ""
-    snapshot_retention: int = 0
-
-
 class GhIssuesPruneConfig(BaseModel):
     closed_older_than: str = "7d"
 
@@ -122,59 +112,15 @@ class GhConfig(BaseModel):
     issues: GhIssuesConfig = Field(default_factory=GhIssuesConfig)
 
 
-class ProjectDefaultConfig(BaseModel):
-    owner: str = ""
-    number: int | None = None
-    project_id: str = ""
-
-
-class ProjectAutoLinkConfig(BaseModel):
-    enabled: bool = False
-    default_lane: str = ""
-    on_issue_create: bool = True
-    on_pr_create: bool = False
-
-
-class ProjectFieldMap(BaseModel):
-    status: str = "Status"
-    deadline: str = "Deadline"
-    type: str = "Type"
-
-
-class ProjectConfig(BaseModel):
-    """GitHub Projects v2 settings for the top-level `cli project` surface."""
-
-    # v0a shorthand from #72.
-    owner: str = ""
-    number: int | None = None
-    project_id: str = ""
-    # v0.4 canonical shape from #75.
-    default: ProjectDefaultConfig = Field(default_factory=ProjectDefaultConfig)
-    auto_link: ProjectAutoLinkConfig = Field(default_factory=ProjectAutoLinkConfig)
-    fields: ProjectFieldMap = Field(default_factory=ProjectFieldMap)
-    lanes: dict[str, str] = Field(default_factory=dict)
-    task_root: str = "config/project"
-    pairs_file: str = "tasks.pairs.json"
-
-    def model_post_init(self, __context: object) -> None:
-        if self.owner.strip() and not self.default.owner.strip():
-            object.__setattr__(
-                self,
-                "default",
-                self.default.model_copy(update={"owner": self.owner.strip()}),
-            )
-        if self.number is not None and self.default.number is None:
-            object.__setattr__(
-                self,
-                "default",
-                self.default.model_copy(update={"number": self.number}),
-            )
-        if self.project_id.strip() and not self.default.project_id.strip():
-            object.__setattr__(
-                self,
-                "default",
-                self.default.model_copy(update={"project_id": self.project_id.strip()}),
-            )
+class ChromeConfig(BaseModel):
+    profile: str = "Default"
+    bookmarks_file: str = ""
+    downloads_dir: str = ""
+    photos_dir: str = ""
+    photos_takeout_dir: str = ""
+    profiles: dict[str, ChromeProfileConfig] = Field(default_factory=dict)
+    snapshots_dir: str = ""
+    snapshot_retention: int = 0
 
 
 class AuthCredentialConfig(BaseModel):
@@ -201,7 +147,6 @@ class CliConfig(BaseModel):
     drives: DrivesConfig = Field(default_factory=DrivesConfig)
     notion: NotionConfig = Field(default_factory=NotionConfig)
     gh: GhConfig = Field(default_factory=GhConfig)
-    project: ProjectConfig = Field(default_factory=ProjectConfig)
     chrome: ChromeConfig = Field(default_factory=ChromeConfig)
     auth: AuthConfig = Field(default_factory=AuthConfig)
 
@@ -209,7 +154,12 @@ class CliConfig(BaseModel):
 class CliSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="CLI_", extra="ignore")
 
-    config_dir: Path = Path.home() / ".config" / "cli"
+    config_dir: Path = Field(default_factory=lambda: user_cli_config_dir())
+
+
+def user_cli_config_dir() -> Path:
+    """OS-standard user config directory (XDG on Linux, Application Support on macOS)."""
+    return Path(user_config_dir("cli", appauthor=False))
 
 
 def project_root() -> Path:
@@ -230,14 +180,39 @@ def load_local_env() -> None:
         load_dotenv(env_path, override=False)
 
 
+def _deep_merge(base: dict, overlay: dict) -> dict:
+    merged = dict(base)
+    for key, value in overlay.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def active_config_profile() -> str | None:
+    """Named overlay file config.<profile>.yaml (e.g. test)."""
+    profile = os.environ.get("CLI_PROFILE", "").strip()
+    if profile:
+        return profile
+    if os.environ.get("CLI_ENV", "").strip().lower() == "test":
+        return "test"
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return "test"
+    return None
+
+
+def bundled_config_dir() -> Path:
+    """Repo-shipped defaults for contributors and CI (not used at runtime unless CLI_CONFIG_DIR)."""
+    return project_root() / "config"
+
+
 def default_config_dir() -> Path:
+    """User config dir; override with CLI_CONFIG_DIR (tests, Docker, custom installs)."""
     env = os.environ.get("CLI_CONFIG_DIR")
     if env:
         return Path(env).expanduser()
-    bundled = project_root() / "config"
-    if bundled.exists():
-        return bundled
-    return Path.home() / ".config" / "cli"
+    return user_cli_config_dir()
 
 
 def load_yaml(path: Path) -> dict:
@@ -262,14 +237,20 @@ def _normalize_drives(raw: dict) -> dict:
 
 
 def load_config(config_dir: Path | None = None) -> CliConfig:
+    load_local_env()
+    explicit_dir = bool(os.environ.get("CLI_CONFIG_DIR", "").strip())
     base = config_dir or default_config_dir()
     main_path = base / "config.yaml"
     drives_path = base / "drives.yaml"
-    if not drives_path.exists() and base.name == "ci":
-        drives_path = base.parent / "drives.yaml"
 
-    merged: dict = {}
-    merged.update(load_yaml(main_path))
+    merged: dict = load_yaml(main_path) if main_path.is_file() else {}
+    if not explicit_dir:
+        profile = active_config_profile()
+        if profile:
+            profile_path = base / f"config.{profile}.yaml"
+            if profile_path.is_file():
+                merged = _deep_merge(merged, load_yaml(profile_path))
+
     drives_data = load_yaml(drives_path)
     if "drives" in drives_data:
         merged["drives"] = _normalize_drives(drives_data["drives"])
@@ -309,12 +290,18 @@ def _credential_token(cfg: CliConfig, name: str, fallback_env: str) -> str | Non
 
 
 def tags_dir_path(config_dir: Path | None = None) -> Path:
-    """Resolved absolute path to local tag zip storage (e.g. iCloud git-tags)."""
+    """Resolved absolute path to local tag zip storage."""
     cfg = load_config(config_dir)
-    raw = Path(cfg.backup.tags_dir).expanduser()
-    if raw.is_absolute():
-        return raw
-    return (project_root() / raw).resolve()
+    raw = cfg.backup.tags_dir.strip()
+    if not raw:
+        raise RuntimeError(
+            "backup.tags_dir is not configured. "
+            "Run `cli configure set backup.tags_dir <path>`."
+        )
+    path = Path(raw).expanduser()
+    if path.is_absolute():
+        return path
+    return (project_root() / path).resolve()
 
 
 def tag_zip_basename(repo_basename: str, tag: str) -> str:
@@ -557,89 +544,27 @@ def photos_takeout_dir(config_dir: Path | None = None) -> Path:
     return chrome_downloads_dir(config_dir)
 
 
-def gh_issues_repo(config_dir: Path | None = None) -> str:
-    repo = load_config(config_dir).gh.issues.repo.strip()
+def tasks_link_repo(config_dir: Path | None = None) -> str:
+    """GitHub owner/repo for task runbook links (git-hosted tasks/ tree)."""
+    repo = load_config(config_dir).notion.link_repo.strip()
     if not repo:
-        raise RuntimeError("gh.issues.repo is not configured.")
+        raise RuntimeError("notion.link_repo is not configured.")
     return repo
 
 
 def task_runbook_url(body_filepath: str, *, config_dir: Path | None = None) -> str:
-    """GitHub blob URL for a task body under the private database repo (tasks/)."""
+    """GitHub blob URL for a task body under the configured tasks repo."""
     cfg = load_config(config_dir)
-    repo = gh_issues_repo(config_dir)
+    repo = tasks_link_repo(config_dir)
     branch = (cfg.notion.link_branch or "main").strip()
     rel = body_filepath.strip().lstrip("/")
     return f"https://github.com/{repo}/blob/{branch}/tasks/{rel}"
 
 
-def gh_issues_labels_manifest(config_dir: Path | None = None) -> Path:
+def notion_labels_manifest(config_dir: Path | None = None) -> Path:
     cfg = load_config(config_dir)
-    raw = cfg.gh.issues.labels_manifest.strip()
-    if not raw:
-        return notion_task_root(config_dir) / "labels.manifest.yaml"
+    raw = cfg.notion.labels_manifest.strip() or "labels.manifest.yaml"
     path = Path(raw).expanduser()
     if path.is_absolute():
         return path.resolve()
     return (notion_task_root(config_dir) / path).resolve()
-
-
-def gh_issues_closed_older_than(config_dir: Path | None = None) -> str:
-    return load_config(config_dir).gh.issues.prune.closed_older_than
-
-
-def project_default(config_dir: Path | None = None) -> ProjectDefaultConfig:
-    """Default GitHub Project v2 owner/number/id."""
-    default = load_config(config_dir).project.default
-    if not default.owner.strip():
-        raise RuntimeError(
-            "project.default.owner is not configured. Set project.default.owner in config/config.yaml."
-        )
-    if default.number is None and not default.project_id.strip():
-        raise RuntimeError(
-            "project.default.number or project.default.project_id is not configured."
-        )
-    return default
-
-
-def project_lane(alias_or_label: str, config_dir: Path | None = None) -> str:
-    """Resolve a friendly lane alias to the exact Status option label."""
-    value = alias_or_label.strip()
-    if not value:
-        raise RuntimeError("Project lane must not be blank.")
-    lanes = load_config(config_dir).project.lanes
-    if value in lanes:
-        return lanes[value]
-    lowered = value.lower()
-    for alias, label in lanes.items():
-        if alias.lower() == lowered:
-            return label
-    return value
-
-
-def project_auto_link(config_dir: Path | None = None) -> ProjectAutoLinkConfig:
-    """Auto-link settings for `cli gh issue create`."""
-    return load_config(config_dir).project.auto_link
-
-
-def project_task_root(config_dir: Path | None = None) -> Path:
-    """Resolved path to local GitHub Project task pairs."""
-    env = os.environ.get("PROJECT_TASK_ROOT", "").strip()
-    if env:
-        return Path(env).expanduser().resolve()
-    raw = load_config(config_dir).project.task_root.strip() or "config/project"
-    path = Path(raw).expanduser()
-    if path.is_absolute():
-        return path.resolve()
-    return (project_root() / path).resolve()
-
-
-def project_pairs_file(config_dir: Path | None = None) -> Path:
-    """Resolved path to the project pairs manifest."""
-    raw = load_config(config_dir).project.pairs_file.strip() or "tasks.pairs.json"
-    path = Path(raw).expanduser()
-    if path.is_absolute():
-        return path.resolve()
-    if len(path.parts) > 1:
-        return (project_root() / path).resolve()
-    return project_task_root(config_dir) / path.name

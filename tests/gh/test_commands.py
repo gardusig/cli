@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from tests.constants import ROOT
-
 import json
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -13,7 +10,6 @@ from typer.testing import CliRunner
 
 from src.cli import app
 from src.services.gh_sequence import SequenceKey, sort_issues_by_sequence
-from src.services.project_service import ProjectRef
 
 runner = CliRunner()
 
@@ -113,45 +109,40 @@ def test_issue_reopen_and_status_commands(mock_factory: MagicMock, mock_svc: Mag
     assert json.loads(status.stdout)["open_issues"] == 2
 
 
-@patch("src.commands.gh._svc")
-def test_backlog_next(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
-    mock_factory.return_value = mock_svc
-    mock_svc.backlog_next.return_value = {"number": 5, "title": "1.1 — Child", "sequence": "1.1 —"}
-    result = runner.invoke(app, ["gh", "--format", "json", "backlog", "next"])
-    assert result.exit_code == 0
-    data = json.loads(result.stdout)
-    assert data["number"] == 5
-
-
-@patch("src.commands.gh._svc")
-def test_label_sync_with_yes(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
-    mock_factory.return_value = mock_svc
-    mock_svc.label_sync.return_value = {"created": ["epic:test"], "deleted": []}
-    result = runner.invoke(
-        app,
-        ["gh", "label", "sync", "--manifest", "labels.yaml", "--yes"],
-    )
-    assert result.exit_code == 0
-
-
 def test_gh_help() -> None:
     result = runner.invoke(app, ["gh", "--help"])
     assert result.exit_code == 0
     assert "issue" in result.output
+    assert "branch" in result.output
+    assert "pr" in result.output
 
 
 @patch("src.commands.gh._svc")
-def test_repo_view_json(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
+def test_branch_list_json(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
     mock_factory.return_value = mock_svc
-    mock_svc.repo_view.return_value = {"nameWithOwner": "owner/repo", "owner": {"login": "owner"}}
-    result = runner.invoke(
-        app,
-        ["gh", "--format", "json", "repo", "view", "--json-fields", "nameWithOwner,owner"],
-    )
+    mock_svc.branch_list.return_value = [{"name": "main", "sha": "abc", "protected": True}]
+    result = runner.invoke(app, ["gh", "--format", "json", "branch", "list"])
     assert result.exit_code == 0
     data = json.loads(result.stdout)
-    assert data["nameWithOwner"] == "owner/repo"
-    mock_svc.repo_view.assert_called_once_with(fields="nameWithOwner,owner")
+    assert data[0]["name"] == "main"
+
+
+@patch("src.commands.gh._pr_shortcut")
+def test_branch_pr_json(mock_factory: MagicMock) -> None:
+    shortcut = MagicMock()
+    shortcut.find_open_pr_for_branch.return_value = {"number": 7, "title": "Feature"}
+    mock_factory.return_value = shortcut
+    result = runner.invoke(app, ["gh", "--format", "json", "branch", "pr", "feature"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert data["pull_request"]["number"] == 7
+
+
+@patch("src.commands.gh._svc")
+def test_branch_delete_requires_yes(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
+    mock_factory.return_value = mock_svc
+    result = runner.invoke(app, ["gh", "branch", "delete", "wip"])
+    assert result.exit_code != 0
 
 
 @patch("src.commands.gh._svc")
@@ -216,148 +207,3 @@ def test_pr_status_command(mock_factory: MagicMock, mock_svc: MagicMock) -> None
     result = runner.invoke(app, ["gh", "pr", "status"])
     assert result.exit_code == 0
     assert json.loads(result.stdout)["open_prs"] == 1
-
-
-@patch("src.commands.gh._svc")
-def test_repo_list_json(mock_factory: MagicMock, mock_svc: MagicMock) -> None:
-    mock_factory.return_value = mock_svc
-    mock_svc.repo_list.return_value = [{"name": "python-cli", "description": "CLI"}]
-    result = runner.invoke(app, ["gh", "--format", "json", "repo", "list"])
-    assert result.exit_code == 0
-    data = json.loads(result.stdout)
-    assert data[0]["name"] == "python-cli"
-    mock_svc.repo_list.assert_called_once()
-
-
-class FakeProjectService:
-    def ref(self, *, owner=None, number=None, project_id=None):  # noqa: ANN001
-        return ProjectRef(owner=owner or "owner", number=number or 1, project_id=project_id or "PVT_1")
-
-    def snapshot_summary(self, ref=None):  # noqa: ANN001
-        ref = ref or self.ref()
-        return [f"owner: {ref.owner}", f"project: {ref.number}"]
-
-    def project_list(self, *, owner: str, limit: int = 30):
-        return [{"number": 1, "title": "Roadmap", "owner": owner, "limit": limit}]
-
-    def project_view(self, number: int, *, owner: str):
-        return {"number": number, "owner": owner, "source": "graphql"}
-
-    def project_node(self, ref: ProjectRef):
-        return {"id": ref.project_id, "number": ref.number, "owner": ref.owner, "source": "graphql"}
-
-    def project_create(self, *, owner: str, title: str):
-        return {"number": 2, "owner": owner, "title": title}
-
-    def project_edit(self, number: int, *, owner: str, title=None, readme=None, visibility=None):  # noqa: ANN001
-        return {"number": number, "owner": owner, "title": title, "visibility": visibility}
-
-    def project_delete(self, number: int, *, owner: str):
-        return {"number": number, "owner": owner, "deleted": True}
-
-    def item_list(self, ref: ProjectRef, *, limit: int = 100):
-        return [{"id": "ITEM_1", "project": ref.number, "limit": limit}]
-
-    def item_view(self, item_id: str, ref: ProjectRef):
-        return {"id": item_id, "project": ref.number}
-
-    def item_add_issue(self, issue: int, ref: ProjectRef):
-        return {"id": "ITEM_1", "issue": issue, "project": ref.number}
-
-    def item_status(self, ref: ProjectRef, *, item_id: str, status: str):
-        return {"id": item_id, "status": status, "project": ref.number}
-
-    def find_item(self, ref: ProjectRef, *, item_id=None, issue=None, pr=None):  # noqa: ANN001
-        return {"id": item_id or "ITEM_1", "issue": issue, "pr": pr, "project": ref.number}
-
-    def item_set(self, ref: ProjectRef, *, item_id: str, field: str, value: str, value_kind: str):
-        return {"id": item_id, "field": field, "value": value, "kind": value_kind}
-
-    def item_delete(self, ref: ProjectRef, *, item_id: str):
-        return {"id": item_id, "deleted": True}
-
-
-@patch("src.commands.gh._project_svc")
-def test_gh_project_crud_commands(mock_factory: MagicMock) -> None:
-    mock_factory.return_value = FakeProjectService()
-    list_result = runner.invoke(app, ["gh", "project", "list", "--owner", "owner"])
-    assert list_result.exit_code == 0
-    assert json.loads(list_result.stdout)[0]["number"] == 1
-
-    create_result = runner.invoke(app, ["gh", "project", "create", "--owner", "owner", "--title", "Roadmap", "--yes"])
-    assert create_result.exit_code == 0
-    assert json.loads(create_result.stdout[create_result.stdout.index("{") :])["title"] == "Roadmap"
-
-    edit_result = runner.invoke(app, ["gh", "project", "edit", "1", "--owner", "owner", "--title", "Updated", "--yes"])
-    assert edit_result.exit_code == 0
-    assert json.loads(edit_result.stdout[edit_result.stdout.index("{") :])["title"] == "Updated"
-
-    delete_result = runner.invoke(app, ["gh", "project", "delete", "1", "--owner", "owner", "--yes"])
-    assert delete_result.exit_code == 0
-    assert json.loads(delete_result.stdout[delete_result.stdout.index("{") :])["deleted"] is True
-
-
-@patch("src.commands.gh._project_svc")
-def test_gh_project_view_uses_graphql_for_api_transport(mock_factory: MagicMock) -> None:
-    mock_factory.return_value = FakeProjectService()
-    result = runner.invoke(app, ["gh", "--transport", "api", "project", "view", "1", "--owner", "owner"])
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
-    assert payload["source"] == "graphql"
-
-
-@patch("src.commands.gh._project_svc")
-def test_gh_project_item_crud_commands(mock_factory: MagicMock) -> None:
-    mock_factory.return_value = FakeProjectService()
-    add_result = runner.invoke(
-        app,
-        ["gh", "project", "item", "add", "--project", "1", "--owner", "owner", "--issue", "42", "--yes"],
-    )
-    assert add_result.exit_code == 0
-    assert json.loads(add_result.stdout[add_result.stdout.index("{") :])["issue"] == 42
-
-    edit_result = runner.invoke(
-        app,
-        [
-            "gh",
-            "project",
-            "item",
-            "edit",
-            "--project",
-            "1",
-            "--owner",
-            "owner",
-            "--id",
-            "ITEM_1",
-            "--field",
-            "Status",
-            "--value",
-            "Done",
-            "--kind",
-            "single-select",
-            "--yes",
-        ],
-    )
-    assert edit_result.exit_code == 0
-    assert json.loads(edit_result.stdout[edit_result.stdout.index("{") :])["value"] == "Done"
-
-    delete_result = runner.invoke(
-        app,
-        ["gh", "project", "item", "delete", "--project", "1", "--owner", "owner", "--id", "ITEM_1", "--yes"],
-    )
-    assert delete_result.exit_code == 0
-    assert json.loads(delete_result.stdout[delete_result.stdout.index("{") :])["deleted"] is True
-
-
-@patch("src.services.gh_repo_readme.sync_profile_readme")
-def test_repo_readme_sync_dry_run(mock_sync: MagicMock, tmp_path: Path) -> None:
-    readme = tmp_path / "README.md"
-    readme.write_text("before\n", encoding="utf-8")
-    mock_sync.return_value = ("after\n", [{"name": "cli"}])
-    result = runner.invoke(
-        app,
-        ["gh", "repo", "readme-sync", "--readme", str(readme), "--dry-run"],
-    )
-    assert result.exit_code == 0
-    assert "after" in result.stdout
-    assert readme.read_text(encoding="utf-8") == "before\n"

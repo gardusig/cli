@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Repo hygiene gate for scripts/ci/repo-hygiene.sh (no Typer/cli entry)."""
+"""Repo hygiene gate for scripts/pull-request/repo-hygiene.sh (no Typer/cli entry)."""
 
 from __future__ import annotations
 

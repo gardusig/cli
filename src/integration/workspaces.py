@@ -60,13 +60,6 @@ API_WORKSPACES: tuple[ApiWorkspace, ...] = (
         description="Tag zips: local ingest, mock cloud upload",
     ),
     ApiWorkspace(
-        name="gh",
-        fixture_subpath="gh/workspace",
-        protected_paths=(),
-        integration_module="tests.gh.test_docker_integration",
-        description="GitHub CLI: mocked gh JSON for list/view",
-    ),
-    ApiWorkspace(
         name="contest",
         fixture_subpath="contest/toy",
         protected_paths=(),
@@ -78,11 +71,9 @@ API_WORKSPACES: tuple[ApiWorkspace, ...] = (
 INTEGRATION_TEST_MODULES: tuple[str, ...] = tuple(
     w.integration_module for w in API_WORKSPACES
 ) + (
-    "tests.cli.test_api_integration",
-    "tests.cli.test_endpoint_integration",
+    "tests.integration.test_smoke",
     "tests.meta.test_external_api_integration",
     "tests.pypi.test_integration",
-    "tests.workflows.test_workflow_e2e",
 )
 
 WORKFLOW_MODULES: tuple[str, ...] = ("tests.workflows.test_workflow_e2e",)

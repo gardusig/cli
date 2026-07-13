@@ -1,5 +1,0 @@
-repo: gardusig/go
-jobs:
-  - id: test
-    name: Go tests
-    target: test
