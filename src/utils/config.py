@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 import yaml
+from platformdirs import user_config_dir
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -23,10 +24,8 @@ class BackupReplica(BaseModel):
     name: str = ""  # optional display label
 
 
-# Default local tag storage: iCloud Drive git-tags folder (macOS).
-DEFAULT_TAGS_DIR = (
-    "~/Library/Mobile Documents/com~apple~CloudDocs/git-tags"
-)
+# Empty until `cli configure set backup.tags_dir` (no baked-in home paths).
+DEFAULT_TAGS_DIR = ""
 
 
 class BackupConfig(BaseModel):
@@ -99,6 +98,20 @@ class ChromeProfileConfig(BaseModel):
     bookmarks_file: str = ""
 
 
+class GhIssuesPruneConfig(BaseModel):
+    closed_older_than: str = "7d"
+
+
+class GhIssuesConfig(BaseModel):
+    repo: str = ""
+    labels_manifest: str = ""
+    prune: GhIssuesPruneConfig = Field(default_factory=GhIssuesPruneConfig)
+
+
+class GhConfig(BaseModel):
+    issues: GhIssuesConfig = Field(default_factory=GhIssuesConfig)
+
+
 class ChromeConfig(BaseModel):
     profile: str = "Default"
     bookmarks_file: str = ""
@@ -117,6 +130,7 @@ class AuthCredentialConfig(BaseModel):
 
 class AuthConfig(BaseModel):
     notion: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
+    gh: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
     backup: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
     deepseek: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
     pypi: AuthCredentialConfig = Field(default_factory=AuthCredentialConfig)
@@ -132,6 +146,7 @@ class CliConfig(BaseModel):
     backup: BackupConfig = Field(default_factory=BackupConfig)
     drives: DrivesConfig = Field(default_factory=DrivesConfig)
     notion: NotionConfig = Field(default_factory=NotionConfig)
+    gh: GhConfig = Field(default_factory=GhConfig)
     chrome: ChromeConfig = Field(default_factory=ChromeConfig)
     auth: AuthConfig = Field(default_factory=AuthConfig)
 
@@ -139,7 +154,12 @@ class CliConfig(BaseModel):
 class CliSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="CLI_", extra="ignore")
 
-    config_dir: Path = Path.home() / ".config" / "cli"
+    config_dir: Path = Field(default_factory=lambda: user_cli_config_dir())
+
+
+def user_cli_config_dir() -> Path:
+    """OS-standard user config directory (XDG on Linux, Application Support on macOS)."""
+    return Path(user_config_dir("cli", appauthor=False))
 
 
 def project_root() -> Path:
@@ -160,14 +180,39 @@ def load_local_env() -> None:
         load_dotenv(env_path, override=False)
 
 
+def _deep_merge(base: dict, overlay: dict) -> dict:
+    merged = dict(base)
+    for key, value in overlay.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def active_config_profile() -> str | None:
+    """Named overlay file config.<profile>.yaml (e.g. test)."""
+    profile = os.environ.get("CLI_PROFILE", "").strip()
+    if profile:
+        return profile
+    if os.environ.get("CLI_ENV", "").strip().lower() == "test":
+        return "test"
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return "test"
+    return None
+
+
+def bundled_config_dir() -> Path:
+    """Repo-shipped defaults for contributors and CI (not used at runtime unless CLI_CONFIG_DIR)."""
+    return project_root() / "config"
+
+
 def default_config_dir() -> Path:
+    """User config dir; override with CLI_CONFIG_DIR (tests, Docker, custom installs)."""
     env = os.environ.get("CLI_CONFIG_DIR")
     if env:
         return Path(env).expanduser()
-    bundled = project_root() / "config"
-    if bundled.exists():
-        return bundled
-    return Path.home() / ".config" / "cli"
+    return user_cli_config_dir()
 
 
 def load_yaml(path: Path) -> dict:
@@ -192,14 +237,20 @@ def _normalize_drives(raw: dict) -> dict:
 
 
 def load_config(config_dir: Path | None = None) -> CliConfig:
+    load_local_env()
+    explicit_dir = bool(os.environ.get("CLI_CONFIG_DIR", "").strip())
     base = config_dir or default_config_dir()
     main_path = base / "config.yaml"
     drives_path = base / "drives.yaml"
-    if not drives_path.exists() and base.name == "ci":
-        drives_path = base.parent / "drives.yaml"
 
-    merged: dict = {}
-    merged.update(load_yaml(main_path))
+    merged: dict = load_yaml(main_path) if main_path.is_file() else {}
+    if not explicit_dir:
+        profile = active_config_profile()
+        if profile:
+            profile_path = base / f"config.{profile}.yaml"
+            if profile_path.is_file():
+                merged = _deep_merge(merged, load_yaml(profile_path))
+
     drives_data = load_yaml(drives_path)
     if "drives" in drives_data:
         merged["drives"] = _normalize_drives(drives_data["drives"])
@@ -239,12 +290,18 @@ def _credential_token(cfg: CliConfig, name: str, fallback_env: str) -> str | Non
 
 
 def tags_dir_path(config_dir: Path | None = None) -> Path:
-    """Resolved absolute path to local tag zip storage (e.g. iCloud git-tags)."""
+    """Resolved absolute path to local tag zip storage."""
     cfg = load_config(config_dir)
-    raw = Path(cfg.backup.tags_dir).expanduser()
-    if raw.is_absolute():
-        return raw
-    return (project_root() / raw).resolve()
+    raw = cfg.backup.tags_dir.strip()
+    if not raw:
+        raise RuntimeError(
+            "backup.tags_dir is not configured. "
+            "Run `cli configure set backup.tags_dir <path>`."
+        )
+    path = Path(raw).expanduser()
+    if path.is_absolute():
+        return path
+    return (project_root() / path).resolve()
 
 
 def tag_zip_basename(repo_basename: str, tag: str) -> str:

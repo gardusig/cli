@@ -48,14 +48,24 @@ sudo apt-get install python3 git
 
 ## Configuration (global)
 
-Cli reads **`config/config.yaml`** in the clone, or **`~/.config/cli/`** after install. Override the directory with `CLI_CONFIG_DIR`.
+Fresh install uses **code defaults only**. Bootstrap with:
 
-Copy the bundled `config/` tree and edit paths for your machine before daily use:
+```bash
+cli configure init
+cli configure set notion.task_root ~/your/tasks
+```
+
+User config path (`cli configure path`):
+
+- Linux: `~/.config/cli` (or `$XDG_CONFIG_HOME/cli`)
+- macOS: `~/Library/Application Support/cli`
+
+Contributors and CI: `CLI_CONFIG_DIR=config` + `CLI_PROFILE=test` (repo overlay, not your home dir).
 
 | Setting | Config key | Purpose |
 | --- | --- | --- |
 | **Git repositories** | `backup.repositories[].path` | Repos for `cli drive ingest` / `drive status` |
-| **Tag zip folder** | `backup.tags_dir` | Local store (default: iCloud `git-tags/`) — source for `drive upload` |
+| **Tag zip folder** | `backup.tags_dir` | Local zip store — set via `cli configure set backup.tags_dir` |
 | **Cloud upload roots** | `drives.yaml` → `google` / `onedrive` / `proton` | Remote folder names per provider |
 | **Notion task root** | `notion.task_root` | Private `header/` + `body/` task files |
 | **Notion pairs manifest** | `notion.pairs_file` | `config/notion/tasks.pairs.json` in this repo |
@@ -88,7 +98,7 @@ Test fixtures (not for production) live under `tests/fixtures/notion/tasks` and 
 
 Cloud providers: `config/drives.yaml`. Notion token: **`export NOTION_TOKEN=...`** (never commit).
 
-Environment overrides (optional): `CLI_BOOKMARKS_FILE`, `CLI_DOWNLOADS_DIR`, `CLI_CONFIG_DIR`, `NOTION_TOKEN`.
+Environment overrides (optional): `CLI_BOOKMARKS_FILE`, `CLI_DOWNLOADS_DIR`, `CLI_CONFIG_DIR`, `CLI_PROFILE`, `NOTION_TOKEN`. Secrets and local paths: **`.env`** in the repo root (see `.env.example`).
 
 ## Install
 

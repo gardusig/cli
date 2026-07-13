@@ -10,7 +10,7 @@ cd cli
 uv sync
 ```
 
-Override config with `CLI_CONFIG_DIR` (default: `config/` in the clone, or `~/.config/cli/` after PyPI install).
+Override config with `CLI_CONFIG_DIR` (default: `config/` in the clone, or `~/.config/cli/` after PyPI install). For tests and CI, set `CLI_PROFILE=test` to merge `config.test.yaml`.
 
 ## Tests
 
@@ -27,13 +27,12 @@ All stages delegate to `scripts/pull-request/` and `scripts/release/` (raw shell
 
 ```bash
 export BASE_VERSION="$(bash scripts/pull-request/host-last-published-version.sh)"
-cp docker/.dockerignore .dockerignore
 
-docker build -f docker/pull-request.dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
-docker build -f docker/pull-request.dockerfile --target unit-test .
+docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build --target unit-test .
 ```
 
-CI workflow scripts copy `docker/.dockerignore` to the repo root automatically before `docker build` (Docker reads `.dockerignore` from the build context).
+Docker reads `.dockerignore` from the repo root build context.
 
 Git runs **only on the host** (`host-base-version.sh` or the workflow). Docker stages read copied files and build-args.
 

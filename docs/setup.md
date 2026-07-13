@@ -11,7 +11,7 @@ pip install -e .
 ## Configure
 
 ```bash
-cp -r config ~/.config/cli   # or set CLI_CONFIG_DIR to the clone config/
+cli configure init
 cli configure list
 cli configure set notion.token --stdin
 ```

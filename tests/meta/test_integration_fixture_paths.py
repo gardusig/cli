@@ -20,7 +20,7 @@ FORBIDDEN_PATH_FRAGMENTS = (
 @pytest.mark.parametrize(
     "rel_path",
     [
-        "config/ci/config.yaml",
+        "config/config.test.yaml",
     ],
 )
 def test_integration_config_avoids_host_paths(rel_path: str) -> None:
@@ -31,8 +31,8 @@ def test_integration_config_avoids_host_paths(rel_path: str) -> None:
         assert fragment not in text, f"{rel_path} must not contain {fragment!r}"
 
 
-def test_ci_config_uses_repo_relative_paths() -> None:
-    data = yaml.safe_load((ROOT / "config/ci/config.yaml").read_text(encoding="utf-8"))
+def test_test_config_uses_repo_relative_paths() -> None:
+    data = yaml.safe_load((ROOT / "config/config.test.yaml").read_text(encoding="utf-8"))
     tags_dir = Path(str(data["backup"]["tags_dir"]))
     assert not tags_dir.is_absolute() or str(tags_dir).startswith("/tmp")
     for repo in data["backup"]["repositories"]:

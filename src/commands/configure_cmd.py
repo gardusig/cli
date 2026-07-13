@@ -13,6 +13,7 @@ import yaml
 
 from src.services.notion_pairs import load_pairs
 from src.utils.config import (
+    bundled_config_dir,
     default_config_dir,
     load_config,
     notion_labels_manifest,
@@ -22,6 +23,10 @@ from src.utils.config import (
 )
 
 configure_app = typer.Typer(help="Configure cli credentials, paths, and defaults.", no_args_is_help=True)
+
+
+def _resolve_config_dir(config_dir: Path | None) -> Path:
+    return config_dir.expanduser() if config_dir is not None else default_config_dir()
 
 SECRET_KEYS: dict[str, dict[str, str]] = {
     "notion.token": {
@@ -57,9 +62,16 @@ SECRET_KEYS: dict[str, dict[str, str]] = {
 }
 
 CONFIG_KEYS: dict[str, dict[str, str]] = {
+    "backup.tags_dir": {"env": "", "example": "~/git-tags"},
+    "chrome.profile": {"env": "", "example": "Default"},
+    "chrome.bookmarks_file": {"env": "CLI_BOOKMARKS_FILE", "example": "~/bookmarks/bookmarks.html"},
+    "chrome.downloads_dir": {"env": "CLI_DOWNLOADS_DIR", "example": "~/Downloads"},
+    "chrome.photos_dir": {"env": "", "example": "~/photos"},
+    "chrome.snapshots_dir": {"env": "", "example": "~/bookmarks/snapshots"},
     "docker.username": {"env": "DOCKERHUB_USERNAME", "example": "binaryLifter"},
+    "gh.issues.repo": {"env": "", "example": "owner/repo"},
     "notion.database_id": {"env": "NOTION_DATABASE_ID", "example": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"},
-    "notion.task_root": {"env": "NOTION_TASK_ROOT", "example": "/workspace/tasks"},
+    "notion.task_root": {"env": "NOTION_TASK_ROOT", "example": "~/github/private/tasks"},
     "notion.pairs_file": {"env": "", "example": "tasks.pairs.json"},
     "notion.link_repo": {"env": "", "example": "gardusig/private"},
     "notion.labels_manifest": {"env": "", "example": "labels.manifest.yaml"},
@@ -116,15 +128,19 @@ def _nested_unset(data: dict[str, Any], dotted: str) -> bool:
 def _auth_paths(config_dir: Path, key: str) -> tuple[Path, Path, str, str]:
     meta = SECRET_KEYS[key]
     auth_name = meta["auth"]
-    token_file = config_dir / "secrets" / f"{auth_name}.token"
-    return config_dir / "auth.yaml", token_file, auth_name, meta["env"]
+    if auth_name == "backup":
+        rel = Path("secrets") / "backup.zip.password"
+    else:
+        rel = Path("secrets") / f"{auth_name}.token"
+    return config_dir / "auth.yaml", config_dir / rel, auth_name, meta["env"]
 
 
 def _set_secret(config_dir: Path, key: str, value: str) -> None:
     auth_path, token_file, auth_name, env_name = _auth_paths(config_dir, key)
+    rel = token_file.relative_to(config_dir)
     auth = _read_yaml(auth_path)
     auth.setdefault("auth", {})
-    auth["auth"][auth_name] = {"env": env_name, "token_file": str(token_file)}
+    auth["auth"][auth_name] = {"env": env_name, "token_file": str(rel)}
     token_file.parent.mkdir(parents=True, exist_ok=True)
     token_file.write_text(value.strip(), encoding="utf-8")
     os.chmod(token_file, 0o600)
@@ -148,21 +164,86 @@ def _get_secret(config_dir: Path, key: str) -> str | None:
     return path.read_text(encoding="utf-8").strip() or None
 
 
+def _config_value(config_dir: Path, key: str) -> Any:
+    data = _read_yaml(config_dir / "config.yaml")
+    value = _nested_get(data, key)
+    if value is not None:
+        return value
+    meta = CONFIG_KEYS.get(key) or {}
+    env_name = meta.get("env", "").strip()
+    if env_name:
+        env_value = os.environ.get(env_name, "").strip()
+        if env_value:
+            return env_value
+    return None
+
+
 def _all_keys() -> list[str]:
     return sorted([*CONFIG_KEYS, *SECRET_KEYS])
+
+
+def _init_auth_layout(config_dir: Path) -> None:
+    """Create secrets/ and auth.yaml (git-style credential store)."""
+    secret_dir = config_dir / "secrets"
+    secret_dir.mkdir(parents=True, exist_ok=True)
+    os.chmod(secret_dir, 0o700)
+    auth: dict[str, Any] = {"auth": {}}
+    for key, meta in SECRET_KEYS.items():
+        auth_name = meta["auth"]
+        token_file = Path("secrets") / f"{auth_name}.token"
+        if auth_name == "backup":
+            token_file = Path("secrets") / "backup.zip.password"
+        auth["auth"][auth_name] = {"env": meta["env"], "token_file": str(token_file)}
+        path = config_dir / token_file
+        if not path.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("", encoding="utf-8")
+            os.chmod(path, 0o600)
+    _write_yaml(config_dir / "auth.yaml", auth)
+
+
+@configure_app.command("init")
+def init_cmd(
+    example: bool = typer.Option(
+        False,
+        "--example",
+        help="Also write config.example.yaml as config.yaml (paths only; edit before use).",
+    ),
+    config_dir: Path | None = typer.Option(None, "--config-dir"),
+) -> None:
+    """Bootstrap the user config directory (like aws configure / git config --global)."""
+    config_dir = _resolve_config_dir(config_dir)
+    config_dir.mkdir(parents=True, exist_ok=True)
+    _init_auth_layout(config_dir)
+    config_file = config_dir / "config.yaml"
+    if example and not config_file.exists():
+        template = bundled_config_dir() / "config.example.yaml"
+        if template.is_file():
+            config_file.write_text(template.read_text(encoding="utf-8"), encoding="utf-8")
+        else:
+            typer.echo(f"example template missing: {template}", err=True)
+            raise typer.Exit(1)
+    typer.echo(f"configuration directory: {config_dir}")
+    typer.echo("Secrets layout: auth.yaml + secrets/")
+    typer.echo("Set paths and tokens with `cli configure set <key> [value]` or `--stdin`.")
+    typer.echo("Run `cli configure list` to see available keys.")
+
+
+@configure_app.command("path")
+def path_cmd(config_dir: Path | None = typer.Option(None, "--config-dir")) -> None:
+    """Print the active configuration directory."""
+    typer.echo(str(_resolve_config_dir(config_dir)))
 
 
 @configure_app.callback(invoke_without_command=True)
 def configure_root(
     ctx: typer.Context,
-    config_dir: Path = typer.Option(default_config_dir(), "--config-dir"),
+    config_dir: Path | None = typer.Option(None, "--config-dir"),
 ) -> None:
-    """Create config storage when invoked without a subcommand."""
+    """Without a subcommand, bootstrap storage and print the config directory."""
     if ctx.invoked_subcommand is not None:
         return
-    config_dir.expanduser().mkdir(parents=True, exist_ok=True)
-    typer.echo(f"configuration directory: {config_dir.expanduser()}")
-    typer.echo("Run `cli configure list` to inspect available keys.")
+    init_cmd(example=False, config_dir=config_dir)
 
 
 @configure_app.command("set")
@@ -170,7 +251,7 @@ def set_cmd(
     key: str,
     value: str | None = typer.Argument(None),
     stdin: bool = typer.Option(False, "--stdin", help="Read the value from stdin."),
-    config_dir: Path = typer.Option(default_config_dir(), "--config-dir"),
+    config_dir: Path | None = typer.Option(None, "--config-dir"),
 ) -> None:
     """Set a dotted config key."""
     if key not in SECRET_KEYS and key not in CONFIG_KEYS:
@@ -179,7 +260,7 @@ def set_cmd(
         value = sys.stdin.read()
     if value is None:
         raise typer.BadParameter("value is required unless --stdin is used")
-    config_dir = config_dir.expanduser()
+    config_dir = _resolve_config_dir(config_dir)
     if key in SECRET_KEYS:
         _set_secret(config_dir, key, value)
     else:
@@ -194,10 +275,10 @@ def set_cmd(
 def get_cmd(
     key: str,
     show: bool = typer.Option(False, "--show", help="Show secret values instead of masking them."),
-    config_dir: Path = typer.Option(default_config_dir(), "--config-dir"),
+    config_dir: Path | None = typer.Option(None, "--config-dir"),
 ) -> None:
     """Get a dotted config key."""
-    config_dir = config_dir.expanduser()
+    config_dir = _resolve_config_dir(config_dir)
     if key in SECRET_KEYS:
         value = _get_secret(config_dir, key)
         if not value:
@@ -205,8 +286,7 @@ def get_cmd(
             raise typer.Exit(1)
         typer.echo(value if show else "***")
         return
-    data = _read_yaml(config_dir / "config.yaml")
-    value = _nested_get(data, key)
+    value = _config_value(config_dir, key)
     if value is None:
         typer.echo(f"{key} is not set", err=True)
         raise typer.Exit(1)
@@ -214,9 +294,9 @@ def get_cmd(
 
 
 @configure_app.command("unset")
-def unset_cmd(key: str, config_dir: Path = typer.Option(default_config_dir(), "--config-dir")) -> None:
+def unset_cmd(key: str, config_dir: Path | None = typer.Option(None, "--config-dir")) -> None:
     """Unset a dotted config key."""
-    config_dir = config_dir.expanduser()
+    config_dir = _resolve_config_dir(config_dir)
     if key in SECRET_KEYS:
         _, token_file, _, _ = _auth_paths(config_dir, key)
         if token_file.exists():
@@ -233,16 +313,15 @@ def unset_cmd(key: str, config_dir: Path = typer.Option(default_config_dir(), "-
 @configure_app.command("list")
 def list_cmd(
     json_output: bool = typer.Option(False, "--json", help="Print JSON."),
-    config_dir: Path = typer.Option(default_config_dir(), "--config-dir"),
+    config_dir: Path | None = typer.Option(None, "--config-dir"),
 ) -> None:
     """List known configuration keys and whether they are set."""
     rows: list[dict[str, Any]] = []
-    config_dir = config_dir.expanduser()
-    config_data = _read_yaml(config_dir / "config.yaml")
+    config_dir = _resolve_config_dir(config_dir)
     for key in _all_keys():
         secret = key in SECRET_KEYS
         meta = SECRET_KEYS.get(key) or CONFIG_KEYS.get(key) or {}
-        value = _get_secret(config_dir, key) if secret else _nested_get(config_data, key)
+        value = _get_secret(config_dir, key) if secret else _config_value(config_dir, key)
         rows.append(
             {
                 "key": key,
@@ -266,7 +345,7 @@ def list_cmd(
 @configure_app.command("import-env")
 def import_env_cmd(
     persist: bool = typer.Option(False, "--persist", help="Persist env values into token files."),
-    config_dir: Path = typer.Option(default_config_dir(), "--config-dir"),
+    config_dir: Path | None = typer.Option(None, "--config-dir"),
 ) -> None:
     """Validate or persist known credentials from environment variables."""
     imported = 0
@@ -276,7 +355,7 @@ def import_env_cmd(
             continue
         imported += 1
         if persist:
-            _set_secret(config_dir.expanduser(), key, value)
+            _set_secret(_resolve_config_dir(config_dir), key, value)
     typer.echo(f"environment credentials available: {imported}")
 
 
