@@ -1,7 +1,0 @@
-name: "docs: weekly review"
-tag: maintenance
-interval: 7
-deadline: "2026-07-12"
-enabled: true
-issue_number: 10
-item_id: ITEM_DOCS

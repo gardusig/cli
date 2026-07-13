@@ -6,11 +6,9 @@ from rich import print as rprint
 from src.utils.catalog import (
     QUICK_DEFAULTS,
     TOP_LEVEL_COMMANDS,
-    WORKFLOW_CHAIN,
     WORKFLOW_SHORTCUTS,
     chrome_command_entries,
     doc_entries,
-    gh_command_entries,
     git_command_entries,
 )
 from src.utils.config import project_root
@@ -25,8 +23,7 @@ def links_root() -> None:
     rprint("[bold]cli index[/bold]")
     rprint(f"repo: {root}\n")
 
-    rprint("[bold]Workflow lifecycle[/bold]")
-    rprint(f"  {WORKFLOW_CHAIN}")
+    rprint("[bold]Workflow shortcuts[/bold]")
     for cli_cmd, doc, note in WORKFLOW_SHORTCUTS:
         rprint(f"  [cyan]cli {cli_cmd}[/cyan] — {note}\n    [dim]{doc}[/dim]")
 
@@ -50,10 +47,6 @@ def links_root() -> None:
             line += " — [dim]docs/large-files.md[/dim]"
         rprint(line)
 
-    rprint("\n[bold]GitHub commands[/bold] (see docs/gh.md)")
-    for entry in gh_command_entries(root):
-        rprint(f"  {entry.cli}")
-
     rprint("\n[bold]Chrome commands[/bold] (see docs/bookmarks.md)")
     for entry in chrome_command_entries(root):
         rprint(f"  {entry.cli} — {entry.note}")
@@ -68,6 +61,5 @@ def links_root() -> None:
     rprint("  cli test python unit — unit gate")
     rprint("  cli test python integration — integration gate")
     rprint("  cli structure check PATH --require-layout — repo structure")
-    rprint("  cli repo inventory gardusig/cli — repository snapshot")
 
     rprint("\n[dim]Tip: cli git docs lists markdown paths for @git-docs[/dim]")

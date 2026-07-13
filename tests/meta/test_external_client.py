@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from tests.constants import ROOT
-
 import httpx
 import pytest
 
@@ -15,7 +13,6 @@ from src.utils.external_client import (
     format_user_message,
     is_retryable_exception,
 )
-from src.utils.process import GhCommandError
 
 
 def test_is_retryable_notion_503() -> None:
@@ -24,16 +21,6 @@ def test_is_retryable_notion_503() -> None:
 
 def test_is_retryable_notion_401_not_retried() -> None:
     assert is_retryable_exception(NotionError("bad token", status_code=401)) is False
-
-
-def test_is_retryable_gh_transient_stderr() -> None:
-    exc = GhCommandError(["gh", "pr", "list"], 1, "HTTP 503 service unavailable")
-    assert is_retryable_exception(exc) is True
-
-
-def test_is_retryable_gh_auth_not_retried() -> None:
-    exc = GhCommandError(["gh", "issue", "list"], 1, "not logged in")
-    assert is_retryable_exception(exc) is False
 
 
 def test_is_retryable_retryable_attribute() -> None:
@@ -81,9 +68,9 @@ def test_failure_hint_notion_401() -> None:
 
 def test_format_user_message_includes_attempt_count() -> None:
     msg = format_user_message(
-        "gh",
-        "issue list",
-        GhCommandError(["gh"], 1, "fail"),
+        "notion",
+        "query",
+        NotionError("x", status_code=503),
         attempts=3,
     )
     assert "3 attempt" in msg

@@ -1,21 +1,25 @@
 # Docker
 
-Workflow routers live in [`gardusig/cli`](https://github.com/gardusig/cli). This repo owns the `.github/Dockerfile` (multi-stage CI via `scripts/ci/*.sh`), the `cli docker` monitor/cleanup commands, and pipeline contracts under [`.github/workflows/`](../.github/workflows/).
+Workflow routers live in [`gardusig/cli`](https://github.com/gardusig/cli). This repo owns `docker/` (Dockerfiles + `.dockerignore`), `scripts/pull-request/`, `scripts/release/`, the `cli docker` monitor/cleanup commands, and pipeline contracts under [`.github/workflows/`](../.github/workflows/).
 
-Run a gate from the repo root:
+Run a gate from the repo root (copy the ignore file into the build context first):
 
 ```bash
-docker build -f .github/Dockerfile --target <stage> .
+cp docker/.dockerignore .dockerignore
+docker build -f docker/pull-request.dockerfile --target <stage> .
 ```
 
-Common targets: `lint`, `version-check`, `unit-test`, `integration-test`, `pypi-test`, `testpypi-consumer`, `release`, `pypi-consumer`.
+Common PR targets: `version-check`, `unit-test`, `testpypi`, `testpypi-consumer`.
+
+Release targets (`docker/release.dockerfile`): `pypi`, `runtime`.
 
 ## CI image layout
 
-Each Dockerfile stage copies the repo (or consumer scripts only) and runs `bash scripts/ci/<stage>.sh`. Local verification:
+Each Dockerfile stage copies the repo (or consumer scripts only) and runs stage scripts under `scripts/pull-request/` or `scripts/release/`. Local verification:
 
 ```bash
-docker build -f .github/Dockerfile --target unit-test .
+cp docker/.dockerignore .dockerignore
+docker build -f docker/pull-request.dockerfile --target unit-test .
 ```
 
 ## CLI base image (hub)

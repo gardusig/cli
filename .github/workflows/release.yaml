@@ -2,82 +2,81 @@ name: Release
 
 on:
   push:
+    branches: [main]
     tags:
       - "v*"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
 
 env:
-  RUNTIME_DOCKERFILE: .github/images/cli-runtime.Dockerfile
-  IMAGE: binarylifter/gardusig-cli
+  RELEASE_DOCKERFILE: docker/release.dockerfile
+  RUNTIME_IMAGE: binarylifter/gardusig-cli
 
 jobs:
-  docker-release:
-    name: Docker image + GitHub release
+  publish-pypi:
+    name: Publish to PyPI
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Resolve release version
-        id: meta
-        run: |
-          tag="${GITHUB_REF#refs/tags/v}"
-          project="$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
-          if [[ "$tag" != "$project" ]]; then
-            echo "tag v${tag} does not match pyproject.toml ${project}" >&2
-            exit 1
-          fi
-          echo "version=${project}" >> "$GITHUB_OUTPUT"
-          echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-
       - uses: docker/setup-buildx-action@v3
+      - name: Resolve package version
+        id: meta
+        run: bash scripts/release/resolve-version.sh
+      - name: docker build — pypi
+        env:
+          CLI_RELEASE_VERSION: ${{ steps.meta.outputs.version }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: bash scripts/release/build-pypi-release.sh
 
-      - name: Build runtime image from PyPI
-        run: |
-          docker build \
-            -f "$RUNTIME_DOCKERFILE" \
-            --build-arg "CLI_VERSION=${{ steps.meta.outputs.version }}" \
-            -t "${IMAGE}:${{ steps.meta.outputs.version }}" \
-            -t "${IMAGE}:latest" \
-            .
-
+  docker-release:
+    name: Docker image
+    if: github.ref == 'refs/heads/main'
+    needs: publish-pypi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Resolve package version
+        id: meta
+        run: bash scripts/release/resolve-version.sh
+      - name: docker build — runtime
+        env:
+          CLI_VERSION: ${{ steps.meta.outputs.version }}
+        run: bash scripts/release/build-runtime-image.sh
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Push image tags
-        run: |
-          docker push "${IMAGE}:${{ steps.meta.outputs.version }}"
-          docker push "${IMAGE}:latest"
-
+        env:
+          CLI_VERSION: ${{ steps.meta.outputs.version }}
+        run: bash scripts/release/push-runtime-image.sh
       - name: Pull and smoke-test published image
-        run: |
-          docker pull "${IMAGE}:${{ steps.meta.outputs.version }}"
-          docker run --rm "${IMAGE}:${{ steps.meta.outputs.version }}" --version
-          docker run --rm "${IMAGE}:${{ steps.meta.outputs.version }}" --help >/dev/null
+        env:
+          CLI_VERSION: ${{ steps.meta.outputs.version }}
+        run: bash scripts/release/smoke-runtime-image.sh
 
+  github-release:
+    name: GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Resolve release version
+        id: meta
+        run: bash scripts/release/resolve-tag-version.sh
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          tag="${{ steps.meta.outputs.tag }}"
-          version="${{ steps.meta.outputs.version }}"
-          if gh release view "$tag" >/dev/null 2>&1; then
-            echo "release ${tag} already exists"
-            exit 0
-          fi
-          gh release create "$tag" \
-            --title "gardusig-cli ${version}" \
-            --notes "$(cat <<EOF
-## Docker
-
-\`\`\`bash
-docker pull ${IMAGE}:${version}
-\`\`\`
-EOF
-)"
+          RELEASE_TAG: ${{ steps.meta.outputs.tag }}
+          CLI_VERSION: ${{ steps.meta.outputs.version }}
+        run: bash scripts/release/create-github-release.sh

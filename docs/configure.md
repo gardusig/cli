@@ -1,52 +1,24 @@
-# Configure
+# Configure (`cli configure`)
 
-`cli configure` is the single configuration entry point. It works like `aws configure` or `git config`: install the package, then set values by key.
+Unified configuration for paths and secrets.
 
-## Install
-
-```bash
-pip install gardusig-cli
-```
-
-## Common Commands
+## Secrets
 
 ```bash
 cli configure list
-cli configure set notion.token secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-cli configure set gh.token --stdin
-cli configure get notion.token
-cli configure import-env
+cli configure set notion.token --stdin
+cli configure import-env --persist
 cli configure check --tasks
+cli configure check --pypi
 ```
 
-Secret values are masked by default. Use `--show` only when you intentionally need to inspect a local value.
+## Task paths
 
-## Resolution Order
+| Key | Purpose |
+| --- | --- |
+| `notion.database_id` | Notion board |
+| `notion.task_root` | Local `header/` + `body/` tree |
+| `notion.link_repo` | `owner/repo` for runbook URLs |
+| `notion.labels_manifest` | Optional labels YAML beside tasks |
 
-1. Environment variable, such as `NOTION_TOKEN`
-2. Value previously stored with `cli configure set`
-3. Clear error with the key and environment variable to set
-
-CI and Docker should inject GitHub secrets as environment variables, then run:
-
-```bash
-cli configure import-env
-cli configure check --tasks
-```
-
-Use `--persist` with `import-env` only when you intentionally want to write token files in the current config directory.
-
-## Keys
-
-| Key | Environment | Example |
-|-----|-------------|---------|
-| `notion.token` | `NOTION_TOKEN` | `secret_...` |
-| `gh.token` | `GH_TOKEN` | `ghp_...` |
-| `pypi.token` | `PYPI_API_TOKEN` | `pypi-...` |
-| `docker.token` | `DOCKERHUB_TOKEN` | `dckr_pat_...` |
-| `docker.username` | `DOCKERHUB_USERNAME` | `binaryLifter` |
-| `notion.database_id` | `NOTION_DATABASE_ID` | Notion database id |
-| `notion.task_root` | `NOTION_TASK_ROOT` | `/workspace/tasks` |
-| `gh.issues.repo` | | `gardusig/private` |
-
-The full credential manifest lives at `config/secrets.manifest.yaml`.
+See [configuration.md](configuration.md) and [secrets.md](secrets.md).

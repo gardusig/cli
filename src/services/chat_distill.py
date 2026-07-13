@@ -1,4 +1,4 @@
-"""Chat → R1 distill → categorize → GitHub issues per repo."""
+"""Chat → R1 distill → categorize (local artifacts only)."""
 
 from __future__ import annotations
 
@@ -10,12 +10,11 @@ import yaml
 
 from src.providers.deepseek import DeepSeekClient
 from src.services.chat_session import ChatSession
-from src.services.gh_service import GhService
 
 _REPOS_CONFIG = Path(__file__).resolve().parents[2] / "config" / "chat" / "repos.yaml"
 
 R1_SYSTEM = """You are an exhaustive idea extractor (DeepSeek R1 / reasoner role).
-Read the full planning chat. List every theme, vague idea, risk, and cross-repo dependency.
+Read the full planning chat. List every theme, vague idea, risk, and dependency.
 Output JSON with keys:
 - themes: [{id, title, description, vagueness: low|medium|high, repos_mentioned: []}]
 - cross_repo_risks: [{description, source_repo, affected_repos: []}]
@@ -23,32 +22,26 @@ Output JSON with keys:
 - raw_notes: string (long-form traversal)
 Do not file issues yet — only extract and connect ideas."""
 
-CATEGORIZE_SYSTEM = """You categorize planning output into GitHub actions per repository.
-Each gardusig repo is SEPARATE — one parent epic per repo when themes apply.
-Shared ideas get cross_repo_notes on each parent body.
-Consider breaking changes (e.g. cli API change affecting yugioh workflows).
-
+CATEGORIZE_SYSTEM = """You categorize planning output into structured actions per repository theme.
 Output JSON:
 {
   "repos": [
     {
-      "repo": "gardusig/cli",
+      "repo": "local/repo-name",
       "parent": {
-        "title": "descriptive epic title (no step prefix)",
+        "title": "descriptive epic title",
         "body": "markdown body with ## Context from chat",
         "priority": 1,
-        "epic_slug": "hub-chat",
+        "epic_slug": "chat-plan",
         "cross_repo_notes": ["..."]
       },
       "actions": [
-        {"type": "comment", "issue_number": 69, "body": "## [cli] plan\\n..."},
-        {"type": "create_child", "title": "1 — ...", "body": "...", "labels": ["issue-type:child", "epic:hub-chat"]}
+        {"type": "create_child", "title": "1 — ...", "body": "...", "labels": ["issue-type:child"]}
       ]
     }
   ]
 }
-Use comment when an existing issue fits; create_parent + create_child for new work.
-priority is 0-5 (1 = ship now). Include vague ideas as low-confidence children if useful."""
+Use priority 0-5 (1 = ship now). Include vague ideas as low-confidence children if useful."""
 
 
 def load_repo_catalog() -> list[dict[str, str]]:
@@ -98,24 +91,12 @@ def run_categorize(
     if not distill and distill_path.is_file():
         distill = json.loads(distill_path.read_text(encoding="utf-8"))
 
-    open_issues_by_repo: dict[str, list[dict[str, Any]]] = {}
-    for entry in load_repo_catalog():
-        repo = entry["repo"]
-        try:
-            svc = GhService(repo=repo)
-            open_issues_by_repo[repo] = svc.issue_list(state="open", limit=30)
-        except Exception:
-            open_issues_by_repo[repo] = []
-
     user = json.dumps(
         {
             "summary": session.summary(),
             "distill_r1": distill,
             "repos": load_repo_catalog(),
-            "open_issues": {
-                repo: [{"number": i["number"], "title": i["title"]} for i in issues]
-                for repo, issues in open_issues_by_repo.items()
-            },
+            "open_issues": {},
         },
         indent=2,
     )
@@ -135,68 +116,26 @@ def run_categorize(
 
 
 def apply_categorize_plan(plan: dict[str, Any], *, yes: bool = False) -> list[dict[str, Any]]:
-    """Apply categorize JSON — create parents, children, comments."""
+    """Return a dry-run summary of categorize JSON (no remote issue writes)."""
     results: list[dict[str, Any]] = []
     for block in plan.get("repos") or []:
         repo = str(block.get("repo", ""))
         if not repo:
             continue
-        svc = GhService(repo=repo)
-        parent_ref: dict[str, Any] | None = None
         parent_spec = block.get("parent")
-        epic_slug = None
         if parent_spec:
-            labels = [
-                "issue-type:epic",
-                f"epic:{parent_spec.get('epic_slug', 'chat-plan')}",
-                f"priority:{parent_spec.get('priority', 2)}",
-            ]
-            body = str(parent_spec.get("body", ""))
-            notes = parent_spec.get("cross_repo_notes") or []
-            if notes:
-                body += "\n\n## Cross-repo notes\n" + "\n".join(f"- {n}" for n in notes)
-            if yes:
-                parent = svc.issue_create(
-                    title=str(parent_spec.get("title", "Chat plan epic")),
-                    body=body,
-                )
-                svc.issue_edit(int(parent["number"]), add_labels=labels)
-                parent_ref = parent
-                epic_slug = parent_spec.get("epic_slug", "chat-plan")
-                results.append({"repo": repo, "action": "create_parent", **parent})
-            else:
-                epic_slug = parent_spec.get("epic_slug", "chat-plan")
-                results.append(
-                    {
-                        "repo": repo,
-                        "action": "create_parent",
-                        "dry_run": True,
-                        "title": parent_spec.get("title"),
-                    }
-                )
-
+            results.append(
+                {
+                    "repo": repo,
+                    "action": "create_parent",
+                    "dry_run": not yes,
+                    "title": parent_spec.get("title"),
+                }
+            )
         for action in block.get("actions") or []:
             kind = action.get("type")
-            if kind == "comment" and action.get("issue_number"):
-                num = int(action["issue_number"])
-                body = str(action.get("body", ""))
-                if yes:
-                    svc.issue_comment(num, body=body)
-                results.append({"repo": repo, "action": "comment", "number": num, "applied": yes})
-            elif kind in {"create", "create_child"} and yes:
-                labels = list(action.get("labels") or [])
-                if epic_slug and "epic:" not in "".join(labels):
-                    labels.append(f"epic:{epic_slug}")
-                if "issue-type:child" not in labels:
-                    labels.append("issue-type:child")
-                created = svc.issue_create(
-                    title=str(action.get("title", "Untitled")),
-                    body=str(action.get("body", "")),
-                    labels=labels,
-                )
-                results.append({"repo": repo, "action": "create_child", **created})
-            elif kind in {"create", "create_child"}:
-                results.append({"repo": repo, "action": "create_child", "dry_run": True, **action})
+            if kind in {"create", "create_child", "comment"}:
+                results.append({"repo": repo, "action": kind, "dry_run": not yes, **action})
     return results
 
 
@@ -207,7 +146,7 @@ def pipeline_from_summary(
     run_distill: bool = True,
     client: DeepSeekClient | None = None,
 ) -> dict[str, Any]:
-    """Import summary (e.g. from workflow_dispatch) and run distill + categorize."""
+    """Import summary and run distill + categorize."""
     session = ChatSession.create(session_id)
     session.set_summary(summary)
     session.append("user", f"[imported summary]\n{summary}")

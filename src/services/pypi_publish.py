@@ -18,6 +18,7 @@ from src.utils.config import project_root
 DEFAULT_REPOSITORY_URL = "https://upload.pypi.org/legacy/"
 TEST_REPOSITORY_URL = "https://test.pypi.org/legacy/"
 PACKAGE_NAME = "gardusig-cli"
+DEFAULT_FIRST_RELEASE_VERSION = "0.1.0"
 
 _VERSION_LINE_RE = re.compile(r'^(version\s*=\s*")[^"]+(")\s*$', re.MULTILINE)
 _INIT_VERSION_RE = re.compile(r'^__version__\s*=\s*"[^"]+"\s*$', re.MULTILINE)
@@ -153,6 +154,91 @@ def read_project_version(root: Path | None = None) -> str:
     if not full:
         raise PyPiPublishError("version not found in pyproject.toml")
     return full.group(1)
+
+
+def fetch_latest_published_version(
+    package: str = PACKAGE_NAME,
+    *,
+    testpypi: bool = False,
+    timeout: float = 20.0,
+) -> str | None:
+    """Return the highest semver published on PyPI (or TestPyPI), or ``None`` when absent."""
+    from src.services.tag_policy import compare_versions
+
+    url = package_index_json_url(package, testpypi=testpypi)
+    label = "TestPyPI" if testpypi else "PyPI"
+    try:
+        req = urllib.request.Request(url, headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            return None
+        raise PyPiPublishError(f"{label} index HTTP {exc.code} for {url}") from exc
+    except urllib.error.URLError as exc:
+        raise PyPiPublishError(f"{label} index unreachable: {exc.reason}") from exc
+    except json.JSONDecodeError as exc:
+        raise PyPiPublishError(f"invalid JSON from {label} index ({url})") from exc
+
+    releases = data.get("releases") or {}
+    versions = [version for version, files in releases.items() if files]
+    if not versions:
+        return None
+
+    best: str | None = None
+    for candidate in versions:
+        try:
+            normalized = normalize_release_version(candidate)
+        except PyPiPublishError:
+            continue
+        if best is None:
+            best = normalized
+            continue
+        if compare_versions(normalized, best) > 0:
+            best = normalized
+    return best
+
+
+def suggest_next_release_version(
+    *,
+    published: str | None = None,
+    level: str = "patch",
+    first_default: str = DEFAULT_FIRST_RELEASE_VERSION,
+    root: Path | None = None,
+) -> str:
+    """Next PyPI-compatible version: patch bump over *published*, else first-release default."""
+    from src.services.tag_policy import bump_semver
+
+    root = (root or project_root()).resolve()
+    if published is None:
+        published = fetch_latest_published_version()
+
+    if published:
+        return bump_semver(normalize_release_version(published), level=level)
+
+    try:
+        return normalize_release_version(read_project_version(root))
+    except PyPiPublishError:
+        return normalize_release_version(first_default)
+
+
+def apply_next_release_version(
+    *,
+    published: str | None = None,
+    level: str = "patch",
+    first_default: str = DEFAULT_FIRST_RELEASE_VERSION,
+    root: Path | None = None,
+) -> str:
+    """Write the suggested next version to ``pyproject.toml`` and ``src/__init__.py``."""
+    root = (root or project_root()).resolve()
+    version = suggest_next_release_version(
+        published=published,
+        level=level,
+        first_default=first_default,
+        root=root,
+    )
+    sync_version_files(root, version)
+    return version
 
 
 def resolve_release_version(

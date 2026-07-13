@@ -14,11 +14,11 @@ import yaml
 from src.services.notion_pairs import load_pairs
 from src.utils.config import (
     default_config_dir,
-    gh_issues_labels_manifest,
-    gh_issues_repo,
     load_config,
+    notion_labels_manifest,
     notion_pairs_file,
     notion_task_root,
+    tasks_link_repo,
 )
 
 configure_app = typer.Typer(help="Configure cli credentials, paths, and defaults.", no_args_is_help=True)
@@ -29,12 +29,6 @@ SECRET_KEYS: dict[str, dict[str, str]] = {
         "env": "NOTION_TOKEN",
         "example": "secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         "ci": "github-pipelines/tasks/NOTION_TOKEN",
-    },
-    "gh.token": {
-        "auth": "gh",
-        "env": "GH_TOKEN",
-        "example": "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-        "ci": "github-pipelines/tasks/CENTRAL_PIPELINE_PAT",
     },
     "backup.password": {
         "auth": "backup",
@@ -67,8 +61,8 @@ CONFIG_KEYS: dict[str, dict[str, str]] = {
     "notion.database_id": {"env": "NOTION_DATABASE_ID", "example": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"},
     "notion.task_root": {"env": "NOTION_TASK_ROOT", "example": "/workspace/tasks"},
     "notion.pairs_file": {"env": "", "example": "tasks.pairs.json"},
-    "gh.issues.repo": {"env": "", "example": "gardusig/private"},
-    "gh.issues.labels_manifest": {"env": "", "example": "labels.manifest.yaml"},
+    "notion.link_repo": {"env": "", "example": "gardusig/private"},
+    "notion.labels_manifest": {"env": "", "example": "labels.manifest.yaml"},
 }
 
 
@@ -302,12 +296,10 @@ def check_cmd(
             missing.append(f"pairs manifest not found: {pairs}")
         if pairs.is_file():
             load_pairs(pairs, task_root=root)
-        labels = gh_issues_labels_manifest()
+        labels = notion_labels_manifest()
         if not labels.is_file():
             missing.append(f"labels manifest not found: {labels}")
-        gh_issues_repo()
-        if not _get_secret(default_config_dir(), "gh.token"):
-            missing.append("gh.token is not set; export GH_TOKEN or run cli configure set gh.token")
+        tasks_link_repo()
     if pypi and not _get_secret(default_config_dir(), "pypi.token"):
         missing.append("pypi.token is not set; export PYPI_API_TOKEN or run cli configure set pypi.token")
     if missing:

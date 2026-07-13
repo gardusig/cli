@@ -19,36 +19,35 @@ Override config with `CLI_CONFIG_DIR` (default: `config/` in the clone, or `~/.c
 .venv/bin/python -m pytest tests/services/test_pipeline_selective.py -q
 ```
 
-Unit coverage gate (≥80%): `coverage-unit.ini` — enforced in CI via `scripts/ci/unit-test.sh`.
+Unit coverage gate (≥80%): `coverage-unit.ini` — enforced in CI via `scripts/pull-request/unit-test.sh`.
 
 ## Local Docker CI
 
-All stages delegate to `scripts/ci/*.sh` (raw shell — no `cli` or `python3 -m src` in those scripts).
+All stages delegate to `scripts/pull-request/` and `scripts/release/` (raw shell — no `cli` or `python3 -m src` in those scripts).
 
 ```bash
-export BASE_VERSION="$(bash scripts/ci/host-base-version.sh origin/main)"
-export CLI_RELEASE_VERSION="$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
+export BASE_VERSION="$(bash scripts/pull-request/host-last-published-version.sh)"
+cp docker/.dockerignore .dockerignore
 
-docker build -f .github/Dockerfile --target lint .
-docker build -f .github/Dockerfile --target unit-test .
-docker build -f .github/Dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
-docker build -f .github/Dockerfile --target pypi-test --build-arg "CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION}" .
+docker build -f docker/pull-request.dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build -f docker/pull-request.dockerfile --target unit-test .
 ```
+
+CI workflow scripts copy `docker/.dockerignore` to the repo root automatically before `docker build` (Docker reads `.dockerignore` from the build context).
 
 Git runs **only on the host** (`host-base-version.sh` or the workflow). Docker stages read copied files and build-args.
 
-Pipeline job graphs: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml), [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) (each file is a workflow that only invokes Docker targets).
+Pipeline job graphs: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml), [`.github/workflows/release.yaml`](../.github/workflows/release.yaml).
 
-GitHub Actions entrypoints: same files — see [`.github/workflows/README.md`](../.github/workflows/README.md).
+GitHub Actions entrypoints: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml) and [`.github/workflows/release.yaml`](../.github/workflows/release.yaml).
 
 ## Boundaries
 
 | Layer | Location | Notes |
 | --- | --- | --- |
-| CI shell | `scripts/ci/` | `pytest`, `pip`, `twine`, `git` |
+| CI shell | `scripts/pull-request/`, `scripts/release/` | `pytest`, `pip`, `twine`, `git` |
 | Product | `src/` | installable `gardusig-cli` package |
-| Hub routers | `gardusig/cli` | `workflow_call` orchestration |
-| Consumer smoke | `scripts/ci/consumer/` | pip-installed `cli` binary only |
+| Consumer smoke | `scripts/pull-request/consumer/` | pip-installed `cli` binary only |
 
 ## Release (maintainer)
 

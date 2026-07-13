@@ -15,7 +15,6 @@ from src.cli import app
 runner = CliRunner()
 
 PROVIDER_MODULES = [
-    "src.providers.github",
     "src.providers.notion",
     "src.providers.chrome",
     "src.providers.google_drive",
@@ -61,7 +60,6 @@ DOCKER_VERIFY_PATHS = [
 
 REQUIRED_PATHS = [
     "config/config.yaml",
-    "config/gh/labels.manifest.yaml",
     "config/release/config.yaml",
     "config/notion/tasks.pairs.json",
     "config/notion/templates/body.md",

@@ -43,12 +43,7 @@ def init_cmd(
                     "database_id": "your-notion-database-id",
                     "task_root": "~/github/private/tasks",
                     "pairs_file": "tasks.pairs.json",
-                },
-                "gh": {
-                    "issues": {
-                        "repo": "gardusig/private",
-                        "labels_manifest": "labels.manifest.yaml",
-                    }
+                    "link_repo": "owner/private-tasks-repo",
                 },
             },
         )
@@ -88,7 +83,6 @@ def secrets_init_cmd(config_dir: Path = typer.Option(default_config_dir(), "--co
     auth = {
         "auth": {
             "notion": {"env": "NOTION_TOKEN", "token_file": str(secret_dir / "notion.token")},
-            "gh": {"env": "GH_TOKEN", "token_file": str(secret_dir / "github.token")},
             "backup": {
                 "env": "BACKUP_ZIP_PASSWORD",
                 "token_file": str(secret_dir / "backup.zip.password"),

@@ -1,7 +1,7 @@
 """CLI package registry for selective test resolution.
 
 The registry is intentionally deterministic: it maps repo-relative changed
-paths to CLI packages and suggested test surfaces without invoking git, gh, or
+paths to CLI packages and suggested test surfaces without invoking git or
 AI providers.
 """
 
@@ -118,36 +118,20 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
         checks=(_PACKAGE_INTEGRATION,),
     ),
     _pkg(
-        "gh",
-        source=(
-            "src/commands/gh.py",
-            "src/providers/gh.py",
-            "src/services/gh_*.py",
-            "src/services/issue_craft.py",
-            "config/gh/**",
-        ),
-        tests=("tests/gh/", "tests/harness/gh_harness.py"),
-        checks=(_PACKAGE_INTEGRATION,),
-    ),
-    _pkg(
         "opencode",
         source=(
             "src/commands/opencode_cmd.py",
-            "src/commands/craft.py",
             "src/commands/chat.py",
-            "src/commands/ai.py",
-            "src/commands/review.py",
             "src/providers/opencode.py",
             "src/providers/deepseek.py",
-            "src/services/craft_ai.py",
-            "src/services/issue_craft.py",
-            "src/services/pr_craft.py",
+            "src/services/chat_distill.py",
             "config/deepseek/**",
+            "config/opencode/**",
         ),
-        tests=("tests/gh/", "tests/services/test_craft_ai.py"),
+        tests=("tests/services/test_chat_distill.py",),
         checks=("opencode --help",),
         notes=(
-            "Keep token-spending commands under cli opencode, not deterministic cli gh.",
+            "Keep token-spending commands under cli opencode.",
             "Prefer a dedicated src/commands/opencode/ package before adding more AI flows.",
         ),
         requires_ai=True,
@@ -191,12 +175,6 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
         source=("src/commands/languages.py", "src/commands/_toolkit.py", "src/services/toolkit/**"),
         tests=("tests/services/test_toolkit.py",),
         checks=("languages --help", "languages list"),
-    ),
-    _pkg(
-        "deploy",
-        source=("src/commands/deploy_cmd.py", "src/services/gh_dispatch.py"),
-        tests=("tests/gh/test_commands.py",),
-        checks=("deploy --help",),
     ),
     _pkg(
         "release",
@@ -291,36 +269,13 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
         checks=("puzzles --help",),
     ),
     _pkg(
-        "repo",
-        source=("src/commands/repo.py", "src/services/repo_*.py"),
-        tests=("tests/services/test_repo_hygiene.py",),
-        checks=("repo --help",),
-    ),
-    _pkg(
         "tasks",
-        source=("src/commands/tasks.py", "src/models/task.py", "src/services/gh_issues_sync.py"),
+        source=("src/commands/tasks.py", "src/models/task.py"),
         tests=(
             "tests/cli/test_tasks_commands.py",
             "tests/notion/test_pairs.py",
-            "tests/gh/test_issues_sync.py",
         ),
         checks=("tasks --help",),
-    ),
-    _pkg(
-        "project",
-        source=(
-            "src/commands/project.py",
-            "src/providers/gh_project.py",
-            "src/services/project_service.py",
-            "src/utils/config.py",
-            "config/project/**",
-            "docs/project.md",
-        ),
-        tests=(
-            "tests/project/",
-            "tests/cli/test_project_command.py",
-        ),
-        checks=(_PACKAGE_INTEGRATION,),
     ),
     _pkg(
         "wiki",

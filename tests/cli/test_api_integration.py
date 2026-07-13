@@ -8,14 +8,13 @@ import pytest
 from typer.testing import CliRunner
 
 from src.integration.cli_api_checks import CliApiCheck, cli_api_checks
-from src.integration.workspaces import fixture_dir
-from tests.harness.cli_api_harness import GH_WS, run_cli_api_checks
+from tests.harness.cli_api_harness import run_cli_api_checks
 
 RUNNER = CliRunner()
 
 
 def _api_checks(tmp_path: Path) -> list[CliApiCheck]:
-    return cli_api_checks(gh_workspace=fixture_dir(GH_WS), drive_repo=str(tmp_path / "r"))
+    return cli_api_checks(drive_repo=str(tmp_path / "r"))
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
@@ -46,6 +45,5 @@ def test_cli_api_command(
         RUNNER,
         monkeypatch,
         tmp_path,
-        gh_workspace=fixture_dir(GH_WS),
     )
     assert errors == [], "\n---\n".join(errors)

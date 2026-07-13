@@ -17,10 +17,10 @@ from src.integration.cli_api_checks import (
     CliApiCheck,
     checks_for_path,
     cli_api_checks,
+    command_path,
     registered_api_command_paths,
 )
 from src.integration.contest_integration import CONTEST_SUBCOMMANDS, ContestCheck, contest_checks
-from src.integration.project_integration import PROJECT_COMMAND_PATHS, PROJECT_FAIL_EXEMPT_PATHS, ProjectCheck, project_checks
 from src.integration.docker_integration import (
     DOCKER_SUBCOMMANDS,
     DockerCheck,
@@ -35,9 +35,9 @@ from src.integration.public_endpoints import (
 )
 from src.integration.workspaces import API_WORKSPACES, fixture_dir
 
-Category = Literal["api", "git", "pypi", "docker", "contest", "project", "top"]
+Category = Literal["api", "git", "pypi", "docker", "contest", "top"]
 
-_API_NAMES: tuple[ApiName, ...] = ("gh", "notion", "drive", "chrome")
+_API_NAMES: tuple[ApiName, ...] = ("notion", "drive", "chrome")
 
 # Read-only commands with no meaningful CLI failure path (inventory still lists ok checks).
 _FAIL_EXEMPT_PATHS: dict[Category, frozenset[tuple[str, ...]]] = {
@@ -85,12 +85,9 @@ class IntegrationCoverageRow:
         }
 
 
-def _gh_workspace() -> Path:
-    return fixture_dir(next(w for w in API_WORKSPACES if w.name == "gh"))
-
 
 def _api_cli_checks() -> list[CliApiCheck]:
-    return cli_api_checks(gh_workspace=_gh_workspace(), drive_repo=".")
+    return cli_api_checks(drive_repo=".")
 
 
 def _endpoint_success(check: EndpointCheck) -> bool:
@@ -248,45 +245,10 @@ def _contest_rows(checks: list[ContestCheck]) -> list[IntegrationCoverageRow]:
     return rows
 
 
-def _project_rows(checks: list[ProjectCheck]) -> list[IntegrationCoverageRow]:
-    rows: list[IntegrationCoverageRow] = []
-    for path in PROJECT_COMMAND_PATHS:
-        ok_labels = [
-            check.label
-            for check in checks
-            if check.kind == "ok"
-            and not check.failure
-            and _args_include_project_path(check, path)
-        ]
-        fail_labels = [
-            check.label
-            for check in checks
-            if (check.kind == "refuse" or check.failure)
-            and _args_include_project_path(check, path)
-        ]
-        rows.append(
-            IntegrationCoverageRow(
-                "project",
-                path,
-                ok_labels,
-                fail_labels,
-                fail_exempt=path in PROJECT_FAIL_EXEMPT_PATHS,
-            )
-        )
-    return rows
-
-
-def _args_include_project_path(check: ProjectCheck, path: tuple[str, ...]) -> bool:
-    from src.integration.cli_api_checks import command_tokens
-
-    tokens = command_tokens(check.args)
-    return len(tokens) >= len(path) and tokens[: len(path)] == path
-
-
 def _top_level_rows(checks: list[EndpointCheck]) -> list[IntegrationCoverageRow]:
     rows: list[IntegrationCoverageRow] = []
     for name in TOP_LEVEL_COMMANDS:
-        if name in _API_NAMES or name in {"git", "docker", "contest", "pypi", "project"}:
+        if name in _API_NAMES or name in {"git", "docker", "contest", "pypi"}:
             continue
         path = (name,)
         ok, fail = _labels_for_path(checks, path, category="top")
@@ -308,14 +270,12 @@ def integration_coverage_inventory() -> tuple[IntegrationCoverageRow, ...]:
     endpoints = endpoint_checks()
     docker = docker_checks()
     contest = contest_checks()
-    project = project_checks()
     rows = [
         *_api_rows(api_checks),
         *_git_rows(endpoints),
         *_pypi_rows(endpoints),
         *_docker_rows(docker),
         *_contest_rows(contest),
-        *_project_rows(project),
         *_top_level_rows(endpoints),
     ]
     return tuple(sorted(rows, key=lambda row: (row.category, row.path)))
@@ -335,7 +295,7 @@ def integration_coverage_summary() -> dict[str, Any]:
                     1 for row in rows if row.category == category and row.complete
                 ),
             }
-            for category in ("api", "git", "pypi", "docker", "contest", "project", "top")
+            for category in ("api", "git", "pypi", "docker", "contest", "top")
         },
     }
 

@@ -14,18 +14,6 @@ from tests.pack.conftest import requires_docs
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = CliRunner()
 
-INTEGRATION_SCRIPT_PACKAGES = (
-    "gh",
-    "git",
-    "notion",
-    "drive",
-    "chrome",
-    "docker",
-    "contest",
-    "project",
-    "pypi",
-)
-
 
 @requires_docs
 def test_infra_epic_ci_docs_exist() -> None:
@@ -36,25 +24,17 @@ def test_infra_epic_ci_docs_exist() -> None:
     assert "CI_UNIT_TIMEOUT" in text
 
 
-def test_infra_epic_script_policy_docs() -> None:
-    text = (ROOT / "scripts" / "test" / "README.md").read_text(encoding="utf-8")
-    assert "Nine-script policy" in text
-    assert "gh.sh" in text
-
-
-def test_infra_epic_registry_covers_gh() -> None:
+def test_infra_epic_registry_covers_core_packages() -> None:
     names = {pkg.name for pkg in test_packages.test_package_registry()}
-    assert "gh" in names
     assert "git" in names
     assert "docker" in names
+    assert "notion" in names
 
 
-def test_infra_epic_integration_scripts_exist() -> None:
-    scripts = ROOT / "scripts" / "test"
-    for package in INTEGRATION_SCRIPT_PACKAGES:
-        assert (scripts / f"{package}.sh").is_file(), package
-    assert (scripts / "all.sh").is_file()
-    assert (scripts / "_common.sh").is_file()
+def test_infra_epic_pipeline_scripts_exist() -> None:
+    assert (ROOT / "scripts" / "pull-request" / "version-check.sh").is_file()
+    assert (ROOT / "scripts" / "pull-request" / "set-version.sh").is_file()
+    assert (ROOT / "scripts" / "release" / "pypi-release.sh").is_file()
 
 
 def test_infra_epic_resolve_help() -> None:
@@ -70,7 +50,7 @@ def test_infra_epic_suite_contract() -> None:
     assert "check_integration_coverage" in result.stdout
 
 
-def test_infra_epic_force_full_suite_flag() -> None:
-    result = RUNNER.invoke(app, ["gh", "wf", "--help"])
+def test_infra_epic_git_deploy_help() -> None:
+    result = RUNNER.invoke(app, ["git", "deploy", "--help"])
     assert result.exit_code == 0
-    assert "run" in result.stdout
+    assert "tag" in result.stdout.lower()

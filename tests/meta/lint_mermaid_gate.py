@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate mermaid fences in markdown (invoked from scripts/ci/lint.sh)."""
+"""Validate mermaid fences in markdown (invoked from scripts/pull-request/lint.sh)."""
 
 from __future__ import annotations
 

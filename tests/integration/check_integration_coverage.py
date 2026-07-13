@@ -45,7 +45,7 @@ def main() -> int:
     print(
         "Integration coverage gate passed "
         f"({summary['complete']}/{summary['total_commands']} commands, "
-        f"api/git/pypi/docker/contest/project/top)."
+        f"api/git/pypi/docker/contest/top)."
     )
     return 0
 

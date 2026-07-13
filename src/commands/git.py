@@ -14,7 +14,6 @@ from src.services.backup_zip import archive_tag_zip
 from src.services.git_deploy import DeployAssessment, GitDeployError, assess_deploy_readiness
 from src.services.git_review import run_review
 from src.services.git_shortcuts import GitPushResult, GitShortcuts
-from src.services.gh_service import GhService
 from src.services.pypi_publish import PyPiPublishError
 from src.services.tag_policy import (
     latest_tag,
@@ -995,26 +994,17 @@ def deploy_cmd(
         "--status",
         help="Print deploy assessment and exit (read-only).",
     ),
-    skip_pr_check: bool = typer.Option(
-        False,
-        "--skip-pr-check",
-        help="Allow tagging when open PRs exist.",
-    ),
 ) -> None:
-    """Tag main when it differs from the latest tag and no open PRs block release."""
+    """Tag main when it differs from the latest policy tag."""
     svc = _svc()
     repo = Path(svc.top)
     try:
-        gh_svc = GhService()
-        assessment = assess_deploy_readiness(svc, repo_root=repo, gh_svc=gh_svc)
+        assessment = assess_deploy_readiness(svc, repo_root=repo)
     except GitDeployError as exc:
         raise typer.Exit(str(exc)) from exc
     _print_deploy_assessment(assessment)
     if status or dry_run:
         raise typer.Exit()
-    if assessment.open_pr_count and not skip_pr_check:
-        rprint("[red]blocked[/red] merge or close open PRs first (or pass --skip-pr-check)")
-        raise typer.Exit(1)
     if not assessment.needs_tag:
         rprint("[dim]skip[/dim] main matches latest tag")
         raise typer.Exit()

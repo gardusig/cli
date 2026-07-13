@@ -1,6 +1,6 @@
 # Allowed tracked roots (do not add ignore patterns that hide these):
-#   config/ docs/ scripts/ src/ tests/ .github/
-#   .github/Dockerfile .dockerignore pyproject.toml uv.lock requirements*.txt coverage-unit.ini README.md LICENSE
+#   config/ docs/ scripts/ src/ tests/ docker/ .github/
+#   docker/*.dockerfile docker/.dockerignore pyproject.toml uv.lock requirements*.txt coverage-unit.ini README.md LICENSE
 #
 # --- Cursor / IDE ---
 .cursor/
@@ -36,6 +36,9 @@ htmlcov/
 src-*/
 src.egg-info/
 *.whl
+
+# --- Docker build context (generated from docker/.dockerignore before docker build) ---
+.dockerignore
 
 # --- Integration temp dirs (host leaks outside Docker scratch) ---
 cli-git-*/

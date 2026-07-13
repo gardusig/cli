@@ -1,16 +1,15 @@
 repo: gardusig/cli
-dockerfile: .github/Dockerfile
-dockerignore: .dockerignore
+dockerfile: docker/release.dockerfile
+dockerignore: docker/.dockerignore
 jobs:
-  - id: release
+  - id: pypi
     name: Publish to PyPI
-    target: release
+    target: pypi
     build_args_from_ref: true
     secrets:
       PYPI_API_TOKEN: PYPI_API_TOKEN
-  - id: pypi-consumer
-    name: PyPI consumer integration
-    target: pypi-consumer
-    needs: release
+  - id: runtime
+    name: Lean Docker image
+    target: runtime
+    needs: pypi
     build_args_from_ref: true
-    docker_socket: true

@@ -1,55 +1,26 @@
-# Task Shortcuts
+# Tasks (`cli tasks`)
 
-Task data lives in `gardusig/database/tasks`. The CLI provides reusable shortcuts only; workflow policy lives in `gardusig/cli`.
+Local task pair helpers around Notion sync.
 
-## Pair validation
+## Commands
 
-```bash
-cli validate tasks
-cli tasks pairs build
-```
-
-## Ingest to PR
-
-```bash
-cli tasks ingest-pr --source notion --yes
-cli tasks ingest-pr --source github --yes
-```
-
-The command only stages `tasks/`, commits to a sync branch, pushes, and opens a PR.
-
-## Hub workflow dispatch
-
-```bash
-cli gh wf run dispatch.yml -R gardusig/cli \
-  -f workflow=tasks -f repository=gardusig/database -f action=github-deploy
-
-cli gh wf run dispatch.yml -R gardusig/cli \
-  -f workflow=repo-review -f repository=gardusig/cli -f job=version-check
-```
-
-The dispatch target is always `gardusig/cli`; app repos do not contain workflows.
-
-## Named CLI workflows
-
-```bash
-cli tasks list
-cli tasks run notion ingest
-cli tasks run notion deploy --yes
-cli tasks run github ingest --yes
-```
-
-The merged workflow catalog treats task operations as named workflows, not arbitrary `cli` argv passed through CI.
-
-| Workflow | Sequence |
+| Command | Purpose |
 | --- | --- |
-| `private-notion-deploy` | `cli tasks pairs build` -> `cli validate tasks` -> `cli notion deploy --yes` |
-| `private-notion-ingest-pr` | `cli tasks ingest-pr --source notion --yes` |
-| `private-gh-issues-deploy` | delete all repo issues -> insert all task issues -> update board/project order |
-| `private-gh-issues-ingest-pr` | `cli tasks ingest-pr --source github --yes` |
-| `private-gh-issues-prune-closed` | `cli gh issues prune --closed-older-than 7d --yes` |
-| `private-project-deploy` | `cli project pairs build` -> `cli validate tasks` -> `cli project deploy --yes` |
-| `private-project-ingest` | `cli project ingest` (board -> header yaml) |
-| `private-project-sync` | `cli project sync --yes` (ingest then deploy; non-zero on deploy failures) |
+| `cli tasks pairs validate` | Check `tasks.pairs.json` against header/body files |
+| `cli tasks pairs build` | Rebuild pairs manifest from task root |
+| `cli tasks run notion deploy` | Shortcut for `cli notion deploy --yes` |
+| `cli tasks run notion ingest` | Shortcut for `cli notion ingest` |
+| `cli tasks ingest-pr --source notion` | Ingest, commit, push a sync branch |
 
-GitHub Project updates go through reviewed task-board workflows, including top-level `cli project ...`. Direct ad hoc `cli gh project ...` remains blocked.
+## Configuration
+
+Task paths live under **`notion.task_root`**. Runbook links use **`notion.link_repo`** (git-hosted `tasks/` tree).
+
+```bash
+cli configure check --tasks
+```
+
+## Related
+
+- [notion.md](notion.md)
+- [config-tasks.md](config-tasks.md)

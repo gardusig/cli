@@ -1,4 +1,4 @@
-"""Task runbook URL derivation from the private database repo."""
+"""Task runbook URL derivation from the git-hosted tasks repo."""
 
 from __future__ import annotations
 
@@ -9,12 +9,11 @@ import pytest
 from src.utils.config import task_runbook_url
 
 
-def test_task_runbook_url_uses_gh_issues_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_task_runbook_url_uses_notion_link_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     cfg_dir = tmp_path / "cfg"
     cfg_dir.mkdir()
     (cfg_dir / "config.yaml").write_text(
-        "gh:\n  issues:\n    repo: gardusig/private\n"
-        "notion:\n  link_branch: main\n",
+        "notion:\n  link_repo: gardusig/private\n  link_branch: main\n",
         encoding="utf-8",
     )
     monkeypatch.setenv("CLI_CONFIG_DIR", str(cfg_dir))
@@ -26,8 +25,7 @@ def test_task_runbook_url_respects_link_branch(tmp_path: Path, monkeypatch: pyte
     cfg_dir = tmp_path / "cfg"
     cfg_dir.mkdir()
     (cfg_dir / "config.yaml").write_text(
-        "gh:\n  issues:\n    repo: gardusig/private\n"
-        "notion:\n  link_branch: develop\n",
+        "notion:\n  link_repo: gardusig/private\n  link_branch: develop\n",
         encoding="utf-8",
     )
     monkeypatch.setenv("CLI_CONFIG_DIR", str(cfg_dir))

@@ -1,26 +1,19 @@
-# Integration check entry points
+# Integration tests
 
-Python runners invoked from the `cli test python ...` command surface.
-Implementation lives in `src/integration/`; these files are thin `main()` wrappers.
+Dockerized checks validate every public command surface with mocked external APIs where needed.
 
-**Docker only** — each script calls `require_docker_integration()` and exits on the host.
-Use `cli test python unit .` or `cli test python integration .`, not bare `python tests/integration/...`.
+## Layout
 
-| Script | Purpose |
-| --- | --- |
-| `check_integration_coverage.py` | Registry gate: every public command has ok/fail checks |
-| `check_public_commands.py` | Run all public CLI integration checks |
-| `check_public_endpoints.py` | Run all endpoint checks |
-| `check_workflow_integration.py` | Git workflow scenarios (granular) |
-| `check_workflows.py` | E2E workflow integration (plan, context, PR, reset) |
-| `check_api_integration.py` | Pytest API integration modules |
-| `check_docker_commands.py` | Docker CLI checks (`--live` for host daemon) |
-| `check_notion_tasks.py` | Alias → `check_api_integration.py` |
+- `check_integration_coverage.py` — ok/fail inventory gate
+- `check_public_commands.py` — full public command runner
+- `check_package_integration.py` — per-package legs (`git`, `notion`, `drive`, `chrome`, …)
 
-**Config isolation** (workflow E2E): default `CLI_CONFIG_DIR=config/ci`; per-workflow overrides via `tests/fixtures/workflows/<name>/config.yaml`. GH calls use mocked stateful store (`tests/harness/gh_harness.py`).
+## Config
 
-Host cleanup after accidental local runs:
+Default `CLI_CONFIG_DIR=config/ci` (see `tests/conftest.py`). Workflow E2E uses disposable git repos under `.integration-scratch/`.
+
+## Run
 
 ```bash
-cli git clean --yes
+cli test python integration .
 ```

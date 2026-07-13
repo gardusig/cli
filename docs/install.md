@@ -1,20 +1,17 @@
 # Install
 
-Install the published CLI package from PyPI:
-
 ```bash
 pip install gardusig-cli
-cli --version
 ```
 
-The distribution is `gardusig-cli`; the executable is `cli`.
+Console command: **`cli`**.
 
-After installation, configure credentials and paths:
+From source:
 
 ```bash
-cli configure list
-cli configure set gh.token --stdin
-cli configure import-env
+git clone https://github.com/gardusig/cli.git
+cd cli
+pip install -e ".[dev]"
 ```
 
-Pipelines use the same install path through `pip install --no-cache-dir gardusig-cli`.
+Configure secrets with `cli configure` — see [configure.md](configure.md).

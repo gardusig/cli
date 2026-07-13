@@ -60,13 +60,6 @@ API_WORKSPACES: tuple[ApiWorkspace, ...] = (
         description="Tag zips: local ingest, mock cloud upload",
     ),
     ApiWorkspace(
-        name="gh",
-        fixture_subpath="gh/workspace",
-        protected_paths=(),
-        integration_module="tests.gh.test_docker_integration",
-        description="GitHub CLI: mocked gh JSON for list/view",
-    ),
-    ApiWorkspace(
         name="contest",
         fixture_subpath="contest/toy",
         protected_paths=(),

@@ -12,11 +12,8 @@ runner = CliRunner()
 def test_links_lists_docs_and_defaults() -> None:
     result = runner.invoke(app, ["links"])
     assert result.exit_code == 0
-    assert "Workflow lifecycle" in result.stdout
-    assert "backlog next" in result.stdout
+    assert "Workflow shortcuts" in result.stdout
     assert "cli git push" in result.stdout
-    assert "cli gh pr merge" in result.stdout
-    assert "GitHub commands" in result.stdout
     assert "Quick defaults" in result.stdout
     assert "docs/large-files.md" in result.stdout
     assert "cli git start" in result.stdout
@@ -44,9 +41,8 @@ def test_links_documents_restore_placeholder() -> None:
     assert "restore" in result.stdout.lower()
 
 
-def test_links_mentions_project_tasks_contest() -> None:
+def test_links_mentions_tasks_and_contest() -> None:
     result = runner.invoke(app, ["links"])
     assert result.exit_code == 0
-    assert "cli project" in result.stdout
     assert "cli tasks" in result.stdout
     assert "cli contest" in result.stdout

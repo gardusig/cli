@@ -12,14 +12,14 @@ runner = CliRunner()
 def test_test_packages_resolve_outputs_json_contract() -> None:
     result = runner.invoke(
         app,
-        ["test", "packages", "resolve", "--changed-path", "src/commands/gh.py"],
+        ["test", "packages", "resolve", "--changed-path", "src/commands/git.py"],
     )
 
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
-    assert "gh" in payload["package_names"]
+    assert "git" in payload["package_names"]
     assert payload["requires_ai"] is False
-    assert any(path.startswith("tests/gh") for path in payload["unit_test_paths"])
+    assert any(path.startswith("tests/git") for path in payload["unit_test_paths"])
     assert payload["pipeline_contract"]["owner"] == "gardusig/cli"
 
 
@@ -50,7 +50,7 @@ def test_test_packages_resolve_rejects_unknown_format() -> None:
             "packages",
             "resolve",
             "--changed-path",
-            "src/commands/gh.py",
+            "src/commands/git.py",
             "--format",
             "yaml",
         ],
@@ -64,19 +64,19 @@ def test_test_packages_list_outputs_registry() -> None:
     result = runner.invoke(app, ["test", "packages", "list", "--format", "table"])
 
     assert result.exit_code == 0
-    assert "gh:" in result.stdout
-    assert "tests/gh/" in result.stdout
+    assert "git:" in result.stdout
+    assert "tests/git/" in result.stdout
 
 
 def test_test_packages_run_dry_run_outputs_commands() -> None:
     result = runner.invoke(
         app,
-        ["test", "packages", "run", "gh", "--dry-run", "--format", "json"],
+        ["test", "packages", "run", "git", "--dry-run", "--format", "json"],
     )
 
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
-    assert payload["package"]["name"] == "gh"
+    assert payload["package"]["name"] == "git"
     assert any(command["kind"] == "unit" for command in payload["commands"])
 
 
@@ -87,7 +87,7 @@ def test_test_packages_run_can_emit_integration_only_commands() -> None:
             "test",
             "packages",
             "run",
-            "gh",
+            "git",
             "--no-unit",
             "--dry-run",
             "--format",
@@ -106,7 +106,7 @@ def test_test_packages_suite_outputs_full_contract() -> None:
 
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
-    assert "gh" in payload["packages"]
+    assert "git" in payload["packages"]
     assert payload["pipeline_contract"]["owner"] == "gardusig/cli"
 
 
@@ -116,7 +116,7 @@ def test_test_packages_resolve_can_use_git_range(monkeypatch) -> None:
     monkeypatch.setattr(
         test_cmd,
         "changed_paths_from_git",
-        lambda base, head, repo_root: ["src/commands/gh.py"],
+        lambda base, head, repo_root: ["src/commands/git.py"],
     )
 
     result = runner.invoke(
@@ -126,5 +126,5 @@ def test_test_packages_resolve_can_use_git_range(monkeypatch) -> None:
 
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
-    assert payload["changed_paths"] == ["src/commands/gh.py"]
-    assert payload["package_names"] == ["gh"]
+    assert payload["changed_paths"] == ["src/commands/git.py"]
+    assert payload["package_names"] == ["git"]

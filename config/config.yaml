@@ -27,6 +27,8 @@ notion:
   task_root: ~/github/private/tasks
   pairs_file: tasks.pairs.json
   link_branch: main
+  link_repo: gardusig/private
+  labels_manifest: labels.manifest.yaml
   cleanup_before_deploy: true
   properties:
     title: Name
@@ -45,10 +47,3 @@ chrome:
   downloads_dir: ~/Downloads
   photos_dir: ""                       # private path, e.g. ~/git-local/private/photos
   photos_takeout_dir: ""               # optional; defaults to downloads_dir
-
-gh:
-  issues:
-    repo: gardusig/private
-    labels_manifest: labels.manifest.yaml
-    prune:
-      closed_older_than: 7d

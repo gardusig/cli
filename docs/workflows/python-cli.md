@@ -18,7 +18,7 @@ Manual `repo-review.yml` jobs:
 - `version-suggest`
 - `command-surface`
 
-All jobs run as Docker targets from the CLI repo's root `Dockerfile`.
+All jobs run as Docker targets from `docker/pull-request.dockerfile` or `docker/release.dockerfile`.
 
 ## CLI workflows
 
@@ -31,7 +31,8 @@ Separate CLI workflow definitions should live under `.github/workflows/cli/pytho
 | `python-cli-pypi-test` | pypi-test Docker target | Build/package validation and optional TestPyPI path |
 | `python-cli-release-pypi` | release Docker target | Publish release artifacts using pipeline-owned PyPI secrets |
 | `python-cli-version-check` | `cli pypi version check` | Compare package version against `origin/main` |
-| `python-cli-version-suggest` | `cli pypi version suggest` | Suggest the next package version |
+| `python-cli-version-suggest` | `cli pypi version suggest` | Suggest the next package version (patch over last PyPI release) |
+| `python-cli-version-set` | `cli pypi version set` | Write the next package version to pyproject.toml and src/__init__.py |
 | `python-cli-command-surface` | public command surface check | Keep docs, command registration, and public CLI shape aligned |
 | `python-cli-pipeline-dispatch-smoke` | `cli pipeline run ... --dry-run` | Verify dispatch payloads for known centralized workflows |
 
@@ -41,7 +42,7 @@ Separate CLI workflow definitions should live under `.github/workflows/cli/pytho
 
 1. Check out `gardusig/python-cli` at `main` or the requested ref.
 2. Run `cli release main --yes` to tag, publish PyPI, verify, and create the GitHub release.
-3. Build `docker/cli-base.dockerfile` with `gardusig-cli==<released-version>`.
+3. Build `docker/release.dockerfile` target `runtime` with `gardusig-cli==<released-version>`.
 
 ## Command contract lane
 

@@ -54,19 +54,16 @@ class EndpointCheck:
 TOP_LEVEL_COMMANDS = (
     "links",
     "git",
-    "gh",
     "opencode",
     "lint",
     "test",
     "structure",
     "validate",
     "languages",
-    "deploy",
     "release",
     "restore",
     "drive",
     "notion",
-    "project",
     "chrome",
     "docker",
     "contest",
@@ -74,7 +71,6 @@ TOP_LEVEL_COMMANDS = (
     "config",
     "pypi",
     "puzzles",
-    "repo",
     "tasks",
 )
 
@@ -121,6 +117,7 @@ PYPI_SUBCOMMANDS = (
     "upload",
     "version check",
     "version suggest",
+    "version set",
     "version tag-suggest",
 )
 
@@ -149,9 +146,7 @@ def endpoint_checks() -> list[EndpointCheck]:
                 "configure",
                 "languages",
                 "lint",
-                "project",
                 "puzzles",
-                "repo",
                 "structure",
                 "tasks",
                 "validate",
@@ -161,8 +156,6 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck("restore", ("restore",), needle="not implemented yet"),
         EndpointCheck("drive help", ("drive", "--help"), needle="download"),
         EndpointCheck("notion help", ("notion", "--help"), needle="ingest"),
-        EndpointCheck("project help", ("project", "--help"), needle="GitHub Projects"),
-        EndpointCheck("project pairs help", ("project", "pairs", "--help"), needle="status"),
         EndpointCheck(
             "notion ingest missing token",
             ("notion", "ingest"),
@@ -178,17 +171,6 @@ def endpoint_checks() -> list[EndpointCheck]:
             accept_exit_codes=(1,),
             extra_env={"CLI_BOOKMARKS_FILE": "/nonexistent/cli/missing-bookmarks.html"},
         ),
-        EndpointCheck("gh help", ("gh", "--help"), needle="issue"),
-        EndpointCheck("gh issue help", ("gh", "issue", "--help"), needle="reopen"),
-        EndpointCheck("gh pr help", ("gh", "pr", "--help"), needle="checks"),
-        EndpointCheck(
-            "gh pr shortcut refuse",
-            ("gh", "pr"),
-            kind="refuse",
-            needle="Refusing write",
-            failure="refuse_gate",
-        ),
-        EndpointCheck("gh project help", ("gh", "project", "--help"), needle="GitHub Projects"),
         EndpointCheck("opencode help", ("opencode", "--help"), needle="chat"),
         EndpointCheck(
             "opencode plan missing arg",
@@ -202,17 +184,17 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck("test help", ("test", "--help"), needle="python"),
         EndpointCheck(
             "test packages resolve",
-            ("test", "packages", "resolve", "--changed-path", "src/commands/gh.py"),
+            ("test", "packages", "resolve", "--changed-path", "src/commands/git.py"),
             needle='"package_names"',
         ),
         EndpointCheck(
             "test packages list",
             ("test", "packages", "list", "--format", "table"),
-            needle="gh:",
+            needle="git:",
         ),
         EndpointCheck(
             "test packages run dry-run",
-            ("test", "packages", "run", "gh", "--dry-run", "--format", "table"),
+            ("test", "packages", "run", "git", "--dry-run", "--format", "table"),
             needle="python3 -m pytest",
         ),
         EndpointCheck(
@@ -232,14 +214,6 @@ def endpoint_checks() -> list[EndpointCheck]:
             failure="missing_marker",
             needle="missing one of",
         ),
-        EndpointCheck("deploy help", ("deploy", "--help"), needle="deploy"),
-        EndpointCheck(
-            "deploy refuse",
-            ("deploy", "pull-request", "python-cli"),
-            kind="refuse",
-            needle=refuse,
-            accept_exit_codes=(1,),
-        ),
         EndpointCheck("release help", ("release", "--help"), needle="release"),
         EndpointCheck(
             "release build refuse",
@@ -255,12 +229,6 @@ def endpoint_checks() -> list[EndpointCheck]:
             needle=refuse,
             accept_exit_codes=(1,),
         ),
-        EndpointCheck(
-            "gh issue list",
-            ("gh", "issue", "list"),
-            needle='"number":',
-            accept_exit_codes=(0, 1),
-        ),
         EndpointCheck("links", ("links",), needle="Quick defaults"),
         EndpointCheck("docker --help", ("docker", "--help"), needle="reset"),
         EndpointCheck("docker ps help", ("docker", "ps", "--help"), needle="format"),
@@ -268,10 +236,7 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck("contest help", ("contest", "--help"), needle="validate"),
         EndpointCheck("configure help", ("configure", "--help"), needle="check"),
         EndpointCheck("config help", ("config", "--help"), needle="check"),
-        EndpointCheck("gh wf help", ("gh", "wf", "--help"), needle="run"),
-        EndpointCheck("gh wf run help", ("gh", "wf", "run", "--help"), needle="list"),
-        EndpointCheck("puzzles help", ("puzzles", "--help"), needle="issues"),
-        EndpointCheck("repo help", ("repo", "--help"), needle="inventory"),
+        EndpointCheck("puzzles help", ("puzzles", "--help"), needle="validate"),
         EndpointCheck("tasks help", ("tasks", "--help"), needle="pairs"),
         EndpointCheck("pypi help", ("pypi", "--help"), needle="upload"),
         EndpointCheck(
@@ -314,6 +279,19 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck(
             "pypi version suggest missing project",
             ("pypi", "version", "suggest"),
+            outside_git=True,
+            needle="pyproject",
+            accept_exit_codes=(1,),
+            failure="missing_pyproject",
+        ),
+        EndpointCheck(
+            "pypi version set dry-run",
+            ("pypi", "version", "set", "--dry-run"),
+            needle="0.",
+        ),
+        EndpointCheck(
+            "pypi version set missing project",
+            ("pypi", "version", "set", "--dry-run"),
             outside_git=True,
             needle="pyproject",
             accept_exit_codes=(1,),
@@ -1448,8 +1426,6 @@ def execute_endpoint_integration_check(
         setup_code, setup_out = ensure_stash_entry(repo_root, git_root)
         if setup_code != 0:
             return [f"{check.label} setup: stash push failed ({setup_code})\n{setup_out}"]
-    if check.label == "gh issue list" and shutil.which("gh") is None:
-        return []
     review_patch = nullcontext()
     if check.failure == "review_fail":
         review_patch = patch("src.commands.git.run_review", return_value=1)

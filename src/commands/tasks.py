@@ -1,4 +1,4 @@
-"""Task pair shortcuts and ingest-to-PR workflow."""
+"""Task pair shortcuts and ingest workflow."""
 
 from __future__ import annotations
 
@@ -12,12 +12,11 @@ from rich import print as rprint
 
 from src.commands.notion import pairs_build_cmd
 from src.internal.write.gate import require_write_gate
-from src.services.gh_issues_sync import ingest_issues
 from src.services.notion_pairs import load_pairs, pair_file_warning, scan_task_root
 from src.services.notion_sync import export_tasks
 from src.utils.config import load_config, notion_pairs_file, notion_task_root, require_notion_token
 
-tasks_app = typer.Typer(help="Task pairs and pipeline shortcuts.", no_args_is_help=True)
+tasks_app = typer.Typer(help="Task pairs and local ingest shortcuts.", no_args_is_help=True)
 pairs_app = typer.Typer(help="Task pair manifest checks.", no_args_is_help=True)
 tasks_app.add_typer(pairs_app, name="pairs")
 
@@ -39,7 +38,6 @@ def list_cmd() -> None:
     _emit(
         [
             {"target": "notion", "ops": ["deploy", "ingest"]},
-            {"target": "github", "ops": ["deploy", "ingest", "prune"]},
             {"target": "pairs", "ops": ["validate", "build"]},
         ],
         "json",
@@ -53,7 +51,6 @@ def run_cmd(
     op: str,
 ) -> None:
     """Short dispatcher for task-related commands."""
-    from src.commands.gh import gh_issues_deploy_cmd, gh_issues_ingest_cmd, gh_issues_prune_cmd
     from src.commands.notion import deploy_cmd as notion_deploy_cmd
     from src.commands.notion import ingest_cmd as notion_ingest_cmd
 
@@ -62,17 +59,6 @@ def run_cmd(
         notion_deploy_cmd(yes="--yes" in args or "-y" in args, cleanup=None)
     elif target == "notion" and op == "ingest":
         notion_ingest_cmd()
-    elif target == "github" and op == "deploy":
-        gh_issues_deploy_cmd(dry_run="--dry-run" in args, yes="--yes" in args or "-y" in args)
-    elif target == "github" and op == "ingest":
-        gh_issues_ingest_cmd(yes="--yes" in args or "-y" in args)
-    elif target == "github" and op == "prune":
-        older = "7d"
-        dry = "--dry-run" in args
-        for i, arg in enumerate(args):
-            if arg == "--closed-older-than" and i + 1 < len(args):
-                older = args[i + 1]
-        gh_issues_prune_cmd(closed_older_than=older, label=[], exclude_label=[], dry_run=dry, yes=True)
     else:
         raise typer.Exit(f"Unknown task operation: {target} {op}")
 
@@ -119,21 +105,18 @@ def ingest_pr_cmd(
     source: str = typer.Option(..., "--source"),
     yes: bool = typer.Option(False, "--yes", "-y"),
 ) -> None:
-    """Ingest from Notion/GitHub Issues, rebuild pairs, and open a PR."""
+    """Ingest from Notion, rebuild pairs, commit, and push a branch."""
     root = notion_task_root()
     require_write_gate(
         f"tasks-ingest-pr-{source}",
         [f"task_root: {root}", "scope: tasks/ only"],
-        question=f"Ingest from {source} and open a task-data PR?",
+        question=f"Ingest from {source} and push a task-data branch?",
         yes=yes,
     )
-    if source == "github":
-        ingest_issues()
-    elif source == "notion":
-        cfg = load_config()
-        export_tasks(root, token=require_notion_token(cfg), config=cfg.notion)
-    else:
-        raise typer.Exit("source must be notion or github")
+    if source != "notion":
+        raise typer.Exit("source must be notion")
+    cfg = load_config()
+    export_tasks(root, token=require_notion_token(cfg), config=cfg.notion)
     pairs_build_cmd()
     pairs_validate_cmd(format="json")
 
@@ -146,15 +129,3 @@ def ingest_pr_cmd(
     subprocess.run(["git", "add", "tasks"], check=True)
     subprocess.run(["git", "commit", "-m", f"Sync tasks from {source}"], check=True)
     subprocess.run(["git", "push", "-u", "origin", "HEAD"], check=True)
-    subprocess.run(
-        [
-            "gh",
-            "pr",
-            "create",
-            "--title",
-            f"Sync tasks from {source}",
-            "--body",
-            f"Updates task pairs from {source}.",
-        ],
-        check=True,
-    )

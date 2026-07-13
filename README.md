@@ -1,6 +1,6 @@
 # cli
 
-Linux-first CLI helper: **`cli g`** · **`cli gh wf`** · **`cli lint`** · **`cli release`**.
+Linux-first CLI helper: **`cli g`** · **`cli git`** · **`cli lint`** · **`cli release`**.
 
 ## Status
 
@@ -45,8 +45,6 @@ Install Python and git with your Linux package manager:
 ```bash
 sudo apt-get install python3 git
 ```
-
-Optional: `gh` (GitHub CLI) for `cli gh` and `cli opencode gh` workflows.
 
 ## Configuration (global)
 
@@ -245,7 +243,6 @@ Details: [docs/release.md](docs/release.md) · [docs/setup.md](docs/setup.md) ·
 - [Setup](docs/setup.md)
 - [Release](docs/release.md)
 - [Git commands](docs/git.md)
-- [GitHub (`cli gh`)](docs/gh.md) · [Workflows (`cli gh wf`)](docs/gh-workflows.md)
 - [Drive (local + cloud)](docs/drive.md)
 - [Chrome](docs/chrome.md) · [Notion](docs/notion.md)
 - [Docker integration](docs/docker.md)
@@ -255,7 +252,6 @@ Details: [docs/release.md](docs/release.md) · [docs/setup.md](docs/setup.md) ·
 ## Related
 
 - [OpenCode](docs/opencode.md) — `cli opencode` AI entry point
-- [Hub operator](docs/hub-operator.md) — headless ship lane + CI runner
 - Cloud drive epic: [cli #4](https://github.com/gardusig/python-cli/issues/4)
 - Bootstrap spec: [cli #3](https://github.com/gardusig/python-cli/issues/3)
 - Chrome: [cli #24](https://github.com/gardusig/python-cli/issues/24) · bookmarks [#1](https://github.com/gardusig/python-cli/issues/1) superseded

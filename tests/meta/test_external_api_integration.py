@@ -16,9 +16,7 @@ from src.integration.workspaces import API_WORKSPACES, fixture_dir
 from src.services.notion_sync import export_tasks, import_tasks
 from src.utils.config import NotionConfig
 from src.utils.external_client import ExternalCallError, ExternalClient
-from src.utils.process import GhCommandError
 from tests.harness.drive_harness import DriveRemoteError, FailingDriveProvider, InMemoryDriveProvider
-from tests.harness.gh_harness import gh_auth_error, gh_transient_error, patch_run_gh
 from tests.harness.integration_harness import copy_fixture_workspace
 from tests.harness.notion_harness import (
     deploy_ok_handler,
@@ -30,7 +28,6 @@ from tests.harness.notion_harness import (
 
 NOTION_WS = next(w for w in API_WORKSPACES if w.name == "notion")
 DRIVE_WS = next(w for w in API_WORKSPACES if w.name == "drive")
-GH_WS = next(w for w in API_WORKSPACES if w.name == "gh")
 RUNNER = CliRunner()
 
 
@@ -112,74 +109,6 @@ def test_notion_ingest_403_fails_without_retry(notion_paths) -> None:
 
 
 @pytest.mark.integration
-def test_gh_issue_list_happy_path_via_run_gh() -> None:
-    fixture = fixture_dir(GH_WS) / "issues.json"
-    issues = json.loads(fixture.read_text(encoding="utf-8"))
-
-    def handler(args, *, cwd=None, check=True):
-        if args[:2] == ["issue", "list"]:
-            from subprocess import CompletedProcess
-
-            return CompletedProcess(args, 0, json.dumps(issues), "")
-        raise GhCommandError(args, 1, f"unmocked: {args}")
-
-    with patch_run_gh(handler=handler):
-        result = RUNNER.invoke(app, ["gh", "--format", "json", "issue", "list"])
-
-    assert result.exit_code == 0
-    payload = json.loads(result.stdout)
-    assert payload[0]["number"] == 42
-
-
-@pytest.mark.integration
-def test_gh_issue_list_auth_failure_surfaces_hint() -> None:
-    from src.providers.gh import GhProvider
-
-    with patch_run_gh(side_effect=gh_auth_error()):
-        with pytest.raises(ExternalCallError) as exc_info:
-            GhProvider().run_json(
-                [
-                    "issue",
-                    "list",
-                    "--state",
-                    "open",
-                    "--limit",
-                    "30",
-                    "--json",
-                    "number,title,state,labels,url",
-                ]
-            )
-
-    assert "gh auth login" in exc_info.value.user_message.casefold()
-
-
-@pytest.mark.integration
-def test_gh_issue_list_transient_503_retries_then_succeeds() -> None:
-    fixture = fixture_dir(GH_WS) / "issues.json"
-    issues = json.loads(fixture.read_text(encoding="utf-8"))
-    state = {"failures": 0}
-
-    def handler(args, *, cwd=None, check=True):
-        if args[:2] != ["issue", "list"]:
-            raise GhCommandError(args, 1, f"unmocked: {args}")
-        if state["failures"] < 1:
-            state["failures"] += 1
-            raise gh_transient_error()
-        from subprocess import CompletedProcess
-
-        return CompletedProcess(args, 0, json.dumps(issues), "")
-
-    client = ExternalClient("gh", sleep=lambda _s: None)
-
-    with patch_run_gh(handler=handler):
-        with patch("src.providers.gh.ExternalClient", return_value=client):
-            result = RUNNER.invoke(app, ["gh", "--format", "json", "issue", "list"])
-
-    assert result.exit_code == 0
-    assert json.loads(result.stdout)[0]["number"] == 42
-
-
-@pytest.mark.integration
 def test_drive_upload_happy_path(tmp_path: Path) -> None:
     from src.services.drive_sync import upload_missing
 
@@ -230,23 +159,3 @@ def test_drive_upload_transient_list_retries_then_succeeds(tmp_path: Path) -> No
 
     assert result.failed == []
     assert "demo-repo/demo-repo-v1.0.0.zip" in result.uploaded
-
-
-@pytest.mark.integration
-def test_cli_run_entrypoint_maps_external_call_error(capsys, monkeypatch) -> None:
-    import sys
-    import typer
-
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        ["cli", "gh", "--format", "json", "issue", "list"],
-    )
-
-    with patch_run_gh(side_effect=gh_auth_error()):
-        with pytest.raises(typer.Exit) as exc_info:
-            run()
-
-    assert exc_info.value.exit_code == 1
-    captured = capsys.readouterr()
-    assert "gh auth login" in (captured.err + captured.out).casefold()
