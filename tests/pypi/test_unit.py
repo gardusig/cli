@@ -76,13 +76,21 @@ def test_suggest_next_release_version_bumps_published() -> None:
     assert suggest_next_release_version(published="1.0.3") == "1.0.4"
 
 
-def test_suggest_next_release_version_keeps_pyproject_on_first_release(tmp_path: Path) -> None:
+@patch("src.services.pypi_publish.fetch_latest_published_version", return_value=None)
+def test_suggest_next_release_version_keeps_pyproject_on_first_release(
+    _fetch: MagicMock,
+    tmp_path: Path,
+) -> None:
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text('[project]\nname = "x"\nversion = "1.0.6"\n', encoding="utf-8")
     assert suggest_next_release_version(published=None, root=tmp_path) == "1.0.6"
 
 
-def test_suggest_next_release_version_defaults_when_missing_pyproject(tmp_path: Path) -> None:
+@patch("src.services.pypi_publish.fetch_latest_published_version", return_value=None)
+def test_suggest_next_release_version_defaults_when_missing_pyproject(
+    _fetch: MagicMock,
+    tmp_path: Path,
+) -> None:
     assert suggest_next_release_version(published=None, root=tmp_path) == "0.1.0"
 
 

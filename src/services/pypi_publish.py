@@ -218,7 +218,7 @@ def suggest_next_release_version(
 
     try:
         return normalize_release_version(read_project_version(root))
-    except PyPiPublishError:
+    except (PyPiPublishError, OSError):
         return normalize_release_version(first_default)
 
 

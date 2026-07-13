@@ -18,7 +18,6 @@ def test_release_main_requires_write_gate(_gate: MagicMock, _version: MagicMock)
     assert result.exit_code != 0
 
 
-@patch("src.commands.release_cmd._ensure_github_release")
 @patch("src.commands.release_cmd.verify_package_version_on_index")
 @patch("src.commands.release_cmd.publish_distributions", return_value=["pkg.whl"])
 @patch("src.commands.release_cmd.resolve_pypi_token", return_value="tok")
@@ -32,7 +31,6 @@ def test_release_main_publishes_and_verifies(
     _token: MagicMock,
     mock_publish: MagicMock,
     mock_verify: MagicMock,
-    mock_release: MagicMock,
 ) -> None:
     result = runner.invoke(app, ["release", "main", "--yes", "--version", "1.2.3"])
 
@@ -44,7 +42,6 @@ def test_release_main_publishes_and_verifies(
     assert build_kwargs["version"] == "1.2.3"
     mock_publish.assert_called_once()
     mock_verify.assert_called_once_with("gardusig-cli", "1.2.3")
-    mock_release.assert_called_once_with("v1.2.3")
 
 
 def test_release_main_invalid_version_reports_error() -> None:

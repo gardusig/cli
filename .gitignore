@@ -38,7 +38,7 @@ src.egg-info/
 *.whl
 
 # --- Docker build context (generated from docker/.dockerignore before docker build) ---
-.dockerignore
+/.dockerignore
 
 # --- Integration temp dirs (host leaks outside Docker scratch) ---
 cli-git-*/

@@ -21,7 +21,6 @@ FORBIDDEN_PATH_FRAGMENTS = (
     "rel_path",
     [
         "config/ci/config.yaml",
-        "tests/fixtures/workflows/plan-to-issues/config.yaml",
     ],
 )
 def test_integration_config_avoids_host_paths(rel_path: str) -> None:

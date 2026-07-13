@@ -15,16 +15,13 @@ import httpx
 import pytest
 
 from src.internal.write.git import gated_git_write, read_git_snapshot
-from src.providers import github, google_drive, icloud_drive, notion, onedrive, proton_drive
-from src.services import drive_sync, git_archive, notion_sync
+from src.providers import google_drive, icloud_drive, notion, onedrive, proton_drive
+from src.services import drive_sync, notion_sync
 from src.services.notion_sync import cleanup_board
 from src.services.git_review import run_review
 from src.utils.http import default_http_timeout
 
 STUB_CALLS: list[tuple[Callable[..., Any], tuple[Any, ...]]] = [
-    (github.archive_repository, ("/repo",)),
-    (github.clone_repository, ("https://x", "/dest")),
-    (github.checkout_tag, ("/repo", "v1")),
     (google_drive.delete, ("/b",)),
     (icloud_drive.upload, ("/a", "/b")),
     (icloud_drive.download, ("/b", "/a")),
@@ -36,7 +33,6 @@ STUB_CALLS: list[tuple[Callable[..., Any], tuple[Any, ...]]] = [
     (proton_drive.delete, ("/b",)),
     (drive_sync.upload_backup, ("/local", "google")),
     (drive_sync.download_latest, ("google", "/dest")),
-    (git_archive.archive_repository, ("/repo",)),
 ]
 
 

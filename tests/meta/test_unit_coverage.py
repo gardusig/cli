@@ -171,28 +171,28 @@ def test_sync_main_resets_to_best_main(mock_run: MagicMock) -> None:
     assert ["reset", "--hard", "origin/main"] in [c.args[0] for c in mock_run.call_args_list]
 
 
-@patch("src.commands.drive.status_cmd")
+@patch("src.commands.backup.status_cmd")
 def test_backup_status_alias_calls_drive(mock_status: MagicMock) -> None:
     result = runner.invoke(app, ["backup", "status"])
     assert result.exit_code == 0
     mock_status.assert_called_once()
 
 
-@patch("src.commands.drive.ingest_cmd")
+@patch("src.commands.backup.ingest_cmd")
 def test_backup_repository_sync_alias(mock_ingest: MagicMock) -> None:
     result = runner.invoke(app, ["backup", "repository", "sync", "/tmp/repo"])
     assert result.exit_code == 0
     mock_ingest.assert_called_once_with("/tmp/repo")
 
 
-@patch("src.commands.drive.list_cmd")
+@patch("src.commands.backup.list_cmd")
 def test_backup_repository_list_alias(mock_list: MagicMock) -> None:
     result = runner.invoke(app, ["backup", "repository", "list"])
     assert result.exit_code == 0
     mock_list.assert_called_once_with(None)
 
 
-@patch("src.commands.drive.delete_cmd")
+@patch("src.commands.backup.delete_cmd")
 def test_backup_repository_delete_alias(mock_delete: MagicMock) -> None:
     result = runner.invoke(app, ["backup", "repository", "delete", "/tmp/repo", "v1", "--yes"])
     assert result.exit_code == 0
@@ -217,7 +217,7 @@ def test_hygiene_check_dispatches_structure(monkeypatch, tmp_path: Path) -> None
     assert calls[0][1]["extra_env"]["POLICY_FILE"] == str(policy.resolve())
 
 
-@patch("src.commands.pypi.pypi_upload_cmd")
+@patch("src.commands.publish.pypi_upload_cmd")
 def test_publish_pypi_upload_deprecated_alias(mock_upload: MagicMock) -> None:
     result = runner.invoke(app, ["publish", "pypi", "--yes", "--testpypi"])
     assert result.exit_code == 0
@@ -227,6 +227,7 @@ def test_publish_pypi_upload_deprecated_alias(mock_upload: MagicMock) -> None:
 
 
 def test_cli_run_surfaces_external_call_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    import typer
     from src.cli import run
     from src.utils.external_client import ExternalCallError
 
@@ -238,6 +239,6 @@ def test_cli_run_surfaces_external_call_error(monkeypatch: pytest.MonkeyPatch) -
         )
 
     monkeypatch.setattr("src.cli.app", _boom)
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(typer.Exit) as exc_info:
         run()
-    assert exc_info.value.code == 1
+    assert exc_info.value.exit_code == 1
