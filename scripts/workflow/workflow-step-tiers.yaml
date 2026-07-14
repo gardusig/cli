@@ -14,7 +14,12 @@ pull-request.yaml:
     checkout: short
     buildx: short
     unit-test: long
-  testpypi:
+
+release.yaml:
+  resolve:
+    checkout: short
+    meta: short
+  publish-testpypi:
     checkout: short
     buildx: short
     testpypi: medium
@@ -22,11 +27,6 @@ pull-request.yaml:
     checkout: short
     buildx: short
     testpypi-consumer: medium
-
-release.yaml:
-  resolve:
-    checkout: short
-    meta: short
   publish-pypi:
     checkout: short
     buildx: short

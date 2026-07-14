@@ -11,8 +11,8 @@ Workflows only orchestrate `docker build` and `docker run`. All pipeline logic l
 
 | Event | Workflow | Pipeline |
 | --- | --- | --- |
-| Pull request → `main` | [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml) | Version check → unit tests → TestPyPI publish → TestPyPI consumer |
-| Tag push | [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) | PyPI → Docker image → GitHub release |
+| Pull request → `main` | [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml) | Version check → unit tests |
+| Tag push | [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) | TestPyPI → integration → PyPI → Docker → GitHub release |
 
 ## Version formats
 
@@ -31,10 +31,8 @@ Push git tag `1.0.7` to run the full release pipeline. Tags must match semver `X
 | Resolve versions | `docker build` + `docker run` | `resolve` | `scripts/pull-request/resolve-version.sh` |
 | Version gate | `docker build` | `version-check` | `scripts/pull-request/version-check.sh` |
 | Unit tests | `docker build` | `unit-test` | `scripts/pull-request/unit-test.sh` |
-| TestPyPI publish | `docker build` | `testpypi` | `scripts/pull-request/testpypi-release.sh` |
-| TestPyPI consumer | `docker build` | `testpypi-consumer` | `scripts/pull-request/testpypi-consumer.sh` |
 
-`BASE_VERSION` is resolved inside the `resolve` Docker stage via `scripts/pull-request/host-last-published-version.sh` (greatest semver on PyPI or TestPyPI; empty on first publish).
+`BASE_VERSION` is resolved inside the `resolve` Docker stage via `scripts/pull-request/host-last-published-version.sh` (greatest semver on PyPI or TestPyPI; empty on first publish). PR CI does **not** publish to TestPyPI.
 
 ## Timeouts
 
@@ -62,16 +60,18 @@ Triggered by pushing a git tag; `resolve-tag-version.sh` runs in the `resolve` D
 
 | Job | Orchestration | Purpose |
 | --- | --- | --- |
-| Resolve version | `docker build` + `docker run` | `1.0.7` → PyPI/Docker `1.0.7` |
-| Publish to PyPI | `docker build` | `gardusig-cli==1.0.7` |
-| Docker image | `docker build` + `ci-tools` `docker run` | Build runtime, push `:1.0.7` and `:latest`, smoke |
+| Resolve version | `docker build` + `docker run` | Tag `1.0.7` → publish coordinates |
+| Publish to TestPyPI | `docker build` | `gardusig-cli==1.0.7` on TestPyPI |
+| TestPyPI consumer | `docker build` | pip install from TestPyPI + integration smoke |
+| Publish to PyPI | `docker build` | `gardusig-cli==1.0.7` on PyPI |
+| Docker image | `docker build` + `ci-tools` `docker run` | Build runtime from PyPI, push `:1.0.7` and `:latest`, smoke |
 | GitHub release | `ci-tools` `docker run` | Create release for tag `1.0.7` |
 
 ## Secrets
 
 | Secret | Used by |
 | --- | --- |
-| `TESTPYPI_API_TOKEN` | PR `testpypi` target |
+| `TESTPYPI_API_TOKEN` | Release `testpypi` target |
 | `PYPI_API_TOKEN` | Release `pypi` target |
 | `DOCKERHUB_TOKEN` | Release runtime image push |
 | `DOCKERHUB_USERNAME` | Release runtime image push |

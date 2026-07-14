@@ -1,12 +1,12 @@
 # Release to PyPI
 
-Production releases publish **`gardusig-cli`** to [PyPI](https://pypi.org/project/gardusig-cli/). Pull request CI uses [TestPyPI](https://test.pypi.org/project/gardusig-cli/) only.
+Production releases publish **`gardusig-cli`** to [PyPI](https://pypi.org/project/gardusig-cli/). Release CI publishes to [TestPyPI](https://test.pypi.org/project/gardusig-cli/) first, runs integration smoke against that install, then promotes to PyPI and Docker.
 
 ## Version source
 
 Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync).
 
-PR CI compares the PR version against the **greatest published PyPI or TestPyPI version** via `scripts/pull-request/version-check.sh`. The workflow resolves `BASE_VERSION` on the runner (`scripts/pull-request/host-last-published-version.sh`) and passes it as a Docker build-arg — **no git inside the image**. When nothing is published yet, the gate is skipped. Otherwise the PR version must be **strictly greater** than that baseline.
+PR CI compares the PR version against the **greatest published PyPI or TestPyPI version** via `scripts/pull-request/version-check.sh`. The `resolve` Docker stage sets `BASE_VERSION` (`scripts/pull-request/host-last-published-version.sh`) and passes it as a build-arg — **no git inside the image**. When nothing is published yet, the gate is skipped. Otherwise the PR version must be **strictly greater** than that baseline.
 
 To bump and write the next compatible version locally:
 
@@ -27,18 +27,25 @@ Example: `main` ships `1.0.3`; a release candidate PR bumps to **`1.1.0`** (or t
 | --- | --- | --- |
 | Validate version | `version-check` | `scripts/pull-request/version-check.sh` |
 | Unit tests | `unit-test` | `scripts/pull-request/unit-test.sh` (≥80% via `coverage-unit.ini`) |
-| TestPyPI publish | `testpypi` | `scripts/pull-request/testpypi-release.sh` |
-| TestPyPI consumer | `testpypi-consumer` | `scripts/pull-request/testpypi-consumer.sh` |
 
-Config: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml) (five jobs: resolve → version-check → unit-test → testpypi → testpypi-consumer).
+Config: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml) (resolve → version-check → unit-test).
 
 ## Release (semver tag)
 
 Triggered by pushing a git tag matching `X.Y.Z` (workflow listens on `*`, resolve step validates semver).
 
+| Step | Docker target | Script |
+| --- | --- | --- |
+| TestPyPI publish | `testpypi` | `scripts/pull-request/testpypi-release.sh` |
+| TestPyPI consumer | `testpypi-consumer` | `scripts/pull-request/testpypi-consumer.sh` |
+| PyPI publish | `pypi` | `scripts/release/pypi-release.sh` |
+| Docker runtime | `runtime` | pip install from PyPI |
+| GitHub release | `ci-github-release` | `scripts/release/create-github-release.sh` |
+
 | Job | Output |
 | --- | --- |
-| Resolve | `1.0.7` → PyPI/Docker `1.0.7` |
+| Resolve | Tag `1.0.7` → publish coordinates |
+| TestPyPI + consumer | Validate install from TestPyPI |
 | Publish to PyPI | `gardusig-cli==1.0.7` on [PyPI](https://pypi.org/project/gardusig-cli/) |
 | Docker image | `binarylifter/gardusig-cli:1.0.7` and `:latest` (installs from PyPI) |
 | GitHub release | Release notes for tag `1.0.7` |
@@ -73,7 +80,7 @@ Configure on **`gardusig/cli`**:
 
 | Secret / setting | Purpose |
 | --- | --- |
-| `TESTPYPI_API_TOKEN` | PR TestPyPI upload (`pypi-test` job) |
+| `TESTPYPI_API_TOKEN` | Release TestPyPI upload (`publish-testpypi` job) |
 | `PYPI_API_TOKEN` | Main PyPI publish (`release.yaml` → `pypi` target) |
 | `DOCKERHUB_TOKEN` | Release Docker image push |
 | `DOCKERHUB_USERNAME` | Release Docker image push (`binaryLifter`) |
