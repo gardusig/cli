@@ -90,6 +90,7 @@ Or run stages individually:
 export BASE_VERSION="$(bash scripts/pull-request/host-last-published-version.sh)"
 docker build -f docker/pull-request.dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
 docker build -f docker/pull-request.dockerfile --target unit-test .
+bash scripts/local/validate-release-consumer.sh
 docker build -f docker/release.dockerfile --target runtime --build-arg "CLI_VERSION=$(python3 -c 'import tomllib; print(tomllib.load(open(\"pyproject.toml\",\"rb\"))[\"project\"][\"version\"])')" .
 ```
 
