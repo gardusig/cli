@@ -59,6 +59,7 @@ def test_merge_readiness_app_local_pipeline_config() -> None:
     assert "testpypi-consumer" not in pr_workflow
     assert "publish-testpypi" in release_workflow
     assert "testpypi-consumer" in release_workflow
+    assert "pypi-consumer" in release_workflow
     assert "needs: version-check" in pr_workflow
     assert "needs: resolve" in pr_workflow
     assert "tags:" in release_workflow
