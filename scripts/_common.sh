@@ -5,9 +5,9 @@ set -euo pipefail
 # Stage timeouts — override via env (e.g. in workflow `env:` blocks).
 : "${CI_UNIT_TIMEOUT:=5m}"
 : "${CI_INTEGRATION_TIMEOUT:=3m}"
-: "${CI_DOCKER_BUILD_TIMEOUT:=10m}"
+: "${CI_DOCKER_BUILD_TIMEOUT:=5m}"
 : "${CI_VERSION_CHECK_TIMEOUT:=2m}"
-: "${CI_TESTPYPI_TIMEOUT:=8m}"
+: "${CI_TESTPYPI_TIMEOUT:=5m}"
 : "${CI_CONSUMER_TIMEOUT:=5m}"
 : "${CI_RESOLVE_TIMEOUT:=2m}"
 : "${CI_LINT_TIMEOUT:=5m}"
@@ -113,7 +113,13 @@ gh_docker_build() {
     echo "dockerignore not found: ${root}/${dockerignore}" >&2
     exit 1
   fi
-  docker build -f "${root}/${dockerfile}" --ignorefile "${root}/${dockerignore}" --target "$target" "$@" "${root}"
+  local -a ignore_args=()
+  if docker build --help 2>&1 | grep -q -- '--ignorefile'; then
+    ignore_args=(--ignorefile "${root}/${dockerignore}")
+  elif [[ ! -e "${root}/.dockerignore" ]]; then
+    ln -sf "${dockerignore}" "${root}/.dockerignore"
+  fi
+  docker build -f "${root}/${dockerfile}" "${ignore_args[@]}" --target "$target" "$@" "${root}"
 }
 
 export_cli_test_profile() {

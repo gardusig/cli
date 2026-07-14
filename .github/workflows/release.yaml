@@ -17,8 +17,8 @@ env:
   RELEASE_DOCKERFILE: docker/release.dockerfile
   DOCKERIGNORE: docker/.dockerignore
   RUNTIME_IMAGE: binarylifter/gardusig-cli
-  CI_DOCKER_BUILD_TIMEOUT: 10m
-  CI_TESTPYPI_TIMEOUT: 8m
+  CI_DOCKER_BUILD_TIMEOUT: 5m
+  CI_TESTPYPI_TIMEOUT: 5m
   CI_RESOLVE_TIMEOUT: 2m
   CI_RELEASE_SMOKE_TIMEOUT: 3m
   CI_DOCKER_PUSH_TIMEOUT: 5m
@@ -51,7 +51,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
         timeout-minutes: 3
       - name: docker build — pypi
-        timeout-minutes: 12
+        timeout-minutes: 5
         env:
           CLI_RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
@@ -67,7 +67,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
         timeout-minutes: 3
       - name: docker build — runtime (from PyPI)
-        timeout-minutes: 10
+        timeout-minutes: 5
         env:
           CLI_VERSION: ${{ needs.resolve.outputs.docker_tag }}
         run: bash scripts/release/build-runtime-image.sh

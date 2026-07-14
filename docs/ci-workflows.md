@@ -4,7 +4,7 @@ This repo owns two GitHub Actions workflows and two Dockerfiles under `docker/`:
 
 - `docker/pull-request.dockerfile` — PR pipeline (build from source)
 - `docker/release.dockerfile` — release (PyPI publish + runtime image)
-- `docker/.dockerignore` — build context ignore rules (via `docker build --ignorefile`)
+- `docker/.dockerignore` — build context ignore rules (symlinked to `.dockerignore` when `--ignorefile` is unavailable)
 
 Workflows call `scripts/pull-request/` and `scripts/release/`; Docker stages call matching scripts under those directories.
 
@@ -44,9 +44,9 @@ Workflow steps and pipeline scripts fail if they exceed their time limit (`timeo
 | --- | --- | --- |
 | `CI_UNIT_TIMEOUT` | `5m` | Unit tests (`unit-test.sh`) |
 | `CI_INTEGRATION_TIMEOUT` | `3m` | Integration smoke (`integration-smoke.sh`) |
-| `CI_DOCKER_BUILD_TIMEOUT` | `10m` | `docker build` wrapper (`build.sh`) |
+| `CI_DOCKER_BUILD_TIMEOUT` | `5m` | `docker build` wrapper (`build.sh`) |
 | `CI_VERSION_CHECK_TIMEOUT` | `2m` | Version gate |
-| `CI_TESTPYPI_TIMEOUT` | `8m` | TestPyPI / PyPI publish |
+| `CI_TESTPYPI_TIMEOUT` | `5m` | TestPyPI / PyPI publish |
 | `CI_CONSUMER_TIMEOUT` | `5m` | Post-install consumer smoke |
 | `CI_RESOLVE_TIMEOUT` | `2m` | Version resolve scripts |
 | `CI_RELEASE_SMOKE_TIMEOUT` | `3m` | Runtime image smoke |
