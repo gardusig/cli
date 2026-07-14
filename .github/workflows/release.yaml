@@ -153,6 +153,7 @@ jobs:
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "${HOME}/.docker/config.json:/root/.docker/config.json:ro" \
             -e CLI_VERSION="${CLI_VERSION}" \
             -e RUNTIME_IMAGE="${RUNTIME_IMAGE}" \
             ci-release-push
@@ -164,6 +165,7 @@ jobs:
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "${HOME}/.docker/config.json:/root/.docker/config.json:ro" \
             -e CLI_VERSION="${CLI_VERSION}" \
             -e RUNTIME_IMAGE="${RUNTIME_IMAGE}" \
             ci-release-smoke
