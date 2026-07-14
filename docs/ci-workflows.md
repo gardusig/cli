@@ -4,7 +4,7 @@ This repo owns two GitHub Actions workflows and two Dockerfiles under `docker/`:
 
 - `docker/pull-request.dockerfile` — PR pipeline (build from source)
 - `docker/release.dockerfile` — release (PyPI publish + runtime image)
-- `docker/.dockerignore` — sole build-context ignore rules (staged to `.dockerignore` at build time)
+- `docker/.dockerignore` — sole build-context ignore rules (`--ignorefile` when supported; otherwise a temporary root copy during build)
 
 Workflows call `scripts/pull-request/` and `scripts/release/`; Docker stages call matching scripts under those directories.
 

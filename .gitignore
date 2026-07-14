@@ -2,7 +2,7 @@
 #   config/ docs/ scripts/ src/ tests/ .github/
 #   docker/.dockerignore docker/pull-request.dockerfile docker/release.dockerfile
 #
-# Ephemeral link staged by gh_docker_build (canonical ignore: docker/.dockerignore)
+# Ephemeral copy staged by gh_docker_build on older Docker (canonical: docker/.dockerignore)
 .dockerignore
 #
 # --- Cursor / IDE ---

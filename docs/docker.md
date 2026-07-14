@@ -9,13 +9,11 @@ bash scripts/pull-request/build.sh unit-test
 bash scripts/release/build.sh runtime
 ```
 
-Or invoke Docker directly after staging the ignore file:
+Or invoke Docker directly when your CLI supports `--ignorefile`:
 
 ```bash
-ln -sf docker/.dockerignore .dockerignore
-docker build -f docker/pull-request.dockerfile --target <stage> .
-docker build -f docker/release.dockerfile --target <stage> .
-rm -f .dockerignore
+docker build -f docker/pull-request.dockerfile --ignorefile docker/.dockerignore --target <stage> .
+docker build -f docker/release.dockerfile --ignorefile docker/.dockerignore --target <stage> .
 ```
 
 Common PR targets (`docker/pull-request.dockerfile`): `version-check`, `unit-test`, `testpypi`, `testpypi-consumer`.
