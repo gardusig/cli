@@ -5,7 +5,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"
 
 expected="${CLI_VERSION:?CLI_VERSION required}"
-if [[ -n "${RUNTIME_IMAGE:-}" ]]; then
+if command -v docker >/dev/null 2>&1 && [[ -n "${RUNTIME_IMAGE:-}" ]]; then
   got="$(docker run --rm "${RUNTIME_IMAGE}:${expected}" --version)"
 else
   got="$(cli --version)"
