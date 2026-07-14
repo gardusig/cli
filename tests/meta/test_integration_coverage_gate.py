@@ -7,15 +7,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from src.integration.integration_coverage import assert_integration_coverage_gate
-
 ROOT = Path(__file__).resolve().parents[2]
 CHECK_SCRIPT = ROOT / "tests" / "integration" / "check_integration_coverage.py"
 SMOKE = ROOT / "scripts" / "pull-request" / "integration-smoke.sh"
-
-
-def test_integration_coverage_gate_passes() -> None:
-    assert_integration_coverage_gate()
 
 
 def test_integration_smoke_script_exists() -> None:

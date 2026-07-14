@@ -18,6 +18,14 @@ RUN apt-get update \
 
 WORKDIR /workspace
 
+FROM base AS resolve
+
+COPY pyproject.toml ./
+COPY scripts/_common.sh scripts/_common.sh
+COPY scripts/release/resolve-tag-version.sh scripts/release/resolve-tag-version.sh
+
+ENTRYPOINT ["bash", "scripts/release/resolve-tag-version.sh"]
+
 FROM base AS pypi
 
 ARG CLI_RELEASE_VERSION=
@@ -40,3 +48,25 @@ RUN pip install --no-cache-dir "gardusig-cli==${CLI_VERSION}"
 
 ENTRYPOINT ["cli"]
 CMD ["--help"]
+
+FROM docker:27-cli AS ci-tools
+
+ENV CI_DOCKER_PUSH_TIMEOUT=5m \
+    CI_RELEASE_SMOKE_TIMEOUT=3m
+
+RUN apk add --no-cache bash github-cli
+
+WORKDIR /workspace
+COPY scripts/_common.sh scripts/_common.sh
+COPY scripts/release/push-runtime-image.sh scripts/release/push-runtime-image.sh
+COPY scripts/release/smoke-runtime-image.sh scripts/release/smoke-runtime-image.sh
+COPY scripts/release/create-github-release.sh scripts/release/create-github-release.sh
+
+FROM ci-tools AS ci-push
+ENTRYPOINT ["bash", "scripts/release/push-runtime-image.sh"]
+
+FROM ci-tools AS ci-smoke
+ENTRYPOINT ["bash", "scripts/release/smoke-runtime-image.sh"]
+
+FROM ci-tools AS ci-github-release
+ENTRYPOINT ["bash", "scripts/release/create-github-release.sh"]

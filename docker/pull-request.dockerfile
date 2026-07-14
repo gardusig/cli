@@ -21,6 +21,15 @@ RUN apt-get update \
 
 WORKDIR /workspace
 
+FROM base AS resolve
+
+COPY pyproject.toml ./
+COPY scripts/_common.sh scripts/_common.sh
+COPY scripts/pull-request/resolve-version.sh scripts/pull-request/resolve-version.sh
+COPY scripts/pull-request/host-last-published-version.sh scripts/pull-request/host-last-published-version.sh
+
+ENTRYPOINT ["bash", "scripts/pull-request/resolve-version.sh"]
+
 FROM base AS version-check
 
 ARG BASE_VERSION=
@@ -34,9 +43,7 @@ RUN bash scripts/pull-request/version-check.sh
 FROM base AS unit-test
 
 COPY pyproject.toml uv.lock README.md LICENSE coverage-unit.ini ./
-COPY scripts/_common.sh scripts/_common.sh
-COPY scripts/pull-request scripts/pull-request
-COPY scripts/release scripts/release
+COPY scripts/ scripts/
 COPY .github/workflows .github/workflows
 COPY docker docker
 COPY docs docs

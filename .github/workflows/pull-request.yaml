@@ -14,88 +14,112 @@ permissions:
 
 env:
   PR_DOCKERFILE: docker/pull-request.dockerfile
-  CI_UNIT_TIMEOUT: 5m
-  CI_INTEGRATION_TIMEOUT: 3m
-  CI_DOCKER_BUILD_TIMEOUT: 5m
-  CI_VERSION_CHECK_TIMEOUT: 2m
-  CI_TESTPYPI_TIMEOUT: 5m
-  CI_CONSUMER_TIMEOUT: 5m
-  CI_RESOLVE_TIMEOUT: 2m
 
 jobs:
   resolve:
     name: Resolve versions
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 9
     outputs:
       version: ${{ steps.meta.outputs.version }}
       base_version: ${{ steps.meta.outputs.base_version }}
     steps:
-      - uses: actions/checkout@v4
+      - id: checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: docker/setup-buildx-action@v3
         timeout-minutes: 3
-      - name: Resolve PR and PyPI versions
+      - id: buildx
+        uses: docker/setup-buildx-action@v3
         timeout-minutes: 3
-        id: meta
-        run: bash scripts/pull-request/resolve-version.sh
+      - id: meta
+        name: docker — resolve
+        timeout-minutes: 3
+        run: |
+          docker build -f "${PR_DOCKERFILE}" --target resolve -t ci-pr-resolve .
+          docker run --rm \
+            -e GITHUB_OUTPUT \
+            -v "${GITHUB_OUTPUT}:${GITHUB_OUTPUT}" \
+            ci-pr-resolve
 
   version-check:
     name: Version check
     needs: resolve
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - id: checkout
+        uses: actions/checkout@v4
         timeout-minutes: 3
-      - name: docker build — version-check
-        timeout-minutes: 5
+      - id: buildx
+        uses: docker/setup-buildx-action@v3
+        timeout-minutes: 3
+      - id: version-check
+        name: docker build — version-check
+        timeout-minutes: 6
         env:
           BASE_VERSION: ${{ needs.resolve.outputs.base_version }}
-        run: bash scripts/pull-request/build-version-check.sh
+        run: |
+          docker build -f "${PR_DOCKERFILE}" --target version-check \
+            --build-arg "BASE_VERSION=${BASE_VERSION}" .
 
   unit-test:
     name: Unit tests
     needs: version-check
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - id: checkout
+        uses: actions/checkout@v4
         timeout-minutes: 3
-      - name: docker build — unit-test
-        timeout-minutes: 5
-        run: bash scripts/pull-request/build-unit-test.sh
+      - id: buildx
+        uses: docker/setup-buildx-action@v3
+        timeout-minutes: 3
+      - id: unit-test
+        name: docker build — unit-test
+        timeout-minutes: 9
+        run: docker build -f "${PR_DOCKERFILE}" --target unit-test .
 
   testpypi:
     name: Publish to TestPyPI
     needs: [resolve, unit-test]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - id: checkout
+        uses: actions/checkout@v4
         timeout-minutes: 3
-      - name: docker build — testpypi
-        timeout-minutes: 5
+      - id: buildx
+        uses: docker/setup-buildx-action@v3
+        timeout-minutes: 3
+      - id: testpypi
+        name: docker build — testpypi
+        timeout-minutes: 6
         env:
           CLI_RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
           TESTPYPI_API_TOKEN: ${{ secrets.TESTPYPI_API_TOKEN }}
-        run: bash scripts/pull-request/build-testpypi.sh
+        run: |
+          docker build -f "${PR_DOCKERFILE}" --target testpypi \
+            --build-arg "CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION}" \
+            --build-arg "TESTPYPI_API_TOKEN=${TESTPYPI_API_TOKEN}" .
 
   testpypi-consumer:
     name: Install from TestPyPI
     needs: [resolve, testpypi]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - id: checkout
+        uses: actions/checkout@v4
         timeout-minutes: 3
-      - name: docker build — testpypi-consumer
-        timeout-minutes: 5
+      - id: buildx
+        uses: docker/setup-buildx-action@v3
+        timeout-minutes: 3
+      - id: testpypi-consumer
+        name: docker build — testpypi-consumer
+        timeout-minutes: 6
         env:
           CLI_RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
-        run: bash scripts/pull-request/build-testpypi-consumer.sh
+        run: |
+          docker build -f "${PR_DOCKERFILE}" --target testpypi-consumer \
+            --build-arg "CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION}" .

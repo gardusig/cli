@@ -333,15 +333,5 @@ def format_integration_coverage_report() -> str:
     return "\n".join(lines)
 
 
-def assert_integration_coverage_gate() -> None:
-    """Legacy inventory gate — read-only shell smoke is the integration source of truth."""
-    from pathlib import Path
-
-    root = Path(__file__).resolve().parents[2]
-    smoke = root / "scripts" / "pull-request" / "integration-smoke.sh"
-    if not smoke.is_file():
-        raise AssertionError(f"missing integration smoke script: {smoke}")
-
-
 def manifest_json(*, indent: int = 2) -> str:
     return json.dumps(integration_coverage_manifest(), indent=indent)

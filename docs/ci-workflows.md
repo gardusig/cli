@@ -5,7 +5,7 @@ This repo owns two GitHub Actions workflows and two Dockerfiles under `docker/`:
 - `docker/pull-request.dockerfile` — PR pipeline (per-target `COPY` lists)
 - `docker/release.dockerfile` — release (PyPI publish + runtime image)
 
-Workflows call `scripts/pull-request/` and `scripts/release/`; Docker stages call matching scripts under those directories.
+Workflows only orchestrate `docker build` and `docker run`. All pipeline logic lives in `scripts/` and runs inside Docker stages (or `ci-tools` for host-docker operations like push/smoke/release).
 
 ## Triggers
 
@@ -26,43 +26,46 @@ Push git tag `1.0.7` to run the full release pipeline. Tags must match semver `X
 
 ## Pull request
 
-| Step | Docker target | Script |
-| --- | --- | --- |
-| Version gate | `version-check` | `scripts/pull-request/version-check.sh` |
-| Unit tests | `unit-test` | `scripts/pull-request/unit-test.sh` |
-| TestPyPI publish | `testpypi` | `scripts/pull-request/testpypi-release.sh` |
-| TestPyPI consumer | `testpypi-consumer` | `scripts/pull-request/testpypi-consumer.sh` |
+| Step | Orchestration | Docker target | Script (inside image) |
+| --- | --- | --- | --- |
+| Resolve versions | `docker build` + `docker run` | `resolve` | `scripts/pull-request/resolve-version.sh` |
+| Version gate | `docker build` | `version-check` | `scripts/pull-request/version-check.sh` |
+| Unit tests | `docker build` | `unit-test` | `scripts/pull-request/unit-test.sh` |
+| TestPyPI publish | `docker build` | `testpypi` | `scripts/pull-request/testpypi-release.sh` |
+| TestPyPI consumer | `docker build` | `testpypi-consumer` | `scripts/pull-request/testpypi-consumer.sh` |
 
-`BASE_VERSION` is resolved on the runner via `scripts/pull-request/host-last-published-version.sh` (greatest semver on PyPI or TestPyPI; empty on first publish).
+`BASE_VERSION` is resolved inside the `resolve` Docker stage via `scripts/pull-request/host-last-published-version.sh` (greatest semver on PyPI or TestPyPI; empty on first publish).
 
 ## Timeouts
 
-Workflow steps and pipeline scripts fail if they exceed their time limit (`timeout` / `timeout-minutes`).
+GitHub Actions step limits use tier labels from `scripts/workflow/workflow-step-tiers.yaml`:
 
-| Variable | Default | Used by |
+| Tier | Minutes | Typical steps |
 | --- | --- | --- |
-| `CI_UNIT_TIMEOUT` | `5m` | Unit tests (`unit-test.sh`) |
-| `CI_INTEGRATION_TIMEOUT` | `3m` | Integration smoke (`integration-smoke.sh`) |
-| `CI_DOCKER_BUILD_TIMEOUT` | `5m` | `docker build` wrapper (`build.sh`) |
-| `CI_VERSION_CHECK_TIMEOUT` | `2m` | Version gate |
-| `CI_TESTPYPI_TIMEOUT` | `5m` | TestPyPI / PyPI publish |
-| `CI_CONSUMER_TIMEOUT` | `5m` | Post-install consumer smoke |
-| `CI_RESOLVE_TIMEOUT` | `2m` | Version resolve scripts |
-| `CI_RELEASE_SMOKE_TIMEOUT` | `3m` | Runtime image smoke |
-| `CI_DOCKER_PUSH_TIMEOUT` | `5m` | Docker Hub push |
+| `short` | 3 | checkout, buildx, resolve, login |
+| `medium` | 6 | docker build (fast), push, consumer |
+| `long` | 9 | unit-test docker build |
 
-GitHub Actions also sets per-step `timeout-minutes` on each workflow step (typically 3–12 minutes).
+Each job `timeout-minutes` is the **sum** of its step timeouts. Apply or verify:
+
+```bash
+bash scripts/workflow/sum-job-timeouts.sh      # print sums from config
+bash scripts/workflow/apply-timeouts.sh        # write step + job timeouts
+bash scripts/workflow/apply-timeouts.sh --check
+```
+
+Pipeline scripts enforce limits via `CI_*_TIMEOUT` and `stage_run_with_timeout` (set in Dockerfiles, not workflow YAML).
 
 ## Release (tag `*`)
 
-Triggered by pushing a git tag; `resolve-tag-version.sh` accepts only semver `X.Y.Z` (legacy `vX.Y.Z` is stripped).
+Triggered by pushing a git tag; `resolve-tag-version.sh` runs in the `resolve` Docker stage and accepts only semver `X.Y.Z` (legacy `vX.Y.Z` is stripped).
 
-| Job | Purpose |
-| --- | --- |
-| Resolve version | `1.0.7` → PyPI/Docker `1.0.7` |
-| Publish to PyPI | `gardusig-cli==1.0.7` |
-| Docker image | `pip install gardusig-cli==1.0.7` → push `:1.0.7` and `:latest` |
-| GitHub release | Create release for tag `1.0.7` |
+| Job | Orchestration | Purpose |
+| --- | --- | --- |
+| Resolve version | `docker build` + `docker run` | `1.0.7` → PyPI/Docker `1.0.7` |
+| Publish to PyPI | `docker build` | `gardusig-cli==1.0.7` |
+| Docker image | `docker build` + `ci-tools` `docker run` | Build runtime, push `:1.0.7` and `:latest`, smoke |
+| GitHub release | `ci-tools` `docker run` | Create release for tag `1.0.7` |
 
 ## Secrets
 
