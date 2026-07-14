@@ -18,6 +18,12 @@ set -euo pipefail
 : "${PIP_INSTALL_INITIAL_DELAY:=4}"
 : "${PIP_INSTALL_BACKOFF_MULTIPLIER:=2}"
 : "${PIP_INSTALL_MAX_DELAY:=45}"
+: "${PYPI_INDEX_SETTLE_SECONDS:=0}"
+: "${DOCKER_REGISTRY_SETTLE_SECONDS:=0}"
+: "${DOCKER_PULL_ATTEMPTS:=12}"
+: "${DOCKER_PULL_INITIAL_DELAY:=4}"
+: "${DOCKER_PULL_BACKOFF_MULTIPLIER:=2}"
+: "${DOCKER_PULL_MAX_DELAY:=45}"
 
 gh_repo_root() {
   cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd
@@ -182,6 +188,36 @@ print(int(math.ceil(delay)))
 PY
 }
 
+pypi_registry_backoff_seconds() {
+  pypi_backoff_seconds "$1"
+}
+
+docker_registry_backoff_seconds() {
+  local attempt="$1"
+  python3 - <<'PY' "$attempt" "${DOCKER_PULL_INITIAL_DELAY}" "${DOCKER_PULL_BACKOFF_MULTIPLIER}" "${DOCKER_PULL_MAX_DELAY}"
+import math
+import sys
+
+attempt = int(sys.argv[1])
+initial = float(sys.argv[2])
+multiplier = float(sys.argv[3])
+cap = float(sys.argv[4])
+delay = min(initial * (multiplier ** max(0, attempt - 1)), cap)
+print(int(math.ceil(delay)))
+PY
+}
+
+pypi_settle_before_pull() {
+  local package="$1"
+  local version="$2"
+  local index="${3:-pypi}"
+  local settle="${PYPI_INDEX_SETTLE_SECONDS}"
+  if (( settle > 0 )); then
+    echo "settling ${settle}s before checking ${package}==${version} on ${index}..."
+    sleep "$settle"
+  fi
+}
+
 pypi_index_has_version() {
   local package="$1"
   local version="$2"
@@ -226,6 +262,8 @@ pypi_wait_and_install_package() {
   local attempt=1
   local -a pip_args=()
 
+  pypi_settle_before_pull "$package" "$version" "$index"
+
   while (( attempt <= attempts )); do
     if pypi_index_has_version "$package" "$version" "$index"; then
       mapfile -d '' -t pip_args < <(pypi_pip_install_args "$package" "$version" "$index")
@@ -246,6 +284,53 @@ pypi_wait_and_install_package() {
     attempt=$((attempt + 1))
   done
   echo "failed to install ${package}==${version} from ${index} after ${attempts} attempts" >&2
+  return 1
+}
+
+docker_registry_has_tag() {
+  local image="${1:?image required}"
+  local tag="${2:?tag required}"
+  curl -fsS "https://hub.docker.com/v2/repositories/${image}/tags/${tag}/" >/dev/null 2>&1
+}
+
+docker_settle_before_pull() {
+  local image="$1"
+  local tag="$2"
+  local settle="${DOCKER_REGISTRY_SETTLE_SECONDS}"
+  if (( settle > 0 )); then
+    echo "settling ${settle}s before checking ${image}:${tag} on Docker Hub..."
+    sleep "$settle"
+  fi
+}
+
+# Wait for Docker Hub tag propagation, then pull, with exponential backoff between attempts.
+docker_wait_and_pull() {
+  local image="${1:?image required}"
+  local tag="${2:?tag required}"
+  local attempts="${DOCKER_PULL_ATTEMPTS}"
+  local attempt=1
+
+  docker_settle_before_pull "$image" "$tag"
+
+  while (( attempt <= attempts )); do
+    if docker_registry_has_tag "$image" "$tag"; then
+      if docker pull "${image}:${tag}"; then
+        echo "pulled ${image}:${tag} from Docker Hub"
+        return 0
+      fi
+      echo "registry lists ${image}:${tag} but docker pull failed (${attempt}/${attempts})"
+    else
+      echo "waiting for ${image}:${tag} on Docker Hub (${attempt}/${attempts})..."
+    fi
+    if (( attempt < attempts )); then
+      local delay
+      delay="$(docker_registry_backoff_seconds "$attempt")"
+      echo "retrying in ${delay}s..."
+      sleep "$delay"
+    fi
+    attempt=$((attempt + 1))
+  done
+  echo "failed to pull ${image}:${tag} from Docker Hub after ${attempts} attempts" >&2
   return 1
 }
 

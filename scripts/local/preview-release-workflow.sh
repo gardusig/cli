@@ -129,6 +129,15 @@ else
 fi
 echo
 
+echo "--- pypi-consumer ---"
+if _publish_flag "${PUBLISH_PYPI:-0}" || _pypi_has_version "${docker_tag}" pypi; then
+  docker build -f "${dockerfile}" --target pypi-consumer \
+    --build-arg "CLI_RELEASE_VERSION=${docker_tag}" .
+else
+  echo "skip pypi-consumer (gardusig-cli==${docker_tag} not on PyPI; set PUBLISH_PYPI=1 first)"
+fi
+echo
+
 echo "--- publish-docker — build runtime ---"
 if _publish_flag "${PUBLISH_PYPI:-0}"; then
   docker build -f "${dockerfile}" --target runtime \

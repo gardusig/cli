@@ -53,7 +53,8 @@ ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
     PIP_INSTALL_ATTEMPTS=12 \
     PIP_INSTALL_INITIAL_DELAY=4 \
     PIP_INSTALL_BACKOFF_MULTIPLIER=2 \
-    PIP_INSTALL_MAX_DELAY=45
+    PIP_INSTALL_MAX_DELAY=45 \
+    PYPI_INDEX_SETTLE_SECONDS=20
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends bash git ca-certificates curl \
@@ -68,6 +69,34 @@ COPY scripts/pull-request/testpypi-consumer-body.sh scripts/pull-request/testpyp
 COPY scripts/pull-request/consumer/_common.sh scripts/pull-request/consumer/_common.sh
 COPY scripts/pull-request/consumer/run.sh scripts/pull-request/consumer/run.sh
 RUN bash scripts/pull-request/testpypi-consumer.sh
+
+FROM python:3.12-slim AS pypi-consumer
+
+ARG CLI_RELEASE_VERSION=
+ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
+    PYPI_INDEX=pypi \
+    CLI_PROFILE=test \
+    CI_CONSUMER_TIMEOUT=10m \
+    CI_INTEGRATION_TIMEOUT=3m \
+    PIP_INSTALL_ATTEMPTS=12 \
+    PIP_INSTALL_INITIAL_DELAY=4 \
+    PIP_INSTALL_BACKOFF_MULTIPLIER=2 \
+    PIP_INSTALL_MAX_DELAY=45 \
+    PYPI_INDEX_SETTLE_SECONDS=20
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bash git ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+COPY tests/fixtures/config/config.yaml tests/fixtures/config/config.test.yaml tests/fixtures/config/drives.yaml tests/fixtures/config/
+COPY scripts/_common.sh scripts/_common.sh
+COPY scripts/pull-request/_smoke.sh scripts/pull-request/_smoke.sh
+COPY scripts/pull-request/testpypi-consumer-body.sh scripts/pull-request/testpypi-consumer-body.sh
+COPY scripts/pull-request/consumer/_common.sh scripts/pull-request/consumer/_common.sh
+COPY scripts/pull-request/consumer/run.sh scripts/pull-request/consumer/run.sh
+COPY scripts/release/pypi-consumer.sh scripts/release/pypi-consumer.sh
+RUN bash scripts/release/pypi-consumer.sh
 
 FROM base AS pypi
 
@@ -92,6 +121,7 @@ ENV CLI_VERSION=${CLI_VERSION} \
     PIP_INSTALL_INITIAL_DELAY=4 \
     PIP_INSTALL_BACKOFF_MULTIPLIER=2 \
     PIP_INSTALL_MAX_DELAY=45 \
+    PYPI_INDEX_SETTLE_SECONDS=20 \
     CI_RUNTIME_INSTALL_TIMEOUT=10m
 
 RUN apt-get update \
@@ -111,15 +141,22 @@ CMD ["--help"]
 FROM docker:27-cli AS ci-tools
 
 ENV CI_DOCKER_PUSH_TIMEOUT=5m \
-    CI_RELEASE_SMOKE_TIMEOUT=3m
+    CI_RELEASE_SMOKE_TIMEOUT=3m \
+    DOCKER_REGISTRY_SETTLE_SECONDS=20 \
+    DOCKER_PULL_ATTEMPTS=12 \
+    DOCKER_PULL_INITIAL_DELAY=4 \
+    DOCKER_PULL_BACKOFF_MULTIPLIER=2 \
+    DOCKER_PULL_MAX_DELAY=45
 
-RUN apk add --no-cache bash github-cli coreutils
+RUN apk add --no-cache bash github-cli coreutils curl
 
 WORKDIR /workspace
+COPY tests/fixtures/config/config.yaml tests/fixtures/config/config.test.yaml tests/fixtures/config/drives.yaml tests/fixtures/config/
 COPY scripts/_common.sh scripts/_common.sh
 COPY scripts/release/push-runtime-image.sh scripts/release/push-runtime-image.sh
 COPY scripts/release/smoke-runtime-image.sh scripts/release/smoke-runtime-image.sh
 COPY scripts/release/verify-runtime-version.sh scripts/release/verify-runtime-version.sh
+COPY scripts/release/runtime-docker-smoke.sh scripts/release/runtime-docker-smoke.sh
 COPY scripts/release/create-github-release.sh scripts/release/create-github-release.sh
 
 FROM ci-tools AS ci-push
