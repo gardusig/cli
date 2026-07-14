@@ -56,7 +56,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
         timeout-minutes: 3
       - id: testpypi
-        name: docker build — testpypi
+        name: Publish to TestPyPI
         timeout-minutes: 6
         env:
           CLI_RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
@@ -79,7 +79,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
         timeout-minutes: 3
       - id: testpypi-consumer
-        name: docker build — testpypi-consumer
+        name: Install from TestPyPI
         timeout-minutes: 6
         env:
           CLI_RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
@@ -99,8 +99,8 @@ jobs:
       - id: buildx
         uses: docker/setup-buildx-action@v4
         timeout-minutes: 3
-      - id: pypi
-        name: docker build — pypi
+      - id: publish-pypi
+        name: Publish to PyPI
         timeout-minutes: 6
         env:
           CLI_RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
@@ -110,11 +110,11 @@ jobs:
             --build-arg "CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION}" \
             --build-arg "PYPI_API_TOKEN=${PYPI_API_TOKEN}" .
 
-  docker-release:
-    name: Docker image
+  publish-docker:
+    name: Publish to Docker
     needs: [resolve, publish-pypi]
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 33
     steps:
       - id: checkout
         uses: actions/checkout@v5
@@ -123,8 +123,8 @@ jobs:
         uses: docker/setup-buildx-action@v4
         timeout-minutes: 3
       - id: runtime
-        name: docker build — runtime (from PyPI)
-        timeout-minutes: 6
+        name: Publish to Docker — build runtime
+        timeout-minutes: 9
         env:
           CLI_VERSION: ${{ needs.resolve.outputs.docker_tag }}
         run: |
@@ -145,8 +145,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - id: docker-push
-        name: Push Docker tags (${{ needs.resolve.outputs.docker_tag }}, latest)
+      - id: publish-docker
+        name: Publish to Docker
         timeout-minutes: 6
         env:
           CLI_VERSION: ${{ needs.resolve.outputs.docker_tag }}
@@ -157,7 +157,7 @@ jobs:
             -e RUNTIME_IMAGE="${RUNTIME_IMAGE}" \
             ci-release-push
       - id: runtime-smoke
-        name: Pull and smoke-test published image
+        name: Publish to Docker — smoke
         timeout-minutes: 6
         env:
           CLI_VERSION: ${{ needs.resolve.outputs.docker_tag }}
@@ -168,9 +168,9 @@ jobs:
             -e RUNTIME_IMAGE="${RUNTIME_IMAGE}" \
             ci-release-smoke
 
-  github-release:
-    name: GitHub release
-    needs: [resolve, docker-release]
+  publish-github:
+    name: Publish to GitHub
+    needs: [resolve, publish-docker]
     runs-on: ubuntu-latest
     timeout-minutes: 9
     steps:
@@ -183,8 +183,8 @@ jobs:
         name: docker build — ci-github-release
         timeout-minutes: 3
         run: docker build -f "${RELEASE_DOCKERFILE}" --target ci-github-release -t ci-github-release .
-      - id: github-release
-        name: docker run — github-release
+      - id: publish-github
+        name: Publish to GitHub
         timeout-minutes: 3
         env:
           GH_TOKEN: ${{ github.token }}

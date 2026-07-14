@@ -147,6 +147,23 @@ def test_load_yaml_invalid_mapping_raises(tmp_path: Path) -> None:
         load_yaml(path)
 
 
+def test_pypi_backoff_seconds() -> None:
+    import subprocess
+    from pathlib import Path
+
+    common = Path(__file__).resolve().parents[2] / "scripts" / "_common.sh"
+    for attempt, expected in ((1, "4"), (2, "8"), (3, "16"), (5, "45")):
+        out = subprocess.check_output(
+            [
+                "bash",
+                "-c",
+                f'source "{common}" && PIP_INSTALL_INITIAL_DELAY=4 PIP_INSTALL_BACKOFF_MULTIPLIER=2 PIP_INSTALL_MAX_DELAY=45 pypi_backoff_seconds {attempt}',
+            ],
+            text=True,
+        ).strip()
+        assert out == expected, f"attempt {attempt}: got {out}"
+
+
 def test_gh_version_prefix_helpers() -> None:
     import subprocess
     from pathlib import Path

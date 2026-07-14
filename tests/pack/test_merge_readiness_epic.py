@@ -65,7 +65,9 @@ def test_merge_readiness_app_local_pipeline_config() -> None:
     assert '"*"' in release_workflow
     assert 'if: github.ref == \'refs/heads/main\'' not in release_workflow
     assert "publish-pypi" in release_workflow
-    assert "docker-release" in release_workflow
+    assert "publish-docker" in release_workflow
+    assert "publish-github" in release_workflow
+    assert "docker-release" not in release_workflow
     assert "timeout-minutes:" in pr_workflow
 
 

@@ -8,11 +8,16 @@ set -euo pipefail
 : "${CI_DOCKER_BUILD_TIMEOUT:=5m}"
 : "${CI_VERSION_CHECK_TIMEOUT:=2m}"
 : "${CI_TESTPYPI_TIMEOUT:=5m}"
-: "${CI_CONSUMER_TIMEOUT:=5m}"
+: "${CI_CONSUMER_TIMEOUT:=10m}"
 : "${CI_RESOLVE_TIMEOUT:=2m}"
 : "${CI_LINT_TIMEOUT:=5m}"
 : "${CI_RELEASE_SMOKE_TIMEOUT:=3m}"
 : "${CI_DOCKER_PUSH_TIMEOUT:=5m}"
+: "${CI_RUNTIME_INSTALL_TIMEOUT:=10m}"
+: "${PIP_INSTALL_ATTEMPTS:=12}"
+: "${PIP_INSTALL_INITIAL_DELAY:=4}"
+: "${PIP_INSTALL_BACKOFF_MULTIPLIER:=2}"
+: "${PIP_INSTALL_MAX_DELAY:=45}"
 
 gh_repo_root() {
   cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd
@@ -160,6 +165,88 @@ if head <= base:
     )
 print(f"version ok: {sys.argv[2]} > {sys.argv[1]}")
 PY
+}
+
+pypi_backoff_seconds() {
+  local attempt="$1"
+  python3 - <<'PY' "$attempt" "${PIP_INSTALL_INITIAL_DELAY}" "${PIP_INSTALL_BACKOFF_MULTIPLIER}" "${PIP_INSTALL_MAX_DELAY}"
+import math
+import sys
+
+attempt = int(sys.argv[1])
+initial = float(sys.argv[2])
+multiplier = float(sys.argv[3])
+cap = float(sys.argv[4])
+delay = min(initial * (multiplier ** max(0, attempt - 1)), cap)
+print(int(math.ceil(delay)))
+PY
+}
+
+pypi_index_has_version() {
+  local package="$1"
+  local version="$2"
+  local index="${3:-pypi}"
+  local url
+  if [[ "$index" == "pypi" ]]; then
+    url="https://pypi.org/pypi/${package}/json"
+  else
+    url="https://test.pypi.org/pypi/${package}/json"
+  fi
+  local response
+  response="$(curl -fsS "$url" 2>/dev/null || true)"
+  [[ -n "$response" ]] && printf '%s' "$response" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+version = sys.argv[1]
+files = (data.get('releases') or {}).get(version) or []
+sys.exit(0 if files else 1)
+" "$version"
+}
+
+pypi_pip_install_args() {
+  local package="$1"
+  local version="$2"
+  local index="${3:-pypi}"
+  if [[ "$index" == "pypi" ]]; then
+    printf '%s\0' pip install --no-cache-dir "${package}==${version}"
+  else
+    printf '%s\0' pip install --no-cache-dir \
+      --index-url https://test.pypi.org/simple/ \
+      --extra-index-url https://pypi.org/simple/ \
+      "${package}==${version}"
+  fi
+}
+
+# Wait for index propagation, then pip install, with exponential backoff between attempts.
+pypi_wait_and_install_package() {
+  local package="${1:-gardusig-cli}"
+  local version="${2:?version required}"
+  local index="${3:-pypi}"
+  local attempts="${PIP_INSTALL_ATTEMPTS}"
+  local attempt=1
+  local -a pip_args=()
+
+  while (( attempt <= attempts )); do
+    if pypi_index_has_version "$package" "$version" "$index"; then
+      mapfile -d '' -t pip_args < <(pypi_pip_install_args "$package" "$version" "$index")
+      if "${pip_args[@]}"; then
+        echo "installed ${package}==${version} from ${index}"
+        return 0
+      fi
+      echo "index lists ${package}==${version} on ${index} but pip install failed (${attempt}/${attempts})"
+    else
+      echo "waiting for ${package}==${version} on ${index} (${attempt}/${attempts})..."
+    fi
+    if (( attempt < attempts )); then
+      local delay
+      delay="$(pypi_backoff_seconds "$attempt")"
+      echo "retrying in ${delay}s..."
+      sleep "$delay"
+    fi
+    attempt=$((attempt + 1))
+  done
+  echo "failed to install ${package}==${version} from ${index} after ${attempts} attempts" >&2
+  return 1
 }
 
 stage_run_with_timeout() {

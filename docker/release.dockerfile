@@ -48,8 +48,12 @@ ARG CLI_RELEASE_VERSION=
 ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
     PYPI_INDEX=testpypi \
     CLI_PROFILE=test \
-    CI_CONSUMER_TIMEOUT=5m \
-    CI_INTEGRATION_TIMEOUT=3m
+    CI_CONSUMER_TIMEOUT=10m \
+    CI_INTEGRATION_TIMEOUT=3m \
+    PIP_INSTALL_ATTEMPTS=12 \
+    PIP_INSTALL_INITIAL_DELAY=4 \
+    PIP_INSTALL_BACKOFF_MULTIPLIER=2 \
+    PIP_INSTALL_MAX_DELAY=45
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends bash git ca-certificates curl \
@@ -82,8 +86,22 @@ RUN bash scripts/release/pypi-release.sh
 FROM python:3.12-slim AS runtime
 
 ARG CLI_VERSION=
-RUN test -n "${CLI_VERSION}"
-RUN pip install --no-cache-dir "gardusig-cli==${CLI_VERSION}"
+ENV CLI_VERSION=${CLI_VERSION} \
+    PYPI_INDEX=pypi \
+    PIP_INSTALL_ATTEMPTS=12 \
+    PIP_INSTALL_INITIAL_DELAY=4 \
+    PIP_INSTALL_BACKOFF_MULTIPLIER=2 \
+    PIP_INSTALL_MAX_DELAY=45 \
+    CI_RUNTIME_INSTALL_TIMEOUT=10m
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bash curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+COPY scripts/_common.sh scripts/_common.sh
+COPY scripts/release/runtime-install.sh scripts/release/runtime-install.sh
+RUN bash scripts/release/runtime-install.sh
 
 ENTRYPOINT ["cli"]
 CMD ["--help"]

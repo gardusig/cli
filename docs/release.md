@@ -47,8 +47,15 @@ Triggered by pushing a git tag matching `X.Y.Z` (workflow listens on `*`, resolv
 | Resolve | Tag `1.0.7` → publish coordinates |
 | TestPyPI + consumer | Validate install from TestPyPI |
 | Publish to PyPI | `gardusig-cli==1.0.7` on [PyPI](https://pypi.org/project/gardusig-cli/) |
-| Docker image | `binarylifter/gardusig-cli:1.0.7` and `:latest` (installs from PyPI) |
-| GitHub release | Release notes for tag `1.0.7` |
+| Publish to Docker | `binarylifter/gardusig-cli:1.0.7` and `:latest` (installs from PyPI) |
+| Publish to GitHub | Release notes for tag `1.0.7` |
+
+Local dry-run before tagging:
+
+```bash
+bash scripts/local/preview-release-workflow.sh
+GITHUB_REF_NAME=1.1.3 bash scripts/local/preview-release-workflow.sh
+```
 
 Config: [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) (tag push only — **not** on `main` merge).
 
