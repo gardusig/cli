@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.constants import TEST_CONFIG_DIR
+
 from src.utils.config import active_config_profile, load_config
 
 
@@ -63,8 +65,6 @@ def test_explicit_config_dir_skips_profile_merge(tmp_path: Path, monkeypatch: py
 
 
 def test_repo_test_profile_uses_fixture_paths() -> None:
-    from tests.constants import ROOT
-
-    cfg = load_config(ROOT / "config")
+    cfg = load_config(TEST_CONFIG_DIR)
     assert cfg.notion.task_root == "tests/fixtures/notion/tasks"
     assert cfg.chrome.bookmarks_file == "tests/fixtures/bookmarks.html"

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import os
 import subprocess
+from pathlib import Path
 
 import typer
 
@@ -21,10 +21,9 @@ from src.services.pypi_publish import (
     resolve_release_version,
     verify_package_version_on_index,
 )
+from src.utils.config import project_root
 
 release_app = typer.Typer(help="Build release artifacts.", no_args_is_help=True)
-
-_ROOT = Path(__file__).resolve().parents[2]
 
 
 @release_app.command("build")
@@ -32,8 +31,9 @@ def release_build_cmd(
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip write gate."),
 ) -> None:
     require_write_gate("release-build", ["repo: local"], yes=yes)
+    root = project_root()
     try:
-        artifacts = build_distributions(_ROOT)
+        artifacts = build_distributions(root)
         typer.echo(f"Built: {', '.join(path.name for path in artifacts)}")
     except PyPiPublishError as exc:
         typer.echo(str(exc), err=True)
@@ -46,8 +46,9 @@ def release_main_cmd(
     version: str | None = typer.Option(None, "--version", help="Release version (defaults to pyproject)."),
 ) -> None:
     """Tag main, publish gardusig-cli to PyPI, and push the release tag."""
+    root = project_root()
     try:
-        release_version = resolve_release_version(version, root=_ROOT) or read_project_version(_ROOT)
+        release_version = resolve_release_version(version, root=root) or read_project_version(root)
         tag = format_release_tag(release_version)
         require_write_gate(
             "release-main",
@@ -59,8 +60,8 @@ def release_main_cmd(
             question=f"Publish {PACKAGE_NAME} {release_version} and create {tag}?",
             yes=yes,
         )
-        _ensure_release_tag(tag)
-        artifacts = build_distributions(_ROOT, version=release_version)
+        _ensure_release_tag(tag, root=root)
+        artifacts = build_distributions(root, version=release_version)
         uploaded = publish_distributions(
             artifacts,
             token=resolve_pypi_token(),
@@ -73,7 +74,7 @@ def release_main_cmd(
         raise typer.Exit(1) from exc
 
 
-def _ensure_release_tag(tag: str) -> None:
+def _ensure_release_tag(tag: str, *, root: Path) -> None:
     tag_env = {
         **os.environ,
         "GIT_AUTHOR_NAME": os.environ.get("GIT_AUTHOR_NAME", "gardusig-cli-release"),
@@ -83,7 +84,7 @@ def _ensure_release_tag(tag: str) -> None:
     }
     existing = subprocess.run(
         ["git", "rev-parse", "-q", "--verify", f"refs/tags/{tag}"],
-        cwd=_ROOT,
+        cwd=root,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         check=False,
@@ -91,19 +92,18 @@ def _ensure_release_tag(tag: str) -> None:
     if existing.returncode != 0:
         subprocess.run(
             ["git", "tag", "-a", tag, "-m", tag],
-            cwd=_ROOT,
+            cwd=root,
             check=True,
             env=tag_env,
         )
-    push = subprocess.run(["git", "push", "origin", tag], cwd=_ROOT, check=False)
+    push = subprocess.run(["git", "push", "origin", tag], cwd=root, check=False)
     if push.returncode != 0:
         remote = subprocess.run(
             ["git", "ls-remote", "--tags", "origin", tag],
-            cwd=_ROOT,
+            cwd=root,
             capture_output=True,
             text=True,
             check=False,
         )
         if not remote.stdout.strip():
             push.check_returncode()
-

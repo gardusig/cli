@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.constants import ROOT
+from tests.constants import ROOT, TEST_CONFIG_DIR
 
 from src.integration.docker_guard import in_docker_integration
 
@@ -65,7 +65,7 @@ def test_config_profile(monkeypatch: pytest.MonkeyPatch) -> None:
         env = os.environ.get("CLI_CONFIG_DIR", "").strip()
         if env:
             return Path(env).expanduser()
-        return ROOT / "config"
+        return TEST_CONFIG_DIR
 
     monkeypatch.delenv("CLI_CONFIG_DIR", raising=False)
     monkeypatch.setenv("CLI_PROFILE", "test")

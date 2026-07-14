@@ -1,5 +1,0 @@
-# Tag naming for this repository (read by gardusig-cli `git tag` / `git deploy`).
-# Semver release tags; deploy workflow runs on push to main only.
-pattern: semver-v
-bump: patch
-require_increase: true

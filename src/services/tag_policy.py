@@ -121,7 +121,7 @@ def infer_tag_pattern(repo_root: Path, tags: list[str]) -> TagPattern:
     if detected is not None:
         return detected
     if (repo_root / "pyproject.toml").is_file():
-        return TagPattern.SEMVER_V
+        return TagPattern.SEMVER
     return TagPattern.PLAIN
 
 
@@ -220,6 +220,12 @@ def suggest_next_tag(
                 pass
         return _PATTERN_EXAMPLES[TagPattern.SEMVER_V]
     if policy.pattern == TagPattern.SEMVER:
+        root = (repo_root or Path.cwd()).resolve()
+        if (root / "pyproject.toml").is_file():
+            try:
+                return read_project_version(root)
+            except PyPiPublishError:
+                pass
         return _PATTERN_EXAMPLES[TagPattern.SEMVER]
     if policy.pattern == TagPattern.DATE:
         return date.today().isoformat()

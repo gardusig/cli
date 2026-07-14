@@ -357,10 +357,10 @@ def test_git_tag_local_only(
     _prepare: MagicMock,
     _push: MagicMock,
 ) -> None:
-    result = runner.invoke(app, ["git", "tag", "v0.1.1"])
+    result = runner.invoke(app, ["git", "tag", "0.1.1"])
     assert result.exit_code == 0
-    assert "v0.1.1" in result.stdout
-    mock_create.assert_called_once_with("v0.1.1", replace=False)
+    assert "0.1.1" in result.stdout
+    mock_create.assert_called_once_with("0.1.1", replace=False)
 
 
 @patch.object(GitShortcuts, "tag_push_action", return_value="push")

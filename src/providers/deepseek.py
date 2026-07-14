@@ -10,9 +10,11 @@ from typing import Any, Literal
 import httpx
 import yaml
 
+from src.utils.paths import bundled_path
+
 Role = Literal["chat", "reason", "categorize"]
 
-_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "deepseek" / "models.yaml"
+_CONFIG_PATH = bundled_path("deepseek", "models.yaml")
 
 
 class DeepSeekError(RuntimeError):

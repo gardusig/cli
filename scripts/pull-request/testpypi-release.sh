@@ -5,19 +5,12 @@ source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"
 
 stage_ensure_dev
 root="$(gh_repo_root)"
-version="${CLI_RELEASE_VERSION:?CLI_RELEASE_VERSION is required}"
+version="$(gh_strip_v_prefix "${CLI_RELEASE_VERSION:?CLI_RELEASE_VERSION is required}")"
+gh_set_project_version "$root" "$version"
 
 _publish_testpypi() {
   if [[ -z "${TESTPYPI_API_TOKEN:-}" ]]; then
     echo "TESTPYPI_API_TOKEN is required" >&2
-    exit 1
-  fi
-
-  local tag_version project_version
-  tag_version="${version#v}"
-  project_version="$(gh_read_project_version "$root")"
-  if [[ "$tag_version" != "$project_version" ]]; then
-    echo "version mismatch: CLI_RELEASE_VERSION=$tag_version pyproject=$project_version" >&2
     exit 1
   fi
 

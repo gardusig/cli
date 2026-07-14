@@ -9,7 +9,7 @@
 | `google_drive.token` | `GOOGLE_DRIVE_TOKEN` | `cli drive` (Google) |
 | `onedrive.token` | `ONEDRIVE_TOKEN` | `cli drive` (OneDrive) |
 
-Canonical manifest: [`config/secrets.manifest.yaml`](../config/secrets.manifest.yaml).
+Canonical manifest: [`secrets.manifest.yaml`](secrets.manifest.yaml).
 
 ```bash
 cli configure set notion.token --stdin

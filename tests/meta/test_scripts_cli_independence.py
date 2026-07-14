@@ -99,8 +99,8 @@ def test_version_check_uses_host_base_version_not_git() -> None:
 @pytest.mark.parametrize(
     "relative",
     [
-        "Dockerfile",
-        ".dockerignore",
+        "docker/pull-request.dockerfile",
+        "docker/.dockerignore",
         "scripts/_common.sh",
         "scripts/pull-request/unit-test.sh",
     ],

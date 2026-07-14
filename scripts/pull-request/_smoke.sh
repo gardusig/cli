@@ -12,7 +12,7 @@ smoke_default_config_dir() {
 
 smoke_setup_config() {
   export CLI_PROFILE="${CLI_PROFILE:-test}"
-  export CLI_CONFIG_DIR="${CLI_CONFIG_DIR:-$(smoke_default_config_dir)/config}"
+  export CLI_CONFIG_DIR="${CLI_CONFIG_DIR:-$(smoke_default_config_dir)/tests/fixtures/config}"
   if [[ ! -d "$CLI_CONFIG_DIR" ]]; then
     echo "CLI_CONFIG_DIR does not exist: $CLI_CONFIG_DIR" >&2
     exit 1

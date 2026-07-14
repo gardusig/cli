@@ -10,8 +10,20 @@ import yaml
 
 from src.providers.deepseek import DeepSeekClient
 from src.services.chat_session import ChatSession
+from src.utils.paths import bundled_path
 
-_REPOS_CONFIG = Path(__file__).resolve().parents[2] / "config" / "chat" / "repos.yaml"
+
+def load_repo_catalog() -> list[dict[str, str]]:
+    path = bundled_path("chat", "repos.yaml")
+    if not path.is_file():
+        return []
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    owner = data.get("owner", "gardusig")
+    return [
+        {"repo": f"{owner}/{r['name']}", "description": r.get("description", "")}
+        for r in data.get("repos") or []
+    ]
+
 
 R1_SYSTEM = """You are an exhaustive idea extractor (DeepSeek R1 / reasoner role).
 Read the full planning chat. List every theme, vague idea, risk, and dependency.
@@ -42,17 +54,6 @@ Output JSON:
   ]
 }
 Use priority 0-5 (1 = ship now). Include vague ideas as low-confidence children if useful."""
-
-
-def load_repo_catalog() -> list[dict[str, str]]:
-    if not _REPOS_CONFIG.is_file():
-        return []
-    data = yaml.safe_load(_REPOS_CONFIG.read_text(encoding="utf-8")) or {}
-    owner = data.get("owner", "gardusig")
-    return [
-        {"repo": f"{owner}/{r['name']}", "description": r.get("description", "")}
-        for r in data.get("repos") or []
-    ]
 
 
 def run_r1_distill(session: ChatSession, client: DeepSeekClient | None = None) -> dict[str, Any]:

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# docker build --target for root Dockerfile
+# docker build --target for pull-request Dockerfile
 set -euo pipefail
 # shellcheck source=scripts/_common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"
@@ -7,6 +7,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"
 target="${1:?target required}"
 shift
 
+DOCKERFILE="${PR_DOCKERFILE}"
 root="$(gh_repo_root)"
 cd "$root"
 

@@ -1,4 +1,4 @@
-# Default config — override paths in .env or ~/.config/cli/config.yaml (see config.example.yaml).
+# Base config for pytest / CI (merged with config.test.yaml when CLI_PROFILE=test).
 backup:
   tags_dir: .integration-scratch/tags
   repositories: []
@@ -6,7 +6,7 @@ backup:
 notion:
   database_id: ""
   task_root: ""
-  pairs_file: config/notion/tasks.pairs.json
+  pairs_file: tasks.pairs.json
   link_branch: main
   link_repo: ""
   labels_manifest: labels.manifest.yaml

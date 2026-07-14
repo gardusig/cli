@@ -37,7 +37,9 @@ def test_release_main_publishes_and_verifies(
     assert result.exit_code == 0, result.stdout + (result.stderr or "")
     assert "Released gardusig-cli==1.2.3" in result.stdout
     mock_gate.assert_called_once()
-    mock_tag.assert_called_once_with("v1.2.3")
+    mock_tag.assert_called_once()
+    assert mock_tag.call_args.args == ("v1.2.3",)
+    assert mock_tag.call_args.kwargs["root"] == Path.cwd().resolve()
     _, build_kwargs = mock_build.call_args
     assert build_kwargs["version"] == "1.2.3"
     mock_publish.assert_called_once()

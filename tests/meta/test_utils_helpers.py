@@ -14,6 +14,7 @@ from src.utils import fs, hashing, retry, zip as zip_util
 from src.providers.notion import NotionError
 from src.utils.confirm import require_confirmation
 from src.utils.config import default_config_dir, load_config, load_yaml, project_root
+from src.utils.paths import bundled_config_dir, bundled_path
 from src.utils.external_client import ExternalCallError
 from src.utils.process import GitCommandError, run_git
 from src.utils.yaml import dump_yaml, load_yaml as utils_load_yaml
@@ -27,6 +28,13 @@ def test_project_root_points_at_repo() -> None:
 def test_project_root_respects_cli_root(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("CLI_ROOT", str(tmp_path))
     assert project_root() == tmp_path.resolve()
+
+
+def test_bundled_defaults_ship_with_package() -> None:
+    assert (bundled_config_dir() / "config.example.yaml").is_file()
+    assert bundled_path("deepseek", "models.yaml").is_file()
+    assert bundled_path("opencode", "opencode.json").is_file()
+    assert bundled_path("notion", "templates", "body.md").is_file()
 
 
 def test_tags_dir_path_resolves_icloud_absolute(tmp_path: Path) -> None:
@@ -137,6 +145,41 @@ def test_load_yaml_invalid_mapping_raises(tmp_path: Path) -> None:
     path.write_text("- not-a-map\n", encoding="utf-8")
     with pytest.raises(ValueError, match="mapping"):
         load_yaml(path)
+
+
+def test_gh_version_prefix_helpers() -> None:
+    import subprocess
+    from pathlib import Path
+
+    common = Path(__file__).resolve().parents[2] / "scripts" / "_common.sh"
+    for fn, arg, expected in (
+        ("gh_strip_v_prefix", "v1.0.7", "1.0.7"),
+        ("gh_strip_v_prefix", "1.0.7", "1.0.7"),
+    ):
+        out = subprocess.check_output(
+            ["bash", "-c", f'source "{common}" && {fn} "{arg}"'],
+            text=True,
+        ).strip()
+        assert out == expected
+
+
+def test_gh_set_project_version(tmp_path: Path) -> None:
+    import subprocess
+    from pathlib import Path
+
+    root = tmp_path / "proj"
+    root.mkdir()
+    (root / "pyproject.toml").write_text('version = "0.0.1"\n', encoding="utf-8")
+    (root / "src").mkdir()
+    (root / "src" / "__init__.py").write_text('__version__ = "0.0.1"\n', encoding="utf-8")
+    common = Path(__file__).resolve().parents[2] / "scripts" / "_common.sh"
+
+    subprocess.run(
+        ["bash", "-c", f'source "{common}" && gh_set_project_version "{root}" "v2.3.4"'],
+        check=True,
+    )
+    assert 'version = "2.3.4"' in (root / "pyproject.toml").read_text(encoding="utf-8")
+    assert '__version__ = "2.3.4"' in (root / "src" / "__init__.py").read_text(encoding="utf-8")
 
 
 def test_load_config_merges_files(tmp_path: Path) -> None:

@@ -25,7 +25,7 @@ Default on macOS:
     {repo-name}-2026-06-12.zip
 ```
 
-Set via `backup.tags_dir` in `config/config.yaml`. iCloud syncs this folder automatically.
+Set via `backup.tags_dir` (`cli configure set backup.tags_dir …`). iCloud syncs this folder automatically.
 
 ## Commands
 
@@ -123,7 +123,7 @@ Hub workflow repos are not backup targets for Drive. If a hub repo appears in `b
 
 ## Configuration
 
-`config/config.yaml`:
+User `config.yaml` (under `cli configure path`):
 
 ```yaml
 backup:
@@ -151,7 +151,7 @@ Tokens are never committed. Export OAuth access tokens or point `auth.yaml` at t
 | Google Drive | `GOOGLE_DRIVE_TOKEN` | `auth.google_drive.token_file` |
 | OneDrive | `ONEDRIVE_TOKEN` | `auth.onedrive.token_file` |
 
-See `config/secrets.manifest.yaml` and `.env.example`.
+See [secrets.manifest.yaml](secrets.manifest.yaml) and [secrets.md](secrets.md).
 
 `drive deploy` copies missing zips to every replica. Cloud replicas use append-only upload (skip existing remote paths). USB replicas copy files to the configured mount path.
 

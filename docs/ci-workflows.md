@@ -1,9 +1,10 @@
 # Gardusig CI/CD — Docker pipeline
 
-This repo owns two GitHub Actions workflows and a single root `Dockerfile`:
+This repo owns two GitHub Actions workflows and two Dockerfiles under `docker/`:
 
-- `Dockerfile` — PR pipeline (build from source) and release (PyPI + runtime image)
-- `.dockerignore` — build context ignore rules
+- `docker/pull-request.dockerfile` — PR pipeline (build from source)
+- `docker/release.dockerfile` — release (PyPI publish + runtime image)
+- `docker/.dockerignore` — build context ignore rules (via `docker build --ignorefile`)
 
 Workflows call `scripts/pull-request/` and `scripts/release/`; Docker stages call matching scripts under those directories.
 
@@ -11,9 +12,18 @@ Workflows call `scripts/pull-request/` and `scripts/release/`; Docker stages cal
 
 | Event | Workflow | Pipeline |
 | --- | --- | --- |
-| Pull request → `main` | [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml) | Version gate → unit tests → TestPyPI → consumer integration |
-| Push `main` | [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) | Publish PyPI → lean Docker image |
-| Tag `v*` | [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) | GitHub release |
+| Pull request → `main` | [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml) | Version check → unit tests → TestPyPI publish → TestPyPI consumer |
+| Tag push | [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) | PyPI → Docker image → GitHub release |
+
+## Version formats
+
+| Target | Format | Example |
+| --- | --- | --- |
+| Git tag | `X.Y.Z` | `1.0.7` |
+| PyPI | `X.Y.Z` | `1.0.7` |
+| Docker Hub | `X.Y.Z` + `latest` | `binarylifter/gardusig-cli:1.0.7` |
+
+Push git tag `1.0.7` to run the full release pipeline. Tags must match semver `X.Y.Z` (a leading `v` is accepted and stripped for PyPI/Docker).
 
 ## Pull request
 
@@ -44,12 +54,16 @@ Workflow steps and pipeline scripts fail if they exceed their time limit (`timeo
 
 GitHub Actions also sets per-step `timeout-minutes` on each workflow step (typically 3–12 minutes).
 
-## Release (main merge)
+## Release (tag `*`)
 
-| Job | Docker target | Script |
-| --- | --- | --- |
-| Publish to PyPI | `pypi` | `scripts/release/pypi-release.sh` |
-| Lean runtime image | `runtime` | `pip install gardusig-cli==$VERSION` (no repo source) |
+Triggered by pushing a git tag; `resolve-tag-version.sh` accepts only semver `X.Y.Z` (legacy `vX.Y.Z` is stripped).
+
+| Job | Purpose |
+| --- | --- |
+| Resolve version | `1.0.7` → PyPI/Docker `1.0.7` |
+| Publish to PyPI | `gardusig-cli==1.0.7` |
+| Docker image | `pip install gardusig-cli==1.0.7` → push `:1.0.7` and `:latest` |
+| GitHub release | Create release for tag `1.0.7` |
 
 ## Secrets
 
@@ -62,10 +76,19 @@ GitHub Actions also sets per-step `timeout-minutes` on each workflow step (typic
 
 ## Local validation
 
+Compare host scripts vs both Dockerfiles:
+
+```bash
+bash scripts/local/compare-docker-pipelines.sh
+```
+
+Or run stages individually:
+
 ```bash
 export BASE_VERSION="$(bash scripts/pull-request/host-last-published-version.sh)"
-docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
-docker build --target unit-test .
+docker build -f docker/pull-request.dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build -f docker/pull-request.dockerfile --target unit-test .
+docker build -f docker/release.dockerfile --target runtime --build-arg "CLI_VERSION=$(python3 -c 'import tomllib; print(tomllib.load(open(\"pyproject.toml\",\"rb\"))[\"project\"][\"version\"])')" .
 ```
 
 See [release.md](release.md) and [development.md](development.md).

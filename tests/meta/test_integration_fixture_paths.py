@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from tests.constants import ROOT
+from tests.constants import ROOT, TEST_CONFIG_DIR
 
 FORBIDDEN_PATH_FRAGMENTS = (
     "~/git-local",
@@ -20,7 +20,7 @@ FORBIDDEN_PATH_FRAGMENTS = (
 @pytest.mark.parametrize(
     "rel_path",
     [
-        "config/config.test.yaml",
+        "tests/fixtures/config/config.test.yaml",
     ],
 )
 def test_integration_config_avoids_host_paths(rel_path: str) -> None:
@@ -32,7 +32,7 @@ def test_integration_config_avoids_host_paths(rel_path: str) -> None:
 
 
 def test_test_config_uses_repo_relative_paths() -> None:
-    data = yaml.safe_load((ROOT / "config/config.test.yaml").read_text(encoding="utf-8"))
+    data = yaml.safe_load((TEST_CONFIG_DIR / "config.test.yaml").read_text(encoding="utf-8"))
     tags_dir = Path(str(data["backup"]["tags_dir"]))
     assert not tags_dir.is_absolute() or str(tags_dir).startswith("/tmp")
     for repo in data["backup"]["repositories"]:

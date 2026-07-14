@@ -17,12 +17,11 @@ from src.services.test_packages import (
     package_resolution_payload,
     test_package_registry,
 )
+from src.utils.config import project_root
 
 test_app = typer.Typer(help="Run repo test pipeline (unit / integration / all).", no_args_is_help=True)
 packages_app = typer.Typer(help="Resolve changed paths to CLI test packages.", no_args_is_help=True)
 test_app.add_typer(packages_app, name="packages")
-
-_ROOT = Path(__file__).resolve().parents[2]
 
 
 @test_app.command("python")
@@ -177,26 +176,26 @@ def _emit_payload(payload: dict, format: str) -> None:
 
 @test_app.command("unit", hidden=True)
 def test_unit_cmd() -> None:
-    dispatch("test", "python", _ROOT, suite="unit")
+    dispatch("test", "python", project_root(), suite="unit")
 
 
 @test_app.command("integration", hidden=True)
 def test_integration_cmd() -> None:
-    dispatch("test", "python", _ROOT, suite="integration")
+    dispatch("test", "python", project_root(), suite="integration")
 
 
 @test_app.command("command-surface", hidden=True)
 def test_command_surface_cmd() -> None:
-    dispatch("test", "python", _ROOT, suite="command-surface")
+    dispatch("test", "python", project_root(), suite="command-surface")
 
 
 @test_app.command("regression", hidden=True)
 def test_regression_cmd() -> None:
-    dispatch("test", "python", _ROOT, suite="unit")
-    dispatch("test", "python", _ROOT, suite="integration")
+    dispatch("test", "python", project_root(), suite="unit")
+    dispatch("test", "python", project_root(), suite="integration")
 
 
 @test_app.command("all", hidden=True)
 def test_all_cmd() -> None:
-    dispatch("test", "python", _ROOT, suite="unit")
-    dispatch("test", "python", _ROOT, suite="integration")
+    dispatch("test", "python", project_root(), suite="unit")
+    dispatch("test", "python", project_root(), suite="integration")

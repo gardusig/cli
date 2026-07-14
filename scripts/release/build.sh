@@ -6,6 +6,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"
 target="${1:?target required}"
 shift
 
+DOCKERFILE="${RELEASE_DOCKERFILE}"
 root="$(gh_repo_root)"
 cd "$root"
 

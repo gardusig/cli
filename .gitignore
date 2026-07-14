@@ -1,6 +1,6 @@
 # Allowed tracked roots (do not add ignore patterns that hide these):
 #   config/ docs/ scripts/ src/ tests/ .github/
-#   Dockerfile .dockerignore pyproject.toml uv.lock requirements*.txt coverage-unit.ini README.md LICENSE
+#   docker/.dockerignore docker/pull-request.dockerfile docker/release.dockerfile
 #
 # --- Cursor / IDE ---
 .cursor/

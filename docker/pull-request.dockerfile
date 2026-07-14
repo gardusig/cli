@@ -1,7 +1,5 @@
-# CI and release pipeline — build with: docker build --target <stage> .
-#
-# Pull request: version-check, unit-test, testpypi, testpypi-consumer
-# Release:      pypi, runtime
+# Pull-request CI — build from source.
+# docker build -f docker/pull-request.dockerfile --target <stage> .
 
 FROM python:3.12-slim AS base
 
@@ -15,17 +13,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     CI_VERSION_CHECK_TIMEOUT=2m \
     CI_TESTPYPI_TIMEOUT=8m \
     CI_CONSUMER_TIMEOUT=5m \
-    CI_RESOLVE_TIMEOUT=2m \
-    CI_RELEASE_SMOKE_TIMEOUT=3m \
-    CI_DOCKER_PUSH_TIMEOUT=5m
+    CI_RESOLVE_TIMEOUT=2m
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends bash git ca-certificates g++ coreutils curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
-
-# --- Pull request -----------------------------------------------------------------
 
 FROM base AS version-check
 
@@ -65,31 +59,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
-COPY config/config.yaml config/config.test.yaml config/drives.yaml /workspace/config/
+COPY tests/fixtures/config/config.yaml tests/fixtures/config/config.test.yaml tests/fixtures/config/drives.yaml /workspace/tests/fixtures/config/
 COPY scripts/pull-request/testpypi-consumer.sh /workspace/scripts/pull-request/
 COPY scripts/pull-request/_smoke.sh /workspace/scripts/pull-request/
 COPY scripts/pull-request/integration-smoke.sh /workspace/scripts/pull-request/
 COPY scripts/pull-request/consumer /workspace/scripts/pull-request/consumer
 RUN CLI_RELEASE_VERSION="${CLI_RELEASE_VERSION}" bash scripts/pull-request/testpypi-consumer.sh
-
-# --- Release ----------------------------------------------------------------------
-
-FROM base AS pypi
-
-ARG CLI_RELEASE_VERSION=
-ARG PYPI_API_TOKEN=
-
-ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
-    PYPI_API_TOKEN=${PYPI_API_TOKEN}
-
-COPY . .
-RUN bash scripts/release/pypi-release.sh
-
-FROM python:3.12-slim AS runtime
-
-ARG CLI_VERSION=
-RUN test -n "${CLI_VERSION}"
-RUN pip install --no-cache-dir "gardusig-cli==${CLI_VERSION}"
-
-ENTRYPOINT ["cli"]
-CMD ["--help"]

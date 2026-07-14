@@ -47,11 +47,11 @@ def test_git_tag_creates_and_pushes(
     mock_prepare: MagicMock,
     mock_push: MagicMock,
 ) -> None:
-    result = runner.invoke(app, ["git", "tag", "v0.1.1"])
+    result = runner.invoke(app, ["git", "tag", "0.1.1"])
     assert result.exit_code == 0
-    assert "v0.1.1" in result.stdout
+    assert "0.1.1" in result.stdout
     mock_prepare.assert_called_once_with(yes=False)
-    mock_create.assert_called_once_with("v0.1.1", replace=False)
+    mock_create.assert_called_once_with("0.1.1", replace=False)
     mock_push.assert_called_once()
 
 
@@ -67,7 +67,7 @@ def test_git_tag_replace_requires_gate(
     snapshot: MagicMock,
 ) -> None:
     with patch(GIT_SNAPSHOT_PATCH, return_value=snapshot):
-        result = runner.invoke(app, ["git", "tag", "v0.1.1"])
+        result = runner.invoke(app, ["git", "tag", "0.1.1"])
     assert result.exit_code != 0
     mock_create.assert_not_called()
 
@@ -84,9 +84,9 @@ def test_git_tag_replace_with_yes(
     snapshot: MagicMock,
 ) -> None:
     with patch(GIT_SNAPSHOT_PATCH, return_value=snapshot):
-        result = runner.invoke(app, ["git", "tag", "v0.1.1", "--yes"])
+        result = runner.invoke(app, ["git", "tag", "0.1.1", "--yes"])
     assert result.exit_code == 0
-    mock_create.assert_called_once_with("v0.1.1", replace=True)
+    mock_create.assert_called_once_with("0.1.1", replace=True)
 
 
 @patch("src.commands.git._reconcile_tag_push")
@@ -99,9 +99,9 @@ def test_git_tag_replace_with_force(
     mock_prepare: MagicMock,
     _push: MagicMock,
 ) -> None:
-    result = runner.invoke(app, ["git", "tag", "v0.1.1", "--yes", "--force"])
+    result = runner.invoke(app, ["git", "tag", "0.1.1", "--yes", "--force"])
     assert result.exit_code == 0
-    mock_create.assert_called_once_with("v0.1.1", replace=True)
+    mock_create.assert_called_once_with("0.1.1", replace=True)
 
 
 @patch.object(GitShortcuts, "tag_push_action", return_value="force")
@@ -110,36 +110,36 @@ def test_git_tag_push_force_flag_skips_gate(
     mock_push: MagicMock,
     _action: MagicMock,
 ) -> None:
-    result = runner.invoke(app, ["git", "tag", "push", "v0.1.1", "--force"])
+    result = runner.invoke(app, ["git", "tag", "push", "0.1.1", "--force"])
     assert result.exit_code == 0
     assert "force-pushed" in result.stdout
-    mock_push.assert_called_once_with("v0.1.1", force=True)
+    mock_push.assert_called_once_with("0.1.1", force=True)
 
 
-@patch.object(GitShortcuts, "list_local_tags", return_value=["v0.1.0", "v0.1.1"])
-@patch.object(GitShortcuts, "list_remote_tags", return_value=["v0.1.0"])
+@patch.object(GitShortcuts, "list_local_tags", return_value=["0.1.0", "0.1.1"])
+@patch.object(GitShortcuts, "list_remote_tags", return_value=["0.1.0"])
 def test_git_tag_list(_remote: MagicMock, _local: MagicMock) -> None:
     result = runner.invoke(app, ["git", "tag", "list"])
     assert result.exit_code == 0
     assert "Local tags" in result.stdout
     assert "Remote tags" in result.stdout
-    assert "v0.1.1" in result.stdout
+    assert "0.1.1" in result.stdout
 
 
 @patch.object(GitShortcuts, "tag_push_action", return_value="push")
 @patch.object(GitShortcuts, "push_tag")
 def test_git_tag_push(mock_push: MagicMock, _action: MagicMock, snapshot: MagicMock) -> None:
     with patch(GIT_SNAPSHOT_PATCH, return_value=snapshot):
-        result = runner.invoke(app, ["git", "tag", "push", "v0.1.1", "--yes"])
+        result = runner.invoke(app, ["git", "tag", "push", "0.1.1", "--yes"])
     assert result.exit_code == 0
     assert "pushed" in result.stdout
-    mock_push.assert_called_once_with("v0.1.1", force=False)
+    mock_push.assert_called_once_with("0.1.1", force=False)
 
 
 @patch.object(GitShortcuts, "tag_push_action", return_value="skip")
 @patch.object(GitShortcuts, "push_tag")
 def test_git_tag_push_skip(mock_push: MagicMock, _action: MagicMock) -> None:
-    result = runner.invoke(app, ["git", "tag", "push", "v0.1.1", "--yes"])
+    result = runner.invoke(app, ["git", "tag", "push", "0.1.1", "--yes"])
     assert result.exit_code == 0
     assert "skip" in result.stdout
     mock_push.assert_not_called()
@@ -148,7 +148,7 @@ def test_git_tag_push_skip(mock_push: MagicMock, _action: MagicMock) -> None:
 @patch.object(GitShortcuts, "tag_push_action", return_value="no-remote")
 @patch.object(GitShortcuts, "push_tag")
 def test_git_tag_push_no_remote(mock_push: MagicMock, _action: MagicMock) -> None:
-    result = runner.invoke(app, ["git", "tag", "push", "v0.1.1", "--yes"])
+    result = runner.invoke(app, ["git", "tag", "push", "0.1.1", "--yes"])
     assert result.exit_code == 0
     assert "no origin" in result.stdout.lower()
     mock_push.assert_not_called()
@@ -158,22 +158,22 @@ def test_git_tag_push_no_remote(mock_push: MagicMock, _action: MagicMock) -> Non
 @patch.object(GitShortcuts, "push_tag")
 def test_git_tag_push_force(mock_push: MagicMock, _action: MagicMock, snapshot: MagicMock) -> None:
     with patch(GIT_SNAPSHOT_PATCH, return_value=snapshot):
-        result = runner.invoke(app, ["git", "tag", "push", "v0.1.1", "--yes"])
+        result = runner.invoke(app, ["git", "tag", "push", "0.1.1", "--yes"])
     assert result.exit_code == 0
     assert "force-pushed" in result.stdout
-    mock_push.assert_called_once_with("v0.1.1", force=True)
+    mock_push.assert_called_once_with("0.1.1", force=True)
 
 
 @patch.object(GitShortcuts, "tag_push_action", return_value="missing-local")
 def test_git_tag_push_missing_local(_action: MagicMock) -> None:
-    result = runner.invoke(app, ["git", "tag", "push", "v9.9.9", "--yes"])
+    result = runner.invoke(app, ["git", "tag", "push", "9.9.9", "--yes"])
     assert result.exit_code != 0
     assert "Tag not found" in result.stdout
 
 
 @patch.object(GitShortcuts, "prepare_for_tag", side_effect=RuntimeError("dirty tree"))
 def test_git_tag_prepare_failure(mock_prepare: MagicMock) -> None:
-    result = runner.invoke(app, ["git", "tag", "v0.1.2"])
+    result = runner.invoke(app, ["git", "tag", "0.1.2"])
     assert result.exit_code != 0
     assert "dirty tree" in result.stdout
     mock_prepare.assert_called_once()
@@ -182,13 +182,13 @@ def test_git_tag_prepare_failure(mock_prepare: MagicMock) -> None:
 def test_git_tag_rejects_invalid_format() -> None:
     result = runner.invoke(app, ["git", "tag", "2026-06-11", "--yes"])
     assert result.exit_code != 0
-    assert "semver-v" in result.stdout
+    assert "semver" in result.stdout
 
 
 @patch.object(GitShortcuts, "tag_exists_local", return_value=False)
 @patch("src.commands.git.archive_tag_zip")
 def test_git_zip_requires_tag(mock_archive: MagicMock, _exists: MagicMock) -> None:
-    result = runner.invoke(app, ["git", "zip", "v9.9.9"])
+    result = runner.invoke(app, ["git", "zip", "9.9.9"])
     assert result.exit_code != 0
     assert "Tag not found" in result.stdout
     mock_archive.assert_not_called()
@@ -205,7 +205,7 @@ def test_git_zip_with_tag(
     _encrypted: MagicMock,
     tmp_path: Path,
 ) -> None:
-    dest = tmp_path / "repo-v0.1.1.zip"
+    dest = tmp_path / "repo-0.1.1.zip"
 
     def _write_archive(repo_path: Path, tag: str, out: Path, **kwargs: object) -> Path:
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -214,7 +214,7 @@ def test_git_zip_with_tag(
 
     mock_archive.side_effect = _write_archive
     with patch("src.commands.git.default_zip_path", return_value=dest):
-        result = runner.invoke(app, ["git", "zip", "v0.1.1"])
+        result = runner.invoke(app, ["git", "zip", "0.1.1"])
     assert result.exit_code == 0
     assert ".zip" in result.stdout
     mock_archive.assert_called_once()
@@ -294,10 +294,10 @@ def test_zip_tag_creates_archive() -> None:
         (repo / "README.md").write_text("hi\n", encoding="utf-8")
         subprocess.run(["git", "-C", str(repo), "add", "README.md"], check=True, capture_output=True)
         subprocess.run(["git", "-C", str(repo), "commit", "-m", "init"], check=True, capture_output=True)
-        subprocess.run(["git", "-C", str(repo), "tag", "-a", "v0.1.1", "-m", "v0.1.1"], check=True)
+        subprocess.run(["git", "-C", str(repo), "tag", "-a", "0.1.1", "-m", "0.1.1"], check=True)
         out = repo / "out.zip"
         svc = GitShortcuts(top=str(repo))
-        path = svc.zip_tag("v0.1.1", out)
+        path = svc.zip_tag("0.1.1", out)
         assert path.is_file()
         assert path.stat().st_size > 0
 

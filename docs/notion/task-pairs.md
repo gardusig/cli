@@ -1,6 +1,6 @@
 # Task pairs (header + body)
 
-Parallel-path pairs joined by `config/notion/tasks.pairs.json`. Task **files** live in private `notion.task_root`; the manifest lives in cli.
+Parallel-path pairs joined by `notion.pairs_file` (typically `tasks.pairs.json` under your private `notion.task_root`). Task **files** live in that task root; templates ship in `src/data/notion/templates/`.
 
 ## Pair contract
 
@@ -28,7 +28,7 @@ cli notion pairs build
 
 ## Body writing
 
-- Template: [config/notion/templates/body.md](../../config/notion/templates/body.md) (header: [header.yaml](../../config/notion/templates/header.yaml))
+- Template: [src/data/notion/templates/body.md](../../src/data/notion/templates/body.md) (header: [header.yaml](../../src/data/notion/templates/header.yaml))
 - Shape: `## Steps` → `## Done when`
 - **No** title or cadence intro in body — `name` + schedule fields live in header yaml
 - No links to other files in body prose
@@ -36,8 +36,8 @@ cli notion pairs build
 ## Add a board row
 
 1. Pick a path stem, e.g. `clean/kitchen`.
-2. Copy [config/notion/templates/header.yaml](../../config/notion/templates/header.yaml) → `header/clean/kitchen.yaml` with **`name`** + cadence fields.
-3. Copy [config/notion/templates/body.md](../../config/notion/templates/body.md) → `body/clean/kitchen.md` using the body template.
+2. Copy [src/data/notion/templates/header.yaml](../../src/data/notion/templates/header.yaml) → `header/clean/kitchen.yaml` with **`name`** + cadence fields.
+3. Copy [src/data/notion/templates/body.md](../../src/data/notion/templates/body.md) → `body/clean/kitchen.md` using the body template.
 4. Run `cli notion pairs build`.
 
 ## Last done policy

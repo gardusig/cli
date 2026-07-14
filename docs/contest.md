@@ -17,7 +17,7 @@ Fast solutions are **not** stored in cli. You provide three paths:
 - `--brute` — Python slow reference
 - `--generator` — Python input generator
 
-Templates: [`config/contest/templates/`](../config/contest/templates/)
+Templates: [`tests/fixtures/contest/templates/`](../tests/fixtures/contest/templates/)
 
 ## Setup
 
@@ -62,7 +62,7 @@ cxx_std: c++17
 cli contest validate --config contest.yaml
 ```
 
-Defaults: [`config/contest/defaults.yaml`](../config/contest/defaults.yaml) (`timeout: 10`, `memory_mb: 256`, `image: cli-contest:runner`, `cxx_std: c++17`).
+Defaults: bundled in `src/data/contest/defaults.yaml` (`timeout: 10`, `memory_mb: 256`, `image: cli-contest:runner`, `cxx_std: c++17`).
 
 ## Generator contract
 
@@ -81,11 +81,11 @@ def large_cases() -> list[Case]: ...
 def format_one(payload) -> list[str]: ...
 ```
 
-Copy [`config/contest/templates/generator.py`](../config/contest/templates/generator.py) as a starting point.
+Copy [`tests/fixtures/contest/templates/generator.py`](../tests/fixtures/contest/templates/generator.py) as a starting point.
 
 ## Brute contract
 
-Reads multi-test stdin (`T` on first line), writes one answer line per case. See [`config/contest/templates/brute.py`](../config/contest/templates/brute.py).
+Reads multi-test stdin (`T` on first line), writes one answer line per case. See [`tests/fixtures/contest/templates/brute.py`](../tests/fixtures/contest/templates/brute.py).
 
 ## Outcomes
 
@@ -101,7 +101,7 @@ Keep real solutions in an external competitions repo. Copy the templates once:
 
 ```bash
 mkdir -p ../competitions/codeforces/2237-a
-cp config/contest/templates/{generator.py,brute.py,lib.py} ../competitions/codeforces/2237-a/
+cp tests/fixtures/contest/templates/{generator.py,brute.py,lib.py} ../competitions/codeforces/2237-a/
 ```
 
 Create a generator that emits a multi-test input for each tier. The small tier should include samples and corner cases; the large tier should be heavy enough that the brute is expected to TLE.

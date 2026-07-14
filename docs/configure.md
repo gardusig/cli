@@ -50,4 +50,4 @@ See [configuration.md](configuration.md) and [secrets.md](secrets.md).
 
 ## Contributors
 
-Tests and CI use `CLI_CONFIG_DIR=config` + `CLI_PROFILE=test` — not your home directory.
+Tests and CI use `CLI_CONFIG_DIR=tests/fixtures/config` + `CLI_PROFILE=test` — not your home directory.

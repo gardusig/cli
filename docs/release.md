@@ -30,28 +30,30 @@ Example: `main` ships `1.0.3`; a release candidate PR bumps to **`1.1.0`** (or t
 | TestPyPI publish | `testpypi` | `scripts/pull-request/testpypi-release.sh` |
 | TestPyPI consumer | `testpypi-consumer` | `scripts/pull-request/testpypi-consumer.sh` |
 
-Config: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml).
+Config: [`.github/workflows/pull-request.yaml`](../.github/workflows/pull-request.yaml) (five jobs: resolve → version-check → unit-test → testpypi → testpypi-consumer).
 
-## Main pipeline (merge to `main`)
+## Release (semver tag)
 
-On every push to `main`:
+Triggered by pushing a git tag matching `X.Y.Z` (workflow listens on `*`, resolve step validates semver).
 
-| Job | Docker target | Script |
-| --- | --- | --- |
-| Publish to PyPI | `pypi` | `scripts/release/pypi-release.sh` |
-| Lean Docker image | `runtime` | `pip install gardusig-cli==$VERSION` (no repo source) |
+| Job | Output |
+| --- | --- |
+| Resolve | `1.0.7` → PyPI/Docker `1.0.7` |
+| Publish to PyPI | `gardusig-cli==1.0.7` on [PyPI](https://pypi.org/project/gardusig-cli/) |
+| Docker image | `binarylifter/gardusig-cli:1.0.7` and `:latest` (installs from PyPI) |
+| GitHub release | Release notes for tag `1.0.7` |
 
-Config: [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) (push `main`).
+Config: [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) (tag push only — **not** on `main` merge).
 
-## Release pipeline (tag `v*` only)
+### Version format
 
-On tag push matching `v*`:
+| Target | Format |
+| --- | --- |
+| Git tag | `X.Y.Z` |
+| PyPI | `X.Y.Z` |
+| Docker | `X.Y.Z` (+ `latest`) |
 
-1. Create GitHub release for the tag
-
-Docker image publish runs on `main` after PyPI (not on tag push).
-
-Tag `vX.Y.Z` must match `pyproject.toml` (see `config/tag.yaml`).
+Tag policy example: [`src/data/config/tag.yaml.example`](../src/data/config/tag.yaml.example) (`pattern: semver`).
 
 ## Scripts ⊥ CLI boundary
 
@@ -85,7 +87,7 @@ Push the branch and open a pull request in the hosting UI, or merge via your usu
 Publish Docker image + GitHub release:
 
 ```bash
-git tag v1.1.1 && git push origin v1.1.1
+git tag 1.1.1 && git push origin 1.1.1
 ```
 
 ## Install contract
@@ -101,7 +103,7 @@ cli --version
 
 ```bash
 export BASE_VERSION="$(bash scripts/pull-request/host-last-published-version.sh)"
-docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build -f docker/pull-request.dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
 bash scripts/pull-request/unit-test.sh
 uv run pytest tests/meta/ tests/services/test_pipeline_selective.py \
   tests/services/test_pipeline_runtime.py -q
@@ -111,15 +113,15 @@ Confirm PR CI is green on GitHub Actions (see [ci-workflows.md](ci-workflows.md)
 
 ## Post-merge release (maintainer)
 
-After merge to `main`, GitHub Actions runs [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) → PyPI publish → lean Docker image on Docker Hub.
+After merge to `main`, push a semver tag to trigger [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) → PyPI publish → Docker Hub image.
 
 Tag push creates the GitHub release:
 
 ```bash
 git checkout main && git pull
 # Ensure pyproject.toml version matches the tag you will push
-git tag v1.1.1
-git push origin v1.1.1
+git tag 1.1.1
+git push origin 1.1.1
 ```
 
 Tag push runs the `github-release` job in [`.github/workflows/release.yaml`](../.github/workflows/release.yaml).

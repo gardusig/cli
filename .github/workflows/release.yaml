@@ -1,10 +1,10 @@
 name: Release
 
+# Tag-driven release: git tag X.Y.Z → PyPI X.Y.Z → Docker X.Y.Z (+ latest) → GitHub release.
 on:
   push:
-    branches: [main]
     tags:
-      - "v*"
+      - "*"
 
 concurrency:
   group: release-${{ github.ref }}
@@ -14,6 +14,8 @@ permissions:
   contents: write
 
 env:
+  RELEASE_DOCKERFILE: docker/release.dockerfile
+  DOCKERIGNORE: docker/.dockerignore
   RUNTIME_IMAGE: binarylifter/gardusig-cli
   CI_DOCKER_BUILD_TIMEOUT: 10m
   CI_TESTPYPI_TIMEOUT: 8m
@@ -22,44 +24,52 @@ env:
   CI_DOCKER_PUSH_TIMEOUT: 5m
 
 jobs:
+  resolve:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      git_tag: ${{ steps.meta.outputs.git_tag }}
+      version: ${{ steps.meta.outputs.version }}
+      docker_tag: ${{ steps.meta.outputs.docker_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Resolve tag → PyPI/Docker version
+        timeout-minutes: 3
+        id: meta
+        run: bash scripts/release/resolve-tag-version.sh
+
   publish-pypi:
     name: Publish to PyPI
-    if: github.ref == 'refs/heads/main'
+    needs: resolve
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
         timeout-minutes: 3
-      - name: Resolve package version
-        timeout-minutes: 3
-        id: meta
-        run: bash scripts/release/resolve-version.sh
       - name: docker build — pypi
         timeout-minutes: 12
         env:
-          CLI_RELEASE_VERSION: ${{ steps.meta.outputs.version }}
+          CLI_RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: bash scripts/release/build-pypi-release.sh
 
   docker-release:
     name: Docker image
-    if: github.ref == 'refs/heads/main'
-    needs: publish-pypi
+    needs: [resolve, publish-pypi]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
         timeout-minutes: 3
-      - name: Resolve package version
-        timeout-minutes: 3
-        id: meta
-        run: bash scripts/release/resolve-version.sh
-      - name: docker build — runtime
+      - name: docker build — runtime (from PyPI)
         timeout-minutes: 10
         env:
-          CLI_VERSION: ${{ steps.meta.outputs.version }}
+          CLI_VERSION: ${{ needs.resolve.outputs.docker_tag }}
         run: bash scripts/release/build-runtime-image.sh
       - name: Log in to Docker Hub
         timeout-minutes: 3
@@ -67,34 +77,30 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Push image tags
+      - name: Push Docker tags (${{ needs.resolve.outputs.docker_tag }}, latest)
         timeout-minutes: 5
         env:
-          CLI_VERSION: ${{ steps.meta.outputs.version }}
+          CLI_VERSION: ${{ needs.resolve.outputs.docker_tag }}
         run: bash scripts/release/push-runtime-image.sh
       - name: Pull and smoke-test published image
         timeout-minutes: 5
         env:
-          CLI_VERSION: ${{ steps.meta.outputs.version }}
+          CLI_VERSION: ${{ needs.resolve.outputs.docker_tag }}
         run: bash scripts/release/smoke-runtime-image.sh
 
   github-release:
     name: GitHub release
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [resolve, docker-release]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Resolve release version
-        timeout-minutes: 3
-        id: meta
-        run: bash scripts/release/resolve-tag-version.sh
       - name: Create GitHub release
         timeout-minutes: 3
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.meta.outputs.tag }}
-          CLI_VERSION: ${{ steps.meta.outputs.version }}
+          RELEASE_TAG: ${{ needs.resolve.outputs.git_tag }}
+          CLI_VERSION: ${{ needs.resolve.outputs.version }}
         run: bash scripts/release/create-github-release.sh

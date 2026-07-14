@@ -1,6 +1,6 @@
 repo: gardusig/cli
-dockerfile: Dockerfile
-dockerignore: .dockerignore
+dockerfile: docker/release.dockerfile
+dockerignore: docker/.dockerignore
 jobs:
   - id: pypi
     name: Publish to PyPI

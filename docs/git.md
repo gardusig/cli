@@ -163,19 +163,19 @@ Single-repository only (run from the repo you want to tag).
 
 ### Tag naming (per repo)
 
-Put [`config/tag.yaml`](../config/tag.yaml) in the target repo, or let the CLI **detect** the pattern from existing tags:
+Put `<repo>/config/tag.yaml` in the target repo (see [`src/data/config/tag.yaml.example`](../src/data/config/tag.yaml.example)), or let the CLI **detect** the pattern from existing tags:
 
 | `pattern` | Example | Default when omitted |
 | --- | --- | --- |
-| `semver-v` | `v0.1.0` | Used when `pyproject.toml` exists (this repo) |
-| `semver` | `1.0.0` | — |
+| `semver` | `1.0.0` | Used when `pyproject.toml` exists (this repo) |
+| `semver-v` | `v0.1.0` | Legacy `v`-prefixed repos |
 | `date` | `2026-06-24` | Daily snapshot repos |
 | `plain` | `my-release` | No validation / no auto-suggest |
 
 Optional keys: `bump` (`patch` \| `minor` \| `major`), `require_increase: true` (reject tags ≤ latest).
 
-**This repo** (`config/tag.yaml`): `semver-v`, patch bump, `require_increase: true`.  
-`cli git tag` with no name **auto-suggests the next tag** (e.g. `v0.1.0` → `v0.1.1`).
+**This repo** uses bare semver tags with auto-detection when no `config/tag.yaml` is present.  
+`cli git tag` with no name **auto-suggests the next tag** (e.g. `0.1.0` → `0.1.1`).
 
 PR CI runs `cli pypi version check` — `pyproject.toml` version must be **greater than** `main`.
 
@@ -186,20 +186,20 @@ cli pypi version check        # compare HEAD vs origin/main
 ```
 
 ```bash
-cli git tag                    # sync main, suggest next vX.Y.Z, push to origin
-cli git tag v0.1.1             # explicit release tag
+cli git tag                    # sync main, suggest next X.Y.Z, push to origin
+cli git tag 0.1.1              # explicit release tag
 cli git tag list               # local + remote tags (sorted)
 cli git tag push               # push latest local tag to origin
-cli git tag push v0.1.1 --yes --force   # force-push when remote differs
+cli git tag push 0.1.1 --yes --force   # force-push when remote differs
 cli git zip                    # zip latest local tag → git-tags/REPO/
-cli git zip v0.1.1 -o out.zip
+cli git zip 0.1.1 -o out.zip
 ```
 
 `tag` syncs **main** first, creates the **next** tag greater than the latest (per `config/tag.yaml`), then pushes to `origin` when configured. `zip` always archives the **latest local** tag unless you pass a name. Subcommands: `list`, `push` (`--force`), and explicit tag names still work.
 
 ### CI/CD workflows
 
-See [ci-workflows.md](ci-workflows.md) for the standard trio: **`test.yml`** (PR build/test) → **`deploy.yml`** (main → tag) → **`release.yml`** (tag → GitHub Release artifacts).
+See [ci-workflows.md](ci-workflows.md): PR pipeline (`pull-request.yaml`) and tag-driven release (`release.yaml`).
 
 ### Deploy (auto-tag on main)
 

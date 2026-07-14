@@ -138,19 +138,19 @@ def _test_python_unit(spec: CommandSpec, workspace: Path, extra_env: dict[str, s
 
 
 def _test_python_integration(spec: CommandSpec, workspace: Path, extra_env: dict[str, str]) -> int:
-    del spec, extra_env
-    for cmd in (
-        ["bash", "scripts/pull-request/integration-test.sh"],
-    ):
-        code = _run(cmd, workspace)
-        if code != 0:
-            return code
+    del spec
+    from src.services.cli_smoke import SmokeError, run_all
+
+    config_dir = Path(extra_env["CLI_CONFIG_DIR"]) if extra_env.get("CLI_CONFIG_DIR") else None
+    try:
+        run_all(config_dir=config_dir, workspace=workspace)
+    except SmokeError:
+        return 1
     return 0
 
 
 def _test_python_command_surface(spec: CommandSpec, workspace: Path, extra_env: dict[str, str]) -> int:
-    del spec, extra_env
-    return _run(["bash", "scripts/pull-request/integration-smoke.sh"], workspace)
+    return _test_python_integration(spec, workspace, extra_env)
 
 
 def _lint_typescript(spec: CommandSpec, workspace: Path, extra_env: dict[str, str]) -> int:
