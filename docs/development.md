@@ -33,7 +33,7 @@ docker build -f docker/pull-request.dockerfile --target version-check --build-ar
 docker build -f docker/pull-request.dockerfile --target unit-test .
 ```
 
-Build context stays the repo root. Dockerfiles copy only the paths each stage needs (`ci-source` / `release-source`); there is no `.dockerignore`.
+Build context stays the repo root. Each Dockerfile target copies only the scripts, package metadata, and trees that stage needs.
 
 Git runs **only on the host** (`host-base-version.sh` or the workflow). Docker stages read copied files and build-args.
 

@@ -106,11 +106,13 @@ def test_host_last_published_version_queries_pypi_and_testpypi() -> None:
 def test_dockerfiles_copy_explicit_source_tree() -> None:
     pr_docker = (ROOT / "docker" / "pull-request.dockerfile").read_text(encoding="utf-8")
     release_docker = (ROOT / "docker" / "release.dockerfile").read_text(encoding="utf-8")
-    assert "FROM base AS ci-source" in pr_docker
-    assert "COPY tests tests" in pr_docker
     assert "COPY . ." not in pr_docker
-    assert "FROM base AS release-source" in release_docker
     assert "COPY . ." not in release_docker
+    assert "COPY scripts/pull-request scripts/pull-request" not in pr_docker
+    assert "COPY scripts/release scripts/release" not in release_docker
+    assert "COPY scripts/pull-request/version-check.sh" in pr_docker
+    assert "COPY scripts/pull-request/unit-test.sh" in pr_docker
+    assert "COPY scripts/release/pypi-release.sh" in release_docker
 
 
 @pytest.mark.parametrize(

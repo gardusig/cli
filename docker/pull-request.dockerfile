@@ -21,26 +21,26 @@ RUN apt-get update \
 
 WORKDIR /workspace
 
-# Explicit source tree — no repo-root .dockerignore.
-FROM base AS ci-source
-COPY pyproject.toml uv.lock README.md LICENSE coverage-unit.ini ./
-COPY scripts/_common.sh scripts/_common.sh
-COPY scripts/pull-request scripts/pull-request
-COPY src src
-COPY tests tests
-
-FROM ci-source AS version-check
+FROM base AS version-check
 
 ARG BASE_VERSION=
 ENV BASE_VERSION=${BASE_VERSION}
 
+COPY pyproject.toml ./
+COPY scripts/_common.sh scripts/_common.sh
+COPY scripts/pull-request/version-check.sh scripts/pull-request/version-check.sh
 RUN bash scripts/pull-request/version-check.sh
 
-FROM ci-source AS unit-test
+FROM base AS unit-test
 
+COPY pyproject.toml uv.lock coverage-unit.ini ./
+COPY scripts/_common.sh scripts/_common.sh
+COPY scripts/pull-request/unit-test.sh scripts/pull-request/unit-test.sh
+COPY src src
+COPY tests tests
 RUN bash scripts/pull-request/unit-test.sh
 
-FROM ci-source AS testpypi
+FROM base AS testpypi
 
 ARG CLI_RELEASE_VERSION=
 ARG TESTPYPI_API_TOKEN=
@@ -48,6 +48,10 @@ ARG TESTPYPI_API_TOKEN=
 ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
     TESTPYPI_API_TOKEN=${TESTPYPI_API_TOKEN}
 
+COPY pyproject.toml README.md LICENSE ./
+COPY scripts/_common.sh scripts/_common.sh
+COPY scripts/pull-request/testpypi-release.sh scripts/pull-request/testpypi-release.sh
+COPY src src
 RUN bash scripts/pull-request/testpypi-release.sh
 
 FROM python:3.12-slim AS testpypi-consumer
@@ -64,9 +68,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
-COPY tests/fixtures/config/config.yaml tests/fixtures/config/config.test.yaml tests/fixtures/config/drives.yaml /workspace/tests/fixtures/config/
-COPY scripts/pull-request/testpypi-consumer.sh /workspace/scripts/pull-request/
-COPY scripts/pull-request/_smoke.sh /workspace/scripts/pull-request/
-COPY scripts/pull-request/integration-smoke.sh /workspace/scripts/pull-request/
-COPY scripts/pull-request/consumer /workspace/scripts/pull-request/consumer
-RUN CLI_RELEASE_VERSION="${CLI_RELEASE_VERSION}" bash scripts/pull-request/testpypi-consumer.sh
+COPY tests/fixtures/config/config.yaml tests/fixtures/config/config.test.yaml tests/fixtures/config/drives.yaml tests/fixtures/config/
+COPY scripts/_common.sh scripts/_common.sh
+COPY scripts/pull-request/_smoke.sh scripts/pull-request/_smoke.sh
+COPY scripts/pull-request/testpypi-consumer.sh scripts/pull-request/testpypi-consumer.sh
+COPY scripts/pull-request/testpypi-consumer-body.sh scripts/pull-request/testpypi-consumer-body.sh
+COPY scripts/pull-request/consumer/_common.sh scripts/pull-request/consumer/_common.sh
+COPY scripts/pull-request/consumer/run.sh scripts/pull-request/consumer/run.sh
+RUN bash scripts/pull-request/testpypi-consumer.sh

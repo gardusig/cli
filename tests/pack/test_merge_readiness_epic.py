@@ -33,6 +33,8 @@ def test_merge_readiness_app_local_pipeline_config() -> None:
     assert "COPY src src" in release_docker
     assert "COPY . ." not in pr_docker
     assert "COPY . ." not in release_docker
+    assert "COPY scripts/pull-request scripts/pull-request" not in pr_docker
+    assert "COPY scripts/release scripts/release" not in release_docker
     workflows_dir = ROOT / ".github" / "workflows"
     workflow_files = sorted(path.name for path in workflows_dir.glob("*.yaml"))
     assert workflow_files == ["pull-request.yaml", "release.yaml"]
