@@ -33,9 +33,13 @@ RUN bash scripts/pull-request/version-check.sh
 
 FROM base AS unit-test
 
-COPY pyproject.toml uv.lock coverage-unit.ini ./
+COPY pyproject.toml uv.lock README.md LICENSE coverage-unit.ini ./
 COPY scripts/_common.sh scripts/_common.sh
-COPY scripts/pull-request/unit-test.sh scripts/pull-request/unit-test.sh
+COPY scripts/pull-request scripts/pull-request
+COPY scripts/release scripts/release
+COPY .github/workflows .github/workflows
+COPY docker docker
+COPY docs docs
 COPY src src
 COPY tests tests
 RUN bash scripts/pull-request/unit-test.sh
