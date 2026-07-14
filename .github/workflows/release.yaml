@@ -114,7 +114,7 @@ jobs:
     name: Install from PyPI
     needs: [resolve, publish-pypi]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
       - id: checkout
         uses: actions/checkout@v5
@@ -124,7 +124,7 @@ jobs:
         timeout-minutes: 3
       - id: pypi-consumer
         name: Install from PyPI
-        timeout-minutes: 9
+        timeout-minutes: 6
         env:
           CLI_RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
         run: |

@@ -31,6 +31,10 @@ release.yaml:
     checkout: short
     buildx: short
     publish-pypi: medium
+  pypi-consumer:
+    checkout: short
+    buildx: short
+    pypi-consumer: medium
   publish-docker:
     checkout: short
     buildx: short
