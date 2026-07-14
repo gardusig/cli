@@ -64,8 +64,8 @@ Triggered by pushing a git tag; `resolve-tag-version.sh` runs in the `resolve` D
 | Publish to TestPyPI | `docker build` | `gardusig-cli==1.0.7` on TestPyPI |
 | TestPyPI consumer | `docker build` | pip install from TestPyPI + integration smoke |
 | Publish to PyPI | `docker build` | `gardusig-cli==1.0.7` on PyPI |
-| Docker image | `docker build` + `ci-tools` `docker run` | Build runtime from PyPI, push `:1.0.7` and `:latest`, smoke |
-| GitHub release | `ci-tools` `docker run` | Create release for tag `1.0.7` |
+| Publish to Docker | `docker build` + `ci-tools` `docker run` | Build runtime from PyPI, push `:1.0.7` and `:latest`, smoke |
+| Publish to GitHub | `ci-tools` `docker run` | Create release for tag `1.0.7` |
 
 ## Secrets
 
@@ -90,7 +90,7 @@ Or run stages individually:
 export BASE_VERSION="$(bash scripts/pull-request/host-last-published-version.sh)"
 docker build -f docker/pull-request.dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
 docker build -f docker/pull-request.dockerfile --target unit-test .
-bash scripts/local/validate-release-consumer.sh
+bash scripts/local/preview-release-workflow.sh
 docker build -f docker/release.dockerfile --target runtime --build-arg "CLI_VERSION=$(python3 -c 'import tomllib; print(tomllib.load(open(\"pyproject.toml\",\"rb\"))[\"project\"][\"version\"])')" .
 ```
 

@@ -30,16 +30,16 @@ release.yaml:
   publish-pypi:
     checkout: short
     buildx: short
-    pypi: medium
-  docker-release:
+    publish-pypi: medium
+  publish-docker:
     checkout: short
     buildx: short
     runtime: medium
     ci-tools: short
     docker-login: short
-    docker-push: medium
+    publish-docker: medium
     runtime-smoke: medium
-  github-release:
+  publish-github:
     checkout: short
     ci-tools: short
-    github-release: short
+    publish-github: short
