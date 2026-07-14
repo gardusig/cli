@@ -99,7 +99,11 @@ gh_docker_build() {
   shift
   local root dockerfile dockerignore
   root="$(gh_repo_root)"
-  dockerfile="${DOCKERFILE:?DOCKERFILE required (PR_DOCKERFILE or RELEASE_DOCKERFILE)}"
+  dockerfile="${DOCKERFILE:-${PR_DOCKERFILE:-${RELEASE_DOCKERFILE:-}}}"
+  if [[ -z "$dockerfile" ]]; then
+    echo "DOCKERFILE required (PR_DOCKERFILE or RELEASE_DOCKERFILE)" >&2
+    exit 1
+  fi
   dockerignore="${DOCKERIGNORE:?DOCKERIGNORE required}"
   if [[ ! -f "${root}/${dockerfile}" ]]; then
     echo "dockerfile not found: ${root}/${dockerfile}" >&2
