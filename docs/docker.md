@@ -2,11 +2,20 @@
 
 Workflow routers live in [`gardusig/cli`](https://github.com/gardusig/cli). This repo owns `docker/*.dockerfile`, `docker/.dockerignore`, `scripts/pull-request/`, `scripts/release/`, the `cli docker` monitor/cleanup commands, and pipeline contracts under [`.github/workflows/`](../.github/workflows/).
 
-Run a gate from the repo root:
+Run a gate from the repo root (prefer `scripts/pull-request/build.sh` / `scripts/release/build.sh`, which stage `docker/.dockerignore` automatically):
 
 ```bash
+bash scripts/pull-request/build.sh unit-test
+bash scripts/release/build.sh runtime
+```
+
+Or invoke Docker directly after staging the ignore file:
+
+```bash
+ln -sf docker/.dockerignore .dockerignore
 docker build -f docker/pull-request.dockerfile --target <stage> .
 docker build -f docker/release.dockerfile --target <stage> .
+rm -f .dockerignore
 ```
 
 Common PR targets (`docker/pull-request.dockerfile`): `version-check`, `unit-test`, `testpypi`, `testpypi-consumer`.
@@ -19,7 +28,7 @@ Each Dockerfile stage copies the repo (or consumer scripts only) and runs stage 
 
 ```bash
 bash scripts/local/compare-docker-pipelines.sh
-docker build -f docker/pull-request.dockerfile --target unit-test .
+bash scripts/pull-request/build.sh unit-test
 ```
 
 ## CLI base image (hub)

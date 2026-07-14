@@ -103,6 +103,14 @@ def test_host_last_published_version_queries_pypi_and_testpypi() -> None:
     assert "test.pypi.org/pypi/" in code
 
 
+def test_gh_docker_build_stages_dockerignore_from_docker_folder() -> None:
+    common = ROOT / "scripts" / "_common.sh"
+    code = common.read_text(encoding="utf-8")
+    assert "docker/.dockerignore" in code or 'DOCKERIGNORE:-docker/.dockerignore' in code
+    assert "ln -sf" in code
+    assert "--ignorefile" not in code
+
+
 @pytest.mark.parametrize(
     "relative",
     [

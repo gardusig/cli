@@ -113,13 +113,12 @@ gh_docker_build() {
     echo "dockerignore not found: ${root}/${dockerignore}" >&2
     exit 1
   fi
-  local -a ignore_args=()
-  if docker build --help 2>&1 | grep -q -- '--ignorefile'; then
-    ignore_args=(--ignorefile "${root}/${dockerignore}")
-  elif [[ ! -e "${root}/.dockerignore" ]]; then
-    ln -sf "${dockerignore}" "${root}/.dockerignore"
-  fi
-  docker build -f "${root}/${dockerfile}" "${ignore_args[@]}" --target "$target" "$@" "${root}"
+  # Docker reads .dockerignore from the build-context root. The canonical file
+  # lives at docker/.dockerignore; stage it before each build.
+  local staged_ignore="${root}/.dockerignore"
+  rm -f "${staged_ignore}"
+  ln -sf "${dockerignore}" "${staged_ignore}"
+  docker build -f "${root}/${dockerfile}" --target "$target" "$@" "${root}"
 }
 
 export_cli_test_profile() {
