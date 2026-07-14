@@ -46,6 +46,7 @@ def test_merge_readiness_app_local_pipeline_config() -> None:
     assert "scripts/pull-request/resolve-version.sh" in pr_workflow
     assert "version-check" in pr_workflow
     assert "testpypi-consumer" in pr_workflow
+    assert "needs: [resolve, unit-test]" in pr_workflow or "needs: [unit-test, resolve]" in pr_workflow
     assert "tags:" in release_workflow
     assert '"*"' in release_workflow
     assert 'if: github.ref == \'refs/heads/main\'' not in release_workflow

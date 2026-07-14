@@ -71,7 +71,7 @@ jobs:
 
   testpypi:
     name: Publish to TestPyPI
-    needs: unit-test
+    needs: [resolve, unit-test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
