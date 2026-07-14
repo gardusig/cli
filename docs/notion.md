@@ -8,12 +8,12 @@ Naming matches **`cli drive`**: **ingest** = into local; **deploy** = out to Not
 
 ## Layout
 
-Task root (`notion.task_root`) holds **`header/`** and **`body/`** (typically a private directory). The **manifest** (`tasks.pairs.json`) and **pair templates** live in this repo under `config/notion/` — set `notion.pairs_file` accordingly.
+Task root (`notion.task_root`) holds **`header/`** and **`body/`** (typically a private directory). The **manifest** (`tasks.pairs.json`) path is set via `notion.pairs_file`. Header/body scaffolds ship in **`src/data/notion/templates/`**.
 
 | Path | Role |
 | --- | --- |
-| `config/notion/tasks.pairs.json` | Manifest: `{ "header_filepath", "body_filepath" }` per task |
-| `config/notion/templates/` | Header/body scaffolds when adding rows |
+| `tasks.pairs.json` (or custom path) | Manifest: `{ "header_filepath", "body_filepath" }` per task |
+| `src/data/notion/templates/` | Header/body scaffolds when adding rows |
 | `header/**/*.yaml` (under `task_root`) | **`name`** (unique Notion title) + cadence fields |
 | `body/**/*.md` (under `task_root`) | SOP only — `## Steps`, `## Done when` (cadence lives in header yaml) |
 
@@ -23,13 +23,13 @@ Full pair contract: [notion/task-pairs.md](./notion/task-pairs.md).
 
 ## Configuration
 
-`config/config.yaml`:
+User `config.yaml` (see `cli configure`):
 
 ```yaml
 notion:
   database_id: your-notion-database-id
   task_root: ~/git-local/private/tasks
-  pairs_file: config/notion/tasks.pairs.json
+  pairs_file: tasks.pairs.json
   link_branch: main
   cleanup_before_deploy: true
   properties:

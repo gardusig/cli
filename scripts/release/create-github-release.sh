@@ -1,9 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Create a GitHub release manually in the browser or with your own tooling.
-# This CLI publishes tags via `cli release main` (git tag + push + PyPI).
+# shellcheck source=scripts/_common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"
+
+# Create GitHub release for tag vX.Y.Z (PyPI/Docker use X.Y.Z without v).
 
 tag="${RELEASE_TAG:?RELEASE_TAG required}"
 version="${CLI_VERSION:?CLI_VERSION required}"
 
-echo "Tag ${tag} should already be pushed. Create the GitHub release for gardusig-cli ${version} in the repository UI."
+if command -v gh >/dev/null 2>&1 && [[ -n "${GH_TOKEN:-}" ]]; then
+  gh_args=()
+  if [[ -n "${GITHUB_REPOSITORY:-}" ]]; then
+    gh_args+=(-R "$GITHUB_REPOSITORY")
+  fi
+  if gh release view "$tag" "${gh_args[@]}" >/dev/null 2>&1; then
+    echo "GitHub release already exists: $tag"
+    exit 0
+  fi
+  gh release create "$tag" \
+    "${gh_args[@]}" \
+    --title "$tag" \
+    --notes "Release **gardusig-cli ${version}**
+
+- PyPI: \`pip install gardusig-cli==${version}\`
+- Docker: \`${RUNTIME_IMAGE:-binarylifter/gardusig-cli}:${version}\`"
+  echo "Created GitHub release $tag"
+  exit 0
+fi
+
+echo "Install gh and set GH_TOKEN to create release automatically."
+echo "Tag ${tag} — publish gardusig-cli ${version} on PyPI and ${RUNTIME_IMAGE:-binarylifter/gardusig-cli}:${version} on Docker Hub."

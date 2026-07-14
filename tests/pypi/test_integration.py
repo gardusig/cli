@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from tests.constants import ROOT
+from tests.constants import ROOT, TEST_CONFIG_DIR
 
-CONFIG_DIR = ROOT / "config"
+CONFIG_DIR = TEST_CONFIG_DIR
 TEST_CONFIG_ENV = {"CLI_CONFIG_DIR": str(CONFIG_DIR), "CLI_PROFILE": "test"}
 
 import os

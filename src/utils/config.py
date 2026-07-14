@@ -8,6 +8,8 @@ from platformdirs import user_config_dir
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from src.utils.paths import bundled_config_dir, bundled_path, project_root, resolve_repo_relative
+
 
 class BackupRepository(BaseModel):
     path: str
@@ -162,13 +164,6 @@ def user_cli_config_dir() -> Path:
     return Path(user_config_dir("cli", appauthor=False))
 
 
-def project_root() -> Path:
-    override = os.environ.get("CLI_ROOT", "").strip()
-    if override:
-        return Path(override).expanduser().resolve()
-    return Path(__file__).resolve().parents[2]
-
-
 def load_local_env() -> None:
     """Load repo-root .env into os.environ (does not override existing vars)."""
     try:
@@ -180,14 +175,12 @@ def load_local_env() -> None:
         load_dotenv(env_path, override=False)
 
 
-def _deep_merge(base: dict, overlay: dict) -> dict:
-    merged = dict(base)
-    for key, value in overlay.items():
-        if isinstance(value, dict) and isinstance(merged.get(key), dict):
-            merged[key] = _deep_merge(merged[key], value)
-        else:
-            merged[key] = value
-    return merged
+def default_config_dir() -> Path:
+    """User config dir; override with CLI_CONFIG_DIR (tests, Docker, custom installs)."""
+    env = os.environ.get("CLI_CONFIG_DIR")
+    if env:
+        return Path(env).expanduser()
+    return user_cli_config_dir()
 
 
 def active_config_profile() -> str | None:
@@ -202,19 +195,6 @@ def active_config_profile() -> str | None:
     return None
 
 
-def bundled_config_dir() -> Path:
-    """Repo-shipped defaults for contributors and CI (not used at runtime unless CLI_CONFIG_DIR)."""
-    return project_root() / "config"
-
-
-def default_config_dir() -> Path:
-    """User config dir; override with CLI_CONFIG_DIR (tests, Docker, custom installs)."""
-    env = os.environ.get("CLI_CONFIG_DIR")
-    if env:
-        return Path(env).expanduser()
-    return user_cli_config_dir()
-
-
 def load_yaml(path: Path) -> dict:
     if not path.exists():
         return {}
@@ -223,6 +203,16 @@ def load_yaml(path: Path) -> dict:
     if not isinstance(data, dict):
         raise ValueError(f"Expected mapping in {path}")
     return data
+
+
+def _deep_merge(base: dict, overlay: dict) -> dict:
+    merged = dict(base)
+    for key, value in overlay.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
 
 
 def _normalize_drives(raw: dict) -> dict:
@@ -301,7 +291,7 @@ def tags_dir_path(config_dir: Path | None = None) -> Path:
     path = Path(raw).expanduser()
     if path.is_absolute():
         return path
-    return (project_root() / path).resolve()
+    return resolve_repo_relative(path)
 
 
 def tag_zip_basename(repo_basename: str, tag: str) -> str:
@@ -357,7 +347,7 @@ def bookmarks_file_path(profile: str | None = None, config_dir: Path | None = No
     path = Path(raw).expanduser()
     if path.is_absolute():
         return path.resolve()
-    return (project_root() / path).resolve()
+    return resolve_repo_relative(path)
 
 
 def chrome_snapshots_dir(config_dir: Path | None = None) -> Path | None:
@@ -368,7 +358,7 @@ def chrome_snapshots_dir(config_dir: Path | None = None) -> Path | None:
     path = Path(raw).expanduser()
     if path.is_absolute():
         return path.resolve()
-    return (project_root() / path).resolve()
+    return resolve_repo_relative(path)
 
 
 def chrome_snapshot_retention(config_dir: Path | None = None) -> int:
@@ -391,7 +381,7 @@ def notion_task_root(config_dir: Path | None = None) -> Path:
     path = Path(raw).expanduser()
     if path.is_absolute():
         return path.resolve()
-    return (project_root() / path).resolve()
+    return resolve_repo_relative(path)
 
 
 def notion_pairs_file(config_dir: Path | None = None) -> Path:
@@ -407,7 +397,7 @@ def notion_pairs_file(config_dir: Path | None = None) -> Path:
     if path.is_absolute():
         return path.resolve()
     if len(path.parts) > 1:
-        return (project_root() / path).resolve()
+        return resolve_repo_relative(path)
     return notion_task_root(config_dir) / path.name
 
 
@@ -418,7 +408,7 @@ def notion_tasks_dir(config_dir: Path | None = None) -> Path:
 
 def notion_body_template_file(config_dir: Path | None = None) -> Path:
     """Default body scaffold for new task pairs (ingest creates empty bodies)."""
-    return (project_root() / "config" / "notion" / "templates" / "body.md").resolve()
+    return bundled_path("notion", "templates", "body.md").resolve()
 
 
 def notion_database_id(
@@ -461,7 +451,7 @@ def require_backup_zip_password() -> str:
     if not password:
         raise RuntimeError(
             "BACKUP_ZIP_PASSWORD is not set. Export a zip password for encrypted "
-            "backup repositories (see .env.example)."
+            "backup repositories (see docs/secrets.md or `cli configure list`)."
         )
     return password
 
@@ -530,7 +520,7 @@ def photos_dir_path(config_dir: Path | None = None) -> Path:
     path = Path(raw).expanduser()
     if path.is_absolute():
         return path.resolve()
-    return (project_root() / path).resolve()
+    return resolve_repo_relative(path)
 
 
 def photos_takeout_dir(config_dir: Path | None = None) -> Path:

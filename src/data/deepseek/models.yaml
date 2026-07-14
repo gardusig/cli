@@ -12,7 +12,4 @@ roles:
     description: R1 — extensive traversal of ideas discussed in chat
   categorize:
     model: deepseek-chat
-    description: R4-class — pick topics and craft parent issues per repo (use deepseek-chat until v4-pro API id is set)
-
-# Map future v4 pro when available:
-# categorize.model: deepseek-v4-pro
+    description: R4-class — pick topics and craft parent issues per repo

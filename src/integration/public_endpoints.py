@@ -862,8 +862,8 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag local",
-            ("git", "tag", "v0.0.0", "--yes"),
-            needle="v0.0.0",
+            ("git", "tag", "0.0.0", "--yes"),
+            needle="0.0.0",
             needs_git=True,
             reset_git=True,
         ),
@@ -891,14 +891,14 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git zip",
-            ("git", "zip", "v0.0.0"),
+            ("git", "zip", "0.0.0"),
             needle=".zip",
             needs_git=True,
             reset_git=True,
         ),
         EndpointCheck(
             "git zip missing tag",
-            ("git", "zip", "v9.9.9"),
+            ("git", "zip", "9.9.9"),
             needle="Tag not found",
             needs_git=True,
             reset_git=True,
@@ -907,7 +907,7 @@ def endpoint_checks() -> list[EndpointCheck]:
         EndpointCheck(
             "git tag invalid format",
             ("git", "tag", "2026-06-11", "--yes"),
-            needle="semver-v",
+            needle="semver",
             needs_git=True,
             reset_git=True,
             accept_exit_codes=(1,),
@@ -1051,7 +1051,7 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag replace refuse",
-            ("git", "tag", "v0.0.1"),
+            ("git", "tag", "0.0.1"),
             kind="refuse",
             needle=refuse,
             needs_git=True,
@@ -1059,8 +1059,8 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag replace force",
-            ("git", "tag", "v0.0.1", "--yes", "--force"),
-            needle="v0.0.1",
+            ("git", "tag", "0.0.1", "--yes", "--force"),
+            needle="0.0.1",
             needs_git=True,
             reset_git=True,
         ),
@@ -1163,7 +1163,7 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag push refuse",
-            ("git", "tag", "push", "v0.0.2"),
+            ("git", "tag", "push", "0.0.2"),
             kind="refuse",
             needle=refuse,
             needs_git=True,
@@ -1313,8 +1313,8 @@ def endpoint_checks() -> list[EndpointCheck]:
         ),
         EndpointCheck(
             "git tag push yes",
-            ("git", "tag", "push", "v0.0.3", "--yes"),
-            needle="v0.0.3",
+            ("git", "tag", "push", "0.0.3", "--yes"),
+            needle="0.0.3",
             needs_git=True,
             reset_git=True,
         ),
@@ -1908,18 +1908,18 @@ def execute_endpoint_integration_check(
         reset_integration_git(git_root)
     if check.label == "git tag replace refuse" and git_root is not None:
         subprocess.run(
-            ["git", "-C", str(git_root), "tag", "-a", "v0.0.1", "-m", "v0.0.1"],
+            ["git", "-C", str(git_root), "tag", "-a", "0.0.1", "-m", "0.0.1"],
             check=True,
             capture_output=True,
         )
     if check.label == "git tag replace force" and git_root is not None:
         subprocess.run(
-            ["git", "-C", str(git_root), "tag", "-a", "v0.0.1", "-m", "v0.0.1"],
+            ["git", "-C", str(git_root), "tag", "-a", "0.0.1", "-m", "0.0.1"],
             check=True,
             capture_output=True,
         )
     if check.label in {"git tag push yes", "git tag push refuse"} and git_root is not None:
-        tag_name = "v0.0.3" if check.label == "git tag push yes" else "v0.0.2"
+        tag_name = "0.0.3" if check.label == "git tag push yes" else "0.0.2"
         subprocess.run(
             ["git", "-C", str(git_root), "tag", "-a", tag_name, "-m", tag_name],
             check=True,
@@ -1927,7 +1927,7 @@ def execute_endpoint_integration_check(
         )
     if check.label == "git zip" and git_root is not None:
         subprocess.run(
-            ["git", "-C", str(git_root), "tag", "-a", "v0.0.0", "-m", "v0.0.0"],
+            ["git", "-C", str(git_root), "tag", "-a", "0.0.0", "-m", "0.0.0"],
             check=True,
             capture_output=True,
         )
@@ -1964,7 +1964,7 @@ def execute_endpoint_integration_check(
                 latest_tag=None,
                 tag_sha=None,
                 needs_tag=True,
-                suggested_tag="v0.0.1",
+                suggested_tag="0.0.1",
                 open_prs=(),
             ),
         )

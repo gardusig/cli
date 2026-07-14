@@ -6,7 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+from tests.constants import ROOT, TEST_CONFIG_DIR
+
 SMOKE = ROOT / "scripts" / "pull-request" / "integration-smoke.sh"
 
 
@@ -15,7 +16,7 @@ def main() -> int:
         print(f"missing smoke script: {SMOKE}", file=sys.stderr)
         return 1
     env = dict(**{k: v for k, v in __import__("os").environ.items()})
-    env.setdefault("CLI_CONFIG_DIR", str(ROOT / "config"))
+    env.setdefault("CLI_CONFIG_DIR", str(TEST_CONFIG_DIR))
     env.setdefault("CLI_PROFILE", "test")
     result = subprocess.run(["bash", str(SMOKE)], cwd=ROOT, env=env, check=False)
     if result.returncode != 0:

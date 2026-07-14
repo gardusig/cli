@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from tests.constants import ROOT
+from tests.constants import ROOT, TEST_CONFIG_DIR
 
 import importlib
 from pathlib import Path
@@ -59,13 +59,11 @@ DOCKER_VERIFY_PATHS = [
 ]
 
 REQUIRED_PATHS = [
-    "config/config.yaml",
-    "config/release/config.yaml",
-    "config/notion/tasks.pairs.json",
-    "config/notion/templates/body.md",
-    "config/notion/templates/header.yaml",
-    "config/config.test.yaml",
-    "config/drives.yaml",
+    "tests/fixtures/config/config.yaml",
+    "tests/fixtures/config/config.test.yaml",
+    "tests/fixtures/config/drives.yaml",
+    "src/data/notion/templates/body.md",
+    "src/data/notion/templates/header.yaml",
     "coverage-unit.ini",
     "tests/fixtures/bookmarks.html",
     "tests/fixtures/notion/tasks/tasks.pairs.json",
@@ -102,7 +100,7 @@ def test_top_level_commands_registered() -> None:
 def test_config_loader() -> None:
     from src.utils.config import load_config
 
-    cfg = load_config(ROOT / "config")
+    cfg = load_config(TEST_CONFIG_DIR)
     assert cfg.backup.repositories
     assert cfg.backup.tags_dir == ".integration-scratch/ci-tags"
     assert cfg.drives.google.enabled is True

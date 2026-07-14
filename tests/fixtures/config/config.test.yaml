@@ -1,5 +1,4 @@
-# Test / CI profile — merged when CLI_PROFILE=test (pytest, Docker, scripts/_common.sh).
-# Paths are repo-relative so the same config works locally and in /workspace.
+# Test / CI profile — merged when CLI_PROFILE=test (pytest, Docker, smoke scripts).
 backup:
   tags_dir: .integration-scratch/ci-tags
   repositories:

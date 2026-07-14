@@ -6,7 +6,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-_TEMPLATES = Path(__file__).resolve().parents[4] / "config" / "contest" / "templates"
+_TEMPLATES = Path(__file__).resolve().parents[1] / "templates"
 sys.path.insert(0, str(_TEMPLATES))
 
 from lib import Case, format_multi_test  # noqa: E402

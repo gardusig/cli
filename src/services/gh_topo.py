@@ -9,11 +9,13 @@ from typing import Any
 
 import yaml
 
+from src.utils.paths import bundled_path
+
 _STEP_RE = re.compile(r"^(?P<step>\d+)\s*[—\-]\s*(?P<rest>.+)$")
 _PRIORITY_RE = re.compile(r"^priority:(?P<n>[0-5])$")
 _DEPENDS_RE = re.compile(r"(?:Depends|Blocked-by):\s*#(?P<num>\d+)", re.IGNORECASE)
 
-_PRIORITY_LEVELS_PATH = Path(__file__).resolve().parents[2] / "config" / "gh" / "priority-levels.yaml"
+_PRIORITY_LEVELS_PATH = bundled_path("gh", "priority-levels.yaml")
 
 
 @dataclass(frozen=True, order=True)

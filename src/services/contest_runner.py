@@ -23,7 +23,8 @@ from src.services.contest_docker import (
     run_fast,
 )
 from src.services.contest_serde import compare_text, unified_diff
-from src.utils.config import load_yaml, project_root
+from src.utils.config import load_yaml
+from src.utils.paths import bundled_path
 
 
 TierName = Literal["small", "large"]
@@ -64,8 +65,7 @@ class ContestValidateResult:
 
 
 def contest_defaults() -> dict:
-    path = project_root() / "config" / "contest" / "defaults.yaml"
-    return load_yaml(path)
+    return load_yaml(bundled_path("contest", "defaults.yaml"))
 
 
 def load_contest_config(config_path: Path) -> dict:

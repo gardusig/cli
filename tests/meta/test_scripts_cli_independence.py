@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -14,6 +15,7 @@ FORBIDDEN_IN_SCRIPTS = (
     "python -m src",
 )
 FORBIDDEN_IN_SRC = (
+    "scripts/",
     "subprocess.run([\"scripts/",
     "subprocess.run(['scripts/",
     "Path(\"scripts/",
@@ -96,11 +98,60 @@ def test_version_check_uses_host_base_version_not_git() -> None:
     assert "git fetch" not in code
 
 
+def test_host_last_published_version_queries_pypi_and_testpypi() -> None:
+    script = PR_SCRIPTS / "host-last-published-version.sh"
+    code = script.read_text(encoding="utf-8")
+    assert "pypi.org/pypi/" in code
+    assert "test.pypi.org/pypi/" in code
+
+
+def test_dockerfiles_copy_explicit_source_tree() -> None:
+    pr_docker = (ROOT / "docker" / "pull-request.dockerfile").read_text(encoding="utf-8")
+    release_docker = (ROOT / "docker" / "release.dockerfile").read_text(encoding="utf-8")
+    assert "COPY . ." not in pr_docker
+    assert "COPY . ." not in release_docker
+    assert "COPY scripts/pull-request/version-check.sh" in pr_docker
+    assert "COPY scripts/ scripts/" in pr_docker
+    assert "testpypi" not in pr_docker
+    assert "COPY scripts/pull-request/testpypi-release.sh" in release_docker
+    assert "COPY scripts/release/pypi-release.sh" in release_docker
+    assert "COPY scripts/pull-request scripts/pull-request" not in pr_docker
+    assert "COPY scripts/release scripts/release" not in pr_docker
+    assert "COPY scripts/release scripts/release" not in release_docker
+
+
+def test_workflows_do_not_reference_shell_scripts() -> None:
+    workflows = ROOT / ".github" / "workflows"
+    for path in sorted(workflows.glob("*.yaml")):
+        text = path.read_text(encoding="utf-8")
+        assert ".sh" not in text, path.name
+        assert "bash scripts/" not in text, path.name
+        assert "scripts/" not in text, path.name
+
+
+_SHELL_INVOKE_RE = re.compile(
+    r'(?:RUN bash |ENTRYPOINT \["bash", )"([^"]+\.sh)"'
+)
+
+
+def test_dockerfiles_only_invoke_scripts_shell() -> None:
+    for path in sorted((ROOT / "docker").glob("*.dockerfile")):
+        text = path.read_text(encoding="utf-8")
+        for match in _SHELL_INVOKE_RE.finditer(text):
+            script = match.group(1)
+            assert script.startswith("scripts/"), f"{path.name}: {script}"
+        for line in text.splitlines():
+            stripped = line.strip()
+            if not stripped.startswith("COPY ") or ".sh" not in stripped:
+                continue
+            assert "scripts/" in stripped, f"{path.name}: {stripped}"
+
+
 @pytest.mark.parametrize(
     "relative",
     [
-        "Dockerfile",
-        ".dockerignore",
+        "docker/pull-request.dockerfile",
+        "docker/release.dockerfile",
         "scripts/_common.sh",
         "scripts/pull-request/unit-test.sh",
     ],

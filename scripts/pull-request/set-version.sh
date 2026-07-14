@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Set pyproject.toml + src/__init__.py to the next PyPI-compatible version.
-# Patch-bumps the latest published PyPI release; on first publish keeps a valid
+# Patch-bumps the greatest published PyPI/TestPyPI release; on first publish keeps a valid
 # working-tree version or falls back to 0.1.0.
 set -euo pipefail
 # shellcheck source=scripts/_common.sh
@@ -18,7 +18,7 @@ for arg in "$@"; do
 Usage: scripts/pull-request/set-version.sh [--dry-run]
 
 Writes the next semver to pyproject.toml and src/__init__.py:
-  - when PyPI has releases: patch-bump the latest published version
+  - when PyPI or TestPyPI has releases: patch-bump the greatest published version
   - when none yet: keep a valid pyproject version, else 0.1.0
 
 Prints the chosen version on stdout.

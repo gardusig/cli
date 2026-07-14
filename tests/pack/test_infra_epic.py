@@ -50,7 +50,7 @@ def test_infra_epic_resolve_help() -> None:
 def test_infra_epic_suite_contract() -> None:
     result = RUNNER.invoke(app, ["test", "packages", "suite", "--format", "json"])
     assert result.exit_code == 0
-    assert "integration-smoke" in result.stdout
+    assert "cli_smoke" in result.stdout
 
 
 def test_infra_epic_git_deploy_help() -> None:

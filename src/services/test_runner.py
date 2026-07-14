@@ -5,6 +5,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from src.services.cli_smoke import SmokeError, run_all as run_smoke
+
 
 def run_unit(root: Path) -> None:
     subprocess.run(
@@ -26,8 +28,11 @@ def run_unit(root: Path) -> None:
 
 
 def run_integration(root: Path) -> None:
-    subprocess.run(["bash", "scripts/pull-request/integration-test.sh"], cwd=root, check=True)
+    try:
+        run_smoke(workspace=root)
+    except SmokeError as exc:
+        raise RuntimeError(str(exc)) from exc
 
 
 def run_command_surface(root: Path) -> None:
-    subprocess.run(["bash", "scripts/pull-request/integration-smoke.sh"], cwd=root, check=True)
+    run_integration(root)

@@ -63,15 +63,15 @@ def test_load_tag_policy_from_repo(tmp_path: Path) -> None:
     assert policy.pattern == TagPattern.DATE
 
 
-def test_infer_semver_v_from_pyproject(tmp_path: Path) -> None:
+def test_infer_semver_from_pyproject(tmp_path: Path) -> None:
     (tmp_path / "pyproject.toml").write_text(
         '[project]\nname = "x"\nversion = "0.2.0"\n',
         encoding="utf-8",
     )
     policy = resolve_tag_policy(tmp_path, [])
-    assert policy.pattern == TagPattern.SEMVER_V
+    assert policy.pattern == TagPattern.SEMVER
     assert policy.require_increase is True
-    assert suggest_next_tag([], policy, repo_root=tmp_path) == "v0.2.0"
+    assert suggest_next_tag([], policy, repo_root=tmp_path) == "0.2.0"
 
 
 def test_latest_tag_picks_highest_semver() -> None:

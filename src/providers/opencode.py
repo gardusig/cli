@@ -13,12 +13,12 @@ import yaml
 
 from src.providers.deepseek import DeepSeekClient, Role
 from src.utils.config import default_config_dir
+from src.utils.paths import bundled_path
 
 ModelTier = Literal["plan", "summarize", "code", "categorize"]
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_MODELS_PATH = _REPO_ROOT / "config" / "opencode" / "models.yaml"
-_BUNDLED_CONFIG = _REPO_ROOT / "config" / "opencode" / "opencode.json"
+_MODELS_PATH = bundled_path("opencode", "models.yaml")
+_BUNDLED_CONFIG = bundled_path("opencode", "opencode.json")
 
 # plan/code → reason (R1); summarize → chat; categorize → categorize (R4-class)
 _TIER_ROLE: dict[ModelTier, Role] = {

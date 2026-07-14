@@ -14,7 +14,9 @@ import shlex
 import subprocess
 from typing import Any
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+from src.utils.config import project_root
+
+_REPO_ROOT = project_root()
 _DEFAULT_PACKAGE_LIMIT = 4
 _COMMON_ENV = {"CLI_PROFILE": "test"}
 _CORE_INTEGRATION_CHECKS = (
@@ -136,8 +138,8 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
             "src/providers/opencode.py",
             "src/providers/deepseek.py",
             "src/services/chat_distill.py",
-            "config/deepseek/**",
-            "config/opencode/**",
+            "src/data/deepseek/**",
+            "src/data/opencode/**",
         ),
         tests=("tests/services/test_chat_distill.py",),
         checks=("opencode --help",),
@@ -255,7 +257,7 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
     ),
     _pkg(
         "config",
-        source=("src/commands/config_cmd.py", "src/utils/config.py", "config/**"),
+        source=("src/commands/config_cmd.py", "src/utils/config.py", "src/data/config/**"),
         tests=("tests/cli/",),
         checks=("config --help",),
     ),
@@ -320,7 +322,7 @@ TEST_PACKAGES: tuple[TestPackage, ...] = (
         "internal",
         source=("src/internal/**",),
         tests=("tests/internal/", "tests/cli/"),
-        checks=("scripts/pull-request/integration-smoke.sh",),
+        checks=("python -m src.services.cli_smoke",),
         notes=("Read/write gate internals affect many commands.",),
         broad=True,
     ),
@@ -586,6 +588,9 @@ def full_suite_payload() -> dict[str, Any]:
 def _integration_command(package_name: str, check: str) -> TestCommand:
     if check == _PACKAGE_INTEGRATION:
         command = ("python3", "tests/integration/check_package_integration.py", "--package", package_name)
+    elif check.startswith("python -m "):
+        module = check.removeprefix("python -m ").strip()
+        command = ("python3", "-m", module)
     elif check.startswith("tests/") and check.endswith(".py"):
         command = ("python3", check)
     else:

@@ -7,10 +7,11 @@ Work in a **standalone clone** of [`gardusig/cli`](https://github.com/gardusig/c
 ```bash
 git clone git@github.com:gardusig/cli.git
 cd cli
-uv sync
+uv sync          # installs runtime + [dependency-groups].dev (see pyproject.toml)
+# or: pip install -e ".[dev]"
 ```
 
-Override config with `CLI_CONFIG_DIR` (default: `config/` in the clone, or `~/.config/cli/` after PyPI install). For tests and CI, set `CLI_PROFILE=test` to merge `config.test.yaml`.
+Override config with `CLI_CONFIG_DIR` (default after PyPI install: `~/.config/cli/`). For tests and CI, set `CLI_PROFILE=test` to merge `config.test.yaml` from `tests/fixtures/config/`.
 
 ## Tests
 
@@ -28,11 +29,11 @@ All stages delegate to `scripts/pull-request/` and `scripts/release/` (raw shell
 ```bash
 export BASE_VERSION="$(bash scripts/pull-request/host-last-published-version.sh)"
 
-docker build --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
-docker build --target unit-test .
+docker build -f docker/pull-request.dockerfile --target version-check --build-arg "BASE_VERSION=${BASE_VERSION}" .
+docker build -f docker/pull-request.dockerfile --target unit-test .
 ```
 
-Docker reads `.dockerignore` from the repo root build context.
+Build context stays the repo root. Each Dockerfile target copies only what it runs; the `unit-test` stage additionally includes `scripts/`, `docker/`, `.github/workflows/`, and `docs/` so meta and pack tests see the same repo layout.
 
 Git runs **only on the host** (`host-base-version.sh` or the workflow). Docker stages read copied files and build-args.
 
@@ -51,7 +52,7 @@ GitHub Actions entrypoints: [`.github/workflows/pull-request.yaml`](../.github/w
 ## Release (maintainer)
 
 1. Bump `pyproject.toml` / `src/__init__.py` (strictly greater than `main` for PR gate).
-2. Merge PR; push tag `vX.Y.Z` matching the version.
+2. Merge PR; push tag `X.Y.Z` matching the version (bare semver, e.g. `1.0.8`).
 3. [`.github/workflows/release.yaml`](../.github/workflows/release.yaml) publishes to PyPI and runs consumer integration.
 
 See [release.md](release.md) for secrets and hub sync (`docs/yaml-sync/`).

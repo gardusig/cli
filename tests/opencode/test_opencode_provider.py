@@ -13,6 +13,10 @@ from src.providers.opencode import (
     resolve_opencode_config,
 )
 
+from src.utils.paths import bundled_path
+
+from src.utils.paths import bundled_path
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -24,7 +28,8 @@ def test_model_for_role_reads_config() -> None:
 def test_resolve_opencode_config_uses_config_dir() -> None:
     path = resolve_opencode_config()
     assert path is not None
-    assert path == ROOT / "config" / "opencode" / "opencode.json"
+    assert path.is_file()
+    assert path == bundled_path("opencode", "opencode.json")
 
 
 def test_parse_opencode_stdout_plain_text() -> None:

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.constants import ROOT
+from tests.constants import ROOT, TEST_CONFIG_DIR
 
 SMOKE = ROOT / "scripts" / "pull-request" / "integration-smoke.sh"
 
@@ -21,7 +21,7 @@ def test_integration_smoke_script_exists() -> None:
 @pytest.mark.integration
 def test_integration_smoke_runs() -> None:
     env = dict(os.environ)
-    env.setdefault("CLI_CONFIG_DIR", str(ROOT / "config"))
+    env.setdefault("CLI_CONFIG_DIR", str(TEST_CONFIG_DIR))
     env.setdefault("CLI_PROFILE", "test")
     result = subprocess.run(["bash", str(SMOKE)], cwd=ROOT, env=env, check=False)
     assert result.returncode == 0, "integration-smoke.sh failed"

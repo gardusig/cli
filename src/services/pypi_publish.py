@@ -199,6 +199,38 @@ def fetch_latest_published_version(
     return best
 
 
+def fetch_greatest_published_version(
+    package: str = PACKAGE_NAME,
+    *,
+    timeout: float = 20.0,
+) -> str | None:
+    """Return the highest semver published on PyPI or TestPyPI, or ``None`` when absent."""
+    from src.services.tag_policy import compare_versions
+
+    best: str | None = None
+    errors: list[str] = []
+    for testpypi in (False, True):
+        label = "TestPyPI" if testpypi else "PyPI"
+        try:
+            candidate = fetch_latest_published_version(
+                package,
+                testpypi=testpypi,
+                timeout=timeout,
+            )
+        except PyPiPublishError as exc:
+            errors.append(f"{label}: {exc}")
+            continue
+        if candidate is None:
+            continue
+        if best is None or compare_versions(candidate, best) > 0:
+            best = candidate
+    if best is not None:
+        return best
+    if errors:
+        raise PyPiPublishError("; ".join(errors))
+    return None
+
+
 def suggest_next_release_version(
     *,
     published: str | None = None,
@@ -211,7 +243,7 @@ def suggest_next_release_version(
 
     root = (root or project_root()).resolve()
     if published is None:
-        published = fetch_latest_published_version()
+        published = fetch_greatest_published_version()
 
     if published:
         return bump_semver(normalize_release_version(published), level=level)

@@ -12,7 +12,7 @@ Load order inside the config directory:
 2. `config.<profile>.yaml` when `CLI_PROFILE` is set (unless `CLI_CONFIG_DIR` disables profiles)
 3. `drives.yaml`, `auth.yaml`
 
-Repo-root **`.env`** is loaded for local dev convenience (never overrides existing env vars).
+Optional: a **`.env`** file in the current project root is loaded for local convenience (never overrides existing env vars). Prefer **`cli configure set … --stdin`** for secrets.
 
 ## First-time setup
 
@@ -32,7 +32,7 @@ cli configure set notion.token --stdin
 
 Override: `CLI_CONFIG_DIR=/path` (profile merge disabled).
 
-Contributors / CI: `CLI_CONFIG_DIR=config` and `CLI_PROFILE=test`.
+Contributors / CI: `CLI_CONFIG_DIR=tests/fixtures/config` and `CLI_PROFILE=test`.
 
 ## Files
 
@@ -44,7 +44,7 @@ Contributors / CI: `CLI_CONFIG_DIR=config` and `CLI_PROFILE=test`.
 | `contest/defaults.yaml` | `cli contest validate` timeout, memory, image defaults |
 | `contest/templates/` | Generator and brute scaffolds for competitive programming |
 
-See [`config/README.md`](../config/README.md) for how CI overrides relate to the root files.
+Test fixtures live under [`tests/fixtures/config/`](../tests/fixtures/config/) (not shipped on PyPI).
 
 ## Notion tasks
 
@@ -52,7 +52,7 @@ See [`config/README.md`](../config/README.md) for how CI overrides relate to the
 notion:
   database_id: your-notion-database-id
   task_root: ~/git-local/private/tasks
-  pairs_file: config/notion/tasks.pairs.json
+  pairs_file: tasks.pairs.json
   cleanup_before_deploy: true
   properties:
     title: Name
@@ -65,7 +65,7 @@ notion:
 ```
 
 - `task_root` — private folder with `header/` and `body/` (task content)
-- `pairs_file` — manifest path; use `config/notion/tasks.pairs.json` in this repo (or a bare filename under `task_root` for tests)
+- `pairs_file` — manifest path (bare filename under `task_root`, or a repo-relative path)
 - `header` yaml **`name`** — unique Notion title (required in each yaml)
 - `database_id` — existing Notion database (cli never creates schema)
 - **`NOTION_TOKEN`** — integration token in environment only (not in YAML)
