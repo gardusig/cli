@@ -21,7 +21,8 @@ _resolve_tag_version() {
   root="$(gh_repo_root)"
   project_version="$(gh_read_project_version "$root")"
   if [[ "$version" != "$project_version" ]]; then
-    echo "note: tag ${git_tag} (${version}) differs from pyproject (${project_version}); publish will sync before build" >&2
+    echo "tag ${git_tag} (${version}) must match pyproject (${project_version})" >&2
+    exit 1
   fi
 
   gh_write_output tag "$git_tag"
