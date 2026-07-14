@@ -116,6 +116,7 @@ def test_dockerfiles_copy_explicit_source_tree() -> None:
     assert "COPY scripts/pull-request/testpypi-release.sh" in release_docker
     assert "COPY scripts/release/pypi-release.sh" in release_docker
     assert "COPY scripts/release/runtime-install.sh" in release_docker
+    assert "COPY scripts/release/verify-runtime-version.sh" in release_docker
     assert "COPY scripts/pull-request scripts/pull-request" not in pr_docker
     assert "COPY scripts/release scripts/release" not in pr_docker
     assert "COPY scripts/release scripts/release" not in release_docker

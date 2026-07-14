@@ -101,7 +101,9 @@ RUN apt-get update \
 WORKDIR /workspace
 COPY scripts/_common.sh scripts/_common.sh
 COPY scripts/release/runtime-install.sh scripts/release/runtime-install.sh
-RUN bash scripts/release/runtime-install.sh
+COPY scripts/release/verify-runtime-version.sh scripts/release/verify-runtime-version.sh
+RUN bash scripts/release/runtime-install.sh \
+    && bash scripts/release/verify-runtime-version.sh
 
 ENTRYPOINT ["cli"]
 CMD ["--help"]
@@ -117,6 +119,7 @@ WORKDIR /workspace
 COPY scripts/_common.sh scripts/_common.sh
 COPY scripts/release/push-runtime-image.sh scripts/release/push-runtime-image.sh
 COPY scripts/release/smoke-runtime-image.sh scripts/release/smoke-runtime-image.sh
+COPY scripts/release/verify-runtime-version.sh scripts/release/verify-runtime-version.sh
 COPY scripts/release/create-github-release.sh scripts/release/create-github-release.sh
 
 FROM ci-tools AS ci-push

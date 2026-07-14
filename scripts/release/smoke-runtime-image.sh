@@ -7,7 +7,7 @@ version="${CLI_VERSION:?CLI_VERSION required}"
 
 _smoke_runtime_image() {
   docker pull "${RUNTIME_IMAGE}:${CLI_VERSION}"
-  docker run --rm "${RUNTIME_IMAGE}:${CLI_VERSION}" --version
+  bash "$(dirname "${BASH_SOURCE[0]}")/verify-runtime-version.sh"
 }
 
 stage_run_with_timeout "${CI_RELEASE_SMOKE_TIMEOUT}" _smoke_runtime_image
