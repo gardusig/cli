@@ -111,7 +111,7 @@ FROM docker:27-cli AS ci-tools
 ENV CI_DOCKER_PUSH_TIMEOUT=5m \
     CI_RELEASE_SMOKE_TIMEOUT=3m
 
-RUN apk add --no-cache bash github-cli
+RUN apk add --no-cache bash github-cli coreutils
 
 WORKDIR /workspace
 COPY scripts/_common.sh scripts/_common.sh
