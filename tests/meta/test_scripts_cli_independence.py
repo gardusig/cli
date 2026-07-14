@@ -103,20 +103,21 @@ def test_host_last_published_version_queries_pypi_and_testpypi() -> None:
     assert "test.pypi.org/pypi/" in code
 
 
-def test_gh_docker_build_uses_docker_folder_ignore_only() -> None:
-    common = ROOT / "scripts" / "_common.sh"
-    code = common.read_text(encoding="utf-8")
-    assert 'DOCKERIGNORE:-docker/.dockerignore' in code
-    assert "ln -sf" not in code
-    assert "--ignorefile" in code
-    assert 'cp "${root}/${dockerignore}" "${root}/.dockerignore"' in code
+def test_dockerfiles_copy_explicit_source_tree() -> None:
+    pr_docker = (ROOT / "docker" / "pull-request.dockerfile").read_text(encoding="utf-8")
+    release_docker = (ROOT / "docker" / "release.dockerfile").read_text(encoding="utf-8")
+    assert "FROM base AS ci-source" in pr_docker
+    assert "COPY tests tests" in pr_docker
+    assert "COPY . ." not in pr_docker
+    assert "FROM base AS release-source" in release_docker
+    assert "COPY . ." not in release_docker
 
 
 @pytest.mark.parametrize(
     "relative",
     [
         "docker/pull-request.dockerfile",
-        "docker/.dockerignore",
+        "docker/release.dockerfile",
         "scripts/_common.sh",
         "scripts/pull-request/unit-test.sh",
     ],

@@ -1,9 +1,6 @@
 # Allowed tracked roots (do not add ignore patterns that hide these):
 #   config/ docs/ scripts/ src/ tests/ .github/
-#   docker/.dockerignore docker/pull-request.dockerfile docker/release.dockerfile
-#
-# Ephemeral copy staged by gh_docker_build on older Docker (canonical: docker/.dockerignore)
-.dockerignore
+#   docker/pull-request.dockerfile docker/release.dockerfile
 #
 # --- Cursor / IDE ---
 .cursor/

@@ -1,7 +1,6 @@
 repo: gardusig/cli
 selective: true
 dockerfile: docker/pull-request.dockerfile
-dockerignore: docker/.dockerignore
 jobs:
 - id: version-check
   name: Version gate

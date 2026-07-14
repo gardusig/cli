@@ -1,19 +1,19 @@
 # Docker
 
-Workflow routers live in [`gardusig/cli`](https://github.com/gardusig/cli). This repo owns `docker/*.dockerfile`, `docker/.dockerignore`, `scripts/pull-request/`, `scripts/release/`, the `cli docker` monitor/cleanup commands, and pipeline contracts under [`.github/workflows/`](../.github/workflows/).
+Workflow routers live in [`gardusig/cli`](https://github.com/gardusig/cli). This repo owns `docker/*.dockerfile`, `scripts/pull-request/`, `scripts/release/`, the `cli docker` monitor/cleanup commands, and pipeline contracts under [`.github/workflows/`](../.github/workflows/).
 
-Run a gate from the repo root (prefer `scripts/pull-request/build.sh` / `scripts/release/build.sh`, which stage `docker/.dockerignore` automatically):
+Run a gate from the repo root:
 
 ```bash
 bash scripts/pull-request/build.sh unit-test
 bash scripts/release/build.sh runtime
 ```
 
-Or invoke Docker directly when your CLI supports `--ignorefile`:
+Or invoke Docker directly:
 
 ```bash
-docker build -f docker/pull-request.dockerfile --ignorefile docker/.dockerignore --target <stage> .
-docker build -f docker/release.dockerfile --ignorefile docker/.dockerignore --target <stage> .
+docker build -f docker/pull-request.dockerfile --target <stage> .
+docker build -f docker/release.dockerfile --target <stage> .
 ```
 
 Common PR targets (`docker/pull-request.dockerfile`): `version-check`, `unit-test`, `testpypi`, `testpypi-consumer`.

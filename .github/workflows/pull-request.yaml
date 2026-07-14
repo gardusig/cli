@@ -14,7 +14,6 @@ permissions:
 
 env:
   PR_DOCKERFILE: docker/pull-request.dockerfile
-  DOCKERIGNORE: docker/.dockerignore
   CI_UNIT_TIMEOUT: 5m
   CI_INTEGRATION_TIMEOUT: 3m
   CI_DOCKER_BUILD_TIMEOUT: 5m

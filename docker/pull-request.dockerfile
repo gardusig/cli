@@ -21,20 +21,26 @@ RUN apt-get update \
 
 WORKDIR /workspace
 
-FROM base AS version-check
+# Explicit source tree — no repo-root .dockerignore.
+FROM base AS ci-source
+COPY pyproject.toml uv.lock README.md LICENSE coverage-unit.ini ./
+COPY scripts/_common.sh scripts/_common.sh
+COPY scripts/pull-request scripts/pull-request
+COPY src src
+COPY tests tests
+
+FROM ci-source AS version-check
 
 ARG BASE_VERSION=
 ENV BASE_VERSION=${BASE_VERSION}
 
-COPY . .
 RUN bash scripts/pull-request/version-check.sh
 
-FROM base AS unit-test
+FROM ci-source AS unit-test
 
-COPY . .
 RUN bash scripts/pull-request/unit-test.sh
 
-FROM base AS testpypi
+FROM ci-source AS testpypi
 
 ARG CLI_RELEASE_VERSION=
 ARG TESTPYPI_API_TOKEN=
@@ -42,7 +48,6 @@ ARG TESTPYPI_API_TOKEN=
 ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
     TESTPYPI_API_TOKEN=${TESTPYPI_API_TOKEN}
 
-COPY . .
 RUN bash scripts/pull-request/testpypi-release.sh
 
 FROM python:3.12-slim AS testpypi-consumer

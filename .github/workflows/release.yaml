@@ -15,7 +15,6 @@ permissions:
 
 env:
   RELEASE_DOCKERFILE: docker/release.dockerfile
-  DOCKERIGNORE: docker/.dockerignore
   RUNTIME_IMAGE: binarylifter/gardusig-cli
   CI_DOCKER_BUILD_TIMEOUT: 5m
   CI_TESTPYPI_TIMEOUT: 5m

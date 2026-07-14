@@ -20,7 +20,6 @@ gh_repo_root() {
 
 PR_DOCKERFILE="${PR_DOCKERFILE:-docker/pull-request.dockerfile}"
 RELEASE_DOCKERFILE="${RELEASE_DOCKERFILE:-docker/release.dockerfile}"
-DOCKERIGNORE="${DOCKERIGNORE:-docker/.dockerignore}"
 RUNTIME_IMAGE="${RUNTIME_IMAGE:-binarylifter/gardusig-cli}"
 
 gh_read_project_version() {
@@ -97,34 +96,18 @@ gh_write_output() {
 gh_docker_build() {
   local target="$1"
   shift
-  local root dockerfile dockerignore
+  local root dockerfile
   root="$(gh_repo_root)"
   dockerfile="${DOCKERFILE:-${PR_DOCKERFILE:-${RELEASE_DOCKERFILE:-}}}"
   if [[ -z "$dockerfile" ]]; then
     echo "DOCKERFILE required (PR_DOCKERFILE or RELEASE_DOCKERFILE)" >&2
     exit 1
   fi
-  dockerignore="${DOCKERIGNORE:?DOCKERIGNORE required}"
   if [[ ! -f "${root}/${dockerfile}" ]]; then
     echo "dockerfile not found: ${root}/${dockerfile}" >&2
     exit 1
   fi
-  if [[ ! -f "${root}/${dockerignore}" ]]; then
-    echo "dockerignore not found: ${root}/${dockerignore}" >&2
-    exit 1
-  fi
-  if docker build --help 2>&1 | grep -q -- '--ignorefile'; then
-    docker build -f "${root}/${dockerfile}" --ignorefile "${root}/${dockerignore}" \
-      --target "$target" "$@" "${root}"
-    return
-  fi
-  # Older buildx: Docker reads .dockerignore only from the context root. Copy the
-  # canonical docker/.dockerignore for the build, then remove it.
-  (
-    cp "${root}/${dockerignore}" "${root}/.dockerignore"
-    trap 'rm -f "${root}/.dockerignore"' EXIT
-    docker build -f "${root}/${dockerfile}" --target "$target" "$@" "${root}"
-  )
+  docker build -f "${root}/${dockerfile}" --target "$target" "$@" "${root}"
 }
 
 export_cli_test_profile() {

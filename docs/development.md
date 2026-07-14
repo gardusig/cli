@@ -33,7 +33,7 @@ docker build -f docker/pull-request.dockerfile --target version-check --build-ar
 docker build -f docker/pull-request.dockerfile --target unit-test .
 ```
 
-Build context stays the repo root. Ignore rules live only in `docker/.dockerignore`. `gh_docker_build` passes `--ignorefile` when the local Docker CLI supports it; otherwise it copies that file to `.dockerignore` for the build and deletes it afterward.
+Build context stays the repo root. Dockerfiles copy only the paths each stage needs (`ci-source` / `release-source`); there is no `.dockerignore`.
 
 Git runs **only on the host** (`host-base-version.sh` or the workflow). Docker stages read copied files and build-args.
 

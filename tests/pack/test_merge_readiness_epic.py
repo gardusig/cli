@@ -27,7 +27,12 @@ def test_merge_readiness_app_local_pipeline_config() -> None:
     release_workflow = (ROOT / ".github" / "workflows" / "release.yaml").read_text(encoding="utf-8")
     assert (ROOT / "docker" / "pull-request.dockerfile").is_file()
     assert (ROOT / "docker" / "release.dockerfile").is_file()
-    assert (ROOT / "docker" / ".dockerignore").is_file()
+    pr_docker = (ROOT / "docker" / "pull-request.dockerfile").read_text(encoding="utf-8")
+    release_docker = (ROOT / "docker" / "release.dockerfile").read_text(encoding="utf-8")
+    assert "COPY src src" in pr_docker
+    assert "COPY src src" in release_docker
+    assert "COPY . ." not in pr_docker
+    assert "COPY . ." not in release_docker
     workflows_dir = ROOT / ".github" / "workflows"
     workflow_files = sorted(path.name for path in workflows_dir.glob("*.yaml"))
     assert workflow_files == ["pull-request.yaml", "release.yaml"]
@@ -36,8 +41,6 @@ def test_merge_readiness_app_local_pipeline_config() -> None:
     assert not (ROOT / "scripts" / "ci").exists()
     assert "PR_DOCKERFILE: docker/pull-request.dockerfile" in pr_workflow
     assert "RELEASE_DOCKERFILE: docker/release.dockerfile" in release_workflow
-    assert "DOCKERIGNORE: docker/.dockerignore" in pr_workflow
-    assert "DOCKERIGNORE: docker/.dockerignore" in release_workflow
     assert "scripts/pull-request/resolve-version.sh" in pr_workflow
     assert "version-check" in pr_workflow
     assert "testpypi-consumer" in pr_workflow

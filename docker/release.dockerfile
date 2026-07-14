@@ -18,7 +18,14 @@ RUN apt-get update \
 
 WORKDIR /workspace
 
-FROM base AS pypi
+# Explicit source tree — no repo-root .dockerignore.
+FROM base AS release-source
+COPY pyproject.toml README.md LICENSE ./
+COPY scripts/_common.sh scripts/_common.sh
+COPY scripts/release scripts/release
+COPY src src
+
+FROM release-source AS pypi
 
 ARG CLI_RELEASE_VERSION=
 ARG PYPI_API_TOKEN=
@@ -26,7 +33,6 @@ ARG PYPI_API_TOKEN=
 ENV CLI_RELEASE_VERSION=${CLI_RELEASE_VERSION} \
     PYPI_API_TOKEN=${PYPI_API_TOKEN}
 
-COPY . .
 RUN bash scripts/release/pypi-release.sh
 
 FROM python:3.12-slim AS runtime

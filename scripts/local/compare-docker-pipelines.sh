@@ -28,7 +28,6 @@ echo "project version: ${version}"
 echo "base version:    ${base_version:-<none>}"
 echo "PR dockerfile:   ${PR_DOCKERFILE}"
 echo "release docker:  ${RELEASE_DOCKERFILE}"
-echo "dockerignore:    ${DOCKERIGNORE}"
 echo
 
 _run_host() {
