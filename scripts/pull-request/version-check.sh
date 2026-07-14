@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compare PR version against the last published PyPI version (BASE_VERSION from host).
+# Compare PR version against the greatest published PyPI/TestPyPI version (BASE_VERSION from host).
 set -euo pipefail
 # shellcheck source=scripts/_common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"
@@ -10,7 +10,7 @@ _run_version_check() {
   cd "$root"
 
   if [[ -z "${BASE_VERSION:-}" ]]; then
-    echo "no published PyPI version yet — version gate skipped"
+    echo "no published PyPI/TestPyPI version yet — version gate skipped"
     return 0
   fi
 

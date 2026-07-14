@@ -96,6 +96,13 @@ def test_version_check_uses_host_base_version_not_git() -> None:
     assert "git fetch" not in code
 
 
+def test_host_last_published_version_queries_pypi_and_testpypi() -> None:
+    script = PR_SCRIPTS / "host-last-published-version.sh"
+    code = script.read_text(encoding="utf-8")
+    assert "pypi.org/pypi/" in code
+    assert "test.pypi.org/pypi/" in code
+
+
 @pytest.mark.parametrize(
     "relative",
     [

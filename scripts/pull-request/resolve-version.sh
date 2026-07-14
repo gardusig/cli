@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Resolve PR head version and last published PyPI version.
+# Resolve PR head version and greatest published PyPI/TestPyPI version.
 set -euo pipefail
 # shellcheck source=scripts/_common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"

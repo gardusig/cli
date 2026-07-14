@@ -65,11 +65,11 @@ def pypi_version_suggest_cmd(
     base_version: str = typer.Option(
         "",
         "--base-version",
-        help="Explicit published version to bump (default: latest on PyPI).",
+        help="Explicit published version to bump (default: greatest on PyPI or TestPyPI).",
     ),
     level: str = typer.Option("patch", "--level", help="Semver bump when a base exists: patch, minor, major."),
 ) -> None:
-    """Print suggested next package version (patch bump over last PyPI release)."""
+    """Print suggested next package version (patch bump over greatest PyPI/TestPyPI release)."""
     root = project_root()
     try:
         published = base_version.strip() or None
@@ -90,7 +90,7 @@ def pypi_version_set_cmd(
     base_version: str = typer.Option(
         "",
         "--base-version",
-        help="Explicit published version to bump (default: latest on PyPI).",
+        help="Explicit published version to bump (default: greatest on PyPI or TestPyPI).",
     ),
     level: str = typer.Option("patch", "--level", help="Semver bump when a base exists: patch, minor, major."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Print the version without writing files."),

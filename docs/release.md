@@ -6,7 +6,7 @@ Production releases publish **`gardusig-cli`** to [PyPI](https://pypi.org/projec
 
 Canonical version: `pyproject.toml` and `src/__init__.py` (kept in sync).
 
-PR CI compares the PR version against the **last published PyPI version** via `scripts/pull-request/version-check.sh`. The workflow resolves `BASE_VERSION` on the runner (`scripts/pull-request/host-last-published-version.sh`) and passes it as a Docker build-arg — **no git inside the image**. When nothing is published yet, the gate is skipped. Otherwise the PR version must be **strictly greater** than the last PyPI release.
+PR CI compares the PR version against the **greatest published PyPI or TestPyPI version** via `scripts/pull-request/version-check.sh`. The workflow resolves `BASE_VERSION` on the runner (`scripts/pull-request/host-last-published-version.sh`) and passes it as a Docker build-arg — **no git inside the image**. When nothing is published yet, the gate is skipped. Otherwise the PR version must be **strictly greater** than that baseline.
 
 To bump and write the next compatible version locally:
 

@@ -34,7 +34,7 @@ Push git tag `1.0.7` to run the full release pipeline. Tags must match semver `X
 | TestPyPI publish | `testpypi` | `scripts/pull-request/testpypi-release.sh` |
 | TestPyPI consumer | `testpypi-consumer` | `scripts/pull-request/testpypi-consumer.sh` |
 
-`BASE_VERSION` is resolved on the runner via `scripts/pull-request/host-last-published-version.sh` (latest PyPI release; empty on first publish).
+`BASE_VERSION` is resolved on the runner via `scripts/pull-request/host-last-published-version.sh` (greatest semver on PyPI or TestPyPI; empty on first publish).
 
 ## Timeouts
 

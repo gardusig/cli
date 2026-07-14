@@ -181,6 +181,8 @@ import pytest
 from src.services.pypi_publish import (
     PACKAGE_NAME,
     PyPiPublishError,
+    fetch_greatest_published_version,
+    fetch_latest_published_version,
     package_index_json_url,
     verify_package_version_on_index,
 )
@@ -196,6 +198,34 @@ def test_package_index_json_url_production() -> None:
     assert package_index_json_url(PACKAGE_NAME, testpypi=False) == (
         "https://pypi.org/pypi/gardusig-cli/json"
     )
+
+
+def test_fetch_greatest_published_version_picks_highest() -> None:
+    with (
+        patch(
+            "src.services.pypi_publish.fetch_latest_published_version",
+            side_effect=lambda *args, testpypi=False, **kwargs: (
+                "1.0.6" if not testpypi else "1.1.1"
+            ),
+        ),
+    ):
+        assert fetch_greatest_published_version() == "1.1.1"
+
+
+def test_fetch_greatest_published_version_uses_single_index() -> None:
+    with patch(
+        "src.services.pypi_publish.fetch_latest_published_version",
+        side_effect=lambda *args, testpypi=False, **kwargs: "1.0.6" if not testpypi else None,
+    ):
+        assert fetch_greatest_published_version() == "1.0.6"
+
+
+def test_fetch_greatest_published_version_none_when_absent() -> None:
+    with patch(
+        "src.services.pypi_publish.fetch_latest_published_version",
+        return_value=None,
+    ):
+        assert fetch_greatest_published_version() is None
 
 
 def test_verify_package_version_on_index_ok() -> None:
