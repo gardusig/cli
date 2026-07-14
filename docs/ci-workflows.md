@@ -54,6 +54,8 @@ bash scripts/workflow/apply-timeouts.sh --check
 
 Pipeline scripts enforce limits via `CI_*_TIMEOUT` and `stage_run_with_timeout` (set in Dockerfiles, not workflow YAML).
 
+Post-publish installs (`testpypi-consumer`, release `runtime`) wait for the index JSON API, then retry `pip install` with exponential backoff (`PIP_INSTALL_INITIAL_DELAY`, `PIP_INSTALL_BACKOFF_MULTIPLIER`, `PIP_INSTALL_MAX_DELAY`, `PIP_INSTALL_ATTEMPTS`).
+
 ## Release (tag `*`)
 
 Triggered by pushing a git tag; `resolve-tag-version.sh` runs in the `resolve` Docker stage and accepts only semver `X.Y.Z` (legacy `vX.Y.Z` is stripped).

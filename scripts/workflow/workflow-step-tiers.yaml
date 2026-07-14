@@ -34,7 +34,7 @@ release.yaml:
   publish-docker:
     checkout: short
     buildx: short
-    runtime: medium
+    runtime: long
     ci-tools: short
     docker-login: short
     publish-docker: medium
